@@ -4,7 +4,7 @@
   <parent>
     <artifactId>notes</artifactId>
     <groupId>org.exoplatform.addons.notes</groupId>
-    <version>1.1.x-SNAPSHOT</version>
+    <version>1.1.x-ux-SNAPSHOT</version>
   </parent>
   <artifactId>notes-webui</artifactId>
   <packaging>jar</packaging>
