@@ -18,7 +18,7 @@
     <application-name>wiki</application-name>
     <portlet-name>WikiPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
-    <css-path>/skin/css/wiki/wiki.css</css-path>
+    <css-path>/skin/css/notes/notes.css</css-path>
     <css-priority>1</css-priority>
   </portlet-skin>
 
@@ -26,14 +26,14 @@
     <application-name>wiki</application-name>
     <portlet-name>Notes</portlet-name>
     <skin-name>Enterprise</skin-name>
-    <css-path>/skin/css/wiki/wiki.css</css-path>
+    <css-path>/skin/css/notes/notes.css</css-path>
   </portlet-skin>
 
   <portlet-skin>
     <application-name>wiki</application-name>
     <portlet-name>NotesEditor</portlet-name>
     <skin-name>Enterprise</skin-name>
-    <css-path>/skin/css/wiki/wiki.css</css-path>
+    <css-path>/skin/css/notes/notes.css</css-path>
   </portlet-skin>
 
   <portlet>
