@@ -89,7 +89,7 @@
                 <outputDirectory>${project.build.directory}/${project.build.finalName}/skin/css</outputDirectory>
                 <compress>false</compress>
                 <includes>
-                  <include>wiki/wiki.less</include>
+                  <include>notes/notes.less</include>
                 </includes>
               </configuration>
               <goals>
