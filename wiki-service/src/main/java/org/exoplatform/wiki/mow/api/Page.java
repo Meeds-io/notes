@@ -53,6 +53,8 @@ public class Page {
 
   private String wikiOwner;
 
+  private String parentPageName;
+
   private boolean isMinorEdit;
 
   public Page() {
@@ -202,5 +204,13 @@ public class Page {
 
   public void setMinorEdit(boolean isMinorEdit) {
     this.isMinorEdit = isMinorEdit;
+  }
+
+  public String getParentPageName() {
+    return parentPageName;
+  }
+
+  public void setParentPageName(String parentPageName) {
+    this.parentPageName = parentPageName;
   }
 }
