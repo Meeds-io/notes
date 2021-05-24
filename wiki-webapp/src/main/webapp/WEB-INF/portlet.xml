@@ -43,7 +43,7 @@
 
   <portlet>
     <portlet-name>Notes</portlet-name>
-    <display-name xml:lang="EN">Notes</display-name>
+    <display-name xml:lang="EN">Notes Application</display-name>
     <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
     <init-param>
     <name>portlet-view-dispatched-file-path</name>
@@ -59,6 +59,27 @@
     <portlet-info>
       <title>Notes Application</title>
       <keywords>Notes Application</keywords>
+    </portlet-info>
+   </portlet>
+
+   <portlet>
+    <portlet-name>NotesEditor</portlet-name>
+    <display-name xml:lang="EN">Notes Editor Application</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+    <name>portlet-view-dispatched-file-path</name>
+    <value>/html/notesEditor.html</value>
+    </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
+    <supports>
+    <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.notes.notesPortlet</resource-bundle>
+    <portlet-info>
+      <title>Notes Editor Application</title>
+      <keywords>Notes Editor Application</keywords>
     </portlet-info>
    </portlet>
 </portlet-app>
