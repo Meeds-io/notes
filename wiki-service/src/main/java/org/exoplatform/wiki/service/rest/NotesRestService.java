@@ -83,14 +83,13 @@ import java.lang.Class;
 @Path("/notes")
 public class NotesRestService implements ResourceContainer {
 
-  private final WikiService      wikiService;
+  private final WikiService           wikiService;
 
   private final ResourceBundleService resourceBundleService;
 
-  private static Log             log = ExoLogger.getLogger("wiki:WikiRestService");
+  private static Log                  log = ExoLogger.getLogger("wiki:WikiRestService");
 
-  private final CacheControl     cc;
-
+  private final CacheControl          cc;
 
   public NotesRestService(WikiService wikiService, ResourceBundleService resourceBundleService) {
     this.wikiService = wikiService;
@@ -102,9 +101,9 @@ public class NotesRestService implements ResourceContainer {
 
   /**
    * Return the note page content as html or wiki syntax.
+   * 
    * @param text contain the data as html
    * @return the instance of javax.ws.rs.core.Response
-   *
    * @LevelAPI Experimental
    */
   @POST
@@ -125,9 +124,9 @@ public class NotesRestService implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
   public Response getPage(@Context UriInfo uriInfo,
-                                                              @PathParam("wikiType") String wikiType,
-                                                              @PathParam("wikiOwner") String wikiOwner,
-                                                              @PathParam("pageId") String pageId) {
+                          @PathParam("wikiType") String wikiType,
+                          @PathParam("wikiOwner") String wikiOwner,
+                          @PathParam("pageId") String pageId) {
     try {
       Page page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId);
       if (page == null) {
@@ -140,15 +139,14 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-
   /**
    * Save draft title and content for a page specified by the given page params
    * 
-
    * @param page WIKI PAGE.
-   * @return {@link Response} with status HTTPStatus.ACCEPTED if saving process is performed successfully
-   *                          with status HTTPStatus.INTERNAL_ERROR if there is any unknown error in the saving process
-   */                          
+   * @return {@link Response} with status HTTPStatus.ACCEPTED if saving process is
+   *         performed successfully with status HTTPStatus.INTERNAL_ERROR if there
+   *         is any unknown error in the saving process
+   */
   @POST
   @Path("/page")
   @RolesAllowed("users")
@@ -158,8 +156,8 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(),page.getWikiOwner());
-      if(wiki == null) {
+      Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(), page.getWikiOwner());
+      if (wiki == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       String syntaxId = wikiService.getDefaultWikiSyntaxId();
@@ -171,9 +169,12 @@ public class NotesRestService implements ResourceContainer {
       page.setUrl("");
       Page createdPage = wikiService.createPage(wiki, page.getParentPageName(), page);
       return Response.ok(createdPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
-    }
-    catch (Exception ex) {
-      log.warn(String.format("Failed to perform auto save wiki page %s:%s:%s", page.getWikiType(),page.getWikiOwner(),page.getId()), ex);
+    } catch (Exception ex) {
+      log.warn(String.format("Failed to perform auto save wiki page %s:%s:%s",
+                             page.getWikiType(),
+                             page.getWikiOwner(),
+                             page.getId()),
+               ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
