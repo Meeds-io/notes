@@ -23,8 +23,15 @@
   </portlet-skin>
 
   <portlet-skin>
-    <application-name>notes</application-name>
+    <application-name>wiki</application-name>
     <portlet-name>Notes</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <css-path>/skin/css/wiki/wiki.css</css-path>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>wiki</application-name>
+    <portlet-name>NotesEditor</portlet-name>
     <skin-name>Enterprise</skin-name>
     <css-path>/skin/css/wiki/wiki.css</css-path>
   </portlet-skin>
@@ -34,7 +41,36 @@
     <module>
       <script>
         <minify>false</minify>
-        <path>/javascript/notes.bundle.js</path>
+        <path>/javascript/eXo/wiki/ckeditor/notes.bundle.js</path>
+      </script>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>jquery</module>
+        <as>$</as>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>NotesEditor</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/eXo/wiki/ckeditor/notesEditor.bundle.js</path>
       </script>
       <depends>
         <module>commonVueComponents</module>
