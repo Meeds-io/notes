@@ -54,6 +54,10 @@
   </component>
 
   <component>
+    <type>org.exoplatform.wiki.service.rest.NotesRestService</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.wiki.resolver.PageResolver</key>
     <type>org.exoplatform.wiki.resolver.PageResolver</type>
   </component>
