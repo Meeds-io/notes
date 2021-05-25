@@ -34,6 +34,70 @@
 	}
 }
 
+/************ New css feature notes ****************/
+#notesTop {
+	display: block;
+	box-shadow: 0 3px 5px hsla(0, 1%, 43%, 0.8);
+	z-index: 10;
+	.cke_top {
+		height: auto;
+	}
+
+	.cke_toolbox {
+		flex-flow: wrap;
+		background-color: #fafafa;
+		border-bottom: 0;
+	}
+
+	.cke_shared {
+		border: 0;
+	}
+}
+#cke_notesContent {
+	border-color: transparent;
+	flex: 0 1 100%;
+	margin-bottom: 0;
+}
+#notesActivityComposer{
+	.notesComposerActions{
+		.notesFormButtons{
+			display: inline-flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			width: 100%;
+			padding: 10px;
+			margin: 0;
+			.notesFormLeftActions{
+				display: inline-flex;
+				flex-direction: row;
+				flex: auto;
+				justify-content: normal;
+				img {
+					height: 40px;
+				}
+				input[type="text"] {
+					flex: 0 1 100%;
+					margin-bottom: 0;
+					border-radius: 0px;
+					border-color: transparent;
+					padding: 0 20px;
+					font-size: 24px;
+				}
+			}
+			.notesFormRightActions{
+				display: inline-flex;
+				padding-right: 30px;
+				#notesUpdateAndPost{
+					padding: 2px 12px;
+					color: #FFFFFF !important;
+					font-size: 15px;
+					letter-spacing: normal;
+					background-color: @primaryColor;
+				}
+			}
+		}
+	}
+}
 
 
 /************ WikiBox ****************/
