@@ -41,7 +41,7 @@
     <module>
       <script>
         <minify>false</minify>
-        <path>/javascript/eXo/wiki/ckeditor/notes.bundle.js</path>
+        <path>/javascript/notes.bundle.js</path>
       </script>
       <depends>
         <module>commonVueComponents</module>
@@ -70,7 +70,7 @@
     <module>
       <script>
         <minify>false</minify>
-        <path>/javascript/eXo/wiki/ckeditor/notesEditor.bundle.js</path>
+        <path>/javascript/notesEditor.bundle.js</path>
       </script>
       <depends>
         <module>commonVueComponents</module>
@@ -116,7 +116,7 @@
     <name>wikiCkeditor</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/eXo/wiki/ckeditor/wikiCkeditor.bundle.js</path>
+      <path>/javascript/wikiCkeditor.bundle.js</path>
     </script>
   </module>
 
@@ -124,7 +124,7 @@
     <name>wikiPageContent</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/eXo/wiki/ckeditor/pageContent.bundle.js</path>
+      <path>/javascript/pageContent.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -773,7 +773,7 @@
     <name>wikiSearchCard</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/eXo/wiki/ckeditor/wikiSearchCard.bundle.js</path>
+      <path>/javascript/wikiSearchCard.bundle.js</path>
     </script>
     <depends>
       <module>commonVueComponents</module>
