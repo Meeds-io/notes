@@ -5,9 +5,9 @@
         id="notesEditor"
         class="notesEditor">
         <div class="notesActions">
-          <div class="notesFormButtons">
+          <div class="notesFormButtons pa-3 ma-0">
             <div class="notesFormLeftActions mr-10">
-              <img src="/wiki/images/wiki.png">
+              <img :src="srcImageNote">
               <input
                 id="notesTitle"
                 class="ml-4"
@@ -16,7 +16,7 @@
                 :placeholder="notesTitlePlaceholder"
                 type="text">
             </div>
-            <div class="notesFormRightActions">
+            <div class="notesFormRightActions pr-7">
               <button
                 class="notesCancel btn mr-2"
                 @click="closeNotes">
@@ -61,6 +61,7 @@ export default {
         parentPageName: 'WikiHome',
         body: 'ddd',
       },
+      srcImageNote: '/wiki/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
       notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}*`,
@@ -96,7 +97,7 @@ export default {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('video','/news/js/ckeditor/plugins/video/','plugin.js');
+      CKEDITOR.plugins.addExternal('video','/notes/javascript/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.dtd.$removeEmpty['i'] = false;
       let extraPlugins = 'sharedspace,simpleLink,selectImage,suggester,font,justify,widget,video';
       const windowWidth = $(window).width();
