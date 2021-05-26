@@ -2,12 +2,12 @@
   <v-app class="notesEditor">
     <div>
       <div
-        id="notesActivityComposer"
-        class="notesComposer">
-        <div class="notesComposerActions">
+        id="notesEditor"
+        class="notesEditor">
+        <div class="notesActions">
           <div class="notesFormButtons">
             <div class="notesFormLeftActions mr-10">
-              <img src="/news/images/newsImageDefault.png">
+              <img src="/wiki/images/wiki.png">
               <input
                 id="notesTitle"
                 class="ml-4"
@@ -17,12 +17,15 @@
                 type="text">
             </div>
             <div class="notesFormRightActions">
-              <button class="notesCancel btn mr-2">
+              <button
+                class="notesCancel btn mr-2"
+                @click="closeNotes">
                 {{ $t("btn.cancel") }}
               </button>
               <button
                 id="notesUpdateAndPost"
-                class="btn btn-primary">
+                class="btn btn-primary"
+                @click="postNotes">
                 {{ $t("btn.post") }}
               </button>
             </div>
@@ -52,7 +55,10 @@ export default {
     return {
       notes: {
         id: '',
-        title: 'ddd',
+        title: '',
+        wikiType: 'portal',
+        wikiOwner: 'dw',
+        parentPageName: 'WikiHome',
         body: 'ddd',
       },
       titleMaxLength: 1000,
@@ -65,6 +71,27 @@ export default {
   },
 
   methods: {
+    postNotes(){
+      const notes = {
+        title: this.notes.title,
+        wikiType: 'portal',
+        wikiOwner: 'dw',
+        parentPageName: 'WikiHome',
+        body: this.notes.body,
+      };
+      if (notes){
+        this.$notesService.addNote(notes).then(() => {
+          this.notes.title='';
+          this.notes.bady='';
+        }).catch(e => {
+          console.error('Error when adding note page', e);
+        });
+      }
+    },
+    closeNotes(){
+      this.notes.title='';
+      this.notes.bady='';
+    },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
@@ -90,7 +117,6 @@ export default {
         extraPlugins: extraPlugins,
         removePlugins: 'image,confirmBeforeReload,maximize,resize',
         allowedContent: true,
-        typeOfRelation: 'mention_activity_stream',
         spaceURL: self.spaceURL,
         toolbarLocation: 'top',
         extraAllowedContent: 'img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*]',
