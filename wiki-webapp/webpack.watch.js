@@ -4,8 +4,7 @@ const webpackCommonConfig = require('./webpack.prod.js');
 
 // the display name of the war
 const app = 'wiki';
-//const exoServerPath = "/exo-server";
-const exoServerPath = "/home/exo/Desktop/plf-enterprise-tomcat-standalone-6.2.x-notes-20210519.190553-1/platform-6.2.x-notes-SNAPSHOT";
+const exoServerPath = "/exo-server";
 
 let config = merge(webpackCommonConfig, {
   output: {
