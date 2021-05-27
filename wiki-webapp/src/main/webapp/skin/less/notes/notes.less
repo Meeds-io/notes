@@ -42,31 +42,30 @@
 	.cke_top {
 		height: auto;
 	}
-
 	.cke_toolbox {
 		flex-flow: wrap;
 		border-bottom: 0;
 	}
-
 	.cke_shared {
 		border: 0;
 	}
 }
-.formInputGroup{
-	display: flex;
-	margin: 0px 1%;
-	padding: 10px 0;
-	#cke_1_contents{
-		height: 400px;
-	}
-}
-#cke_notesContent {
-	border-color: transparent;
-	flex: 0 1 100%;
-	margin-bottom: 0;
-}
+
 #notesEditor{
 	background-color: @baseBackgroundDefault;
+	.formInputGroup{
+		display: flex;
+		margin: 0px 1%;
+		padding: 10px 0;
+		#cke_1_contents{
+			height: 400px!important;
+		}
+		#cke_notesContent {
+			border-color: transparent;
+			flex: 0 1 100%;
+			margin-bottom: 0;
+		}
+	}
 	.notesActions{
 		.notesFormButtons{
 			display: inline-flex;
