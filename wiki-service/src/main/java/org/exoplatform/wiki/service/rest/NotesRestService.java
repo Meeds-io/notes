@@ -16,18 +16,18 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import io.swagger.annotations.ApiParam;
+import java.net.URLDecoder;
+import java.util.*;
+
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.fileupload.DiskFileUpload;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadBase;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+
 import org.exoplatform.common.http.HTTPStatus;
-import org.exoplatform.commons.utils.HTMLSanitizer;
-import org.exoplatform.commons.utils.MimeTypeResolver;
-import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -35,46 +35,21 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.social.rest.entity.IdentityEntity;
-import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.Relations;
+import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.service.image.ResizeImageService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
-import org.exoplatform.wiki.service.impl.DraftData;
-import org.exoplatform.wiki.service.impl.SpaceBean;
-import org.exoplatform.wiki.service.related.JsonRelatedData;
-import org.exoplatform.wiki.service.related.RelatedUtil;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.SearchResultType;
-import org.exoplatform.wiki.service.search.TitleSearchResult;
-import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
 import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.*;
-import java.lang.Object;
-import java.lang.Class;
+import io.swagger.annotations.ApiParam;
 
 /**
  * Notes REST service
@@ -83,7 +58,7 @@ import java.lang.Class;
 @Path("/notes")
 public class NotesRestService implements ResourceContainer {
 
-  private final WikiService           wikiService;
+  private final WikiService           noteBookService;
 
   private final ResourceBundleService resourceBundleService;
 
@@ -91,91 +66,264 @@ public class NotesRestService implements ResourceContainer {
 
   private final CacheControl          cc;
 
-  public NotesRestService(WikiService wikiService, ResourceBundleService resourceBundleService) {
-    this.wikiService = wikiService;
+  public NotesRestService(WikiService noteBookService, ResourceBundleService resourceBundleService) {
+    this.noteBookService = noteBookService;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
     cc.setNoCache(true);
     cc.setNoStore(true);
   }
 
-  /**
-   * Return the note page content as html or wiki syntax.
-   * 
-   * @param text contain the data as html
-   * @return the instance of javax.ws.rs.core.Response
-   * @LevelAPI Experimental
-   */
-  @POST
-  @Path("/content/")
-  public Response getNotePageContent(@FormParam("text") String text) {
-    try {
-      String outputText = WikiHTMLSanitizer.markupSanitize(text);
-
-      return Response.ok(outputText, MediaType.TEXT_HTML).cacheControl(cc).build();
-    } catch (Exception e) {
-      log.error("Error while converting wiki page content: " + e.getMessage(), e);
-      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
-    }
-  }
-
   @GET
-  @Path("/{wikiType}/{wikiOwner:.+}/pages/{pageId}")
+  @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  public Response getPage(@Context UriInfo uriInfo,
-                          @PathParam("wikiType") String wikiType,
-                          @PathParam("wikiOwner") String wikiOwner,
-                          @PathParam("pageId") String pageId) {
+  public Response getNote(@Context UriInfo uriInfo,
+                          @PathParam("noteBookType") String noteBookType,
+                          @PathParam("noteBookOwner") String noteBookOwner,
+                          @PathParam("noteId") String noteId) {
     try {
-      Page page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId);
-      if (page == null) {
+      Page note = noteBookService.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
+      if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      return Response.ok(page).build();
+      note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
+      return Response.ok(note).build();
     } catch (Exception e) {
-      log.error("Can't get page", e);
+      log.error("Can't get note", e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
 
   /**
-   * Save draft title and content for a page specified by the given page params
-   * 
-   * @param page WIKI PAGE.
+   * Create new note
+   *
+   * @param note Note.
    * @return {@link Response} with status HTTPStatus.ACCEPTED if saving process is
    *         performed successfully with status HTTPStatus.INTERNAL_ERROR if there
    *         is any unknown error in the saving process
    */
   @POST
-  @Path("/page")
+  @Path("/note")
   @RolesAllowed("users")
-  public Response savePage(@ApiParam(value = "task object to be updated", required = true) Page page) {
-    if (page == null) {
+  public Response createNote(@ApiParam(value = "task object to be updated", required = true) Page note) {
+    if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(), page.getWikiOwner());
-      if (wiki == null) {
+      /* TODO: check noteBook permissions */
+      Wiki noteBook = noteBookService.getWikiByTypeAndOwner(note.getWikiType(), note.getWikiOwner());
+      if (noteBook == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      String syntaxId = wikiService.getDefaultWikiSyntaxId();
+      String syntaxId = noteBookService.getDefaultWikiSyntaxId();
       String currentUser = identity.getUserId();
-      page.setAuthor(currentUser);
-      page.setOwner(currentUser);
-      page.setSyntax(syntaxId);
-      page.setName(TitleResolver.getId(page.getTitle(), false));
-      page.setUrl("");
-      Page createdPage = wikiService.createPage(wiki, page.getParentPageName(), page);
-      return Response.ok(createdPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      note.setAuthor(currentUser);
+      note.setOwner(currentUser);
+      note.setSyntax(syntaxId);
+      note.setName(TitleResolver.getId(note.getTitle(), false));
+      note.setUrl("");
+      Page createdNote = noteBookService.createPage(noteBook, note.getParentPageName(), note);
+      return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception ex) {
-      log.warn(String.format("Failed to perform auto save wiki page %s:%s:%s",
-                             page.getWikiType(),
-                             page.getWikiOwner(),
-                             page.getId()),
-               ex);
+      log.warn(String.format("Failed to perform auto save noteBook note %s:%s:%s",
+              note.getWikiType(),
+              note.getWikiOwner(),
+              note.getId()),
+              ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
+
+  /**
+   * Update Note
+   *
+   * @param note Note.
+   * @return {@link Response} with status HTTPStatus.ACCEPTED if saving process is
+   *         performed successfully with status HTTPStatus.INTERNAL_ERROR if there
+   *         is any unknown error in the saving process
+   */
+  @PUT
+  @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
+  @RolesAllowed("users")
+  public Response updateNote(@ApiParam(value = "note object to be updated", required = true) @Context UriInfo uriInfo,
+                             @PathParam("noteBookType") String noteBookType,
+                             @PathParam("noteBookOwner") String noteBookOwner,
+                             @PathParam("noteId") String noteId,
+                             Page note) {
+    if (note == null) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note_ = noteBookService.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
+      if (note_ == null) {
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+
+      if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+
+      if (!note_.getTitle().equals(note.getTitle())) {
+        String newNoteName = TitleResolver.getId(note.getTitle(), false);
+        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+                && !note.getName().equals(newNoteName)) {
+          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
+          note_.setName(newNoteName);
+        }
+        note_.setTitle(note.getTitle());
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_TITLE);
+        noteBookService.createVersionOfPage(note_);
+        if (!"__anonim".equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
+          noteBookService.removeDraftOfPage(noteParams);
+        }
+      } else if (!note_.getContent().equals(note.getContent())) {
+        note_.setContent(note.getContent());
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
+        noteBookService.createVersionOfPage(note_);
+      } else if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
+        String newNoteName = TitleResolver.getId(note.getTitle(), false);
+        note_.setTitle(note.getTitle());
+        note_.setContent(note.getContent());
+        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+                && !note.getName().equals(newNoteName)) {
+          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
+          note_.setName(newNoteName);
+        }
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
+        noteBookService.createVersionOfPage(note_);
+        if (!"__anonim".equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
+          noteBookService.removeDraftOfPage(noteParams);
+        }
+      }
+      return Response.ok().build();
+    } catch (Exception ex) {
+      log.warn(String.format("Failed to perform update noteBook note %s:%s:%s",
+              note.getWikiType(),
+              note.getWikiOwner(),
+              note.getId()),
+              ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
+  /**
+   * Display the current tree of a noteBook based on is path
+   *
+   * @param type It can be a Portal, Group, User type of noteBook
+   * @param path Contains the path of the noteBook note
+   * @param currentPath Contains the path of the current note
+   * @param showExcerpt Boolean to display or not the excerpt
+   * @param depth Defined the depth of the children we want to display
+   * @return List of descendants including the note itself.
+   */
+  @GET
+  @Path("/tree/{type}")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getTreeData(@PathParam("type") String type,
+                              @QueryParam(TreeNode.PATH) String path,
+                              @QueryParam(TreeNode.CURRENT_PATH) String currentPath,
+                              @QueryParam(TreeNode.CAN_EDIT) Boolean canEdit,
+                              @QueryParam(TreeNode.SHOW_EXCERPT) Boolean showExcerpt,
+                              @QueryParam(TreeNode.DEPTH) String depth) {
+    try {
+      List<JsonNodeData> responseData = new ArrayList<JsonNodeData>();
+      HashMap<String, Object> context = new HashMap<String, Object>();
+      context.put(TreeNode.CAN_EDIT, canEdit);
+      if (currentPath != null) {
+        currentPath = URLDecoder.decode(currentPath, "utf-8");
+        context.put(TreeNode.CURRENT_PATH, currentPath);
+        WikiPageParams currentNoteParam = TreeUtils.getPageParamsFromPath(currentPath);
+        org.exoplatform.wiki.mow.api.Page currentNote = noteBookService.getPageOfWikiByName(currentNoteParam.getType(),
+                currentNoteParam.getOwner(),
+                currentNoteParam.getPageName());
+        context.put(TreeNode.CURRENT_PAGE, currentNote);
+      }
+
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
+
+      // Put select note to context
+      path = URLDecoder.decode(path, "utf-8");
+      context.put(TreeNode.PATH, path);
+      WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
+      org.exoplatform.wiki.mow.api.Page note = noteBookService.getPageOfWikiByName(noteParam.getType(),
+              noteParam.getOwner(),
+              noteParam.getPageName());
+      if (note == null) {
+        log.warn("User [{}] can not get noteBook path [{}]. Wiki Home is used instead",
+                ConversationState.getCurrent().getIdentity().getUserId(),
+                path);
+        note = noteBookService.getPageOfWikiByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
+        if (note == null) {
+          ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
+                  request.getLocale());
+          String errorMessage = "";
+          if (resourceBundle != null) {
+            errorMessage = resourceBundle.getString("UIWikiMovePageForm.msg.no-permission-at-wiki-destination");
+          }
+          return Response.serverError().entity("{ \"message\": \"" + errorMessage + "\"}").cacheControl(cc).build();
+        }
+      }
+
+      context.put(TreeNode.SELECTED_PAGE, note);
+
+      context.put(TreeNode.SHOW_EXCERPT, showExcerpt);
+      if (type.equalsIgnoreCase(TREETYPE.ALL.toString())) {
+        Stack<WikiPageParams> stk = Utils.getStackParams(note);
+        context.put(TreeNode.STACK_PARAMS, stk);
+        responseData = getJsonTree(noteParam, context);
+      } else if (type.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
+        // Get children only
+        if (depth == null)
+          depth = "1";
+        context.put(TreeNode.DEPTH, depth);
+        responseData = getJsonDescendants(noteParam, context);
+      }
+
+      encodeWikiTree(responseData, request.getLocale());
+      return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (Exception e) {
+      log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
+      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
+    }
+  }
+
+  private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context) throws Exception {
+    Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
+    WikiTreeNode noteBookNode = new WikiTreeNode(noteBook);
+    noteBookNode.pushDescendants(context);
+    return TreeUtils.tranformToJson(noteBookNode, context);
+  }
+
+  private List<JsonNodeData> getJsonDescendants(WikiPageParams params, HashMap<String, Object> context) throws Exception {
+    TreeNode treeNode = TreeUtils.getDescendants(params, context);
+    return TreeUtils.tranformToJson(treeNode, context);
+  }
+
+  private void encodeWikiTree(List<JsonNodeData> responseData, Locale locale) throws Exception {
+    ResourceBundle resourceBundle = resourceBundleService.getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
+    String untitledLabel = "";
+    if (resourceBundle == null) {
+      // May happen in Tests
+      log.warn("Cannot find resource bundle '{}'", Utils.WIKI_RESOUCE_BUNDLE_NAME);
+    } else {
+      untitledLabel = resourceBundle.getString("Page.Untitled");
+    }
+
+    for (JsonNodeData data : responseData) {
+      if (StringUtils.isBlank(data.getName())) {
+        data.setName(untitledLabel);
+      }
+      if (CollectionUtils.isNotEmpty(data.children)) {
+        encodeWikiTree(data.children, locale);
+      }
+    }
+  }
+
 }
