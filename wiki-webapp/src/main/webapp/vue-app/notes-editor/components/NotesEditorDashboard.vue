@@ -35,7 +35,7 @@
         <div class="formInputGroup">
           <textarea
             id="notesContent"
-            v-model="notes.body"
+            v-model="notes.content"
             :placeholder="notesBodyPlaceholder"
             class="notesFormInput"
             name="notesContent">
@@ -59,7 +59,7 @@ export default {
         wikiType: 'portal',
         wikiOwner: 'dw',
         parentPageName: 'WikiHome',
-        body: 'ddd',
+        content: '',
       },
       srcImageNote: '/wiki/images/wiki.png',
       titleMaxLength: 1000,
@@ -78,12 +78,13 @@ export default {
         wikiType: 'portal',
         wikiOwner: 'dw',
         parentPageName: 'WikiHome',
-        body: this.notes.body,
+        content: this.notes.content,
       };
       if (notes){
         this.$notesService.addNote(notes).then(() => {
           this.notes.title='';
-          this.notes.bady='';
+          this.notes.content='';
+          this.initCKEditor();
         }).catch(e => {
           console.error('Error when adding note page', e);
         });
@@ -91,15 +92,16 @@ export default {
     },
     closeNotes(){
       this.notes.title='';
-      this.notes.bady='';
+      this.notes.content='';
+      this.initCKEditor();
     },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('video','/notes/javascript/ckeditor/plugins/video/','plugin.js');
+      CKEDITOR.plugins.addExternal('video','/wiki/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,suggester,font,justify,widget,video';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -150,7 +152,7 @@ export default {
               });
           },
           change: function (evt) {
-            self.notes.body = evt.editor.getData();
+            self.notes.content = evt.editor.getData();
           }
         }
       });
@@ -176,6 +178,3 @@ export default {
   }
 };
 </script>
-<style>
-
-</style>
