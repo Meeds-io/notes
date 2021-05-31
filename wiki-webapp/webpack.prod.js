@@ -55,7 +55,8 @@ const config = {
     pageContent: './src/main/webapp/javascript/eXo/wiki/pageContent.js',
     wikiSearchCard: './src/main/webapp/vue-app/wikiSearch/main.js',
     notes: './src/main/webapp/vue-app/notes/main.js',
-    notesEditor: './src/main/webapp/vue-app/notes-editor/main.js'
+    notesEditor: './src/main/webapp/vue-app/notes-editor/main.js',
+    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js'
   },
   output: {
     path: path.join(__dirname, 'target/wiki/'),

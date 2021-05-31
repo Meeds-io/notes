@@ -34,6 +34,18 @@
     <type>org.exoplatform.wiki.jpa.JPADataStorage</type>
   </component>
 
+  <component>
+    <key>NewNotesFeatureProperties</key>
+    <type>org.exoplatform.container.ExtendedPropertyConfigurator</type>
+    <init-params>
+      <properties-param>
+        <name>NewNotesFeatureProperties</name>
+        <description>New Notes Feature enablement flag</description>
+        <property name="exo.feature.NewNotes.enabled" value="${exo.feature.NewNotes.enabled:false}" />
+      </properties-param>
+    </init-params>
+  </component>
+
   <external-component-plugins>
     <target-component>org.exoplatform.wiki.service.WikiService</target-component>
     <component-plugin>
