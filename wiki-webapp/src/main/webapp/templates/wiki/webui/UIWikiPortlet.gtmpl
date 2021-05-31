@@ -50,6 +50,7 @@
 </style>
 
 <!--  -->
+<% _ctx.include("war:/templates/wiki/webui/UINotesSwitch.gtmpl") %>
 <div class="uiWikiPortlet" id="$uicomponent.id">
   <div class="ParentMaskLayer">
     <div id="KSMaskLayer" class="KSMaskLayer"><span></span></div>

@@ -123,6 +123,9 @@
       <depends>
          <module>wikiPageContent</module>
       </depends>
+      <depends>
+         <module>NotesSwitch</module>
+      </depends>
     </module>
   </portlet>
 
@@ -800,6 +803,33 @@
     </depends>
     <depends>
       <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>jquery</module>
+      <as>$</as>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>NotesSwitch</name>
+    <script>
+      <minify>false</minify>
+      <path>/javascript/notesSwitch.bundle.js</path>
+    </script>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
     </depends>
     <depends>
       <module>jquery</module>
