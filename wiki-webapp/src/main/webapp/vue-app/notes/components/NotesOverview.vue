@@ -3,7 +3,7 @@
     <div class="notes-application border-radius ma-3 py-3 px-6">
       <div class="notes-application-header">
         <div class="notes-title d-flex justify-space-between">
-          <span class=" title text-color">UX Ideation Notes</span>
+          <span class=" title text-color">{{ notes.title }}</span>
           <div class="notes-header-icons">
             <v-icon
               size="22"
@@ -27,26 +27,20 @@
         </div>
         <div class="notes-treeview d-flex pb-2">
           <i class="uiIcon uiTreeviewIcon"></i>
-          <div
+          <!--<div
             v-for="(node, index) in notesTreeview" 
             :key="index" 
             class="notes-tree-item">
             <span class="caption">{{ node.name }}</span>
             <v-icon v-if="index+1 < notesTreeview.length" size="18">mdi-chevron-right</v-icon>
-          </div>
+          </div>-->
         </div>
         <div class="notes-last-update-info">
-          <span class="caption grey-light-color font-italic">Lorem ipsum dolor si amet lorem, lorem ipsum dolor</span>
+          <span class="caption grey-light-color font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
         </div>
       </div>
       <v-divider class="my-4" />
-      <div class="notes-application-content">
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        <p class="text-color">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      <div class="notes-application-content text-color" v-html="notes.content">
       </div>
     </div>
   </v-app>
@@ -55,21 +49,83 @@
 export default {
   data() {
     return {
-      notesTreeview: [
-        {
-          name: 'Node 1',
-          link: '#'
-        },
-        {
-          name: 'Node 2',
-          link: '#'
-        },
-        {
-          name: 'Node 3',
-          link: '#'
-        }
-      ]
+      notes: {},
+      lastUpdatedUser: '',
+      lastUpdatedTime: '',
+      lang: eXo.env.portal.language,
+      dateTimeFormat: {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+      notesPageName: 'Note_Zero',
+      wikiType: eXo.env.portal.spaceName ? 'group' : 'portal',
+      wikiOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      wikiOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      noteTree: [],
+      noteTreeElements: []
     };
+  },
+  watch: {
+    notes() {
+      this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
+      this.lastUpdatedTime = this.notes.updatedDate.time && this.$dateUtil.formatDateObjectToDisplay(new Date(this.notes.updatedDate.time), this.dateTimeFormat, this.lang) || '';
+      this.noteTreeElement = this.buildNoteTree(this.noteTree, this.notesPageName);
+    }
+  },
+  computed: {
+    lastNotesUpdatebBy() {
+      return this.lastUpdatedUser;
+    },
+    displayedDate() {
+      return this.lastUpdatedTime;
+    },
+    noteTreeItem() {
+      console.warn(this.noteTreeElement);
+      return this.noteTreeElement;
+    }
+  },
+  mounted() {
+    this.getNotes();
+    this.getNoteTree();
+  },
+  methods: {
+    retrieveUserInformations(userName) {
+      this.$userService.getUser(userName).then(user => {
+        this.lastUpdatedUser =  user.fullname;
+      });
+    },
+    getNotes() {
+      return this.$notesService.getNotes(this.wikiType, this.wikiOwner , this.notesPageName).then(data => {
+        this.notes = data || [];
+      });
+    },
+    getNoteTree() {
+      return this.$notesService.getNoteTree(this.wikiType, this.wikiOwnerTree , this.notesPageName).then(data => {
+        this.noteTree = data && data.jsonList[0] || [];
+      });
+    },
+    buildNoteTree(arrayObject, stringTest) {
+      let result = [];
+      if (!arrayObject || typeof arrayObject !== 'object') {return;}
+      arrayObject.children.forEach(item => {
+        if (item.path.split('%2F').pop() === stringTest) {
+          result.push({
+            'name': item.name,
+            'path': item.path
+          });
+          result.push({
+            'name': arrayObject.name,
+            'path': arrayObject.path
+          });
+          return result;
+        }
+        return result = this.buildNoteTree(item, stringTest);
+      });
+      return result;
+    },
   }
 };
 </script>

@@ -1,6 +1,33 @@
+import { notesConstants } from './notesConstants.js';
+
+export function getNotes(wikiType, wikiOwner, pageId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/${wikiType}/${wikiOwner}/pages/${pageId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+} 
+
+export function getNoteTree(wikiType, wikiOwner, pageId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/ALL?path=${wikiType}/${wikiOwner}/pages/${pageId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+} 
 
 export function addNote(page) {
-  return fetch('/portal/rest/notes/page', {
+  return fetch(`/${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/${page}`, {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json'
