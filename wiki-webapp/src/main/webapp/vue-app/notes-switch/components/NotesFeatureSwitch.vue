@@ -11,7 +11,7 @@
           {{ buttonText }}
         </v-btn>
       </div>
-      <div v-if="useNewApp" class="white d-flex flex-column text-center pb-4">
+      <div v-if="useNewApp" class="white d-flex flex-column pb-4">
         <notes-overview />
       </div>
     </div>
