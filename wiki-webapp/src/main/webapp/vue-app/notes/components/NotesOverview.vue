@@ -63,9 +63,9 @@ export default {
         minute: '2-digit',
       },
       notesPageName: 'WikiHome',
-      wikiType: eXo.env.portal.spaceName ? 'group' : 'portal',
-      wikiOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-      wikiOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
+      noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteTree: [],
       noteTreeElements: []
     };
@@ -89,6 +89,11 @@ export default {
     }
   },
   mounted() {
+    const urlPath = document.location.pathname;
+    if (urlPath.includes('/wiki/')){
+      const noteId = urlPath.split('/wiki/')[1];
+      this.notesPageName=noteId.split('/')[0];
+    }
     this.getNotes();
     this.getNoteTree();
   },
@@ -99,12 +104,12 @@ export default {
       });
     },
     getNotes() {
-      return this.$notesService.getNotes(this.wikiType, this.wikiOwner , this.notesPageName).then(data => {
+      return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName).then(data => {
         this.notes = data || [];
       });
     },
     getNoteTree() {
-      return this.$notesService.getNoteTree(this.wikiType, this.wikiOwnerTree , this.notesPageName).then(data => {
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName).then(data => {
         this.noteTree = data && data.jsonList[0] || [];
       });
     },
