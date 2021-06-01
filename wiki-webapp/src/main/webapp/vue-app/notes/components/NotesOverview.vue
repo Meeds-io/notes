@@ -1,7 +1,7 @@
 <template>
   <v-app class="transparent" flat>
     <div>
-      <div class="notes-application border-radius ma-3 py-3 px-6">
+      <div class="notes-application white border-radius ma-3 py-3 px-6">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class=" title text-color">{{ notes.title }}</span>
@@ -27,7 +27,7 @@
             </div>
           </div>
           <!--<div class="notes-treeview d-flex pb-2">
-            <i class="uiIcon uiTreeviewIcon"></i>
+            <i class="uiIcon uiTreeviewIcon primary--text me-3"></i>
           <div
             v-for="(node, index) in notesTreeview" 
             :key="index" 
@@ -37,7 +37,7 @@
           </div>
           </div>-->
           <div class="notes-last-update-info">
-            <span class="caption grey-light-color font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
+            <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
           </div>
         </div>
         <v-divider class="my-4" />

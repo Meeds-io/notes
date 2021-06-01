@@ -112,6 +112,38 @@
 	}
 }
 
+
+#notesOverviewApplication {
+  max-width: 100%;
+  .notes-application {
+    .notes-application-header {
+      .notes-treeview {
+        .uiTreeviewIcon {
+          font-family: "PLF-FONT-ICONS" !important;
+          font-style: normal;
+          font-size: 20px;
+          &:before {
+            content: "\e698";
+          }
+        }
+      }
+    }
+  }
+}
+
+
+@media (min-width: @minLargeDesktop) {
+  #notesOverviewApplication{
+    padding: 20px 14%;
+  }
+}
+
+@media (max-width: @maxDesktop) {
+  #notesOverviewApplication {
+    margin: 22px auto 10px;
+  }
+}
+
 /************ WikiBox ****************/
 
 .wikiBox {
@@ -653,50 +685,6 @@
 }
 
 
-/*------------------------Notes Portlet-----------------------------------------*/
-/*------------------------------------------------------------------------------*/
-
-#notesOverviewApplication {
-  max-width: 100%;
-  .notes-application {
-    background: @baseBackground!important;
-    .notes-application-header {
-      .notes-treeview {
-        .uiTreeviewIcon {
-          font-family: "PLF-FONT-ICONS" !important;
-          font-style: normal;
-          font-size: 20px;
-          color: @primaryColor;
-          margin-right: 12px ~'; /** orientation=lt */ ';
-          margin-left: 12px ~'; /** orientation=rt */ ';
-          &:before {
-            content: "\e698";
-          }
-        }
-        .notes-tree-item {
-        }
-      }
-    }
-  }
-}
-
-/*----------------------Colors--------------------------*/
-.grey-light-color {
-  color: @greyColorLighten1;
-}
-
-
-@media (min-width: @minLargeDesktop) {
-  #notesOverviewApplication{
-    padding: 20px 14%;
-  }
-}
-
-@media (max-width: @maxDesktop) {
-  #notesOverviewApplication {
-    margin: 22px auto 10px;
-  }
-}
 
 
 //responsive wiki
