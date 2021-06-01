@@ -1,7 +1,7 @@
 <template>
   <v-app class="white">
-    <div>
-    <div class="white ma-3 py-2 primary--text">
+    <div :class="notesApplicationClass">
+    <div class="white my-3 py-2 primary--text" >
       <v-btn
         link
         text
@@ -19,7 +19,6 @@
         class="mx-auto mt-10"
         @load="displayText" />
       <h3 v-if="imageLoaded" class="font-weight-bold">{{ $t('notes.comingSoon') }}</h3>
-      <notes-overview/>
     </div>
   </div>
   </v-app>
@@ -29,6 +28,7 @@ export default {
   data: () => ({
     useNewApp: false,
     imageLoaded: false,
+    notesApplicationClass: 'wikiPortlet'
   }),
   computed: {
     buttonText() {
@@ -42,8 +42,10 @@ export default {
   watch: {
     useNewApp() {
       if (this.useNewApp) {
+        this.notesApplicationClass='notesApplication';
         $('.uiWikiPortlet').hide();
       } else {
+        this.notesApplicationClass='WikiPortlet';
         $('.uiWikiPortlet').show();
       }
     },
