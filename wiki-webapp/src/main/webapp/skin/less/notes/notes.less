@@ -112,6 +112,38 @@
 	}
 }
 
+
+#notesOverviewApplication {
+  max-width: 100%;
+  .notes-application {
+    .notes-application-header {
+      .notes-treeview {
+        .uiTreeviewIcon {
+          font-family: "PLF-FONT-ICONS" !important;
+          font-style: normal;
+          font-size: 20px;
+          &:before {
+            content: "\e698";
+          }
+        }
+      }
+    }
+  }
+}
+
+
+@media (min-width: @minLargeDesktop) {
+  #notesOverviewApplication{
+    padding: 20px 14%;
+  }
+}
+
+@media (max-width: @maxDesktop) {
+  #notesOverviewApplication {
+    margin: 22px auto 10px;
+  }
+}
+
 /************ WikiBox ****************/
 
 .wikiBox {
@@ -651,6 +683,8 @@
 	font-size: unset;
   }
 }
+
+
 
 
 //responsive wiki
