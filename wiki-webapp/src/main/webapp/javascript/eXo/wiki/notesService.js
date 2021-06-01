@@ -1,7 +1,7 @@
 import { notesConstants } from './notesConstants.js';
 
-export function getNotes(wikiType, wikiOwner, pageId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/${wikiType}/${wikiOwner}/pages/${pageId}`, {
+export function getNotes(noteBookType, noteBookOwner, noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
@@ -13,8 +13,8 @@ export function getNotes(wikiType, wikiOwner, pageId) {
   });
 } 
 
-export function getNoteTree(wikiType, wikiOwner, pageId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/ALL?path=${wikiType}/${wikiOwner}/pages/${pageId}`, {
+export function getNoteTree(noteBookType, noteBookOwner, noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/ALL?path=${noteBookType}/${noteBookOwner}/${noteId}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {

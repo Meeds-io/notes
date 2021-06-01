@@ -1,32 +1,33 @@
 <template>
   <v-app class="transparent" flat>
-    <div class="notes-application border-radius ma-3 py-3 px-6">
-      <div class="notes-application-header">
-        <div class="notes-title d-flex justify-space-between">
-          <span class=" title text-color">{{ notes.title }}</span>
-          <div class="notes-header-icons">
-            <v-icon
-              size="22"
-              class="clickable"
-              :title="$t('notes.label.addPage')">
-              mdi-plus
-            </v-icon>
-            <v-icon
-              size="19"
-              class="clickable px-1"
-              :title="$t('notes.label.editPage')">
-              mdi-square-edit-outline
-            </v-icon>
-            <v-icon
-              size="19"
-              class="clickable"
-              :title="$t('notes.label.openMenu')">
-              mdi-dots-vertical
-            </v-icon>
+    <div>
+      <div class="notes-application border-radius ma-3 py-3 px-6">
+        <div class="notes-application-header">
+          <div class="notes-title d-flex justify-space-between">
+            <span class=" title text-color">{{ notes.title }}</span>
+            <div class="notes-header-icons">
+              <v-icon
+                size="22"
+                class="clickable"
+                :title="$t('notes.label.addPage')">
+                mdi-plus
+              </v-icon>
+              <v-icon
+                size="19"
+                class="clickable px-1"
+                :title="$t('notes.label.editPage')">
+                mdi-square-edit-outline
+              </v-icon>
+              <v-icon
+                size="19"
+                class="clickable"
+                :title="$t('notes.label.openMenu')">
+                mdi-dots-vertical
+              </v-icon>
+            </div>
           </div>
-        </div>
-        <div class="notes-treeview d-flex pb-2">
-          <i class="uiIcon uiTreeviewIcon"></i>
+          <div class="notes-treeview d-flex pb-2">
+            <i class="uiIcon uiTreeviewIcon"></i>
           <!--<div
             v-for="(node, index) in notesTreeview" 
             :key="index" 
@@ -34,14 +35,16 @@
             <span class="caption">{{ node.name }}</span>
             <v-icon v-if="index+1 < notesTreeview.length" size="18">mdi-chevron-right</v-icon>
           </div>-->
+          </div>
+          <div class="notes-last-update-info">
+            <span class="caption grey-light-color font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
+          </div>
         </div>
-        <div class="notes-last-update-info">
-          <span class="caption grey-light-color font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
+        <v-divider class="my-4" />
+        <div class="notes-application-content text-color" v-html="notes.content">
         </div>
       </div>
-      <v-divider class="my-4" />
-      <div class="notes-application-content text-color" v-html="notes.content">
-      </div>
+    <!--<notes-editor-dashboard/>-->
     </div>
   </v-app>
 </template>
