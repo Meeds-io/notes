@@ -5,5 +5,5 @@ export const notesConstants = {
   PORTAL_CONTEXT: eXo.env.portal.context,
   PORTAL_REST: eXo.env.portal.rest,
   CONTAINER_NAME: eXo.env.portal.containerName || '',
-  LANG: eXo.env.portal.language,
+  LANG: eXo.env.portal.language
 };
