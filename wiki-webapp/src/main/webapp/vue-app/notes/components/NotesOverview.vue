@@ -26,16 +26,16 @@
               </v-icon>
             </div>
           </div>
-          <div class="notes-treeview d-flex pb-2">
+          <!--<div class="notes-treeview d-flex pb-2">
             <i class="uiIcon uiTreeviewIcon"></i>
-          <!--<div
+          <div
             v-for="(node, index) in notesTreeview" 
             :key="index" 
             class="notes-tree-item">
             <span class="caption">{{ node.name }}</span>
             <v-icon v-if="index+1 < notesTreeview.length" size="18">mdi-chevron-right</v-icon>
-          </div>-->
           </div>
+          </div>-->
           <div class="notes-last-update-info">
             <span class="caption grey-light-color font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
           </div>
@@ -44,7 +44,6 @@
         <div class="notes-application-content text-color" v-html="notes.content">
         </div>
       </div>
-    <!--<notes-editor-dashboard/>-->
     </div>
   </v-app>
 </template>
@@ -63,7 +62,7 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
-      notesPageName: 'Note_Zero',
+      notesPageName: 'WikiHome',
       wikiType: eXo.env.portal.spaceName ? 'group' : 'portal',
       wikiOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       wikiOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
@@ -75,7 +74,6 @@ export default {
     notes() {
       this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
       this.lastUpdatedTime = this.notes.updatedDate.time && this.$dateUtil.formatDateObjectToDisplay(new Date(this.notes.updatedDate.time), this.dateTimeFormat, this.lang) || '';
-      this.noteTreeElement = this.buildNoteTree(this.noteTree, this.notesPageName);
     }
   },
   computed: {
@@ -109,25 +107,6 @@ export default {
       return this.$notesService.getNoteTree(this.wikiType, this.wikiOwnerTree , this.notesPageName).then(data => {
         this.noteTree = data && data.jsonList[0] || [];
       });
-    },
-    buildNoteTree(arrayObject, stringTest) {
-      let result = [];
-      if (!arrayObject || typeof arrayObject !== 'object') {return;}
-      arrayObject.children.forEach(item => {
-        if (item.path.split('%2F').pop() === stringTest) {
-          result.push({
-            'name': item.name,
-            'path': item.path
-          });
-          result.push({
-            'name': arrayObject.name,
-            'path': arrayObject.path
-          });
-          return result;
-        }
-        return result = this.buildNoteTree(item, stringTest);
-      });
-      return result;
     },
   }
 };
