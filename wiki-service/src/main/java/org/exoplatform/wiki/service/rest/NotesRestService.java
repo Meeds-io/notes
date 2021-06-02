@@ -88,6 +88,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
+      note.setBreadcrumb(noteBookService.getBreadcumb(noteBookType,noteBookOwner,noteId));
       return Response.ok(note).build();
     } catch (Exception e) {
       log.error("Can't get note", e);
