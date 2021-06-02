@@ -22,7 +22,8 @@ export default {
   data: () => ({
     useNewApp: false,
     imageLoaded: false,
-    notesApplicationClass: 'wikiPortlet'
+    notesApplicationClass: 'wikiPortlet',
+    notesPageName: '',
   }),
   computed: {
     buttonText() {
@@ -31,7 +32,7 @@ export default {
       } else {
         return this.$t('notes.switchToNewApp');
       }
-    },
+    }
   },
   watch: {
     useNewApp() {

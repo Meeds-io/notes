@@ -26,16 +26,21 @@
               </v-icon>
             </div>
           </div>
-          <!--<div class="notes-treeview d-flex pb-2">
+          <div class="notes-treeview d-flex pb-2">
             <i class="uiIcon uiTreeviewIcon primary--text me-3"></i>
-          <div
-            v-for="(node, index) in notesTreeview" 
-            :key="index" 
-            class="notes-tree-item">
-            <span class="caption">{{ node.name }}</span>
-            <v-icon v-if="index+1 < notesTreeview.length" size="18">mdi-chevron-right</v-icon>
+            <div
+              v-for="(note, index) in notes.breadcrumb" 
+              :key="index" 
+              class="notes-tree-item">
+              <a
+                v-if="index+1 < notes.breadcrumb.length"
+                @click="getNoteById(note)"
+                class="caption text-color" 
+                :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
+              <span v-else class="caption primary--text font-weight-bold">{{ note.title }}</span>
+              <v-icon v-if="index+1 < notes.breadcrumb.length" size="18">mdi-chevron-right</v-icon>  
+            </div>
           </div>
-          </div>-->
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
           </div>
@@ -62,12 +67,10 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
-      notesPageName: 'WikiHome',
+      notesPageName: '',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-      noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-      noteTree: [],
-      noteTreeElements: []
+      urlPath: document.location.pathname,
     };
   },
   watch: {
@@ -83,19 +86,14 @@ export default {
     displayedDate() {
       return this.lastUpdatedTime;
     },
-    noteTreeItem() {
-      console.warn(this.noteTreeElement);
-      return this.noteTreeElement;
-    }
   },
   mounted() {
-    const urlPath = document.location.pathname;
-    if (urlPath.includes('/wiki/')){
-      const noteId = urlPath.split('/wiki/')[1];
+    this.urlPath = document.location.pathname;
+    if (this.urlPath.includes('/WikiPortlet/')){
+      const noteId = this.urlPath.split('/WikiPortlet/')[1];
       this.notesPageName=noteId.split('/')[0];
     }
-    this.getNotes();
-    this.getNoteTree();
+    this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
   },
   methods: {
     retrieveUserInformations(userName) {
@@ -103,16 +101,17 @@ export default {
         this.lastUpdatedUser =  user.fullname;
       });
     },
-    getNotes() {
-      return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName).then(data => {
+    getNotes(noteBookType,noteBookOwner,notesPageName) {
+      return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
       });
     },
-    getNoteTree() {
-      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName).then(data => {
-        this.noteTree = data && data.jsonList[0] || [];
-      });
-    },
+    getNoteById(note) {
+      this.getNotes(note.wikiType, note.wikiOwner, note.id);
+      const value = this.urlPath.substring(this.urlPath.lastIndexOf('/') + 1);
+      this.urlPath = this.urlPath.replace(value, note.id);
+      window.history.pushState('WikiPortlet', '', this.urlPath); 
+    }
   }
 };
 </script>
