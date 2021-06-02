@@ -27,7 +27,7 @@
             </div>
           </div>
           <div class="notes-treeview d-flex pb-2">
-            <i class="uiIcon uiTreeviewIcon primary--text me-3"></i>
+            <i class="uiIcon uiTreeviewIcon primary--text me-3" @click="getNoteTree()"></i>
             <div
               v-for="(note, index) in notes.breadcrumb" 
               :key="index" 
@@ -50,6 +50,8 @@
         </div>
       </div>
     </div>
+    <note-breadcrumb-drawer 
+      ref="notesBreadcrumb" />
   </v-app>
 </template>
 <script>
@@ -67,7 +69,7 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
-      notesPageName: '',
+      notesPageName: 'WikiHome',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       urlPath: document.location.pathname,
@@ -105,6 +107,14 @@ export default {
       return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
       });
+    },
+    getNoteTree() {
+      this.$refs.notesBreadcrumb.open();
+      //this.$root.$emit('displayNotesTreeview', this.noteTree);
+      /*return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome').then(data => {
+        this.noteTree = data && data.jsonList[0] || [];
+        this.$root.$emit('displayNotesTreeview', this.noteTree);
+      });*/
     },
     getNoteById(note) {
       this.getNotes(note.wikiType, note.wikiOwner, note.id);
