@@ -35,5 +35,11 @@
       <visibility>SYSTEM</visibility>
       <page-reference>portal::global::notes</page-reference>
     </node>
+    <node>
+      <name>notes-editor</name>
+      <label>#{portal.global.edit.notes}</label>
+      <visibility>SYSTEM</visibility>
+      <page-reference>portal::global::notes-editor</page-reference>
+    </node>
   </page-nodes>
 </node-navigation>
