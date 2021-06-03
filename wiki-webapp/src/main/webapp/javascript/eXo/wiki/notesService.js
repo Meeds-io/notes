@@ -13,8 +13,8 @@ export function getNotes(noteBookType, noteBookOwner, noteId) {
   });
 } 
 
-export function getNoteTree(noteBookType, noteBookOwner, noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/ALL?path=${noteBookType}/${noteBookOwner}/${noteId}`, {
+export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/${treeType}?path=${noteBookType}/${noteBookOwner}/${noteId}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {

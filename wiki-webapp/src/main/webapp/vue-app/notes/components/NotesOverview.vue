@@ -6,35 +6,64 @@
           <div class="notes-title d-flex justify-space-between">
             <span class=" title text-color">{{ notes.title }}</span>
             <div class="notes-header-icons">
-              <v-icon
-                size="22"
-                class="clickable"
-                :title="$t('notes.label.addPage')">
-                mdi-plus
-              </v-icon>
-              <v-icon
-                size="19"
-                class="clickable px-1"
-                :title="$t('notes.label.editPage')">
-                mdi-square-edit-outline
-              </v-icon>
-              <v-icon
-                size="19"
-                class="clickable"
-                :title="$t('notes.label.openMenu')">
-                mdi-dots-vertical
-              </v-icon>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                   <v-icon
+                    size="22"
+                    class="clickable"
+                    v-bind="attrs"
+                    v-on="on">
+                      mdi-plus
+                    </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.addPage') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                   <v-icon
+                    size="19"
+                    class="clickable"
+                    v-bind="attrs"
+                    v-on="on">
+                      mdi-square-edit-outline
+                    </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.editPage') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                   <v-icon
+                    size="19"
+                    class="clickable"
+                    v-bind="attrs"
+                    v-on="on">
+                      mdi-dots-vertical
+                    </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+              </v-tooltip>
             </div>
           </div>
           <div class="notes-treeview d-flex pb-2">
-            <i class="uiIcon uiTreeviewIcon primary--text me-3" @click="getNoteTree()"></i>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <i 
+                  class="uiIcon uiTreeviewIcon primary--text me-3"
+                  v-bind="attrs"
+                  v-on="on" 
+                  @click="getNoteTree()"></i>
+              </template>
+              <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
+            </v-tooltip>
             <div
               v-for="(note, index) in notes.breadcrumb" 
               :key="index" 
               class="notes-tree-item">
               <a
                 v-if="index+1 < notes.breadcrumb.length"
-                @click="getNoteById(note)"
+                @click="getNoteById(note.id)"
                 class="caption text-color" 
                 :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
               <span v-else class="caption primary--text font-weight-bold">{{ note.title }}</span>
@@ -74,7 +103,6 @@ export default {
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-      //urlPath: document.location.pathname,
     };
   },
   watch: {
@@ -99,6 +127,9 @@ export default {
       notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteName);
       window.location.pathname = notesConstants.PORTAL_BASE_URL;
     });
+    this.$root.$on('open-note-by-id', noteId => {
+      this.getNoteById(noteId);
+    });
   },
   mounted() {
     if (notesConstants.PORTAL_BASE_URL.includes('/WikiPortlet/')){
@@ -119,15 +150,15 @@ export default {
       });
     },
     getNoteTree() {
-      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome').then(data => {
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome','ALL').then(data => {
         this.noteTree = data && data.jsonList[0] || [];
-        this.$refs.notesBreadcrumb.open(this.noteTree);
+        this.$refs.notesBreadcrumb.open(this.noteTree, this.noteBookType, this.noteBookOwnerTree);
       });
     },
-    getNoteById(note) {
-      this.getNotes(note.wikiType, note.wikiOwner, note.id);
+    getNoteById(noteId) {
+      this.getNotes(this.noteBookType,this.noteBookOwner, noteId);
       const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
-      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, note.id);
+      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteId);
       window.history.pushState('WikiPortlet', '', notesConstants.PORTAL_BASE_URL); 
     },
   }
