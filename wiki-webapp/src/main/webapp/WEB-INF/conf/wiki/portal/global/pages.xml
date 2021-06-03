@@ -66,22 +66,22 @@
   </page>
 
   <page>
-    <name>edit-notes</name>
-    <title>Edit Notes</title>
+    <name>notes-editor</name>
+    <title>Notes Editor</title>
     <access-permissions>*:/spaces/exo_employees</access-permissions>
     <edit-permission>*:/spaces/exo_employees</edit-permission>
-    <container id="top-edit-notes-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
+    <container id="top-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
       <name>top-notes-container</name>
       <access-permissions>*:/spaces/exo_employees</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
-    <container id="edit-notes-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
-      <name>edit-notes-container</name>
+    <container id="notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
+      <name>notes-editor-container</name>
       <access-permissions>*:/spaces/exo_employees</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
-    <container id="bottom-edit-notes-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
-      <name>bottom-edit-notes-container</name>
+    <container id="bottom-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
+      <name>bottom-notes-editor-container</name>
       <access-permissions>*:/spaces/exo_employees</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>

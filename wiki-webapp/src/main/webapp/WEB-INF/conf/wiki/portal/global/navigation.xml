@@ -36,10 +36,10 @@
       <page-reference>portal::global::notes</page-reference>
     </node>
     <node>
-      <name>edit-notes</name>
+      <name>notes-editor</name>
       <label>#{portal.global.edit.notes}</label>
       <visibility>SYSTEM</visibility>
-      <page-reference>portal::global::edit-notes</page-reference>
+      <page-reference>portal::global::notes-editor</page-reference>
     </node>
   </page-nodes>
 </node-navigation>
