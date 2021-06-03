@@ -9,12 +9,14 @@
               <v-icon
                 size="22"
                 class="clickable"
+                @click="addNotes"
                 :title="$t('notes.label.addPage')">
                 mdi-plus
               </v-icon>
               <v-icon
                 size="19"
                 class="clickable px-1"
+                @click="editNotes"
                 :title="$t('notes.label.editPage')">
                 mdi-square-edit-outline
               </v-icon>
@@ -98,6 +100,14 @@ export default {
     this.getNoteTree();
   },
   methods: {
+    addNotes(){
+      const urlPath = document.location.pathname;
+      window.location.href = `${urlPath.split('Notes')[0]}NotesEditor`;
+    },
+    editNotes(){
+      const urlPath = document.location.pathname;
+      window.location.href = `${urlPath.split('Notes')[0]}NotesEditor/id=${this.notes.name}`;
+    },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {
         this.lastUpdatedUser =  user.fullname;
