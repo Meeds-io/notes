@@ -55,6 +55,7 @@
   </v-app>
 </template>
 <script>
+import { notesConstants } from '../../../javascript/eXo/wiki/notesConstants.js';
 export default {
   data() {
     return {
@@ -72,7 +73,8 @@ export default {
       notesPageName: 'WikiHome',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-      urlPath: document.location.pathname,
+      noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      //urlPath: document.location.pathname,
     };
   },
   watch: {
@@ -89,10 +91,18 @@ export default {
       return this.lastUpdatedTime;
     },
   },
+  created() {
+    this.$root.$on('open-note', notePath => {
+      const noteName = notePath.split('%2F').pop();
+      this.getNotes(this.noteBookType, this.noteBookOwner , noteName);
+      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
+      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteName);
+      window.location.pathname = notesConstants.PORTAL_BASE_URL;
+    });
+  },
   mounted() {
-    this.urlPath = document.location.pathname;
-    if (this.urlPath.includes('/WikiPortlet/')){
-      const noteId = this.urlPath.split('/WikiPortlet/')[1];
+    if (notesConstants.PORTAL_BASE_URL.includes('/WikiPortlet/')){
+      const noteId = notesConstants.PORTAL_BASE_URL.split('/WikiPortlet/')[1];
       this.notesPageName=noteId.split('/')[0];
     }
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
@@ -109,19 +119,17 @@ export default {
       });
     },
     getNoteTree() {
-      this.$refs.notesBreadcrumb.open();
-      //this.$root.$emit('displayNotesTreeview', this.noteTree);
-      /*return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome').then(data => {
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome').then(data => {
         this.noteTree = data && data.jsonList[0] || [];
-        this.$root.$emit('displayNotesTreeview', this.noteTree);
-      });*/
+        this.$refs.notesBreadcrumb.open(this.noteTree);
+      });
     },
     getNoteById(note) {
       this.getNotes(note.wikiType, note.wikiOwner, note.id);
-      const value = this.urlPath.substring(this.urlPath.lastIndexOf('/') + 1);
-      this.urlPath = this.urlPath.replace(value, note.id);
-      window.history.pushState('WikiPortlet', '', this.urlPath); 
-    }
+      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
+      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, note.id);
+      window.history.pushState('WikiPortlet', '', notesConstants.PORTAL_BASE_URL); 
+    },
   }
 };
 </script>
