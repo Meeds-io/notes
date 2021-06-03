@@ -107,7 +107,7 @@ public class NotesRestService implements ResourceContainer {
   @POST
   @Path("/note")
   @RolesAllowed("users")
-  public Response createNote(@ApiParam(value = "task object to be updated", required = true) Page note) {
+  public Response createNote(@ApiParam(value = "Note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }

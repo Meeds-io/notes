@@ -287,7 +287,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
     StringBuilder builder = new StringBuilder();
     //
     if (userComment == null) {
-      userComment = getValueFromResourceBundle(commentMsgKey1, args1);
+      //userComment = getValueFromResourceBundle(commentMsgKey1, args1);
     }
     builder.append(userComment);
     //
@@ -313,7 +313,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       activityParams.put(WikiUIActivity.COMMENT_MESSAGE_ARGS2,
                          StringUtils.join(args2, WikiUIActivity.COMMENT_MESSAGE_ARGS_ELEMENT_SAPERATOR));
       if (args2 != null) {
-        builder.append("<br/>").append(getValueFromResourceBundle(commentMsgKey2, args2));
+       // builder.append("<br/>").append(getValueFromResourceBundle(commentMsgKey2, args2));
       } else {
         builder.append("<br/>").append(commentMsgKey2);
       }

@@ -54,13 +54,11 @@
 }
 
 #notesEditor{
-	background-color: @baseBackgroundDefault;
 	.formInputGroup{
-		display: flex;
 		margin: 0px 1%;
 		padding: 10px 0;
 		#cke_1_contents{
-			height: 400px;
+			height: 400px!important;
 		}
 	}
 	#cke_notesContent {
@@ -70,39 +68,20 @@
 	}
 	.notesActions{
 		.notesFormButtons{
-			display: inline-flex;
-			flex-wrap: wrap;
-			justify-content: space-between;
-			width: 100%;
 			.notesFormLeftActions{
-				display: inline-flex;
-				flex-direction: row;
 				flex: auto;
-				justify-content: normal;
 				img {
 					height: 40px;
 				}
 				input[type="text"] {
 					flex: 0 1 100%;
 					margin-bottom: 0;
-					border-radius: 0px;
-					border-color: transparent;
 					padding: 0 20px;
 					font-size: 24px;
 				}
 			}
 			.notesFormRightActions{
-				display: inline-flex;
-				#notesUpdateAndPost{
-					height: 36px;
-					min-width: 64px;
-					padding: 0 16px;
-					color: @baseBackgroundDefault !important;
-					font-size: 15px;
-					letter-spacing: normal;
-					background-color: @primaryColor;
-				}
-				.notesCancel{
+				#notesUpdateAndPost, .notesCancel{
 					height: 36px;
 					min-width: 64px;
 					padding: 0 16px;

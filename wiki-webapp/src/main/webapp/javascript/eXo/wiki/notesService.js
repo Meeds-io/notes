@@ -26,10 +26,9 @@ export function getNoteTree(noteBookType, noteBookOwner, noteId) {
   });
 } 
 
-export function addNote(page) {
-  return fetch(`/${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/${page}`, {
-    headers: {
-      Accept: 'application/json',
+export function createNote(page) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note`, {
+    headers: {  Accept: 'application/json',
       'Content-Type': 'application/json'
     },
     method: 'POST',
@@ -40,6 +39,25 @@ export function addNote(page) {
       return resp.json();
     } else {
       throw new Error('Error when adding note page');
+    }
+  });
+}
+
+export function updateNote(note) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.wikiType}/${note.wikiOwner}/${note.name}`, {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',
+    method: 'PUT',
+    body: JSON.stringify(note)
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      return resp.text().then((text) => {
+        throw new Error(text);
+      });
+    } else {
+      return resp;
     }
   });
 }
