@@ -57,6 +57,8 @@ public class Page {
 
   private String parentPageName;
 
+  private String parentPageId;
+
   private boolean isMinorEdit;
 
   private List<BreadcrumbData> breadcrumb;
@@ -224,5 +226,13 @@ public class Page {
 
   public void setBreadcrumb(List<BreadcrumbData> breadcrumb) {
     this.breadcrumb = breadcrumb;
+  }
+
+  public String getParentPageId() {
+    return parentPageId;
+  }
+
+  public void setParentPageId(String parentPageId) {
+    this.parentPageId = parentPageId;
   }
 }
