@@ -142,12 +142,10 @@ export default {
   },
   methods: {
     addNotes(){
-      const urlPath = document.location.pathname;
-      window.location.href = `${urlPath.split('Notes')[0]}NotesEditor`;
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor`;
     },
     editNotes(){
-      const urlPath = document.location.pathname;
-      window.location.href = `${urlPath.split('Notes')[0]}NotesEditor/id=${this.notes.name}`;
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?idNotes=${this.notes.name}`;
     },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {

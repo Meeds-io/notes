@@ -10,7 +10,7 @@
               <img :src="srcImageNote">
               <input
                 id="notesTitle"
-                class="ml-4"
+                class="ml-4 mb-0 pl-5 pr-5"
                 v-model="notes.title"
                 :maxlength="titleMaxLength"
                 :placeholder="notesTitlePlaceholder"
@@ -18,13 +18,14 @@
             </div>
             <div class="notesFormRightActions pr-7">
               <button
-                class="notesCancel btn mr-2"
+                class="notesCancel btn mr-2 pl-4 pr-4 py-0"
                 @click="confirmCancelNote">
                 {{ $t("btn.cancel") }}
               </button>
               <button
                 id="notesUpdateAndPost"
-                class="btn btn-primary primary"
+                class="btn btn-primary primary pl-4 pr-4 py-0"
+                size="16"
                 @click="postNotes">
                 {{ $t("btn.post") }}
               </button>
@@ -32,7 +33,7 @@
           </div>
         </div>
         <div id="notesTop"></div>
-        <div class="formInputGroup flex">
+        <div class="formInputGroup ma-2 pa-2 flex">
           <textarea
             id="notesContent"
             v-model="notes.content"
@@ -91,9 +92,10 @@ export default {
     this.initCKEditor();
   },
   created() {
-    const urlPath = document.location.pathname;
-    if (urlPath.includes('NotesEditor/id')) {
-      this.notesPageName = urlPath.split('NotesEditor/id')[1].split('=')[1];
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if ( urlParams.has('idNotes') ){
+      this.notesPageName = urlParams.get('idNotes');
       this.getNotes();
     }
   },
@@ -106,6 +108,7 @@ export default {
     },
     postNotes(){
       const notes = {
+        id: this.notes.id,
         title: this.notes.title,
         name: this.notesPageName,
         wikiType: this.notes.wikiType,
@@ -113,10 +116,9 @@ export default {
         parentPageName: 'WikiHome',
         content: this.notes.content,
       };
-      const urlPath = document.location.pathname;
       if (this.notes && this.notes.id){
         this.$notesService.updateNote(notes).then(() => {
-          window.location.href=`${urlPath.split('NotesEditor')[0]}Notes`;
+          window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
         }).catch(e => {
           console.error('Error when update note page', e);
         });
@@ -126,7 +128,7 @@ export default {
       }
       else {
         this.$notesService.createNote(notes).then(() => {
-          window.location.href=`${urlPath.split('NotesEditor')[0]}Notes`;
+          window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
         }).catch(e => {
           console.error('Error when adding note page', e);
         });
@@ -134,6 +136,7 @@ export default {
     },
     confirmPostNotes(){
       const notes = {
+        id: this.notes.id,
         title: this.notes.title,
         name: this.notesPageName,
         wikiType: this.notes.wikiType,
@@ -141,16 +144,14 @@ export default {
         parentPageName: 'WikiHome',
         content: this.notes.content,
       };
-      const urlPath = document.location.pathname;
       this.$notesService.createNote(notes).then(() => {
-        window.location.href=`${urlPath.split('NotesEditor')[0]}Notes`;
+        window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
       }).catch(e => {
         console.error('Error when adding note page', e);
       });
     },
     closeNotes(){
-      const urlPath = document.location.pathname;
-      window.location.href=`${urlPath.split('NotesEditor')[0]}Notes`;
+      window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
     },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {

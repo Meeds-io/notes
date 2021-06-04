@@ -62,3 +62,22 @@ export function updateNote(note) {
     }
   });
 }
+
+export function updateNoteById(note) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(note),
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      return resp.text().then((text) => {
+        throw new Error(text);
+      });
+    } else {
+      return resp;
+    }
+  });
+}
