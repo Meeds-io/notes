@@ -8,39 +8,41 @@
             <div class="notes-header-icons">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
-                   <v-icon
+                  <v-icon
                     size="22"
                     class="clickable"
+                    @click="addNotes"
                     v-bind="attrs"
                     v-on="on">
-                      mdi-plus
-                    </v-icon>
+                    mdi-plus
+                  </v-icon>
                 </template>
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
-                   <v-icon
+                  <v-icon
                     size="19"
                     class="clickable"
+                    @click="editNotes"
                     v-bind="attrs"
                     v-on="on">
-                      mdi-square-edit-outline
-                    </v-icon>
+                    mdi-square-edit-outline
+                  </v-icon>
                 </template>
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
 
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
-                   <v-icon
+                  <v-icon
                     size="19"
                     class="clickable"
                     v-bind="attrs"
                     v-on="on">
-                      mdi-dots-vertical
-                    </v-icon>
+                    mdi-dots-vertical
+                  </v-icon>
                 </template>
                 <span class="caption">{{ $t('notes.label.openMenu') }}</span>
               </v-tooltip>
@@ -139,6 +141,12 @@ export default {
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
   },
   methods: {
+    addNotes(){
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor`;
+    },
+    editNotes(){
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?idNotes=${this.notes.name}`;
+    },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {
         this.lastUpdatedUser =  user.fullname;

@@ -198,26 +198,7 @@ public class NotesRestService implements ResourceContainer {
       if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-
-      if (!note_.getTitle().equals(note.getTitle())) {
-        String newNoteName = TitleResolver.getId(note.getTitle(), false);
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
-          note_.setName(newNoteName);
-        }
-        note_.setTitle(note.getTitle());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_TITLE);
-        noteBookService.createVersionOfPage(note_);
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          noteBookService.removeDraftOfPage(noteParams);
-        }
-      } else if (!note_.getContent().equals(note.getContent())) {
-        note_.setContent(note.getContent());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
-        noteBookService.createVersionOfPage(note_);
-      } else if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
+      if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
@@ -230,8 +211,26 @@ public class NotesRestService implements ResourceContainer {
         noteBookService.createVersionOfPage(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          noteBookService.removeDraftOfPage(noteParams);
+          //noteBookService.removeDraftOfPage(noteParams);
         }
+      } else if (!note_.getTitle().equals(note.getTitle())) {
+        String newNoteName = TitleResolver.getId(note.getTitle(), false);
+        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+                && !note.getName().equals(newNoteName)) {
+          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
+          note_.setName(newNoteName);
+        }
+        note_.setTitle(note.getTitle());
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_TITLE);
+        noteBookService.createVersionOfPage(note_);
+        if (!"__anonim".equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
+          //noteBookService.removeDraftOfPage(noteParams);
+        }
+      } else if (!note_.getContent().equals(note.getContent())) {
+        note_.setContent(note.getContent());
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
+        noteBookService.createVersionOfPage(note_);
       }
       return Response.ok().build();
     } catch (Exception ex) {
@@ -263,8 +262,22 @@ public class NotesRestService implements ResourceContainer {
       if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-
-      if (!note_.getTitle().equals(note.getTitle())) {
+      if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
+        String newNoteName = TitleResolver.getId(note.getTitle(), false);
+        note_.setTitle(note.getTitle());
+        note_.setContent(note.getContent());
+        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+                && !note.getName().equals(newNoteName)) {
+          noteBookService.renamePage(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
+          note_.setName(newNoteName);
+        }
+        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
+        noteBookService.createVersionOfPage(note_);
+        if (!"__anonim".equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
+          noteBookService.removeDraftOfPage(noteParams);
+        }
+      } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
                 && !note.getName().equals(newNoteName)) {
@@ -282,21 +295,6 @@ public class NotesRestService implements ResourceContainer {
         note_.setContent(note.getContent());
         noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
         noteBookService.createVersionOfPage(note_);
-      } else if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
-        String newNoteName = TitleResolver.getId(note.getTitle(), false);
-        note_.setTitle(note.getTitle());
-        note_.setContent(note.getContent());
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
-          note_.setName(newNoteName);
-        }
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
-        noteBookService.createVersionOfPage(note_);
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteBookService.removeDraftOfPage(noteParams);
-        }
       }
       return Response.ok().build();
     } catch (Exception ex) {
