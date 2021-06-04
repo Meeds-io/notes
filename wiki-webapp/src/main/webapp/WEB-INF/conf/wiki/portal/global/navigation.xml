@@ -37,7 +37,7 @@
     </node>
     <node>
       <name>notes-editor</name>
-      <label>#{portal.global.edit.notes}</label>
+      <label>#{portal.global.notes-editor}</label>
       <visibility>SYSTEM</visibility>
       <page-reference>portal::global::notes-editor</page-reference>
     </node>

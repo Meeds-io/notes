@@ -3,14 +3,14 @@
     <div>
       <div
         id="notesEditor"
-        class="notesEditor">
+        class="notesEditor white">
         <div class="notesActions">
-          <div class="notesFormButtons pa-3 ma-0">
-            <div class="notesFormLeftActions mr-10">
+          <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
+            <div class="notesFormLeftActions d-inline-flex mr-10">
               <img :src="srcImageNote">
               <input
                 id="notesTitle"
-                class="ml-4"
+                class="ml-4 mb-0 pl-5 pr-5"
                 v-model="notes.title"
                 :maxlength="titleMaxLength"
                 :placeholder="notesTitlePlaceholder"
@@ -18,13 +18,14 @@
             </div>
             <div class="notesFormRightActions pr-7">
               <button
-                class="notesCancel btn mr-2"
-                @click="closeNotes">
+                class="notesCancel btn mr-2 pl-4 pr-4 py-0"
+                @click="confirmCancelNote">
                 {{ $t("btn.cancel") }}
               </button>
               <button
                 id="notesUpdateAndPost"
-                class="btn btn-primary"
+                class="btn btn-primary primary pl-4 pr-4 py-0"
+                size="16"
                 @click="postNotes">
                 {{ $t("btn.post") }}
               </button>
@@ -32,7 +33,7 @@
           </div>
         </div>
         <div id="notesTop"></div>
-        <div class="formInputGroup">
+        <div class="formInputGroup ma-2 pa-2 flex">
           <textarea
             id="notesContent"
             v-model="notes.content"
@@ -42,6 +43,26 @@
             </textarea>
         </div>
       </div>
+      <exo-confirm-dialog
+        ref="CreateNoteDialog"
+        :message="$t('popup.confirmation')"
+        :title="$t('popup.msg.confirmation')"
+        :ok-label="$t('popup.confirm')"
+        :cancel-label="$t('btn.cancel')"
+        persistent
+        @ok="confirmPostNotes()"
+        @dialog-opened="$emit('confirmDialogOpened')"
+        @dialog-closed="$emit('confirmDialogClosed')" />
+      <exo-confirm-dialog
+        ref="CancelNoteDialog"
+        :message="$t('popup.confirmation.cancel')"
+        :title="$t('popup.msg.confirmation')"
+        :ok-label="$t('popup.ok')"
+        :cancel-label="$t('btn.cancel')"
+        persistent
+        @ok="closeNotes()"
+        @dialog-opened="$emit('confirmDialogOpened')"
+        @dialog-closed="$emit('confirmDialogClosed')" />
     </div>
   </v-app>
 </template>
@@ -56,11 +77,11 @@ export default {
       notes: {
         id: '',
         title: '',
-        wikiType: 'portal',
-        wikiOwner: 'dw',
-        parentPageName: 'WikiHome',
         content: '',
+        parentPageId: '',
       },
+      noteId: '',
+      parentPageId: '',
       srcImageNote: '/wiki/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
@@ -70,30 +91,70 @@ export default {
   mounted() {
     this.initCKEditor();
   },
+  created() {
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if ( urlParams.has('noteId') ){
+      this.noteId = urlParams.get('noteId');
+      this.getNotes();
+    } else if (urlParams.has('parentNoteId')){
+      this.parentPageId = urlParams.get('parentNoteId');
+      this.notes.parentPageId=this.parentPageId;
+    }
+  },
 
   methods: {
+    getNotes() {
+      return this.$notesService.getNoteById(this.noteId).then(data => {
+        this.notes = data || [];
+      });
+    },
     postNotes(){
       const notes = {
+        id: this.notes.id,
         title: this.notes.title,
-        wikiType: 'portal',
-        wikiOwner: 'dw',
-        parentPageName: 'WikiHome',
+        name: this.notes.name,
+        wikiType: this.notes.wikiType,
+        wikiOwner: this.notes.wikiOwner,
         content: this.notes.content,
+        parentPageId: this.notes.parentPageId,
       };
-      if (notes){
-        this.$notesService.addNote(notes).then(() => {
-          this.notes.title='';
-          this.notes.content='';
-          this.initCKEditor();
+      if (this.notes.id){
+        this.$notesService.updateNote(notes).then(() => {
+          window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
+        }).catch(e => {
+          console.error('Error when update note page', e);
+        });
+      }
+      else if (!this.notes.title.length){
+        this.confirmCreateNote();
+      }
+      else {
+        this.$notesService.createNote(notes).then(data => {
+          window.location.href=this.$notesService.getPathByNoteOwner(data);
         }).catch(e => {
           console.error('Error when adding note page', e);
         });
       }
     },
+    confirmPostNotes(){
+      const notes = {
+        id: this.notes.id,
+        title: this.notes.title,
+        name: this.notesPageName,
+        wikiType: this.notes.wikiType,
+        wikiOwner: this.notes.wikiOwner,
+        parentPageName: 'WikiHome',
+        content: this.notes.content,
+      };
+      this.$notesService.createNote(notes).then(() => {
+        window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
+      }).catch(e => {
+        console.error('Error when adding note page', e);
+      });
+    },
     closeNotes(){
-      this.notes.title='';
-      this.notes.content='';
-      this.initCKEditor();
+      window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
     },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
@@ -174,6 +235,12 @@ export default {
         message = `${tempdiv.html()  }&nbsp;`;
       }
       CKEDITOR.instances['notesContent'].setData(message);
+    },
+    confirmCreateNote: function () {
+      this.$refs.CreateNoteDialog.open();
+    },
+    confirmCancelNote: function () {
+      this.$refs.CancelNoteDialog.open();
     },
   }
 };

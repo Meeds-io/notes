@@ -129,7 +129,7 @@
           <description></description>
           <object type="org.exoplatform.commons.addons.PortletModel">
             <field name="contentId">
-              <string>wiki/editNotes</string>
+              <string>wiki/NotesEditor</string>
             </field>
             <field name="permissions">
               <collection type="java.util.ArrayList">
@@ -139,7 +139,7 @@
               </collection>
             </field>
             <field name="title">
-              <string>>Notes Editor Application</string>
+              <string>Notes Editor Application</string>
             </field>
             <field name="showInfoBar">
               <boolean>false</boolean>
@@ -154,6 +154,5 @@
         </object-param>
       </init-params>
     </component-plugin>
->>>>>>> 0205a28b... task-45023: TECH_US11: Create Note editor page (#24)
   </external-component-plugins>
 </configuration>
