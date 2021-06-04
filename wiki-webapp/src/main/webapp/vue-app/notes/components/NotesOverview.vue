@@ -117,10 +117,10 @@ export default {
   },
   methods: {
     addNotes(){
-      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor`;
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}`;
     },
     editNotes(){
-      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?idNotes=${this.notes.name}`;
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`;
     },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {

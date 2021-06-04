@@ -1,6 +1,7 @@
 package org.exoplatform.wiki.ext.impl;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -29,6 +30,7 @@ import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
 
+import javax.ws.rs.core.Response;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -281,6 +283,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
                                     String[] args1,
                                     String commentMsgKey2,
                                     String[] args2) {
+    try {
     // Activity manager
     ExoSocialActivity newComment = new ExoSocialActivityImpl();
 
@@ -324,6 +327,9 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
     //
     activityManager.saveComment(activity, newComment);
+    } catch (Exception ex) {
+      LOG.warn("Failed to add comment to the wiki activity",ex);
+    }
   }
 
   /**
