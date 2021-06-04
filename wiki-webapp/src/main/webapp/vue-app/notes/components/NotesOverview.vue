@@ -132,8 +132,8 @@ export default {
     });
   },
   mounted() {
-    if (notesConstants.PORTAL_BASE_URL.includes('/WikiPortlet/')){
-      const noteId = notesConstants.PORTAL_BASE_URL.split('/WikiPortlet/')[1];
+    if (notesConstants.PORTAL_BASE_URL.includes('/wiki/')){
+      const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
       this.notesPageName=noteId.split('/')[0];
     }
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
@@ -159,7 +159,7 @@ export default {
       this.getNotes(this.noteBookType,this.noteBookOwner, noteId);
       const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
       notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteId);
-      window.history.pushState('WikiPortlet', '', notesConstants.PORTAL_BASE_URL); 
+      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL); 
     },
   }
 };
