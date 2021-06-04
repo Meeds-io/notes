@@ -96,16 +96,15 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if ( urlParams.has('noteId') ){
       this.noteId = urlParams.get('noteId');
-      this.getNotes();
+      this.getNotes(this.noteId);
     } else if (urlParams.has('parentNoteId')){
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
     }
   },
-
   methods: {
-    getNotes() {
-      return this.$notesService.getNoteById(this.noteId).then(data => {
+    getNotes(id) {
+      return this.$notesService.getNoteById(id).then(data => {
         this.notes = data || [];
       });
     },
@@ -121,7 +120,8 @@ export default {
       };
       if (this.notes.id){
         this.$notesService.updateNote(notes).then(() => {
-          window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
+          notes.name=notes.title;
+          window.location.href=this.$notesService.getPathByNoteOwner(notes);
         }).catch(e => {
           console.error('Error when update note page', e);
         });
@@ -148,13 +148,19 @@ export default {
         content: this.notes.content,
       };
       this.$notesService.createNote(notes).then(() => {
-        window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
+        window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
       }).catch(e => {
         console.error('Error when adding note page', e);
       });
     },
     closeNotes(){
-      window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
+      if (this.notes.id){
+        window.location.href=this.$notesService.getPathByNoteOwner(this.notes); 
+      } else {
+        this.$notesService.getNoteById(this.parentPageId).then(data => {
+          window.location.href=this.$notesService.getPathByNoteOwner(data);
+        });      
+      }
     },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
