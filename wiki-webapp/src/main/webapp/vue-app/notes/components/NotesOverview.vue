@@ -6,24 +6,46 @@
           <div class="notes-title d-flex justify-space-between">
             <span class=" title text-color">{{ notes.title }}</span>
             <div class="notes-header-icons">
-              <v-icon
-                size="22"
-                class="clickable"
-                :title="$t('notes.label.addPage')">
-                mdi-plus
-              </v-icon>
-              <v-icon
-                size="19"
-                class="clickable px-1"
-                :title="$t('notes.label.editPage')">
-                mdi-square-edit-outline
-              </v-icon>
-              <v-icon
-                size="19"
-                class="clickable"
-                :title="$t('notes.label.openMenu')">
-                mdi-dots-vertical
-              </v-icon>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    size="22"
+                    class="clickable"
+                    @click="addNotes"
+                    v-bind="attrs"
+                    v-on="on">
+                    mdi-plus
+                  </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.addPage') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    size="19"
+                    class="clickable"
+                    @click="editNotes"
+                    v-bind="attrs"
+                    v-on="on">
+                    mdi-square-edit-outline
+                  </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.editPage') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    size="19"
+                    class="clickable"
+                    v-bind="attrs"
+                    v-on="on">
+                    mdi-dots-vertical
+                  </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+              </v-tooltip>
             </div>
           </div>
           <!--<div class="notes-treeview d-flex pb-2">
@@ -98,6 +120,12 @@ export default {
     this.getNoteTree();
   },
   methods: {
+    addNotes(){
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor`;
+    },
+    editNotes(){
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?idNotes=${this.notes.name}`;
+    },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {
         this.lastUpdatedUser =  user.fullname;

@@ -70,7 +70,7 @@
     <access-permissions>*:/spaces/exo_employees</access-permissions>
     <edit-permission>*:/spaces/exo_employees</edit-permission>
     <container id="top-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
-      <name>top-notes-container</name>
+      <name>top-notes-editor-container</name>
       <access-permissions>*:/spaces/exo_employees</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
