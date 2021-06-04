@@ -77,11 +77,11 @@ export default {
       notes: {
         id: '',
         title: '',
-        wikiType: eXo.env.portal.spaceName ? 'group' : 'portal',
-        wikiOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
-        parentPageName: 'WikiHome',
         content: '',
+        parentPageId: '',
       },
+      noteId: '',
+      parentPageId: '',
       srcImageNote: '/wiki/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
@@ -94,15 +94,18 @@ export default {
   created() {
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
-    if ( urlParams.has('idNotes') ){
-      this.notesPageName = urlParams.get('idNotes');
+    if ( urlParams.has('noteId') ){
+      this.noteId = urlParams.get('noteId');
       this.getNotes();
+    } else if (urlParams.has('parentNoteId')){
+      this.parentPageId = urlParams.get('parentNoteId');
+      this.notes.parentPageId=this.parentPageId;
     }
   },
 
   methods: {
     getNotes() {
-      return this.$notesService.getNotes(this.notes.wikiType, this.notes.wikiOwner , this.notesPageName).then(data => {
+      return this.$notesService.getNoteById(this.noteId).then(data => {
         this.notes = data || [];
       });
     },
@@ -110,15 +113,15 @@ export default {
       const notes = {
         id: this.notes.id,
         title: this.notes.title,
-        name: this.notesPageName,
+        name: this.notes.name,
         wikiType: this.notes.wikiType,
         wikiOwner: this.notes.wikiOwner,
-        parentPageName: 'WikiHome',
         content: this.notes.content,
+        parentPageId: this.notes.parentPageId,
       };
-      if (this.notes && this.notes.id){
+      if (this.notes.id){
         this.$notesService.updateNote(notes).then(() => {
-          window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
+          window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
         }).catch(e => {
           console.error('Error when update note page', e);
         });
@@ -127,8 +130,8 @@ export default {
         this.confirmCreateNote();
       }
       else {
-        this.$notesService.createNote(notes).then(() => {
-          window.location.href=`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes`;
+        this.$notesService.createNote(notes).then(data => {
+          window.location.href=this.$notesService.getPathByNoteOwner(data);
         }).catch(e => {
           console.error('Error when adding note page', e);
         });
