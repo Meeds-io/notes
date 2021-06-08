@@ -1,5 +1,5 @@
 <template>
-  <v-app class="notesEditor full-">
+  <v-app class="notesEditor">
     <div>
       <div
         id="notesEditor"
