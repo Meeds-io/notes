@@ -1,5 +1,5 @@
 <template>
-  <v-app class="notesEditor">
+  <v-app class="notesEditor full-">
     <div>
       <div
         id="notesEditor"
@@ -18,16 +18,16 @@
             </div>
             <div class="notesFormRightActions pr-7">
               <button
-                class="notesCancel btn mr-2 pl-4 pr-4 py-0"
-                @click="confirmCancelNote">
-                {{ $t("btn.cancel") }}
-              </button>
-              <button
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary pl-4 pr-4 py-0"
                 size="16"
                 @click="postNotes">
                 {{ $t("btn.post") }}
+              </button>
+              <button
+                class="notesCancel btn mr-2 pl-4 pr-4 py-0"
+                @click="closeNotes">
+                {{ $t("btn.cancel") }}
               </button>
             </div>
           </div>
@@ -51,16 +51,6 @@
         :cancel-label="$t('btn.cancel')"
         persistent
         @ok="confirmPostNotes()"
-        @dialog-opened="$emit('confirmDialogOpened')"
-        @dialog-closed="$emit('confirmDialogClosed')" />
-      <exo-confirm-dialog
-        ref="CancelNoteDialog"
-        :message="$t('popup.confirmation.cancel')"
-        :title="$t('popup.msg.confirmation')"
-        :ok-label="$t('popup.ok')"
-        :cancel-label="$t('btn.cancel')"
-        persistent
-        @ok="closeNotes()"
         @dialog-opened="$emit('confirmDialogOpened')"
         @dialog-closed="$emit('confirmDialogClosed')" />
     </div>
@@ -141,14 +131,17 @@ export default {
       const notes = {
         id: this.notes.id,
         title: this.notes.title,
-        name: this.notesPageName,
+        name: this.notes.name,
         wikiType: this.notes.wikiType,
         wikiOwner: this.notes.wikiOwner,
-        parentPageName: 'WikiHome',
         content: this.notes.content,
+        parentPageId: this.notes.parentPageId,
       };
-      this.$notesService.createNote(notes).then(() => {
-        window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
+      if (!notes.title){
+        notes.title = this.$t('notes.untitled.title');
+      }
+      this.$notesService.createNote(notes).then(data => {
+        window.location.href=this.$notesService.getPathByNoteOwner(data);
       }).catch(e => {
         console.error('Error when adding note page', e);
       });
@@ -244,9 +237,6 @@ export default {
     },
     confirmCreateNote: function () {
       this.$refs.CreateNoteDialog.open();
-    },
-    confirmCancelNote: function () {
-      this.$refs.CancelNoteDialog.open();
     },
   }
 };
