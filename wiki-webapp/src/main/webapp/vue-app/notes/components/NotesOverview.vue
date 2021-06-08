@@ -77,7 +77,12 @@
           </div>
         </div>
         <v-divider class="my-4" />
-        <div class="notes-application-content text-color" v-html="notes.content">
+        <div v-if="notes.content" class="notes-application-content text-color" v-html="notes.content">
+        </div>
+         <div v-else class="notes-application-content">
+          <p class="body-2 font-italic">
+            {{ $t('notes.label.no-content') }}
+          </p>
         </div>
       </div>
     </div>
@@ -101,7 +106,6 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
-      notesPageName: 'WikiHome',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
@@ -120,6 +124,14 @@ export default {
     displayedDate() {
       return this.lastUpdatedTime;
     },
+    notesPageName() {
+      if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
+        return;
+      } else {
+        const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
+        return noteId.split('/')[0];
+      }
+    }
   },
   created() {
     this.$root.$on('open-note', notePath => {
@@ -134,10 +146,6 @@ export default {
     });
   },
   mounted() {
-    if (notesConstants.PORTAL_BASE_URL.includes('/wiki/')){
-      const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
-      this.notesPageName=noteId.split('/')[0];
-    }
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
   },
   methods: {
@@ -158,9 +166,9 @@ export default {
       });
     },
     getNoteTree() {
-      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome','ALL').then(data => {
-        this.noteTree = data && data.jsonList[0] || [];
-        this.$refs.notesBreadcrumb.open(this.noteTree, this.noteBookType, this.noteBookOwnerTree);
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {
+        this.noteTree = data && data.jsonList || [];
+        this.$refs.notesBreadcrumb.open(this.makeNoteChildren(this.noteTree), this.noteBookType, this.noteBookOwnerTree, this.getOpenedTreeviewItems(this.notes.breadcrumb));
       });
     },
     getNoteById(noteId) {
@@ -169,6 +177,33 @@ export default {
       notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteId);
       window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL); 
     },
+    makeNoteChildren(childrenArray) {
+      const treeviewArray = [];
+      childrenArray.forEach(child => {
+        if ( child.hasChild ) {
+          treeviewArray.push ({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name,
+            children: this.makeNoteChildren(child.children)
+          });
+        } else {
+          treeviewArray.push({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name
+          });
+        }
+      });
+      return treeviewArray;
+    },
+    getOpenedTreeviewItems(breadcrumArray) {
+      const activatedNotes = [];
+      for (let index = 1; index < breadcrumArray.length; index++) {
+        activatedNotes.push(breadcrumArray[index].id);
+      }
+      return activatedNotes;
+    }
   }
 };
 </script>
