@@ -3,7 +3,7 @@
     <div>
       <div
         id="notesEditor"
-        class="notesEditor white">
+        class="notesEditor white width-full">
         <div class="notesActions">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex mr-10">
@@ -33,7 +33,7 @@
           </div>
         </div>
         <div id="notesTop"></div>
-        <div class="formInputGroup ma-2 pa-2 flex">
+        <div class="formInputGroup overflow-auto ma-2 pa-2 flex">
           <textarea
             id="notesContent"
             v-model="notes.content"
