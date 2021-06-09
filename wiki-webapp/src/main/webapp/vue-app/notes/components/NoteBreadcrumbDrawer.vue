@@ -8,20 +8,21 @@
     </template>
     <template slot="content">
       <v-layout column>
-        <template v-if="note" class="ma-0 border-box-sizing">
-          <v-list-item @click="$root.$emit('open-note',note.path)">
+        <template v-if="wikiHome" class="ma-0 border-box-sizing">
+          <v-list-item @click="openNote(event,wikiHome)">
             <v-list-item-content>
-              <v-list-item-title>{{ note.name }}</v-list-item-title>
+              <v-list-item-title>{{ wikiHome.name }}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
         </template>
-        <template v-if="note && note.children && note.children.length">
-          <v-treeview 
-            ref="treeReference"
-            :items="breadcrumbItems"
+        <template v-if="items && items.length">
+          <v-treeview
+            :items="items[0].children"
+            :open="openedItems"
+            :active="active"
             :load-children="fetchNoteChildren"
-            activatable
-            color="warning"
+            item-key="id"
+            hoverable
             open-on-click
             transition>
             <template v-slot:label="{ item }">
@@ -42,35 +43,36 @@ export default {
     breadcrumbItemChild: [],
     noteBookType: '',
     noteBookOwnerTree: '',
+    openNotes: [],
+    activeItem: []
   }),
+  computed: {
+    items() {
+      return this.breadcrumbItems;
+    },
+    wikiHome() {
+      return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
+    },
+    openedItems() {
+      return this.openNotes;
+    },
+    active() {
+      return this.activeItem;
+    }
+  },
   methods: {
-    open(note, noteBookType, noteBookOwnerTree) {
-      this.breadcrumbItems= [];
-      this.note = note;
+    open(noteTreeview, noteBookType, noteBookOwnerTree, openedNotes) {
+      if (this.openNotes && !this.openNotes.length) {
+        this.openNotes = openedNotes;
+      }
+      if (this.activeItem && !this.activeItem.length) {
+        this.activeItem = [this.openNotes[this.openNotes.length-1]];
+      }
+      if (this.breadcrumbItems && !this.breadcrumbItems.length) {
+        this.breadcrumbItems = noteTreeview;
+      }
       this.noteBookType = noteBookType;
       this.noteBookOwnerTree = noteBookOwnerTree;
-      if ( this.note && this.note.children && this.note.children.length ) {
-        this.note.children.forEach(noteChildren => {
-          if ( noteChildren.hasChild ) {
-            this.breadcrumbItems.push(
-              {
-                id: noteChildren.path.split('%2F').pop(),
-                hasChild: noteChildren.hasChild,
-                name: noteChildren.name,
-                children: this.breadcrumbItemChild
-              }
-            );
-          } else {
-            this.breadcrumbItems.push(
-              {
-                id: noteChildren.path.split('%2F').pop(),
-                hasChild: noteChildren.hasChild,
-                name: noteChildren.name
-              }
-            );
-          }
-        });
-      }
       this.$nextTick().then(() => {
         this.$refs.breadcrumbDrawer.open();
       });
@@ -83,26 +85,10 @@ export default {
           const noteChildTree = data.jsonList;
           const temporaryNoteChildren = [];
           noteChildTree.forEach(noteChildren => {
-            if ( noteChildren.hasChild ) {
-              temporaryNoteChildren.push(
-                {
-                  id: noteChildren.path.split('%2F').pop(),
-                  hasChild: noteChildren.hasChild,
-                  name: noteChildren.name,
-                  children: []
-                }
-              );
-            } else {
-              temporaryNoteChildren.push(
-                {
-                  id: noteChildren.path.split('%2F').pop(),
-                  hasChild: noteChildren.hasChild,
-                  name: noteChildren.name
-                }
-              );
-            }
+            this.makeChildren(noteChildren,temporaryNoteChildren);
           });
           childItem.children.push(...temporaryNoteChildren);
+          //this.openNotes.push(childItem.id);
         }
       });
     },
@@ -111,9 +97,26 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
+      this.activeItem = [note.id];
       this.$root.$emit('open-note-by-id',note.id);
       this.$refs.breadcrumbDrawer.close();
-    }
+    },
+    makeChildren(noteChildren, childrenArray) {
+      if ( noteChildren.hasChild ) {
+        childrenArray.push ({
+          id: noteChildren.path.split('%2F').pop(),
+          hasChild: noteChildren.hasChild,
+          name: noteChildren.name,
+          children: []
+        });
+      } else {
+        childrenArray.push({
+          id: noteChildren.path.split('%2F').pop(),
+          hasChild: noteChildren.hasChild,
+          name: noteChildren.name
+        });
+      }
+    },
   }
 };
 </script>
