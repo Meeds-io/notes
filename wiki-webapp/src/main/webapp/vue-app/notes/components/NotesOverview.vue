@@ -77,9 +77,12 @@
           </div>
         </div>
         <v-divider class="my-4" />
-        <div v-if="notes.content" class="notes-application-content text-color" v-html="notes.content">
+        <div
+          v-if="notes.content"
+          class="notes-application-content text-color"
+          v-html="notes.content">
         </div>
-         <div v-else class="notes-application-content">
+        <div v-else class="notes-application-content">
           <p class="body-2 font-italic">
             {{ $t('notes.label.no-content') }}
           </p>
@@ -129,7 +132,11 @@ export default {
         return;
       } else {
         const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
-        return noteId.split('/')[0];
+        if (noteId) {
+          return noteId.split('/')[0];
+        } else {
+          return 'WikiHome';
+        }
       }
     }
   },
