@@ -142,7 +142,7 @@ export default {
   },
   methods: {
     addNotes(){
-      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}`;
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}`,'_blank');
     },
     editNotes(){
       window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`;
