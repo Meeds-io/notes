@@ -97,7 +97,15 @@
           </div>
         </div>
         <v-divider class="my-4" />
-        <div class="notes-application-content text-color" v-html="notes.content">
+        <div
+          v-if="notes.content"
+          class="notes-application-content text-color"
+          v-html="notes.content">
+        </div>
+        <div v-else class="notes-application-content">
+          <p class="body-2 font-italic">
+            {{ $t('notes.label.no-content') }}
+          </p>
         </div>
       </div>
     </div>
@@ -179,10 +187,6 @@ export default {
     });
   },
   mounted() {
-    if (notesConstants.PORTAL_BASE_URL.includes('/wiki/')){
-      const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
-      this.notesPageName=noteId.split('/')[0];
-    }
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
   },
   methods: {
@@ -223,9 +227,9 @@ export default {
       });
     },
     getNoteTree() {
-      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , 'wikiHome','ALL').then(data => {
-        this.noteTree = data && data.jsonList[0] || [];
-        this.$refs.notesBreadcrumb.open(this.noteTree, this.noteBookType, this.noteBookOwnerTree);
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {
+        this.noteTree = data && data.jsonList || [];
+        this.$refs.notesBreadcrumb.open(this.makeNoteChildren(this.noteTree), this.noteBookType, this.noteBookOwnerTree, this.getOpenedTreeviewItems(this.notes.breadcrumb));
       });
     },
     getNoteById(noteId) {
