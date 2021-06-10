@@ -24,6 +24,8 @@ public interface DataStorage {
   /**
    * Get a wiki page by its unique name in the wiki
    *
+   * @param wikiType The wiki type
+   * @param wikiOwner The wiki owner
    * @param pageName The unique name of the page in the wiki
    * @return The wiki page
    * @throws WikiException if an error occured

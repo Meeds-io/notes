@@ -38,7 +38,7 @@ public interface NoteService {
    * @param noteBook Notebook object.
    * @param parentNote  parent note.
    * @return The new note.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public Page createNote(Wiki noteBook, Page parentNote, Page note) throws WikiException;
 
@@ -47,9 +47,11 @@ public interface NoteService {
    *
    * @param noteBook Notebook object.
    * @param parentNoteName  parent note name.
+   * @param note  the note object to create.
    * @param userIdentity  user Identity.
    * @return The new note.
-   * @throws WikiException
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights to the parent note
    */
   Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException, IllegalAccessException;
 
@@ -60,7 +62,9 @@ public interface NoteService {
    * @param noteOwner The NoteBook owner.
    * @param noteId Id of the note.
    * @return "True" if deleting the note is successful, or "false" if not.
-   * @throws WikiException
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights on the note
+   * @throws EntityNotFoundException if the the note to delete dont exist
    */
   public boolean deleteNote(String noteType, String noteOwner, String noteId) throws WikiException;
 
@@ -102,6 +106,8 @@ public interface NoteService {
    * @param userIdentity The user Identity to check permissions.
    * @return "True" if moving the note is successful, or "false" if not.
    * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights on the note
+   * @throws EntityNotFoundException if the the note to move don't exist
    */
   boolean moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
 
@@ -177,9 +183,9 @@ public interface NoteService {
   /**
    * Checks if the given user has the permission on a note
    * 
-   * @param user
-   * @param note
-   * @param permissionType
+   * @param user the user
+   * @param note the note to check
+   * @param permissionType type of permissions to chack
    * @return
    * @throws WikiException if an error occured
    */
@@ -201,7 +207,7 @@ public interface NoteService {
    * Checks if the current user has the admin permission on a note.
    * 
    * @param noteType It can be Portal, Group, or User.
-   * @param owner Owner of the note.
+   * @param owner Owner of the noteBook.
    * @param user Identity of current user.
    * @return "True" if the current user has the admin permission on the note,
    *         or "false" if not.
@@ -222,8 +228,8 @@ public interface NoteService {
   /**
    * Check if the given user can public or restrict the note
    * 
-   * @param currentNote
-   * @param currentIdentity
+   * @param currentNote the note to chack permissions
+   * @param currentIdentity The identity of user
    * @return true if the current user has EditNote permission or admin note or
    *         admin space
    * @throws WikiException if an error occured
@@ -286,7 +292,9 @@ public interface NoteService {
    * @param type Type of update
    * @param userIdentity user Identity
    * @return The updated note
-   * @throws  WikiException, IllegalAccessException, EntityNotFoundException if an error occured
+   * @throws  WikiException if an error occure
+   * @throws IllegalAccessException if the user don't have edit rights on the note
+   * @throws EntityNotFoundException if the the note to update don't exist
    */
   Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
 
@@ -302,8 +310,8 @@ public interface NoteService {
   /**
    * Retrieve the all notes contained in noteBook
    * 
-   * @param noteType
-   * @param noteOwner
+   * @param noteType the notebook Type It can be Portal, Group, or User.
+   * @param noteOwner the notebook owner
    * @return List of pages
    */
   public List<Page> getNotesOfWiki(String noteType, String noteOwner);
