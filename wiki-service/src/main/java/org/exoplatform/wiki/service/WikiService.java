@@ -215,6 +215,7 @@ public interface WikiService {
    * Get parent page of a wiki page
    * @param page Wiki page.
    * @return The list of children pages
+   * @throws WikiException if an error occured
    */
   public Page getParentPageOf(Page page) throws WikiException;
 
@@ -222,6 +223,7 @@ public interface WikiService {
    * Get all the children pages of a wiki page
    * @param page Wiki page.
    * @return The list of children pages
+   * @throws WikiException if an error occured
    */
   public List<Page> getChildrenPageOf(Page page) throws WikiException;
 
@@ -575,6 +577,7 @@ public interface WikiService {
    * 
    * @param username Name of the user.
    * @return The user Wiki.
+   * @throws WikiException if an error occured
    */
   public Wiki getOrCreateUserWiki(String username) throws WikiException;
  
@@ -601,6 +604,7 @@ public interface WikiService {
    * @param wikiType It can be Portal, Group, or User.
    * @param owner The Wiki owner.
    * @return The Wiki.
+   * @throws WikiException if an error occured
    */
   public Wiki getWikiByTypeAndOwner(String wikiType, String owner) throws WikiException;
 
@@ -640,10 +644,10 @@ public interface WikiService {
 
   /**
    * Checks if the given user has the permission on a page
-   * @param user
-   * @param page
-   * @param permissionType
-   * @return
+   * @param user the userName
+   * @param page the wiki page object
+   * @param permissionType permission Type
+   * @return true if user has permissions
    * @throws WikiException if an error occured
    */
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
@@ -673,6 +677,7 @@ public interface WikiService {
    * 
    * @param wikiId The Wiki Id.
    * @return The Wiki.
+   * @throws WikiException if an error occured
    */
   public Wiki getWikiById(String wikiId) throws WikiException;
   
@@ -696,8 +701,8 @@ public interface WikiService {
   
   /**
    * Check if the given user can public or restrict the page
-   * @param currentPage
-   * @param currentUser
+   * @param currentPage page to check
+   * @param currentUser user to chck permissions
    * @return true if the current user has EditPage permission or admin page or admin space
    * @throws WikiException if an error occured
    */
@@ -780,6 +785,8 @@ public interface WikiService {
    * Get all the watchers of a page
    * @param page The wiki page
    * @throws WikiException if an error occured
+   *
+   * @return liste of watchers
    */
   public List<String> getWatchersOfPage(Page page) throws WikiException;
 
@@ -807,9 +814,9 @@ public interface WikiService {
   /**
    * Retrieve the all pages contained in wiki
    * 
-   * @param wikiType
-   * @param wikiOwner
-   * @return
+   * @param wikiType the wiki type
+   * @param wikiOwner the wiki owner
+   * @return List of pages
    */
   public List<Page> getPagesOfWiki(String wikiType, String wikiOwner);
 

@@ -176,6 +176,8 @@ public class Utils {
   /**
    * get user identity.
    * @param userId current userName
+   *
+   * @return the full name of the user
    */
   public static String getIdentityUser( String userId) {
     IdentityManager identityManager = ExoContainerContext.getService(IdentityManager.class);

@@ -37,6 +37,7 @@ public interface NoteService {
    *
    * @param noteBook Notebook object.
    * @param parentNote  parent note.
+   * @param note  the note to create.
    * @return The new note.
    * @throws WikiException if an error occured
    */
@@ -63,8 +64,6 @@ public interface NoteService {
    * @param noteId Id of the note.
    * @return "True" if deleting the note is successful, or "false" if not.
    * @throws WikiException if an error occured
-   * @throws IllegalAccessException if the user don't have edit rights on the note
-   * @throws EntityNotFoundException if the the note to delete dont exist
    */
   public boolean deleteNote(String noteType, String noteOwner, String noteId) throws WikiException;
 
@@ -143,6 +142,7 @@ public interface NoteService {
    * 
    * @param note note.
    * @return The list of children notes
+   * @throws WikiException if an error occured
    */
   public Page getParentNoteOf(Page note) throws WikiException;
 
@@ -151,6 +151,7 @@ public interface NoteService {
    * 
    * @param note note.
    * @return The list of children notes
+   * @throws WikiException if an error occured
    */
   public List<Page> getChildrenNoteOf(Page note) throws WikiException;
 
@@ -186,7 +187,7 @@ public interface NoteService {
    * @param user the user
    * @param note the note to check
    * @param permissionType type of permissions to chack
-   * @return
+   * @return true if user has permissions on the note
    * @throws WikiException if an error occured
    */
   public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException;
