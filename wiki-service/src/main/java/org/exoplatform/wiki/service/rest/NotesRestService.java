@@ -346,6 +346,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteBookService.getPageById(noteId);
+      String noteName = note.getName();
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -353,7 +354,7 @@ public class NotesRestService implements ResourceContainer {
       if (!noteBookService.hasPermissionOnPage(note, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-      noteBookService.deletePage(note.getWikiType(), note.getWikiOwner(), noteId);
+      noteBookService.deletePage(note.getWikiType(), note.getWikiOwner(), noteName);
       return Response.ok().build();
     } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);

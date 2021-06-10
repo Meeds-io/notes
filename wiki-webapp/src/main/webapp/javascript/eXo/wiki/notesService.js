@@ -103,3 +103,16 @@ export function getPathByNoteOwner(note) {
   }
 }
 
+export function deleteNotes(note) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.id}`, {
+    credentials: 'include',
+    method: 'DELETE',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when deleting notes from label');
+    }
+  });
+}
+
