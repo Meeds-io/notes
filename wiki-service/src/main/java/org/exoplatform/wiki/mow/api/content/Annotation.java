@@ -28,14 +28,14 @@ public interface Annotation extends ContentItem {
   /**
    * Get the author of the annotation
    * 
-   * @return
+   * @return Author
    */
   String getAuthor();
 
   /**
    * Get the Date of the annotation
    * 
-   * @return
+   * @return the Date
    */
   Calendar getDate();
 

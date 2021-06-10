@@ -77,7 +77,7 @@ public interface NoteService {
    * @param newName New name of the note.
    * @param newTitle New title of the note.
    * @return "True" if renaming the note is successful, or "false" if not.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean renameNote(String noteType,
                             String noteOwner,
@@ -90,7 +90,7 @@ public interface NoteService {
    *
    * @param currentLocationParams The current location of the note.
    * @param newLocationParams The new location of the note.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public void moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams) throws WikiException;
 
@@ -101,7 +101,7 @@ public interface NoteService {
    * @param newLocationParams The new location of the note.
    * @param userIdentity The user Identity to check permissions.
    * @return "True" if moving the note is successful, or "false" if not.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   boolean moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
 
@@ -113,7 +113,7 @@ public interface NoteService {
    * @param noteName Id of the note.
    * @return The note if the current user has the read permission. Otherwise,
    *         it is "null".
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName) throws WikiException;
 
@@ -125,7 +125,7 @@ public interface NoteService {
    *
    * @param id Unique id of the note.
    * @return The note.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public Page getNoteById(String id) throws WikiException;
 
@@ -155,7 +155,7 @@ public interface NoteService {
    * @param noteOwner The owner.
    * @param noteId Id of the note to which the breadcrumb points.
    * @return The list of data.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public List<BreadcrumbData> getBreadcumb(String noteType, String noteOwner, String noteId) throws WikiException;
 
@@ -167,7 +167,7 @@ public interface NoteService {
    * @param targetNoteBook The target NoteBook to check.
    * @param resultList The list of duplicated notes.
    * @return The list of duplicated notes.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList) throws WikiException;
 
@@ -181,7 +181,7 @@ public interface NoteService {
    * @param note
    * @param permissionType
    * @return
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException;
 
@@ -193,7 +193,7 @@ public interface NoteService {
    * @param user Identity of current user.
    * @return The returned value is "true" if the current user has the admin
    *         permission on the space, or "false" if not.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean hasAdminSpacePermission(String noteType, String owner, Identity user) throws WikiException;
 
@@ -205,7 +205,7 @@ public interface NoteService {
    * @param user Identity of current user.
    * @return "True" if the current user has the admin permission on the note,
    *         or "false" if not.
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean hasAdminNotePermission(String noteType, String owner, Identity user) throws WikiException;
 
@@ -215,7 +215,7 @@ public interface NoteService {
    * @param currentNote The note to update
    * @param currentIdentity The identity of user user that needs to update the note
    * @return true if the user can update the note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean canModifyNotePermission(Page currentNote, Identity currentIdentity) throws WikiException;
 
@@ -226,7 +226,7 @@ public interface NoteService {
    * @param currentIdentity
    * @return true if the current user has EditNote permission or admin note or
    *         admin space
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean canPublicAndRetrictNote(Page currentNote , Identity currentIdentity) throws WikiException;
 
@@ -235,7 +235,7 @@ public interface NoteService {
    * 
    * @param note The note
    * @return All the versions of the note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public List<PageVersion> getVersionsOfNote(Page note) throws WikiException;
 
@@ -245,7 +245,7 @@ public interface NoteService {
    * @param versionName The name of the version
    * @param note The note
    * @return The version of the note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public PageVersion getVersionOfNoteByName(String versionName, Page note) throws WikiException;
 
@@ -254,7 +254,7 @@ public interface NoteService {
    * new version, it does not update the note data
    * 
    * @param note The note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public void createVersionOfNote(Page note) throws WikiException;
 
@@ -263,7 +263,7 @@ public interface NoteService {
    * 
    * @param versionName The name of the version to restore
    * @param note The note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public void restoreVersionOfNote(String versionName, Page note) throws WikiException;
 
@@ -272,7 +272,7 @@ public interface NoteService {
    * Update the given note.
    * 
    * @param note Updated note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public void updateNote(Page note) throws WikiException;
 
@@ -286,7 +286,7 @@ public interface NoteService {
    * @param type Type of update
    * @param userIdentity user Identity
    * @return The updated note
-   * @throws  WikiException, IllegalAccessException, EntityNotFoundException
+   * @throws  WikiException, IllegalAccessException, EntityNotFoundException if an error occured
    */
   Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
 
@@ -295,7 +295,7 @@ public interface NoteService {
    * 
    * @param note The note
    * @return List of all the previous names of the note
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public List<String> getPreviousNamesOfNote(Page note) throws WikiException;
 
@@ -304,7 +304,7 @@ public interface NoteService {
    * 
    * @param noteType
    * @param noteOwner
-   * @return
+   * @return List of pages
    */
   public List<Page> getNotesOfWiki(String noteType, String noteOwner);
 

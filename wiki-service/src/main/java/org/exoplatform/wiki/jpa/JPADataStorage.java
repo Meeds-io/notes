@@ -76,6 +76,8 @@ public class JPADataStorage implements DataStorage {
 
   /**
    * JPADataStorage must depends on DataInitializer to make sure data structure is created before initializing it
+   *
+   *
    */
   public JPADataStorage(WikiDAO wikiDAO,
                         PageDAO pageDAO,
