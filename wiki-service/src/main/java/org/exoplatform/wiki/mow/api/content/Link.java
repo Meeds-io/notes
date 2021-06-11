@@ -27,21 +27,21 @@ public interface Link extends ContentItem {
   /**
    * Get the alias for the link (name to be displayed)
    * 
-   * @return
+   * @return alias
    */
   String getAlias();
 
   /**
    * get the UID of the target page
    * 
-   * @return
+   * @return Target of the link
    */
   String getTarget();
 
   /**
    * Get the page referenced by target
    * 
-   * @return
+   * @return the page referenced by target
    */
   Page getTargetPage();
 }

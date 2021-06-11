@@ -39,6 +39,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.resolver.TitleResolver;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
@@ -58,7 +59,10 @@ import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
 public class NotesRestService implements ResourceContainer {
 
-  private final WikiService           noteBookService;
+
+  private final NoteService   noteService;
+
+  private final WikiService   noteBookService;
 
   private final ResourceBundleService resourceBundleService;
 
@@ -66,7 +70,8 @@ public class NotesRestService implements ResourceContainer {
 
   private final CacheControl          cc;
 
-  public NotesRestService(WikiService noteBookService, ResourceBundleService resourceBundleService) {
+  public NotesRestService(NoteService noteService, WikiService   noteBookService, ResourceBundleService resourceBundleService) {
+    this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
@@ -86,13 +91,17 @@ public class NotesRestService implements ResourceContainer {
                           @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
                           @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
     try {
-      Page note = noteBookService.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
-      note.setBreadcrumb(noteBookService.getBreadcumb(noteBookType,noteBookOwner,noteId));
+      note.setBreadcrumb(noteService.getBreadcumb(noteBookType,noteBookOwner,noteId));
       return Response.ok(note).build();
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}:{}:{}",noteBookType,noteBookOwner,noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
       log.error("Can't get note {}:{}:{}",noteBookType,noteBookOwner,noteId,e);
       return Response.serverError().entity(e.getMessage()).build();
@@ -110,17 +119,17 @@ public class NotesRestService implements ResourceContainer {
   public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteBookService.getPageById(noteId);
-      if (!noteBookService.hasPermissionOnPage(note, PermissionType.VIEWPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
+      Page note = noteService.getNoteById(noteId, identity);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
-      note.setBreadcrumb(noteBookService.getBreadcumb(note.getWikiType(),note.getWikiOwner(),noteId));
+      note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(),note.getWikiOwner(),noteId));
       return Response.ok(note).build();
-    } catch (Exception e) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception e) {
       log.error("Can't get note {}",noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
@@ -142,7 +151,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if(StringUtils.isNotEmpty(note.getParentPageId())){
-        Page note_=noteBookService.getPageById(note.getParentPageId());
+        Page note_=noteService.getNoteById(note.getParentPageId(), identity);
         if(note_!=null){
           noteBookType=note_.getWikiType();
           noteBookOwner=note_.getWikiOwner();
@@ -166,9 +175,12 @@ public class NotesRestService implements ResourceContainer {
       note.setSyntax(syntaxId);
       note.setName(TitleResolver.getId(note.getTitle(), false));
       note.setUrl("");
-      Page createdNote = noteBookService.createPage(noteBook, note.getParentPageName(), note);
+      Page createdNote = noteService.createNote(noteBook, note.getParentPageName(), note, identity);
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
-    } catch (Exception ex) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}",note.getName(),e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception ex) {
       log.warn("Failed to perform save noteBook note {}:{}:{}",noteBookType,noteBookOwner,note.getId(),ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
@@ -190,12 +202,12 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteBookService.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
+      Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
 
-      if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
+      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
@@ -204,36 +216,39 @@ public class NotesRestService implements ResourceContainer {
         note_.setContent(note.getContent());
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
                 && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
+          noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          //noteBookService.removeDraftOfPage(noteParams);
+          //noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
                 && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
+          noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
         note_.setTitle(note.getTitle());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_TITLE);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE,identity);
+        noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          //noteBookService.removeDraftOfPage(noteParams);
+          //noteService.removeDraftOfPage(noteParams);
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        noteService.createVersionOfNote(note_);
       }
       return Response.ok().build();
-    } catch (Exception ex) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception ex) {
       log.error("Failed to perform update noteBook note {}:{}:{}",note.getWikiType(),note.getWikiOwner(),note.getId(),ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
@@ -247,20 +262,16 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
           @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
           @ApiResponse(code = 404, message = "Resource not found") })
-  public Response updateNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
+  public Response updateNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                              @ApiParam(value = "note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteBookService.getPageById(noteId);
+      Page note_ = noteService.getNoteById(noteId, identity);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
-      }
-
-      if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
@@ -268,36 +279,39 @@ public class NotesRestService implements ResourceContainer {
         note_.setContent(note.getContent());
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
                 && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
+          noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteBookService.removeDraftOfPage(noteParams);
+          noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
                 && !note.getName().equals(newNoteName)) {
-          noteBookService.renamePage(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
+          noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
         note_.setTitle(note.getTitle());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_TITLE);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+        noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteBookService.removeDraftOfPage(noteParams);
+          noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
-        noteBookService.updatePage(note_, PageUpdateType.EDIT_PAGE_CONTENT);
-        noteBookService.createVersionOfPage(note_);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        noteService.createVersionOfNote(note_);
       }
       return Response.ok().build();
-    } catch (Exception ex) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have edit permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception ex) {
       log.error("Failed to perform update noteBook note {}:{}:{}",note.getWikiType(),note.getWikiOwner(),note.getId(),ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
@@ -318,17 +332,16 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteBookService.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
+      Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-
-      if (!noteBookService.hasPermissionOnPage(note_, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-      noteBookService.deletePage(noteBookType, noteBookOwner, noteId);
+      noteService.deleteNote(noteBookType, noteBookOwner, noteId, identity);
       return Response.ok().build();
-    } catch (Exception ex) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have delete permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}:{}:{}",noteBookType,noteBookOwner,noteId,ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
@@ -341,22 +354,21 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
           @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
           @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response deleteNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteBookService.getPageById(noteId);
+      Page note = noteService.getNoteById(noteId, identity);
       String noteName = note.getName();
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-
-      if (!noteBookService.hasPermissionOnPage(note, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-      noteBookService.deletePage(note.getWikiType(), note.getWikiOwner(), noteName);
+      noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
-    } catch (Exception ex) {
+    } catch (IllegalAccessException e) {
+      log.error("User does not have delete permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
@@ -374,29 +386,25 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteBookService.getPageById(noteId);
+      Page note = noteService.getNoteById(noteId,identity);
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (!noteBookService.hasPermissionOnPage(note, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-      Page toNote = noteBookService.getPageById(toNoteId);
+      Page toNote = noteService.getNoteById(toNoteId);
       if (toNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (!noteBookService.hasPermissionOnPage(toNote, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-
       WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteId);
       WikiPageParams newLocationParams = new WikiPageParams(toNote.getWikiType(), toNote.getWikiOwner(), toNoteId);
-      boolean isMoved =noteBookService.movePage(currentLocationParams, newLocationParams);
+      boolean isMoved =noteService.moveNote(currentLocationParams, newLocationParams, identity);
       if(isMoved){
         return Response.ok().build();
       }else{
         return Response.notModified().build();
       }
+    } catch (IllegalAccessException e) {
+      log.error("User does not have move permissions on the note {}",noteId,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception ex) {
       log.warn("Failed to perform move of noteBook note {} under {}",noteId,toNoteId,ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -419,6 +427,7 @@ public class NotesRestService implements ResourceContainer {
                               @QueryParam(TreeNode.SHOW_EXCERPT) Boolean showExcerpt,
                               @QueryParam(TreeNode.DEPTH) String depth) {
     try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData = new ArrayList<JsonNodeData>();
       HashMap<String, Object> context = new HashMap<String, Object>();
       context.put(TreeNode.CAN_EDIT, canEdit);
@@ -426,9 +435,9 @@ public class NotesRestService implements ResourceContainer {
         currentPath = URLDecoder.decode(currentPath, "utf-8");
         context.put(TreeNode.CURRENT_PATH, currentPath);
         WikiPageParams currentNoteParam = TreeUtils.getPageParamsFromPath(currentPath);
-        org.exoplatform.wiki.mow.api.Page currentNote = noteBookService.getPageOfWikiByName(currentNoteParam.getType(),
+        Page currentNote = noteService.getNoteOfNoteBookByName(currentNoteParam.getType(),
                 currentNoteParam.getOwner(),
-                currentNoteParam.getPageName());
+                currentNoteParam.getPageName(), identity);
         context.put(TreeNode.CURRENT_PAGE, currentNote);
       }
 
@@ -439,14 +448,14 @@ public class NotesRestService implements ResourceContainer {
       path = URLDecoder.decode(path, "utf-8");
       context.put(TreeNode.PATH, path);
       WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
-      org.exoplatform.wiki.mow.api.Page note = noteBookService.getPageOfWikiByName(noteParam.getType(),
+      Page note = noteService.getNoteOfNoteBookByName(noteParam.getType(),
               noteParam.getOwner(),
-              noteParam.getPageName());
+              noteParam.getPageName(), identity);
       if (note == null) {
         log.warn("User [{}] can not get noteBook path [{}]. Wiki Home is used instead",
                 ConversationState.getCurrent().getIdentity().getUserId(),
                 path);
-        note = noteBookService.getPageOfWikiByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
                   request.getLocale());
@@ -475,6 +484,9 @@ public class NotesRestService implements ResourceContainer {
 
       encodeWikiTree(responseData, request.getLocale());
       return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    }  catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}",path,e);
+      return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
       log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();

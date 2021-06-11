@@ -724,7 +724,7 @@ public class WikiServiceImpl implements WikiService, Startable {
   /**
    * Invalidate all caches of a page and all its descendants
    * @param page root page
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   protected void invalidateCachesOfPageTree(Page page) throws WikiException {
     Queue<Page> queue = new LinkedList<>();
@@ -1365,7 +1365,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     }
   }
 
-  /******* Listeners *******/
+  //******* Listeners *******/
 
   public void postUpdatePage(final String wikiType, final String wikiOwner, final String pageId, Page page, PageUpdateType wikiUpdateType) throws WikiException {
     List<PageWikiListener> listeners = getPageListeners();

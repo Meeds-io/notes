@@ -26,8 +26,8 @@ public final class RelatedUtil {
   /**
    * convert wiki page info to path string. <br>
    * The format: [wiki type]/[wiki owner]/[page id]
-   * @param params
-   * @return
+   * @param params the wiki page params (type, owner and page name)
+   * @return the page path
    */
   public static String getPath(WikiPageParams params) {
     StringBuilder sb = new StringBuilder();
@@ -47,6 +47,7 @@ public final class RelatedUtil {
    * get wiki page params from the path made by {@link #getPath(WikiPageParams)} 
    * @param path made by {@link #getPath(WikiPageParams)}
    * @throws Exception if an error occurs.
+   * @return Wiki page params
    */
   public static WikiPageParams getPageParams(String path) throws Exception {
     return TreeUtils.getPageParamsFromPath(path);

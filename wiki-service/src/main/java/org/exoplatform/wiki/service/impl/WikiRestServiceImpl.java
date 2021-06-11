@@ -236,6 +236,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
    * Display the current tree of a wiki based on is path
    * @param type It can be a Portal, Group, User type of wiki
    * @param path Contains the path of the wiki page
+   * @param canEdit true if user can edit
    * @param currentPath Contains the path of the current wiki page
    * @param showExcerpt Boolean to display or not the excerpt
    * @param depth Defined the depth of the children we want to display
@@ -448,7 +449,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
    * @param wikiOwner Is the owner of the wiki
    * @param start Not used
    * @param number Not used
-   * @param parentFilterExpression
+   * @param parentFilterExpression parent Filter Expression
    * @return List of pages
    */
   @GET
@@ -556,11 +557,12 @@ public class WikiRestServiceImpl implements ResourceContainer {
 
   /**
    * Return a list of title based on a searched words.
+   * @param uriInfo uriInfo
    * @param keyword Word to search
    * @param wikiType It can be a Portal, Group, User type of wiki
    * @param wikiOwner Is the owner of the wiki
    * @return List of title
-   * @throws Exception
+   * @throws Exception if an error occured
    */
   @GET
   @Path("contextsearch/")
@@ -948,6 +950,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
    * @param isNewPage The draft for new page or not
    * @param title draft title
    * @param content draft content
+   * @param clientTime client Time
    * @param isMarkup content is markup or html. True if is markup.
    * @return {@link Response} with status HTTPStatus.ACCEPTED if saving process is performed successfully
    *                          with status HTTPStatus.INTERNAL_ERROR if there is any unknown error in the saving process

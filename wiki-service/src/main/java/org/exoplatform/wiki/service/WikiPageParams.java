@@ -27,10 +27,10 @@ public class WikiPageParams {
   }
 
   /**
-   * @param type
-   * @param owner
-   * @param pageName
-   * @param attachmentName
+   * @param type the wiki Type It can be Portal, Group, or User.
+   * @param owner the wiki owner
+   * @param pageName the wiki page name
+   * @param attachmentName the attachemeny name
    */
   public WikiPageParams(String type, String owner, String pageName, String attachmentName) {
     super();
