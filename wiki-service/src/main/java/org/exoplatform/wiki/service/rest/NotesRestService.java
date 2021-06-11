@@ -366,7 +366,8 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteById(noteId);
+      Page note = noteService.getPageById(noteId);
+      String noteName = note.getName();
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -374,7 +375,7 @@ public class NotesRestService implements ResourceContainer {
       if (!noteService.hasPermissionOnNote(note, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-      noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteId, identity);
+      noteBookService.deletePage(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
       log.error("User does not have delete permissions on the note {}",noteId,e);
