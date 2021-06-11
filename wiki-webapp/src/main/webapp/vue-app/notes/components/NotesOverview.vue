@@ -198,7 +198,7 @@ export default {
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}`,'_blank');
     },
     editNotes(){
-      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`;
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`,'_blank');
     },
     deleteNotes(){
       this.$notesService.deleteNotes(this.notes).then(() => {
