@@ -40,9 +40,26 @@
                     size="19"
                     class="clickable"
                     v-bind="attrs"
-                    v-on="on">
+                    v-on="on"
+                    @click="displayActionMenu = true">
                     mdi-dots-vertical
                   </v-icon>
+                  <v-menu
+                    v-model="displayActionMenu"
+                    class="menuCollaborativeActions"
+                    :position-x="960"
+                    :position-y="185"
+                    transition="slide-x-reverse-transition"
+                    offset-y>
+                    <v-list>
+                      <v-list-item class="draftButton" @click="confirmDeleteNote">
+                        <v-list-item-title class="subtitle-2">
+                          <i class="uiIcon uiIconTrash pr-1"></i>
+                          <span>{{ $t('notes.delete') }}</span>
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </template>
                 <span class="caption">{{ $t('notes.label.openMenu') }}</span>
               </v-tooltip>
@@ -67,6 +84,18 @@
         </div>
       </div>
     </div>
+    <note-breadcrumb-drawer 
+      ref="notesBreadcrumb" />
+    <exo-confirm-dialog
+      ref="DeleteNoteDialog"
+      :message="confirmMessage"
+      :title="$t('popup.confirmation.delete')"
+      :ok-label="$t('popup.ok')"
+      :cancel-label="$t('btn.cancel')"
+      persistent
+      @ok="deleteNotes()"
+      @dialog-opened="$emit('confirmDialogOpened')"
+      @dialog-closed="$emit('confirmDialogClosed')" />
   </v-app>
 </template>
 <script>
@@ -85,6 +114,10 @@ export default {
         minute: '2-digit',
       },
       notesPageName: 'WikiHome',
+      displayActionMenu: false,
+      parentPageName: '',
+      confirmMessage: '',
+      breadcrumbNotes: '',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
@@ -110,6 +143,25 @@ export default {
       return this.noteTreeElement;
     }
   },
+  created() {
+    $(document).on('mousedown', () => {
+      if (this.displayActionMenu) {
+        window.setTimeout(() => {
+          this.displayActionMenu = false;
+        }, this.waitTimeUntilCloseMenu);
+      }
+    });
+    this.$root.$on('open-note', notePath => {
+      const noteName = notePath.split('%2F').pop();
+      this.getNotes(this.noteBookType, this.noteBookOwner , noteName);
+      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
+      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteName);
+      window.location.pathname = notesConstants.PORTAL_BASE_URL;
+    });
+    this.$root.$on('open-note-by-id', noteId => {
+      this.getNoteById(noteId);
+    });
+  },
   mounted() {
     const urlPath = document.location.pathname;
     if (urlPath.includes('/wiki/')){
@@ -126,6 +178,26 @@ export default {
     editNotes(){
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`,'_blank');
     },
+    deleteNotes(){
+      this.$notesService.deleteNotes(this.notes).then(() => {
+        this.refreshNote();
+      }).catch(e => {
+        console.error('Error when deleting notes', e);
+      });
+    },
+    refreshNote(){
+      this.$notesService.getNoteById('1').then(data => {
+        window.location.href=this.$notesService.getPathByNoteOwner(data);
+      });
+    },
+    getParentsNotes(){
+      this.breadcrumbNotes = '';
+      for (let index = 0; index < this.notes.breadcrumb.length-1; index++) {
+        this.parentPageName=this.notes.breadcrumb[index].id;
+        this.breadcrumbNotes = this.breadcrumbNotes.concat(this.notes.breadcrumb[index].title,' > ');
+      }
+      return this.breadcrumbNotes;
+    },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {
         this.lastUpdatedUser =  user.fullname;
@@ -140,6 +212,53 @@ export default {
       return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName).then(data => {
         this.noteTree = data && data.jsonList[0] || [];
       });
+    },
+    getNoteById(noteId) {
+      this.getNotes(this.noteBookType,this.noteBookOwner, noteId);
+      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
+      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteId);
+      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL); 
+    },
+    makeNoteChildren(childrenArray) {
+      const treeviewArray = [];
+      childrenArray.forEach(child => {
+        if ( child.hasChild ) {
+          treeviewArray.push ({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name,
+            children: this.makeNoteChildren(child.children)
+          });
+        } else {
+          treeviewArray.push({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name
+          });
+        }
+      });
+      return treeviewArray;
+    },
+    getOpenedTreeviewItems(breadcrumArray) {
+      const activatedNotes = [];
+      for (let index = 1; index < breadcrumArray.length; index++) {
+        activatedNotes.push(breadcrumArray[index].id);
+      }
+      return activatedNotes;
+    },
+    confirmDeleteNote: function () {
+      this.getParentsNotes();
+      this.confirmMessage = `${this.$t('popup.msg.confirmation.DeleteInfo1', {
+        0: `<b>${this.notes && this.notes.title}</b>`,
+      })
+      }`
+          + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
+          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo3')}</li>`
+          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
+          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo5', {
+            1: `<b>${this.breadcrumbNotes}</b>`,
+          })}</li>`;
+      this.$refs.DeleteNoteDialog.open();
     },
   }
 };
