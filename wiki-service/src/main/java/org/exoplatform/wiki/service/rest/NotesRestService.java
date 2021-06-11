@@ -269,13 +269,9 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteService.getNoteById(noteId);
+      Page note_ = noteService.getNoteById(noteId, identity);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
-      }
-
-      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
@@ -336,13 +332,9 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId);
+      Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
-      }
-
-      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
       }
       noteService.deleteNote(noteBookType, noteBookOwner, noteId, identity);
       return Response.ok().build();
@@ -366,16 +358,12 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getPageById(noteId);
+      Page note = noteService.getNoteById(noteId, identity);
       String noteName = note.getName();
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-
-      if (!noteService.hasPermissionOnNote(note, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-      noteBookService.deletePage(note.getWikiType(), note.getWikiOwner(), noteName, identity);
+      noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
       log.error("User does not have delete permissions on the note {}",noteId,e);
@@ -398,7 +386,7 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteById(noteId);
+      Page note = noteService.getNoteById(noteId,identity);
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -406,10 +394,6 @@ public class NotesRestService implements ResourceContainer {
       if (toNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (!noteService.hasPermissionOnNote(toNote, PermissionType.EDITPAGE, identity)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-
       WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteId);
       WikiPageParams newLocationParams = new WikiPageParams(toNote.getWikiType(), toNote.getWikiOwner(), toNoteId);
       boolean isMoved =noteService.moveNote(currentLocationParams, newLocationParams, identity);
