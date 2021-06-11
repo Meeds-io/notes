@@ -48,6 +48,15 @@
       </properties-param> 
     </init-params>
   </component>
+  <component>
+    <key>org.exoplatform.wiki.service.impl.SessionManager</key>
+    <type>org.exoplatform.wiki.service.impl.SessionManager</type>
+  </component>
+
+  <component>
+    <key>org.exoplatform.wiki.service.NoteService</key>
+    <type>org.exoplatform.wiki.service.impl.NoteServiceImpl</type>
+  </component>
     
   <component>
     <type>org.exoplatform.wiki.service.impl.WikiRestServiceImpl</type>

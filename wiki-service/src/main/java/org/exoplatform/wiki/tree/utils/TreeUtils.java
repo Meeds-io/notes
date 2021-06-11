@@ -43,7 +43,7 @@ public class TreeUtils {
    * 
    * @param params is the wiki page parameters
    * @return <code>TreeNode</code>
-   * @throws Exception
+   * @throws Exception if an error occured
    */
   public static TreeNode getTreeNode(WikiPageParams params) throws Exception {
     Object wikiObject = Utils.getObjectFromParams(params);
@@ -73,7 +73,7 @@ public class TreeUtils {
    * @param params is the wiki page parameters
    * @param context is the page tree context
    * @return <code>TreeNode</code>
-   * @throws Exception
+   * @throws Exception if error occured
    */
   public static TreeNode getDescendants(WikiPageParams params, HashMap<String, Object> context) throws Exception {
     TreeNode treeNode = getTreeNode(params);
