@@ -162,8 +162,8 @@ public class Utils {
   
   /**
    * removes the log of user editing page.
-   * @param pageParams
-   * @param user
+   * @param pageParams wiki page params
+   * @param user current userName
    */
   public static void removeLogEditPage(WikiPageParams pageParams, String user) {
     String pageId = pageParams.getPageName();
@@ -175,7 +175,9 @@ public class Utils {
 
   /**
    * get user identity.
-   * @param userId
+   * @param userId current userName
+   *
+   * @return the full name of the user
    */
   public static String getIdentityUser( String userId) {
     IdentityManager identityManager = ExoContainerContext.getService(IdentityManager.class);
@@ -233,9 +235,11 @@ public class Utils {
    *   <li>http://int.exoplatform.org/portal/intranet/wiki/group/spaces/test_space/test_page</li>
    * </ul>
    * <br>
-   * 
+   *
+   * @param params the wiki oage parms
+   * @param hasDowmainUrl if page has domain url
    * @return The permalink of current wiki page
-   * @throws Exception
+   * @throws Exception if error occured
    */
   public static String getPermanlink(WikiPageParams params, boolean hasDowmainUrl) throws Exception {
     WikiService wikiService = (WikiService) PortalContainer.getComponent(WikiService.class);
@@ -321,8 +325,8 @@ public class Utils {
   /**
    * Validate {@code wikiOwner} depending on {@code wikiType}. <br>
    * If wikiType is {@link PortalConfig#GROUP_TYPE}, {@code wikiOwner} is checked to removed slashes at the begin and the end point of it.
-   * @param wikiType
-   * @param wikiOwner
+   * @param wikiType the wiki type
+   * @param wikiOwner the wiki owner
    * @return wikiOwner after validated.
    */ 
   public static String validateWikiOwner(String wikiType, String wikiOwner){

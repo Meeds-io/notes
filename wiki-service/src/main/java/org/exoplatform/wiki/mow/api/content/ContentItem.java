@@ -29,21 +29,21 @@ public interface ContentItem {
   /**
    * Get the unique identifier for the content
    * 
-   * @return
+   * @return contentId
    */
   String getId();
 
   /**
    * Get the child items
    * 
-   * @return
+   * @return List of children
    */
   List<?> getChildren();
 
   /**
    * Get the text representation of the content item
    * 
-   * @return
+   * @return the content text
    */
   String getText();
   

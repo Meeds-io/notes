@@ -33,6 +33,7 @@ public interface WikiRestService {
      * @param wikiContextKey  contain the context key which contain the syntax.
      * @param isMarkup if <em>true</em> then <em>markup content</em> is returned else <em>html content</em> is returned
      * @param data contain the data as html
+     * @param servletContext the servletContext
      * @return the instance of javax.ws.rs.core.Response
      *
      * @LevelAPI Experimental

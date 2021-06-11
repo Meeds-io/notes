@@ -58,7 +58,7 @@ public class WikiUserEventListener extends UserEventListener {
    * Deletes all wiki data of the deleted user.
    * WikiService does not have delete services, so we have to use DAOs directly and manage unindexation manually.
    * @param user Deleted user
-   * @throws Exception
+   * @throws Exception if error occured
    */
   @Override
   public void postDelete(User user) throws Exception {
