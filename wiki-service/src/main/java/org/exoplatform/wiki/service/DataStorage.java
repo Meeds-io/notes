@@ -24,9 +24,11 @@ public interface DataStorage {
   /**
    * Get a wiki page by its unique name in the wiki
    *
+   * @param wikiType The wiki type
+   * @param wikiOwner The wiki owner
    * @param pageName The unique name of the page in the wiki
    * @return The wiki page
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public Page getPageOfWikiByName(String wikiType, String wikiOwner, String pageName) throws WikiException;
 
@@ -35,7 +37,7 @@ public interface DataStorage {
    *
    * @param id The unique id of wiki page
    * @return The wiki page
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public Page getPageById(String id) throws WikiException;
 
@@ -117,7 +119,7 @@ public interface DataStorage {
    * @param permissionType Permission type to check
    * @param user Identity of the user
    * @return true if the user has the given permission type on the page
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
 
@@ -127,7 +129,7 @@ public interface DataStorage {
    * @param permissionType Permission type to check
    * @param identity Identity of the user
    * @return true if the user has the given permission type on the wiki
-   * @throws WikiException
+   * @throws WikiException if an error occured
    */
   public boolean hasPermissionOnWiki(Wiki wiki, PermissionType permissionType, Identity identity) throws WikiException;
 
@@ -154,9 +156,9 @@ public interface DataStorage {
   /**
    * Retrieve the all pages contained in wiki
    * 
-   * @param wikiType
-   * @param wikiOwner
-   * @return
+   * @param wikiType the wiki type
+   * @param wikiOwner the wiki owner
+   * @return the List pf pages of the wiki
    */
   public List<Page> getPagesOfWiki(String wikiType, String wikiOwner);
 }

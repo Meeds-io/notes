@@ -74,9 +74,6 @@ public class JPADataStorage implements DataStorage {
   private UserACL userACL;
   
 
-  /**
-   * JPADataStorage must depends on DataInitializer to make sure data structure is created before initializing it
-   */
   public JPADataStorage(WikiDAO wikiDAO,
                         PageDAO pageDAO,
                         PageAttachmentDAO pageAttachmentDAO,
