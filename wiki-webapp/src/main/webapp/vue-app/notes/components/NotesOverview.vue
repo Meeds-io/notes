@@ -34,35 +34,38 @@
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                    size="19"
-                    class="clickable"
-                    v-bind="attrs"
-                    v-on="on"
-                    @click="displayActionMenu = true">
-                    mdi-dots-vertical
-                  </v-icon>
-                  <v-menu
-                    v-model="displayActionMenu"
-                    class="menuCollaborativeActions"
-                    :position-x="960"
-                    :position-y="185"
-                    transition="slide-x-reverse-transition"
-                    offset-y>
-                    <v-list>
-                      <v-list-item class="draftButton" @click="confirmDeleteNote">
-                        <v-list-item-title class="subtitle-2">
-                          <i class="uiIcon uiIconTrash pr-1"></i>
-                          <span>{{ $t('notes.delete') }}</span>
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+              <v-menu
+                v-model="displayActionMenu"
+                transition="slide-x-reverse-transition"
+                offset-y
+                left>
+                <template v-slot:activator="{ on: menu, attrs }">
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on: tooltip }">
+                      <v-icon
+                        size="19"
+                        class="clickable"
+                        v-bind="attrs"
+                        v-on="{ ...tooltip, ...menu }"
+                        @click="displayActionMenu = true">
+                        mdi-dots-vertical
+                      </v-icon>
+                    </template>
+                    <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+                  </v-tooltip>
                 </template>
-                <span class="caption">{{ $t('notes.label.openMenu') }}</span>
-              </v-tooltip>
+                <v-list>
+                  <v-list-item
+                    class="draftButton"
+                    :key="notes.id"
+                    @click="confirmDeleteNote">
+                    <v-list-item-title class="subtitle-2">
+                      <i class="uiIcon uiIconTrash pr-1"></i>
+                      <span>{{ $t('notes.delete') }}</span>
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </div>
           </div>
           <!--<div class="notes-treeview d-flex pb-2">
