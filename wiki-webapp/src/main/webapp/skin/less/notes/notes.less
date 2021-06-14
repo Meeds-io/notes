@@ -36,7 +36,7 @@
 
 /************ New css feature notes ****************/
 #notesTop {
-  box-shadow: 0 7px 7px rgb(208 208 208 / 52%);
+  box-shadow: 0 7px 7px hsla(0, 1%, 43%, 0.8);
   position: absolute;
     width: 100%;
 	.cke_top {
@@ -78,6 +78,9 @@
 				input[type="text"] {
 					flex: 0 1 100%;
 					font-size: 24px;
+          &:focus {
+            box-shadow: none!important;
+          }
 				}
 			}
 			.notesFormRightActions{

@@ -10,7 +10,7 @@
               <img :src="srcImageNote">
               <input
                 id="notesTitle"
-                class="ml-4 mb-0 pl-5 pr-5"
+                class="mb-0 pr-5"
                 v-model="notes.title"
                 :maxlength="titleMaxLength"
                 :placeholder="notesTitlePlaceholder"
