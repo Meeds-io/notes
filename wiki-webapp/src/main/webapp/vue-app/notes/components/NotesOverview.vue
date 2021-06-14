@@ -86,9 +86,9 @@
               <a
                 v-if="index+1 < notes.breadcrumb.length"
                 @click="getNoteById(note.id)"
-                class="caption text-color" 
+                class="caption text-color path-clickable" 
                 :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
-              <span v-else class="caption primary--text font-weight-bold">{{ note.title }}</span>
+              <span v-else class="caption text-sub-title">{{ note.title }}</span>
               <v-icon v-if="index+1 < notes.breadcrumb.length" size="18">mdi-chevron-right</v-icon>  
             </div>
           </div>
