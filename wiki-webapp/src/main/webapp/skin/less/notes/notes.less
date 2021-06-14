@@ -36,7 +36,9 @@
 
 /************ New css feature notes ****************/
 #notesTop {
-	box-shadow: 0 3px 5px hsla(0, 1%, 43%, 0.8);
+  box-shadow: 0 7px 7px hsla(0, 1%, 43%, 0.8);
+  position: absolute;
+    width: 100%;
 	.cke_top {
 		height: auto;
 	}
@@ -54,7 +56,12 @@
 	top: 0;
 	z-index: 10000;
 	.formInputGroup{
-		height: 75%;
+    height: calc(~"100vh - 120px");
+    width: 70%!important;
+    max-width: 70%!important;
+    background: white;
+    margin: 0px auto!important;
+    margin-top: 40px!important;
 	}
 	#cke_notesContent {
 		border-color: transparent;
@@ -71,6 +78,9 @@
 				input[type="text"] {
 					flex: 0 1 100%;
 					font-size: 24px;
+          &:focus {
+            box-shadow: none!important;
+          }
 				}
 			}
 			.notesFormRightActions{
