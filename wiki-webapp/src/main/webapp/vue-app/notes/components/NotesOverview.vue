@@ -99,6 +99,7 @@
   </v-app>
 </template>
 <script>
+import { notesConstants } from '../../../javascript/eXo/wiki/notesConstants.js';
 export default {
   data() {
     return {
