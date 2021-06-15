@@ -162,9 +162,21 @@ export default {
     displayedDate() {
       return this.lastUpdatedTime;
     },
-    noteTreeItem() {
-      console.warn(this.noteTreeElement);
-      return this.noteTreeElement;
+    notesPageName() {
+      if (notesConstants.PORTAL_BASE_URL.endsWith('/wiki')){
+        return 'WikiHome';
+      } else {
+        if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
+          return;
+        } else {
+          const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
+          if (noteId) {
+            return noteId.split('/')[0];
+          } else {
+            return 'WikiHome';
+          }
+        }
+      }
     }
   },
   created() {
