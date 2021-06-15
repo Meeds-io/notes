@@ -162,14 +162,18 @@ export default {
       return this.lastUpdatedTime;
     },
     notesPageName() {
-      if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
-        return;
+      if (notesConstants.PORTAL_BASE_URL.endsWith('/wiki')){
+        return 'WikiHome';
       } else {
-        const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
-        if (noteId) {
-          return noteId.split('/')[0];
+        if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
+          return;
         } else {
-          return 'WikiHome';
+          const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
+          if (noteId) {
+            return noteId.split('/')[0];
+          } else {
+            return 'WikiHome';
+          }
         }
       }
     }
