@@ -62,7 +62,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
   public static final String WIKI_PAGE_VERSION   = "version";
 
-  private static final int   EXCERPT_LENGTH      = 140;
+  private static final int   EXCERPT_LENGTH      = 500;
 
   private static final Log   LOG                 = ExoLogger.getExoLogger(WikiSpaceActivityPublisher.class);
 
