@@ -1,11 +1,11 @@
 <template>
   <v-app class="transparent" flat>
     <div>
-      <div class="notes-application white border-radius ma-3 py-3 px-6">
+      <div class="notes-application white border-radius ma-3 py-3 px-3">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
-            <span class=" title text-color">{{ notes.title }}</span>
-            <div class="notes-header-icons">
+            <span class="title text-color mt-n1">{{ notes.title }}</span>
+            <div class="notes-header-icons text-right">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
@@ -68,7 +68,7 @@
               </v-menu>
             </div>
           </div>
-          <div class="notes-treeview d-flex pb-2">
+          <div class="notes-treeview d-flex flex-wrap pb-2">
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
                 <i 
@@ -79,17 +79,88 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <div
-              v-for="(note, index) in notes.breadcrumb" 
-              :key="index" 
-              class="notes-tree-item">
-              <a
-                v-if="index+1 < notes.breadcrumb.length"
-                @click="getNoteById(note.id)"
-                class="caption text-color path-clickable" 
-                :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
-              <span v-else class="caption text-sub-title">{{ note.title }}</span>
-              <v-icon v-if="index+1 < notes.breadcrumb.length" size="18">mdi-chevron-right</v-icon>  
+            <div v-if="notes.breadcrumb.length <= 4" class="notes-tree-items d-flex">
+              <div
+                v-for="(note, index) in notes.breadcrumb"
+                :key="index"
+                :class="notes.breadcrumb.length === 1 && 'single-path-element' || ''"
+                class="notes-tree-item d-flex text-truncate"
+                :style="`max-width: ${100 / (notes.breadcrumb.length)}%`">
+                <v-tooltip max-width="300" bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <a
+                      v-if="index+1 < notes.breadcrumb.length"
+                      v-bind="attrs"
+                      v-on="on"
+                      @click="getNoteById(note.id)"
+                      class="caption text-color text-truncate path-clickable"
+                      :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
+                    <span
+                      v-else
+                      class="caption text-truncate text-sub-title"
+                      v-bind="attrs"
+                      v-on="on">{{ note.title }}</span>
+                  </template>
+                  <span class="caption">{{ note.title }}</span>
+                </v-tooltip>
+                <v-icon v-if="index+1 < notes.breadcrumb.length" size="18">mdi-chevron-right</v-icon>
+              </div>
+            </div>
+            <div v-else class="notes-tree-items notes-long-path d-flex align-center">
+              <div class="notes-tree-item long-path-first-item d-flex text-truncate">
+                <v-tooltip max-width="300" bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <a
+                      class="caption text-color text-truncate path-clickable"
+                      v-bind="attrs"
+                      v-on="on">{{ notes.breadcrumb[0].title }}</a>
+                  </template>
+                  <span class="caption">{{ notes.breadcrumb[0].title }}</span>
+                </v-tooltip>
+                <v-icon size="18">mdi-chevron-right</v-icon>
+              </div>
+              <div class="notes-tree-item long-path-second-item d-flex">
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-icon
+                      v-bind="attrs"
+                      v-on="on"
+                      size="24">
+                      mdi-dots-horizontal
+                    </v-icon>
+                  </template>
+                  <p
+                    v-for="(note, index) in notes.breadcrumb"
+                    :key="index"
+                    class="mb-0">
+                    <span v-if="index > 0 && index <notes.breadcrumb.length-2" class="caption"><v-icon size="18" class="tooltip-chevron">mdi-chevron-right</v-icon> {{ note.title }}</span>
+                  </p>
+                </v-tooltip>
+                <v-icon class="clickable" size="18">mdi-chevron-right</v-icon>
+              </div>
+              <div class="notes-tree-item long-path-third-item d-flex text-truncate">
+                <v-tooltip max-width="300" bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <a
+                      class="caption text-color text-truncate path-clickable"
+                      v-bind="attrs"
+                      v-on="on">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</a>
+                  </template>
+                  <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</span>
+                </v-tooltip>
+                <v-icon size="18">mdi-chevron-right</v-icon>
+              </div>
+              <div class="notes-tree-item d-flex text-truncate">
+                <v-tooltip max-width="300" bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <a
+                      class="caption text-color text-truncate text-sub-title"
+                      v-bind="attrs"
+                      v-on="on">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</a>
+                  </template>
+                  <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</span>
+                </v-tooltip>
+              </div>
             </div>
           </div>
           <div class="notes-last-update-info">
