@@ -160,10 +160,9 @@ export default {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
       CKEDITOR.plugins.addExternal('video','/wiki/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
-      CKEDITOR.plugins.addExternal('exportpdf','/wiki/javascript/eXo/wiki/ckeditor/plugins/exportpdf/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,table,font,justify,widget,video,exportpdf';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,table,font,justify,widget,video';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
