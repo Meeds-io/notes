@@ -1,7 +1,7 @@
 <template>
   <v-app class="transparent" flat>
     <div>
-      <div class="notes-application white border-radius ma-3 py-3 px-3">
+      <div v-if="isAvailableNote" class="notes-application white border-radius pa-6">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class="title text-color mt-n1">{{ notes.title }}</span>
@@ -179,6 +179,21 @@
           </p>
         </div>
       </div>
+      <div v-else class="note-not-found-wrapper text-center mt-6">
+        <v-img
+          :src="noteNotFountImage" 
+          class="mx-auto"
+          max-height="150"
+          max-width="250"
+          contain 
+          eager />
+        <p class="title mt-3 text-light-color">{{ $t('notes.label.noteNotFound') }}</p>
+        <a
+          class="btn btn-primary"
+          :href="defaultPath">
+          {{ $t('notes.label.noteNotFound.button') }}
+        </a>
+      </div>
     </div>
     <note-breadcrumb-drawer 
       ref="notesBreadcrumb" />
@@ -217,6 +232,9 @@ export default {
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
+      defaultPath: 'WikiHome',
+      existingNote: false,
     };
   },
   watch: {
@@ -231,6 +249,9 @@ export default {
     },
     displayedDate() {
       return this.lastUpdatedTime;
+    },
+    isAvailableNote() {
+      return this.existingNote;
     },
     notesPageName() {
       if (notesConstants.PORTAL_BASE_URL.endsWith('/wiki')){
@@ -306,6 +327,9 @@ export default {
     getNotes(noteBookType,noteBookOwner,notesPageName) {
       return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
+        if (this.notes) {
+          this.existingNote = true;
+        }
       });
     },
     getNoteTree() {
@@ -318,7 +342,7 @@ export default {
       this.getNotes(this.noteBookType,this.noteBookOwner, noteId);
       const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
       notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteId);
-      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL); 
     },
     makeNoteChildren(childrenArray) {
       const treeviewArray = [];
