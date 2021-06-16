@@ -1,7 +1,7 @@
 <template>
   <v-app class="transparent" flat>
     <div>
-      <div class="notes-application white border-radius ma-3 py-3 px-3">
+      <div v-if="isAvailableNote" class="notes-application white border-radius pa-6">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class="title text-color mt-n1">{{ notes.title }}</span>
@@ -179,6 +179,21 @@
           </p>
         </div>
       </div>
+      <div v-else class="note-not-found-wrapper text-center mt-6">
+        <v-img
+          :src="noteNotFountImage"
+          class="mx-auto"
+          max-height="150"
+          max-width="250"
+          contain
+          eager />
+        <p class="title mt-3 text-light-color">{{ $t('notes.label.noteNotFound') }}</p>
+        <a
+          class="btn btn-primary"
+          :href="defaultPath">
+          {{ $t('notes.label.noteNotFound.button') }}
+        </a>
+      </div>
     </div>
     <note-breadcrumb-drawer 
       ref="notesBreadcrumb" />
@@ -210,7 +225,6 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
-      notesPageName: 'WikiHome',
       displayActionMenu: false,
       parentPageName: '',
       confirmMessage: '',
@@ -218,6 +232,9 @@ export default {
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
+      noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
+      defaultPath: 'WikiHome',
+      existingNote: false,
     };
   },
   watch: {
@@ -233,9 +250,24 @@ export default {
     displayedDate() {
       return this.lastUpdatedTime;
     },
-    noteTreeItem() {
-      console.warn(this.noteTreeElement);
-      return this.noteTreeElement;
+    isAvailableNote() {
+      return this.existingNote;
+    },
+    notesPageName() {
+      if (notesConstants.PORTAL_BASE_URL.endsWith('/wiki')){
+        return 'WikiHome';
+      } else {
+        if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
+          return;
+        } else {
+          const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
+          if (noteId) {
+            return noteId.split('/')[0];
+          } else {
+            return 'WikiHome';
+          }
+        }
+      }
     }
   },
   created() {
@@ -295,6 +327,9 @@ export default {
     getNotes(noteBookType,noteBookOwner,notesPageName) {
       return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
+        if (this.notes) {
+          this.existingNote = true;
+        }
       });
     },
     getNoteTree() {
