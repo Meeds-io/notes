@@ -160,8 +160,9 @@ export default {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
       CKEDITOR.plugins.addExternal('video','/wiki/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
+
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,table,font,justify,widget,video';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -183,15 +184,21 @@ export default {
         spaceURL: self.spaceURL,
         toolbarLocation: 'top',
         extraAllowedContent: 'img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*]',
-        removeButtons: 'Subscript,Superscript,Cut,Copy,Paste,PasteText,PasteFromWord,Undo,Redo,Scayt,Unlink,Anchor,Table,HorizontalRule,SpecialChar,Maximize,Source,Strike,Outdent,Indent,BGColor,About',
+        removeButtons: '',
         toolbar: [
-          { name: 'format', items: ['Format'] },
-          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
-          { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Blockquote' ] },
-          { name: 'fontsize', items: ['FontSize'] },
-          { name: 'colors', items: [ 'TextColor' ] },
-          { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
-          { name: 'links', items: [ 'simpleLink', 'selectImage', 'Video'] },
+          { name: 'document', items: [ 'Source', '-', 'Save', 'NewPage', 'ExportPdf', 'Preview', 'Print', '-', 'Templates' ] },
+          { name: 'clipboard', items: [ 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo' ] },
+          { name: 'editing', items: [ 'Find', 'Replace', '-', 'SelectAll', '-', 'Scayt' ] },
+          { name: 'forms', items: [ 'Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField' ] },
+          '/',
+          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'CopyFormatting', 'RemoveFormat' ] },
+          { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl', 'Language' ] },
+          { name: 'links', items: [ 'Link', 'Unlink', 'Anchor' ,'simpleLink', 'selectImage', 'Video' ] },
+          { name: 'insert', items: [ 'Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe' ] },
+          '/',
+          { name: 'styles', items: [ 'Styles', 'Format', 'Font', 'FontSize' ] },
+          { name: 'colors', items: [ 'TextColor', 'BGColor' ] },
+          { name: 'tools', items: [ 'Maximize', 'ShowBlocks' ] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
