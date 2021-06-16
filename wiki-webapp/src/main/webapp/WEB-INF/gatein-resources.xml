@@ -129,6 +129,27 @@
     </module>
   </portlet>
 
+  <portlet>
+    <name>NotesExtensions</name>
+    <module>
+      <script>
+        <path>/javascript/eXo/wiki/notesExtensions.js</path>
+      </script>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+    </module>
+  </portlet>
+
   <module>
     <name>wikiCkeditor</name>
     <script>
