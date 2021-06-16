@@ -102,6 +102,14 @@
   }
   .notes-application {
     .notes-application-header {
+      .notes-title  {
+        .notes-header-icons {
+          min-width: 100px!important;
+          button {
+            padding: 1px 2px!important;
+          }
+        }
+      }
       .notes-treeview {
         .uiTreeviewIcon {
           font-family: "PLF-FONT-ICONS" !important;
@@ -111,16 +119,36 @@
             content: "\e698";
           }
         }
-        .notes-tree-item {
-          .path-clickable {
-            &:hover {
-              color: @primaryColor!important;
+        .notes-tree-items {
+          max-width: 95%!important;
+          width: 95%!important;
+          .notes-tree-item {
+            .path-clickable {
+              max-width: 97% !important;
+              &:hover {
+                color: @primaryColor!important;
+              }
             }
           }
+        }
+        .notes-long-path {
+          .long-path-first-item {
+            max-width: 100px;
+         }
+         .long-path-second-item {
+          max-width: 42px;
+         }
+         .long-path-third-item {
+          max-width: 50%;
+         }
         }
       }
     }
   }
+}
+
+.tooltip-chevron {
+  color: white!important;
 }
 
 
