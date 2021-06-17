@@ -48,6 +48,9 @@ export default {
   methods: {
     switchNotesApp() {
       this.useNewApp = !this.useNewApp;
+      if (!this.useNewApp) {
+        window.location.reload();
+      }
     },
     displayText() {
       window.setTimeout(() => this.imageLoaded = true, 200);
