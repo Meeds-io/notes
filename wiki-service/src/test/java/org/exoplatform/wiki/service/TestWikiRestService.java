@@ -1,14 +1,8 @@
 package org.exoplatform.wiki.service;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,6 +22,8 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
+
 import org.junit.Test;
 
 import com.ibm.icu.util.Calendar;
@@ -36,6 +32,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mock.MockResourceBundleService;
 import org.exoplatform.wiki.service.impl.WikiRestServiceImpl;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -127,17 +124,19 @@ public class TestWikiRestService {
     results.add(result2);
     PowerMockito.mockStatic(EntityBuilder.class);
     PageList<org.exoplatform.wiki.service.search.SearchResult> pageList = new ObjectPageList<>(results, 2);
-    when(wikiService.search(any())).thenReturn(pageList);
+    when(wikiService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
     when(uriInfo.getPath()).thenReturn("/wiki/contextsearch");
-    when(EntityBuilder.buildEntityIdentity((Identity) any(), any(), any())).thenReturn(entity);
+    when(EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString())).thenReturn(entity);
     WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
 
     // When
     Response response = wikiRestService.searchData(uriInfo, "wiki", "page", "alioua");
 
     // Then
-    verify(entityBuilder, times(1)).buildEntityIdentity((Identity) any(), any(), any());
     assertEquals(200, response.getStatus());
+
+    PowerMockito.verifyStatic(EntityBuilder.class, times(1));
+    EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString());
   }
   
   @Test

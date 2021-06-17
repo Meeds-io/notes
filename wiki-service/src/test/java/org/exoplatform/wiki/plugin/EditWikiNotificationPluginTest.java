@@ -7,7 +7,9 @@ import org.exoplatform.commons.api.notification.service.NotificationCompletionSe
 import org.exoplatform.commons.api.notification.service.storage.NotificationService;
 import org.exoplatform.commons.notification.impl.NotificationContextImpl;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.notification.Utils.NotificationsUtils;
 import org.exoplatform.wiki.notification.plugin.EditWikiNotificationPlugin;
@@ -20,10 +22,10 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static org.mockito.Mockito.when;
+
+import java.io.Serializable;
+import java.util.*;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.management.*")
@@ -32,13 +34,35 @@ public class EditWikiNotificationPluginTest {
   @Mock
   private InitParams initParams;
 
-  @PrepareForTest({ PluginKey.class, CommonsUtils.class })
+  @PrepareForTest({ PluginKey.class, CommonsUtils.class, ExoContainerContext.class })
   @Test
   public void shouldMakeNotificationWikiContext() {
     // Given
     PowerMockito.mockStatic(CommonsUtils.class);
     when(CommonsUtils.getService(NotificationService.class)).thenReturn(null);
     when(CommonsUtils.getService(NotificationCompletionService.class)).thenReturn(null);
+    PowerMockito.mockStatic(ExoContainerContext.class);
+    when(ExoContainerContext.getService(IDGeneratorService.class)).thenReturn(new IDGeneratorService() {
+      @Override
+      public String generateStringID(Object o) {
+        return String.valueOf(generateLongID(o));
+      }
+
+      @Override
+      public long generateLongID(Object o) {
+        return (long) (Objects.hashCode(o) * Math.random());
+      }
+
+      @Override
+      public Serializable generateID(Object o) {
+        return generateLongID(o);
+      }
+
+      @Override
+      public int generatIntegerID(Object o) {
+        return (int) generateLongID(o);
+      }
+    });
 
     Page page = new Page();
     page.setTitle("title");

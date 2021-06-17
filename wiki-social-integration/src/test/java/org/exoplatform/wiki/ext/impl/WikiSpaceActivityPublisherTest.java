@@ -126,7 +126,7 @@ public class WikiSpaceActivityPublisherTest {
     when(state.getIdentity()).thenReturn(owner);
     ConversationState.setCurrent(state);
 
-    when(activityManager.getActivity(anyString())).thenReturn(null);
+    lenient().when(activityManager.getActivity(anyString())).thenReturn(null);
 
     when(identityManager.getOrCreateIdentity(anyString(),
                                              anyString(),

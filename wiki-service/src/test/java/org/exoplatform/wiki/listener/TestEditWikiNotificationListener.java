@@ -26,9 +26,13 @@ import org.exoplatform.commons.api.notification.service.NotificationCompletionSe
 import org.exoplatform.commons.api.notification.service.storage.NotificationService;
 import org.exoplatform.commons.notification.impl.NotificationContextImpl;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.wiki.notification.Utils.NotificationsUtils;
 import org.exoplatform.wiki.notification.plugin.EditWikiNotificationPlugin;
+
+import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,8 +42,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
 
 import static org.mockito.Mockito.when;
 
@@ -50,13 +54,36 @@ public class TestEditWikiNotificationListener {
   @Mock
   private InitParams initParams;
 
-  @PrepareForTest({ CommonsUtils.class, PluginKey.class })
+  @PrepareForTest({ CommonsUtils.class, PluginKey.class, ExoContainerContext.class })
   @Test
   public void testSendNotificationToWatchersOfWiki() {
     // Given
     PowerMockito.mockStatic(CommonsUtils.class);
     when(CommonsUtils.getService(NotificationService.class)).thenReturn(null);
     when(CommonsUtils.getService(NotificationCompletionService.class)).thenReturn(null);
+    PowerMockito.mockStatic(ExoContainerContext.class);
+    when(ExoContainerContext.getService(IDGeneratorService.class)).thenReturn(new IDGeneratorService() {
+
+      @Override
+      public String generateStringID(Object o) {
+        return String.valueOf(generateLongID(o));
+      }
+
+      @Override
+      public long generateLongID(Object o) {
+        return (long) (Objects.hashCode(o) * Math.random());
+      }
+
+      @Override
+      public Serializable generateID(Object o) {
+        return generateLongID(o);
+      }
+
+      @Override
+      public int generatIntegerID(Object o) {
+        return (int) generateLongID(o);
+      }
+    });
 
     Set<String> recievers = new HashSet<>();
     recievers.add("Jean");
