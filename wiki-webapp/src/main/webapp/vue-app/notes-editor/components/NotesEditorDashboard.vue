@@ -6,17 +6,24 @@
         class="notesEditor width-full">
         <div class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
-            <div class="notesFormLeftActions d-inline-flex mr-10">
-              <img :src="srcImageNote">
-              <input
-                ref="autoFocusInput1"
-                id="notesTitle"
-                class="mb-0 pr-5"
-                v-model="notes.title"
-                :maxlength="titleMaxLength"
-                :placeholder="notesTitlePlaceholder"
-                type="text">
-            </div>
+            <v-form
+              ref="notesEventForm"
+              class="flex"
+              flat>
+              <div class="notesFormLeftActions d-inline-flex mr-10">
+                <img :src="srcImageNote">
+                <input
+                  ref="autoFocusInput1"
+                  id="notesTitle"
+                  class="mb-0 pr-5"
+                  v-model="notes.title"
+                  :maxlength="titleMaxLength"
+                  :placeholder="notesTitlePlaceholder"
+                  type="text"
+                  single-line
+                  @change="resetCustomValidity">
+              </div>
+            </v-form>
             <div class="notesFormRightActions pr-7">
               <button
                 id="notesUpdateAndPost"
@@ -44,16 +51,6 @@
             </textarea>
         </div>
       </div>
-      <exo-confirm-dialog
-        ref="CreateNoteDialog"
-        :message="$t('popup.confirmation')"
-        :title="$t('popup.msg.confirmation')"
-        :ok-label="$t('popup.confirm')"
-        :cancel-label="$t('btn.cancel')"
-        persistent
-        @ok="confirmPostNotes()"
-        @dialog-opened="$emit('confirmDialogOpened')"
-        @dialog-closed="$emit('confirmDialogClosed')" />
     </div>
   </v-app>
 </template>
@@ -100,55 +97,31 @@ export default {
       });
     },
     postNotes(){
-      const notes = {
-        id: this.notes.id,
-        title: this.notes.title,
-        name: this.notes.name,
-        wikiType: this.notes.wikiType,
-        wikiOwner: this.notes.wikiOwner,
-        content: this.notes.content,
-        parentPageId: this.notes.parentPageId,
-      };
-      let notePath = '';
-      if (this.notes.id){
-        this.$notesService.updateNote(notes).then(() => {
-          notes.name=notes.title;
-          notePath = this.$notesService.getPathByNoteOwner(notes).replace(/ /g, '_');
-          window.location.href= notePath;
-        }).catch(e => {
-          console.error('Error when update note page', e);
-        });
+      if (this.validateForm()){
+        const notes = {
+          id: this.notes.id,
+          title: this.notes.title,
+          name: this.notes.name,
+          wikiType: this.notes.wikiType,
+          wikiOwner: this.notes.wikiOwner,
+          content: this.notes.content,
+          parentPageId: this.notes.parentPageId,
+        };
+        if (this.notes.id){
+          this.$notesService.updateNote(notes).then(() => {
+            notes.name=notes.title;
+            window.location.href=this.$notesService.getPathByNoteOwner(notes);
+          }).catch(e => {
+            console.error('Error when update note page', e);
+          });
+        } else {
+          this.$notesService.createNote(notes).then(data => {
+            window.location.href=this.$notesService.getPathByNoteOwner(data);
+          }).catch(e => {
+            console.error('Error when adding note page', e);
+          });
+        }
       }
-      else if (!this.notes.title.length){
-        this.confirmCreateNote();
-      }
-      else {
-        this.$notesService.createNote(notes).then(data => {
-          notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
-          window.location.href = notePath;
-        }).catch(e => {
-          console.error('Error when adding note page', e);
-        });
-      }
-    },
-    confirmPostNotes(){
-      const notes = {
-        id: this.notes.id,
-        title: this.notes.title,
-        name: this.notes.name,
-        wikiType: this.notes.wikiType,
-        wikiOwner: this.notes.wikiOwner,
-        content: this.notes.content,
-        parentPageId: this.notes.parentPageId,
-      };
-      if (!notes.title){
-        notes.title = this.$t('notes.untitled.title');
-      }
-      this.$notesService.createNote(notes).then(data => {
-        window.location.href=this.$notesService.getPathByNoteOwner(data);
-      }).catch(e => {
-        console.error('Error when adding note page', e);
-      });
     },
     closeNotes(){
       if (this.notes.id){
@@ -221,26 +194,23 @@ export default {
         }
       });
     },
-    initCKEditorData: function(message) {
-      if (message) {
-        const tempdiv = $('<div class=\'temp\'/>').html(message);
-        tempdiv.find('a[href*="/profile"]')
-          .each(function() {
-            $(this).replaceWith(function() {
-              return $('<span/>', {
-                class: 'atwho-inserted',
-                html: `<span class="exo-mention">${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
-              }).attr('data-atwho-at-query',`@${  $(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1)}`)
-                .attr('data-atwho-at-value',$(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1))
-                .attr('contenteditable','false');
-            });
-          });
-        message = `${tempdiv.html()  }&nbsp;`;
+    resetCustomValidity() {
+      if (this.$refs.autoFocusInput1) {
+        this.$refs.autoFocusInput1.setCustomValidity('');
       }
-      CKEDITOR.instances['notesContent'].setData(message);
     },
-    confirmCreateNote: function () {
-      this.$refs.CreateNoteDialog.open();
+    validateForm() {
+      this.resetCustomValidity();
+      if (!this.notes.title) {
+        this.$refs.autoFocusInput1.setCustomValidity(this.$t('notes.message.missingTitle'));
+      } else if (this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
+        this.$refs.autoFocusInput1.setCustomValidity(this.$t('notes.message.missingLengthTitle'));
+      }
+      if (!this.$refs.notesEventForm.validate() // Vuetify rules
+          || !this.$refs.notesEventForm.$el.reportValidity()) { // Standard HTML rules
+        return;
+      }
+      return true;
     },
   }
 };
