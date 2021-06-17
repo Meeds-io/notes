@@ -88,22 +88,16 @@
                 :style="`max-width: ${100 / (notes.breadcrumb.length)}%`">
                 <v-tooltip max-width="300" bottom>
                   <template v-slot:activator="{ on, attrs }">
-                    <a
-                      v-if="index+1 < notes.breadcrumb.length"
+                    <a 
                       v-bind="attrs"
                       v-on="on"
                       @click="getNoteById(note.id)"
-                      class="caption text-color text-truncate path-clickable"
-                      :class="index+1 === notes.breadcrumb.length && 'primary--text font-weight-bold' || ''">{{ note.title }}</a>
-                    <span
-                      v-else
-                      class="caption text-truncate text-sub-title"
-                      v-bind="attrs"
-                      v-on="on">{{ note.title }}</span>
+                      class="caption text-truncate "
+                      :class="index < notes.breadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
                   </template>
                   <span class="caption">{{ note.title }}</span>
                 </v-tooltip>
-                <v-icon v-if="index+1 < notes.breadcrumb.length" size="18">mdi-chevron-right</v-icon>
+                <v-icon v-if="index < notes.breadcrumb.length-1" size="18">mdi-chevron-right</v-icon>
               </div>
             </div>
             <div v-else class="notes-tree-items notes-long-path d-flex align-center">
@@ -113,7 +107,8 @@
                     <a
                       class="caption text-color text-truncate path-clickable"
                       v-bind="attrs"
-                      v-on="on">{{ notes.breadcrumb[0].title }}</a>
+                      v-on="on"
+                      @click="getNoteById(notes.breadcrumb[0].id)">{{ notes.breadcrumb[0].title }}</a>
                   </template>
                   <span class="caption">{{ notes.breadcrumb[0].title }}</span>
                 </v-tooltip>
@@ -144,7 +139,8 @@
                     <a
                       class="caption text-color text-truncate path-clickable"
                       v-bind="attrs"
-                      v-on="on">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</a>
+                      v-on="on"
+                      @click="getNoteById(notes.breadcrumb[notes.breadcrumb.length-2].id)">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</a>
                   </template>
                   <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</span>
                 </v-tooltip>
@@ -156,7 +152,8 @@
                     <a
                       class="caption text-color text-truncate text-sub-title"
                       v-bind="attrs"
-                      v-on="on">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</a>
+                      v-on="on"
+                      @click="getNoteById(notes.breadcrumb[notes.breadcrumb.length-1].id)">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</a>
                   </template>
                   <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</span>
                 </v-tooltip>
@@ -235,6 +232,7 @@ export default {
       noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
       defaultPath: 'WikiHome',
       existingNote: false,
+      currentPath: window.location.pathname
     };
   },
   watch: {
@@ -254,15 +252,15 @@ export default {
       return this.existingNote;
     },
     notesPageName() {
-      if (notesConstants.PORTAL_BASE_URL.endsWith('/wiki')){
+      if (this.currentPath.endsWith('/wiki')){
         return 'WikiHome';
       } else {
-        if (!(notesConstants.PORTAL_BASE_URL.includes('/wiki/'))) {
+        if (!(this.currentPath.includes('/wiki/'))) {
           return;
         } else {
-          const noteId = notesConstants.PORTAL_BASE_URL.split('/wiki/')[1];
+          const noteId = this.currentPath.split('/').pop();
           if (noteId) {
-            return noteId.split('/')[0];
+            return noteId;
           } else {
             return 'WikiHome';
           }
@@ -327,9 +325,7 @@ export default {
     getNotes(noteBookType,noteBookOwner,notesPageName) {
       return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
-        if (this.notes) {
-          this.existingNote = true;
-        }
+        this.existingNote = true;
       });
     },
     getNoteTree() {
