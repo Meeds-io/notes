@@ -36,7 +36,9 @@
 
 /************ New css feature notes ****************/
 #notesTop {
-	box-shadow: 0 3px 5px hsla(0, 1%, 43%, 0.8);
+  box-shadow: 0 7px 7px hsla(0, 1%, 43%, 0.8);
+  position: absolute;
+    width: 100%;
 	.cke_top {
 		height: auto;
 	}
@@ -54,7 +56,10 @@
 	top: 0;
 	z-index: 10000;
 	.formInputGroup{
-		height: 75%;
+    height: calc(~"100vh - 120px");
+    background: white;
+    margin: 0px 14%!important;
+    margin-top: 40px!important;
 	}
 	#cke_notesContent {
 		border-color: transparent;
@@ -71,6 +76,9 @@
 				input[type="text"] {
 					flex: 0 1 100%;
 					font-size: 24px;
+          &:focus {
+            box-shadow: none!important;
+          }
 				}
 			}
 			.notesFormRightActions{
@@ -84,10 +92,20 @@
 }
 
 
-#notesOverviewApplication {
+.notesApplication {
   max-width: 100%;
   .notes-application {
+    height: calc(~"100vh - 170px");
+    min-height: calc(~"100vh - 170px");
     .notes-application-header {
+      .notes-title  {
+        .notes-header-icons {
+          min-width: 100px!important;
+          button {
+            padding: 1px 2px!important;
+          }
+        }
+      }
       .notes-treeview {
         .uiTreeviewIcon {
           font-family: "PLF-FONT-ICONS" !important;
@@ -97,9 +115,36 @@
             content: "\e698";
           }
         }
+        .notes-tree-items {
+          max-width: 95%!important;
+          width: 95%!important;
+          .notes-tree-item {
+            .path-clickable {
+              max-width: 97% !important;
+              &:hover {
+                color: @primaryColor!important;
+              }
+            }
+          }
+        }
+        .notes-long-path {
+          .long-path-first-item {
+            max-width: 100px;
+         }
+         .long-path-second-item {
+          max-width: 42px;
+         }
+         .long-path-third-item {
+          max-width: 50%;
+         }
+        }
       }
     }
   }
+}
+
+.tooltip-chevron {
+  color: white!important;
 }
 
 

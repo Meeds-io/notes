@@ -3,14 +3,14 @@
     <div>
       <div
         id="notesEditor"
-        class="notesEditor white width-full">
-        <div class="notesActions">
+        class="notesEditor width-full">
+        <div class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex mr-10">
               <img :src="srcImageNote">
               <input
                 id="notesTitle"
-                class="ml-4 mb-0 pl-5 pr-5"
+                class="mb-0 pr-5"
                 v-model="notes.title"
                 :maxlength="titleMaxLength"
                 :placeholder="notesTitlePlaceholder"
@@ -32,8 +32,8 @@
             </div>
           </div>
         </div>
-        <div id="notesTop"></div>
-        <div class="formInputGroup overflow-auto ma-2 pa-2 flex">
+        <div id="notesTop" class="width-full"></div>
+        <div class="formInputGroup white overflow-auto ma-2 pa-2 flex">
           <textarea
             id="notesContent"
             v-model="notes.content"

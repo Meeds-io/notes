@@ -11,7 +11,7 @@
           {{ buttonText }}
         </v-btn>
       </div>
-      <div v-if="useNewApp" class="white d-flex flex-column pb-4">
+      <div v-if="useNewApp" class="d-flex flex-column pb-4 notes-wrapper">
         <notes-overview />
       </div>
     </div>
@@ -22,7 +22,8 @@ export default {
   data: () => ({
     useNewApp: false,
     imageLoaded: false,
-    notesApplicationClass: 'wikiPortlet'
+    notesApplicationClass: 'wikiPortlet',
+    notesPageName: '',
   }),
   computed: {
     buttonText() {
@@ -31,7 +32,7 @@ export default {
       } else {
         return this.$t('notes.switchToNewApp');
       }
-    },
+    }
   },
   watch: {
     useNewApp() {
@@ -47,6 +48,9 @@ export default {
   methods: {
     switchNotesApp() {
       this.useNewApp = !this.useNewApp;
+      if (!this.useNewApp) {
+        window.location.reload();
+      }
     },
     displayText() {
       window.setTimeout(() => this.imageLoaded = true, 200);
