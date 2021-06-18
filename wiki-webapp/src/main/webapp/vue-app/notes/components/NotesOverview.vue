@@ -79,13 +79,13 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <div v-if="notes.breadcrumb.length <= 4" class="notes-tree-items d-flex">
+            <div v-if="notebreadcrumb.length <= 4" class="notes-tree-items d-flex">
               <div
-                v-for="(note, index) in notes.breadcrumb"
+                v-for="(note, index) in notebreadcrumb"
                 :key="index"
-                :class="notes.breadcrumb.length === 1 && 'single-path-element' || ''"
+                :class="notebreadcrumb.length === 1 && 'single-path-element' || ''"
                 class="notes-tree-item d-flex text-truncate"
-                :style="`max-width: ${100 / (notes.breadcrumb.length)}%`">
+                :style="`max-width: ${100 / (notebreadcrumb.length)}%`">
                 <v-tooltip max-width="300" bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <a 
@@ -93,11 +93,11 @@
                       v-on="on"
                       @click="getNoteById(note.id)"
                       class="caption text-truncate "
-                      :class="index < notes.breadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
+                      :class="index < notebreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
                   </template>
                   <span class="caption">{{ note.title }}</span>
                 </v-tooltip>
-                <v-icon v-if="index < notes.breadcrumb.length-1" size="18">mdi-chevron-right</v-icon>
+                <v-icon v-if="index < notebreadcrumb.length-1" size="18">mdi-chevron-right</v-icon>
               </div>
             </div>
             <div v-else class="notes-tree-items notes-long-path d-flex align-center">
@@ -108,9 +108,9 @@
                       class="caption text-color text-truncate path-clickable"
                       v-bind="attrs"
                       v-on="on"
-                      @click="getNoteById(notes.breadcrumb[0].id)">{{ notes.breadcrumb[0].title }}</a>
+                      @click="getNoteById(notebreadcrumb[0].id)">{{ notebreadcrumb[0].title }}</a>
                   </template>
-                  <span class="caption">{{ notes.breadcrumb[0].title }}</span>
+                  <span class="caption">{{ notebreadcrumb[0].title }}</span>
                 </v-tooltip>
                 <v-icon size="18">mdi-chevron-right</v-icon>
               </div>
@@ -125,10 +125,10 @@
                     </v-icon>
                   </template>
                   <p
-                    v-for="(note, index) in notes.breadcrumb"
+                    v-for="(note, index) in notebreadcrumb"
                     :key="index"
                     class="mb-0">
-                    <span v-if="index > 0 && index <notes.breadcrumb.length-2" class="caption"><v-icon size="18" class="tooltip-chevron">mdi-chevron-right</v-icon> {{ note.title }}</span>
+                    <span v-if="index > 0 && index <notebreadcrumb.length-2" class="caption"><v-icon size="18" class="tooltip-chevron">mdi-chevron-right</v-icon> {{ note.title }}</span>
                   </p>
                 </v-tooltip>
                 <v-icon class="clickable" size="18">mdi-chevron-right</v-icon>
@@ -140,9 +140,9 @@
                       class="caption text-color text-truncate path-clickable"
                       v-bind="attrs"
                       v-on="on"
-                      @click="getNoteById(notes.breadcrumb[notes.breadcrumb.length-2].id)">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</a>
+                      @click="getNoteById(notebreadcrumb[notebreadcrumb.length-2].id)">{{ notebreadcrumb[notebreadcrumb.length-2].title }}</a>
                   </template>
-                  <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-2].title }}</span>
+                  <span class="caption">{{ notebreadcrumb[notebreadcrumb.length-2].title }}</span>
                 </v-tooltip>
                 <v-icon size="18">mdi-chevron-right</v-icon>
               </div>
@@ -153,9 +153,9 @@
                       class="caption text-color text-truncate text-sub-title"
                       v-bind="attrs"
                       v-on="on"
-                      @click="getNoteById(notes.breadcrumb[notes.breadcrumb.length-1].id)">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</a>
+                      @click="getNoteById(notebreadcrumb[notebreadcrumb.length-1].id)">{{ notebreadcrumb[notebreadcrumb.length-1].title }}</a>
                   </template>
-                  <span class="caption">{{ notes.breadcrumb[notes.breadcrumb.length-1].title }}</span>
+                  <span class="caption">{{ notebreadcrumb[notebreadcrumb.length-1].title }}</span>
                 </v-tooltip>
               </div>
             </div>
@@ -225,19 +225,21 @@ export default {
       displayActionMenu: false,
       parentPageName: '',
       confirmMessage: '',
-      breadcrumbNotes: '',
+      //breadcrumbNotes: '',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
       defaultPath: 'WikiHome',
       existingNote: false,
-      currentPath: window.location.pathname
+      currentPath: window.location.pathname, 
+      currentNoteBreadcrumb: []
     };
   },
   watch: {
     notes() {
       this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
+      this.currentNoteBreadcrumb = this.notes.breadcrumb;
       this.lastUpdatedTime = this.notes.updatedDate.time && this.$dateUtil.formatDateObjectToDisplay(new Date(this.notes.updatedDate.time), this.dateTimeFormat, this.lang) || '';
     }
   },
@@ -251,6 +253,9 @@ export default {
 
     isAvailableNote() {
       return this.existingNote;
+    },
+    notebreadcrumb() {
+      return this.currentNoteBreadcrumb;
     },
     notesPageName() {
       if (this.currentPath.endsWith('/wiki')){
@@ -300,23 +305,10 @@ export default {
     },
     deleteNotes(){
       this.$notesService.deleteNotes(this.notes).then(() => {
-        this.refreshNote();
+        this.getNoteById(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
       }).catch(e => {
         console.error('Error when deleting notes', e);
       });
-    },
-    refreshNote(){
-      this.$notesService.getNoteById('1').then(data => {
-        window.location.href=this.$notesService.getPathByNoteOwner(data);
-      });
-    },
-    getParentsNotes(){
-      this.breadcrumbNotes = '';
-      for (let index = 0; index < this.notes.breadcrumb.length-1; index++) {
-        this.parentPageName=this.notes.breadcrumb[index].id;
-        this.breadcrumbNotes = this.breadcrumbNotes.concat(this.notes.breadcrumb[index].title,' > ');
-      }
-      return this.breadcrumbNotes;
     },
     retrieveUserInformations(userName) {
       this.$userService.getUser(userName).then(user => {
@@ -369,7 +361,13 @@ export default {
       return activatedNotes;
     },
     confirmDeleteNote: function () {
-      this.getParentsNotes();
+      let parentsBreadcrumb = '';
+      for (let index = 0; index < this.notebreadcrumb.length-1; index++) {
+        parentsBreadcrumb = parentsBreadcrumb.concat(this.notebreadcrumb[index].title);
+        if (index < this.notebreadcrumb.length-2) {
+          parentsBreadcrumb = parentsBreadcrumb.concat('>');
+        }
+      }
       this.confirmMessage = `${this.$t('popup.msg.confirmation.DeleteInfo1', {
         0: `<b>${this.notes && this.notes.title}</b>`,
       })
@@ -378,7 +376,7 @@ export default {
           + `<li>${this.$t('popup.msg.confirmation.DeleteInfo3')}</li>`
           + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
           + `<li>${this.$t('popup.msg.confirmation.DeleteInfo5', {
-            1: `<b>${this.breadcrumbNotes}</b>`,
+            1: `<b>${parentsBreadcrumb}</b>`,
           })}</li>`;
       this.$refs.DeleteNoteDialog.open();
     },
