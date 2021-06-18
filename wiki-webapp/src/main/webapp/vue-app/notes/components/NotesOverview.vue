@@ -248,6 +248,7 @@ export default {
     displayedDate() {
       return this.lastUpdatedTime;
     },
+
     isAvailableNote() {
       return this.existingNote;
     },
