@@ -77,7 +77,6 @@ export default {
       alert: false,
       type: '',
       message: '',
-      messageError: '',
       noteId: '',
       parentPageId: '',
       srcImageNote: '/wiki/images/wiki.png',
@@ -126,10 +125,9 @@ export default {
             window.location.href=this.$notesService.getPathByNoteOwner(notes);
           }).catch(e => {
             console.error('Error when update note page', e);
-            this.getI18N(e.message);
             this.$root.$emit('show-alert', {
               type: 'error',
-              message: this.messageError
+              message: this.$t(`notes.message.${e.message}`)
             });
           });
         } else {
@@ -137,20 +135,13 @@ export default {
             window.location.href=this.$notesService.getPathByNoteOwner(data);
           }).catch(e => {
             console.error('Error when creating note page', e);
-            this.getI18N(e.message);
             this.$root.$emit('show-alert', {
               type: 'error',
-              message: this.messageError
+              message: this.$t(`notes.message.${e.message}`)
             });
           });
         }
       }
-    },
-    getI18N(message){
-      if (message==='error.duplicate.title'){
-        this.messageError = this.$t(`notes.message.${message}`);
-      } else
-      {this.messageError = this.$t(`notes.${message}`);}
     },
 
     closeNotes(){

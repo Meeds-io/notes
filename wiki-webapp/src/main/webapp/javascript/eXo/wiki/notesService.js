@@ -53,7 +53,7 @@ export function createNote(page) {
       if (resp.status===409){
         throw new Error('error.duplicate.title', resp);
       } else {
-        throw new Error('message.error', resp);
+        throw new Error('error', resp);
       }
 
     } else {
@@ -75,7 +75,7 @@ export function updateNote(note) {
       if (resp.status===409){
         throw new Error('error.duplicate.title', resp);
       } else {
-        throw new Error('message.error', resp);
+        throw new Error('error', resp);
       }
     } else {
       return resp;
