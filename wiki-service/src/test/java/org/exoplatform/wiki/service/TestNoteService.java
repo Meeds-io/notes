@@ -26,6 +26,7 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.mow.api.*;
+import org.junit.Assert;
 
 public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -47,7 +48,7 @@ public class TestNoteService extends BaseTest {
     try {
       noteService.createNote(wiki, "WikiHome", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
     } catch (IllegalAccessException e) {
-      e.printStackTrace();
+      Assert.fail("Current user don't have needed permissions to create the note");
     }
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "testGetGroupPageById-101")) ;
