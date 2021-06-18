@@ -1,5 +1,11 @@
 <template>
   <v-app class="notesEditor">
+    <v-alert
+      v-model="alert"
+      :type="type"
+      dismissible>
+      {{ message }}
+    </v-alert>
     <div>
       <div
         id="notesEditor"
@@ -68,6 +74,10 @@ export default {
         content: '',
         parentPageId: '',
       },
+      alert: false,
+      type: '',
+      message: '',
+      messageError: '',
       noteId: '',
       parentPageId: '',
       srcImageNote: '/wiki/images/wiki.png',
@@ -80,6 +90,9 @@ export default {
     this.initCKEditor();
   },
   created() {
+    this.$root.$on('show-alert', message => {
+      this.displayMessage(message);
+    });
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if ( urlParams.has('noteId') ){
@@ -113,16 +126,33 @@ export default {
             window.location.href=this.$notesService.getPathByNoteOwner(notes);
           }).catch(e => {
             console.error('Error when update note page', e);
+            this.getI18N(e.message);
+            this.$root.$emit('show-alert', {
+              type: 'error',
+              message: this.messageError
+            });
           });
         } else {
           this.$notesService.createNote(notes).then(data => {
             window.location.href=this.$notesService.getPathByNoteOwner(data);
           }).catch(e => {
-            console.error('Error when adding note page', e);
+            console.error('Error when creating note page', e);
+            this.getI18N(e.message);
+            this.$root.$emit('show-alert', {
+              type: 'error',
+              message: this.messageError
+            });
           });
         }
       }
     },
+    getI18N(message){
+      if (message==='Note with same title already exists'){
+        this.messageError = this.$t('notes.message.error.duplicate.title');
+      } else
+      {this.messageError = this.$t('notes.message.error');}
+    },
+
     closeNotes(){
       if (this.notes.id){
         window.location.href=this.$notesService.getPathByNoteOwner(this.notes); 
@@ -219,6 +249,12 @@ export default {
       }
       return true;
     },
+    displayMessage(message) {
+      this.message=message.message;
+      this.type=message.type;
+      this.alert = true;
+      window.setTimeout(() => this.alert = false, 5000);
+    }
   }
 };
 </script>
