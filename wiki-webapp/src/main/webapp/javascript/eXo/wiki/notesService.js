@@ -51,9 +51,9 @@ export function createNote(page) {
   }).then((resp) => {
     if (!resp || !resp.ok) {
       if (resp.status===409){
-        throw new Error('Note with same title already exists', resp);
+        throw new Error('error.duplicate.title', resp);
       } else {
-        throw new Error('Response code indicates a server error', resp);
+        throw new Error('message.error', resp);
       }
 
     } else {
@@ -73,9 +73,9 @@ export function updateNote(note) {
   }).then(resp => {
     if (!resp || !resp.ok) {
       if (resp.status===409){
-        throw new Error('Note with same title already exists', resp);
+        throw new Error('error.duplicate.title', resp);
       } else {
-        throw new Error('Response code indicates a server error', resp);
+        throw new Error('message.error', resp);
       }
     } else {
       return resp;

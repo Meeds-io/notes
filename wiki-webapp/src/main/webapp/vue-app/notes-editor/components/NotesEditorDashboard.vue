@@ -147,10 +147,10 @@ export default {
       }
     },
     getI18N(message){
-      if (message==='Note with same title already exists'){
-        this.messageError = this.$t('notes.message.error.duplicate.title');
+      if (message==='error.duplicate.title'){
+        this.messageError = this.$t(`notes.message.${message}`);
       } else
-      {this.messageError = this.$t('notes.message.error');}
+      {this.messageError = this.$t(`notes.${message}`);}
     },
 
     closeNotes(){
