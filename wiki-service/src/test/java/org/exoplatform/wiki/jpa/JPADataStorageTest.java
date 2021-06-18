@@ -19,16 +19,15 @@
 
 package org.exoplatform.wiki.jpa;
 
+import java.util.*;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Test;
+
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.container.xml.ValuesParam;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.services.security.*;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.mow.api.*;
@@ -36,12 +35,7 @@ import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
-import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.util.*;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
