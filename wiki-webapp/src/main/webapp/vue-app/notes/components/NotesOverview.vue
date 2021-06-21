@@ -233,7 +233,7 @@ export default {
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
       defaultPath: 'WikiHome',
-      existingNote: false,
+      existingNote: true,
       currentPath: window.location.pathname, 
       currentNoteBreadcrumb: []
     };
@@ -320,8 +320,14 @@ export default {
     getNotes(noteBookType,noteBookOwner,notesPageName) {
       return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName).then(data => {
         this.notes = data || [];
-        this.existingNote = true;
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting notes', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$emit('application-loaded');
       });
+      
     },
     getNoteTree() {
       return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {

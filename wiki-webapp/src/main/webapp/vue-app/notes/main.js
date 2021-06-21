@@ -27,11 +27,13 @@ window.Object.defineProperty(Vue.prototype, '$notesService', {
 
 export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
+    const appElement = document.createElement('div');
+    appElement.id = appId;
     // init Vue app when locale ressources are ready
     new Vue({
-      template: `<notes-overview id="${appId}" />`,
+      template: `<notes-overview v-cacheable id="${appId}" />`,
       vuetify,
       i18n
-    }).$mount(`#${appId}`);
+    }).$mount(appElement);
   });
 }
