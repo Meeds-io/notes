@@ -49,11 +49,14 @@ export function createNote(page) {
     credentials: 'include',
     body: JSON.stringify(page)
   }).then((resp) => {
-    if (resp && resp.ok) {
-      return resp.json();
+    if (!resp || !resp.ok) {
+      if (resp.status===409) {
+        throw new Error('error.duplicate.title', resp);
+      } else {
+        throw new Error('error', resp);
+      }
     } else {
-      throw new Error('Error when adding note page');
-    }
+      return resp.json();    }
   });
 }
 
@@ -67,9 +70,11 @@ export function updateNote(note) {
     body: JSON.stringify(note)
   }).then(resp => {
     if (!resp || !resp.ok) {
-      return resp.text().then((text) => {
-        throw new Error(text);
-      });
+      if (resp.status===409){
+        throw new Error('error.duplicate.title', resp);
+      } else {
+        throw new Error('error', resp);
+      }
     } else {
       return resp;
     }

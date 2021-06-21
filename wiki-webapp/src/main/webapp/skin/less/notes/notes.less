@@ -50,41 +50,46 @@
 	}
 }
 
-#notesEditor{
-	position: fixed;
-	height: 100%;
-	top: 0;
-	z-index: 10000;
-	.formInputGroup{
-    height: calc(~"100vh - 120px");
-    background: white;
-    margin: 0px 14%!important;
-    margin-top: 40px!important;
+.notesEditor {
+	.v-alert {
+		z-index: 99999 !important;
 	}
-	#cke_notesContent {
-		border-color: transparent;
-		flex: 0 1 100%;
-		margin-bottom: 0;
-	}
-	.notesActions{
-		.notesFormButtons{
-			.notesFormLeftActions{
-				flex: auto;
-				img {
-					height: 40px;
+	#notesEditor{
+		position: fixed;
+		height: 100%;
+		top: 0;
+		z-index: 10000;
+		.formInputGroup{
+			height: calc(~"100vh - 120px");
+			background: white;
+			margin: 0px 14%!important;
+			margin-top: 40px!important;
+		}
+		#cke_notesContent {
+			border-color: transparent;
+			flex: 0 1 100%;
+			margin-bottom: 0;
+		}
+		.notesActions{
+			.notesFormButtons{
+				.notesFormLeftActions{
+					flex: auto;
+					img {
+						height: 40px;
+					}
+					input[type="text"] {
+						flex: 0 1 100%;
+						font-size: 24px;
+						&:focus {
+							box-shadow: none!important;
+						}
+					}
 				}
-				input[type="text"] {
-					flex: 0 1 100%;
-					font-size: 24px;
-          &:focus {
-            box-shadow: none!important;
-          }
-				}
-			}
-			.notesFormRightActions{
-				#notesUpdateAndPost,.notesCancel{
-					height: 36px;
-					min-width: 64px;
+				.notesFormRightActions{
+					#notesUpdateAndPost,.notesCancel{
+						height: 36px;
+						min-width: 64px;
+					}
 				}
 			}
 		}
