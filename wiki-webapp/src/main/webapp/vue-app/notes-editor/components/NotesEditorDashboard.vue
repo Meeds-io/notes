@@ -12,24 +12,17 @@
         class="notesEditor width-full">
         <div class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
-            <v-form
-              ref="notesEventForm"
-              class="flex"
-              flat>
-              <div class="notesFormLeftActions d-inline-flex mr-10">
-                <img :src="srcImageNote">
-                <input
-                  ref="autoFocusInput1"
-                  id="notesTitle"
-                  class="mb-0 pr-5"
-                  v-model="notes.title"
-                  :maxlength="titleMaxLength"
-                  :placeholder="notesTitlePlaceholder"
-                  type="text"
-                  single-line
-                  @change="resetCustomValidity">
-              </div>
-            </v-form>
+            <div class="notesFormLeftActions d-inline-flex mr-10">
+              <img :src="srcImageNote">
+              <input
+                ref="autoFocusInput1"
+                id="notesTitle"
+                class="mb-0 pr-5"
+                v-model="notes.title"
+                :maxlength="titleMaxLength"
+                :placeholder="notesTitlePlaceholder"
+                type="text">
+            </div>
             <div class="notesFormRightActions pr-7">
               <button
                 id="notesUpdateAndPost"
@@ -214,23 +207,24 @@ export default {
         }
       });
     },
-    resetCustomValidity() {
-      if (this.$refs.autoFocusInput1) {
-        this.$refs.autoFocusInput1.setCustomValidity('');
-      }
-    },
     validateForm() {
-      this.resetCustomValidity();
       if (!this.notes.title) {
-        this.$refs.autoFocusInput1.setCustomValidity(this.$t('notes.message.missingTitle'));
-      } else if (this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
-        this.$refs.autoFocusInput1.setCustomValidity(this.$t('notes.message.missingLengthTitle'));
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.missingTitle')
+        });
+        return false;
       }
-      if (!this.$refs.notesEventForm.validate() // Vuetify rules
-          || !this.$refs.notesEventForm.$el.reportValidity()) { // Standard HTML rules
-        return;
+      else if (this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
+        this.validateFor=false;
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.missingLengthTitle')
+        });
+        return false;
+      } else {
+        return true;
       }
-      return true;
     },
     displayMessage(message) {
       this.message=message.message;
