@@ -35,6 +35,7 @@
               </v-tooltip>
 
               <v-menu
+                v-if="notes.name !== defaultPath"
                 v-model="displayActionMenu"
                 transition="slide-x-reverse-transition"
                 offset-y
@@ -56,6 +57,7 @@
                 </template>
                 <v-list>
                   <v-list-item
+                    v-if="notes.name !== defaultPath"
                     class="draftButton"
                     :key="notes.id"
                     @click="confirmDeleteNote">
