@@ -1,5 +1,11 @@
 <template>
   <v-app class="notesEditor">
+    <v-alert
+      v-model="alert"
+      :type="type"
+      dismissible>
+      {{ message }}
+    </v-alert>
     <div>
       <div
         id="notesEditor"
@@ -68,6 +74,9 @@ export default {
         content: '',
         parentPageId: '',
       },
+      alert: false,
+      type: '',
+      message: '',
       noteId: '',
       parentPageId: '',
       srcImageNote: '/wiki/images/wiki.png',
@@ -80,6 +89,9 @@ export default {
     this.initCKEditor();
   },
   created() {
+    this.$root.$on('show-alert', message => {
+      this.displayMessage(message);
+    });
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if ( urlParams.has('noteId') ){
@@ -113,12 +125,20 @@ export default {
             window.location.href=this.$notesService.getPathByNoteOwner(notes);
           }).catch(e => {
             console.error('Error when update note page', e);
+            this.$root.$emit('show-alert', {
+              type: 'error',
+              message: this.$t(`notes.message.${e.message}`)
+            });
           });
         } else {
           this.$notesService.createNote(notes).then(data => {
             window.location.href=this.$notesService.getPathByNoteOwner(data);
           }).catch(e => {
-            console.error('Error when adding note page', e);
+            console.error('Error when creating note page', e);
+            this.$root.$emit('show-alert', {
+              type: 'error',
+              message: this.$t(`notes.message.${e.message}`)
+            });
           });
         }
       }
@@ -212,6 +232,12 @@ export default {
       }
       return true;
     },
+    displayMessage(message) {
+      this.message=message.message;
+      this.type=message.type;
+      this.alert = true;
+      window.setTimeout(() => this.alert = false, 5000);
+    }
   }
 };
 </script>
