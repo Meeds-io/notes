@@ -45,5 +45,30 @@ public class PageIndexingListener extends PageWikiListener {
     }
   }
 
+  @Override
+  public void postGetToEdit(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+
+  }
+
+  @Override
+  public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+
+  }
+
+  @Override
+  public void postgetPagefromBreadCrumb(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+
+  }
+
+  @Override
+  public void postSwitchToOldApp() {
+
+  }
+
+  @Override
+  public void postSwitchToNewApp() {
+
+  }
+
 
 }
