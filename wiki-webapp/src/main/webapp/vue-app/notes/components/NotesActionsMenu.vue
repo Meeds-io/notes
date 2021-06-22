@@ -10,16 +10,23 @@
       <v-list-item
         v-if="note.name !== defaultPath"
         class="px-2 text-left action-menu-item draftButton"
-        :key="note.id"
         @click="$root.$emit('delete-note')">
-        <v-list-item-title class="subtitle-2">
-          <v-icon
-            size="19"
-            class="primary--text clickable">
-            mdi-trash-can-outline
-          </v-icon>
-          <span>{{ $t('notes.delete') }}</span>
-        </v-list-item-title>
+        <v-icon
+          size="19"
+          class="primary--text clickable pr-2">
+          mdi-trash-can-outline
+        </v-icon>
+        <span>{{ $t('notes.menu.label.delete') }}</span>
+      </v-list-item>
+      <v-list-item
+        class="px-2 text-left action-menu-item draftButton"
+        @click="copyLink">
+        <v-icon
+          size="19"
+          class="primary--text clickable pr-2">
+          mdi-link-variant
+        </v-icon>
+        <span>{{ $t('notes.menu.label.copyLink') }}</span>
       </v-list-item>
     </v-list>
   </v-menu>
@@ -52,6 +59,17 @@ export default {
     this.$root.$on('display-action-menu', ( )=> {
       this.displayActionMenu = true;
     });
+  },
+  methods: {
+    copyLink() {
+      const inputTemp = $('<input>');
+      const path = window.location.href;
+      $('body').append(inputTemp);
+      inputTemp.val(path).select();
+      document.execCommand('copy');
+      inputTemp.remove();
+      this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.linkCopied')});
+    }
   },
 };
 </script>

@@ -186,6 +186,12 @@
       @ok="deleteNotes()"
       @dialog-opened="$emit('confirmDialogOpened')"
       @dialog-closed="$emit('confirmDialogClosed')" />
+    <v-alert
+      v-model="alert"
+      :type="type"
+      dismissible>
+      {{ message }}
+    </v-alert>
   </v-app>
 </template>
 <script>
@@ -207,7 +213,6 @@ export default {
       displayActionMenu: false,
       parentPageName: '',
       confirmMessage: '',
-      //breadcrumbNotes: '',
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
       noteBookOwner: eXo.env.portal.spaceName ? `/spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
       noteBookOwnerTree: eXo.env.portal.spaceName ? `spaces/${eXo.env.portal.spaceName}` : `${eXo.env.portal.portalName}`,
@@ -215,7 +220,10 @@ export default {
       defaultPath: 'WikiHome',
       existingNote: true,
       currentPath: window.location.pathname, 
-      currentNoteBreadcrumb: []
+      currentNoteBreadcrumb: [],
+      alert: false,
+      type: '',
+      message: '',
     };
   },
   watch: {
@@ -269,6 +277,9 @@ export default {
     });
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
+    });
+    this.$root.$on('show-alert', message => {
+      this.displayMessage(message);
     });
   },
   mounted() {
@@ -363,6 +374,12 @@ export default {
           })}</li>`;
       this.$refs.DeleteNoteDialog.open();
     },
+    displayMessage(message) {
+      this.message=message.message;
+      this.type=message.type;
+      this.alert = true;
+      window.setTimeout(() => this.alert = false, 5000);
+    }
   }
 };
 </script>
