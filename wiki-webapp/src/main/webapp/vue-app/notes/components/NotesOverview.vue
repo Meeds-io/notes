@@ -5,7 +5,7 @@
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class="title text-color mt-n1">{{ notes.title }}</span>
-            <div class="notes-header-icons text-right">
+            <div id="note-actions-menu" class="notes-header-icons text-right">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
@@ -34,40 +34,19 @@
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
 
-              <v-menu
-                v-if="notes.name !== defaultPath"
-                v-model="displayActionMenu"
-                transition="slide-x-reverse-transition"
-                offset-y
-                left>
-                <template v-slot:activator="{ on: menu, attrs }">
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on: tooltip }">
-                      <v-icon
-                        size="19"
-                        class="clickable"
-                        v-bind="attrs"
-                        v-on="{ ...tooltip, ...menu }"
-                        @click="displayActionMenu = true">
-                        mdi-dots-vertical
-                      </v-icon>
-                    </template>
-                    <span class="caption">{{ $t('notes.label.openMenu') }}</span>
-                  </v-tooltip>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    size="19"
+                    class="clickable"
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="$root.$emit('display-action-menu')">
+                    mdi-dots-vertical
+                  </v-icon>
                 </template>
-                <v-list>
-                  <v-list-item
-                    v-if="notes.name !== defaultPath"
-                    class="draftButton"
-                    :key="notes.id"
-                    @click="confirmDeleteNote">
-                    <v-list-item-title class="subtitle-2">
-                      <i class="uiIcon uiIconTrash pr-1"></i>
-                      <span>{{ $t('notes.delete') }}</span>
-                    </v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+                <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+              </v-tooltip>
             </div>
           </div>
           <div class="notes-treeview d-flex flex-wrap pb-2">
@@ -194,6 +173,7 @@
         </a>
       </div>
     </div>
+    <notes-actions-menu :note="notes" :default-path="defaultPath" />
     <note-breadcrumb-drawer 
       ref="notesBreadcrumb" />
     <exo-confirm-dialog
@@ -277,13 +257,6 @@ export default {
     }
   },
   created() {
-    $(document).on('mousedown', () => {
-      if (this.displayActionMenu) {
-        window.setTimeout(() => {
-          this.displayActionMenu = false;
-        }, this.waitTimeUntilCloseMenu);
-      }
-    });
     this.$root.$on('open-note', notePath => {
       const noteName = notePath.split('%2F').pop();
       this.getNotes(this.noteBookType, this.noteBookOwner , noteName);
@@ -293,6 +266,9 @@ export default {
     });
     this.$root.$on('open-note-by-id', noteId => {
       this.getNoteById(noteId,'tree');
+    });
+    this.$root.$on('confirmDeleteNote', () => {
+      this.confirmDeleteNote();
     });
   },
   mounted() {
