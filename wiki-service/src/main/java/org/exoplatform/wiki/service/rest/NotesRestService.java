@@ -89,10 +89,11 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(code = 404, message = "Resource not found") })
   public Response getNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
                           @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
-                          @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+                          @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
+                          @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
+      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity,source);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -116,10 +117,11 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
           @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
           @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
+                              @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteById(noteId, identity);
+      Page note = noteService.getNoteById(noteId, identity, source);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -378,6 +380,18 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
+  }
+
+  @GET
+  @Path("/switch/{toApp}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Trigger switch event", httpMethod = "GET", response = Response.class, notes = "This Triggers switch n ote app event")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+          @ApiResponse(code = 404, message = "Resource not found") })
+  public Response triggerSwitchEvent(@ApiParam(value = "toApp", required = true) @PathParam("toApp") String toApp) {
+      noteService.triggerSwitchEvent(toApp);
+      return Response.ok().build();
   }
 
   @PATCH

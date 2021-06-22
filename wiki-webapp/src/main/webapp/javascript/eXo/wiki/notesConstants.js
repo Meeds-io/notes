@@ -6,5 +6,6 @@ export const notesConstants = {
   PORTAL_BASE_URL: eXo.env.server.portalBaseURL || '',
   PORTAL_REST: eXo.env.portal.rest,
   CONTAINER_NAME: eXo.env.portal.containerName || '',
-  LANG: eXo.env.portal.language
+  LANG: eXo.env.portal.language,
+  NOTES_PAGE_NAME: '/wiki'
 };
