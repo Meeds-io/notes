@@ -99,7 +99,7 @@ export default {
   },
   methods: {
     getNotes(id) {
-      return this.$notesService.getNoteById(id).then(data => {
+      return this.$notesService.getNoteById(id,'edit').then(data => {
         this.notes = data || [];
       });
     },

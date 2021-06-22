@@ -1,7 +1,11 @@
 import { notesConstants } from './notesConstants.js';
 
-export function getNotes(noteBookType, noteBookOwner, noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`, {
+export function getNotes(noteBookType, noteBookOwner, noteId,source) {
+  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`;
+  if (source){
+    url=`${url}?source=${source}`;
+  }
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
@@ -13,8 +17,12 @@ export function getNotes(noteBookType, noteBookOwner, noteId) {
   });
 } 
 
-export function getNoteById(noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`, {
+export function getNoteById(noteId,source) {
+  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
+  if (source){
+    url=`${url}?source=${source}`;
+  }
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
@@ -117,6 +125,19 @@ export function deleteNotes(note) {
       return resp;
     } else {
       throw new Error('Error when deleting notes from label');
+    }
+  });
+}
+
+
+export function switchNoteApp(toApp) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/switch/${toApp}`, {
+    credentials: 'include',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when on creating switch event');
     }
   });
 }
