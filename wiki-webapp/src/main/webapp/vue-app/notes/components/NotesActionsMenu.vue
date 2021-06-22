@@ -9,11 +9,15 @@
     <v-list>
       <v-list-item
         v-if="note.name !== defaultPath"
-        class="draftButton"
+        class="px-2 text-left action-menu-item draftButton"
         :key="note.id"
         @click="$root.$emit('delete-note')">
         <v-list-item-title class="subtitle-2">
-          <i class="uiIcon uiIconTrash pr-1"></i>
+          <v-icon
+            size="19"
+            class="primary--text clickable">
+            mdi-trash-can-outline
+          </v-icon>
           <span>{{ $t('notes.delete') }}</span>
         </v-list-item-title>
       </v-list-item>
