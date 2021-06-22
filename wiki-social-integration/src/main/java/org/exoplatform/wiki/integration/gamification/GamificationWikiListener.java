@@ -80,6 +80,16 @@ public class GamificationWikiListener extends PageWikiListener {
   }
 
   @Override
+  public void postSwitchToOldApp() {
+
+  }
+
+  @Override
+  public void postSwitchToNewApp() {
+
+  }
+
+  @Override
   public void postUpdatePage(String wikiType,
                              String wikiOwner,
                              String pageId,

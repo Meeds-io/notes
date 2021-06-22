@@ -382,6 +382,18 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  @GET
+  @Path("/switch/{toApp}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Trigger switch event", httpMethod = "GET", response = Response.class, notes = "This Triggers switch n ote app event")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+          @ApiResponse(code = 404, message = "Resource not found") })
+  public Response triggerSwitchEvent(@ApiParam(value = "toApp", required = true) @PathParam("toApp") String toApp) {
+      noteService.triggerSwitchEvent(toApp);
+      return Response.ok().build();
+  }
+
   @PATCH
   @Path("/note/move/{noteId}/{destinationNoteId}")
   @RolesAllowed("users")

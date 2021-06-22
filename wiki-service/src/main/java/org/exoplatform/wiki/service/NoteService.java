@@ -183,6 +183,8 @@ public interface NoteService {
   public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList) throws WikiException;
 
 
+  void triggerSwitchEvent(String toApp);
+
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
 
   /**

@@ -71,4 +71,14 @@ public class UnifiedSearchPageWikiListener extends PageWikiListener {
   public void postgetPagefromBreadCrumb(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
 
   }
+
+  @Override
+  public void postSwitchToOldApp() {
+
+  }
+
+  @Override
+  public void postSwitchToNewApp() {
+
+  }
 }

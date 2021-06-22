@@ -129,3 +129,16 @@ export function deleteNotes(note) {
   });
 }
 
+
+export function switchNoteApp(toApp) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/switch/${toApp}`, {
+    credentials: 'include',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when on creating switch event');
+    }
+  });
+}
+

@@ -450,6 +450,17 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
+  public void triggerSwitchEvent (String toApp)  {
+    if(toApp.equals("old")){
+      postSwitchToOldApp();
+    }
+    if(toApp.equals("new")){
+      postSwitchToNewApp();
+    }
+  }
+
+
+  @Override
   public void removeDraftOfNote(WikiPageParams param) throws WikiException {
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
     dataStorage.deleteDraftOfPage(page, Utils.getCurrentUser());
@@ -759,6 +770,19 @@ public class NoteServiceImpl implements NoteService {
           log.warn(String.format("Executing listener [%s] on [%s] failed", l, page.getName()), e);
         }
       }
+    }
+  }
+
+  public void postSwitchToOldApp() {
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
+        l.postSwitchToOldApp();
+    }
+  }
+  public void postSwitchToNewApp() {
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
+        l.postSwitchToNewApp();
     }
   }
 

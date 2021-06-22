@@ -60,5 +60,15 @@ public class PageIndexingListener extends PageWikiListener {
 
   }
 
+  @Override
+  public void postSwitchToOldApp() {
+
+  }
+
+  @Override
+  public void postSwitchToNewApp() {
+
+  }
+
 
 }
