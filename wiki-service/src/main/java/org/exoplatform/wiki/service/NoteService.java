@@ -125,6 +125,8 @@ public interface NoteService {
 
   Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException, IllegalAccessException;
 
+  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity, String source) throws WikiException, IllegalAccessException;
+
   /**
    * Gets a note based on its unique id.
    *
@@ -136,6 +138,8 @@ public interface NoteService {
 
 
   Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException;
+
+  Page getNoteById(String id, Identity userIdentity, String source) throws IllegalAccessException, WikiException;
 
   /**
    * Get parent note of a note
