@@ -60,6 +60,15 @@ export default {
       return this.activeItem;
     }
   },
+  created() {
+    this.$root.$on('refresh-treeview-items', (noteChildren, noteBookType, noteBookOwnerTree, openedTreeviewItems )=> {
+      this.openNotes = openedTreeviewItems;
+      this.activeItem = [this.openNotes[this.openNotes.length-1]];
+      this.breadcrumbItems = noteChildren;
+      this.noteBookType = noteBookType;
+      this.noteBookOwnerTree = noteBookOwnerTree;
+    });
+  },
   methods: {
     open(noteTreeview, noteBookType, noteBookOwnerTree, openedNotes) {
       if (this.openNotes && !this.openNotes.length) {
@@ -88,7 +97,6 @@ export default {
             this.makeChildren(noteChildren,temporaryNoteChildren);
           });
           childItem.children.push(...temporaryNoteChildren);
-          //this.openNotes.push(childItem.id);
         }
       });
     },
