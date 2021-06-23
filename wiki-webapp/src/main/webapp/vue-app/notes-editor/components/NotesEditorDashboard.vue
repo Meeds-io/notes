@@ -19,7 +19,6 @@
                 id="notesTitle"
                 class="mb-0 pr-5"
                 v-model="notes.title"
-                :maxlength="titleMaxLength"
                 :placeholder="notesTitlePlaceholder"
                 type="text">
             </div>
