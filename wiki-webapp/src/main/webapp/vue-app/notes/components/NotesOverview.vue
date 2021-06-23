@@ -56,7 +56,7 @@
                   class="uiIcon uiTreeviewIcon primary--text me-3"
                   v-bind="attrs"
                   v-on="on" 
-                  @click="getNoteTree()"></i>
+                  @click="openTreeView = !openTreeView; retrieveNoteTree()"></i>
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
@@ -224,6 +224,7 @@ export default {
       alert: false,
       type: '',
       message: '',
+      openTreeView: false
     };
   },
   watch: {
@@ -281,6 +282,9 @@ export default {
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
     });
+    this.$root.$on('delete-note', () => {
+      this.confirmDeleteNote();
+    });
   },
   mounted() {
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
@@ -316,16 +320,29 @@ export default {
       });
       
     },
-    getNoteTree() {
-      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {
-        this.noteTree = data && data.jsonList || [];
-        this.$refs.notesBreadcrumb.open(this.makeNoteChildren(this.noteTree), this.noteBookType, this.noteBookOwnerTree, this.getOpenedTreeviewItems(this.notes.breadcrumb));
-      });
-    },
     getNoteById(noteId,source) {
       this.getNotes(this.noteBookType,this.noteBookOwner, noteId,source);
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${noteId}`;
       window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+      this.currentPath = window.location.pathname;
+      this.retrieveNoteTree();
+    },
+    retrieveNoteTree() {
+      let noteChildren = '';
+      let openedTreeviewItem = '';
+      this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {
+        this.noteTree = data && data.jsonList || [];
+        noteChildren = this.makeNoteChildren(this.noteTree);
+        openedTreeviewItem = this.getOpenedTreeviewItems(this.notes.breadcrumb);
+
+      }).finally(() => {
+        if (this.openTreeView) {
+          this.$refs.notesBreadcrumb.open(noteChildren, this.noteBookType, this.noteBookOwnerTree, openedTreeviewItem);
+          this.openTreeView = false;
+        } else {
+          this.$root.$emit('refresh-treeview-items',noteChildren, this.noteBookType, this.noteBookOwnerTree, openedTreeviewItem);
+        }
+      });
     },
     makeNoteChildren(childrenArray) {
       const treeviewArray = [];
