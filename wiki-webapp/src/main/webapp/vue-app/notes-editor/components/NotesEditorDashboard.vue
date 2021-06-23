@@ -31,11 +31,6 @@
                 @click="postNotes">
                 {{ $t("btn.post") }}
               </button>
-              <button
-                class="notesCancel btn mr-2 pl-4 pr-4 py-0"
-                @click="closeNotes">
-                {{ $t("btn.cancel") }}
-              </button>
             </div>
           </div>
         </div>
@@ -134,15 +129,6 @@ export default {
             });
           });
         }
-      }
-    },
-    closeNotes(){
-      if (this.notes.id){
-        window.location.href=this.$notesService.getPathByNoteOwner(this.notes); 
-      } else {
-        this.$notesService.getNoteById(this.parentPageId).then(data => {
-          window.location.href=this.$notesService.getPathByNoteOwner(data);
-        });      
       }
     },
     initCKEditor: function() {
