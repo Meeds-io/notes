@@ -651,4 +651,35 @@
     </sql>
   </changeSet>
 
+  <changeSet id="1.0.0-57" author="wiki">
+    <modifyDataType columnName="NAME"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_PAGES"/>
+    <modifyDataType columnName="TITLE"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_PAGES"/>
+    <modifyDataType columnName="NAME"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_PAGE_VERSIONS"/>
+    <modifyDataType columnName="TITLE"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_PAGE_VERSIONS"/>
+    <modifyDataType columnName="PAGE_NAME"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_PAGE_MOVES"/>
+    <modifyDataType columnName="NAME"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_TEMPLATES"/>
+    <modifyDataType columnName="TITLE"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_TEMPLATES"/>
+    <modifyDataType columnName="NAME"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_DRAFT_PAGES"/>
+    <modifyDataType columnName="TITLE"
+                    newDataType="NVARCHAR(1000)"
+                    tableName="WIKI_DRAFT_PAGES"/>
+
+  </changeSet>
+
 </databaseChangeLog>
