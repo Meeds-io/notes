@@ -9,6 +9,7 @@
             <div class="notesFormLeftActions d-inline-flex mr-10">
               <img :src="srcImageNote">
               <input
+                ref="autoFocusInput1"
                 id="notesTitle"
                 class="mb-0 pr-5"
                 v-model="notes.title"
@@ -108,10 +109,12 @@ export default {
         content: this.notes.content,
         parentPageId: this.notes.parentPageId,
       };
+      let notePath = '';
       if (this.notes.id){
         this.$notesService.updateNote(notes).then(() => {
           notes.name=notes.title;
-          window.location.href=this.$notesService.getPathByNoteOwner(notes);
+          notePath = this.$notesService.getPathByNoteOwner(notes).replace(/ /g, '_');
+          window.location.href= notePath;
         }).catch(e => {
           console.error('Error when update note page', e);
         });
@@ -121,7 +124,8 @@ export default {
       }
       else {
         this.$notesService.createNote(notes).then(data => {
-          window.location.href=this.$notesService.getPathByNoteOwner(data);
+          notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+          window.location.href = notePath;
         }).catch(e => {
           console.error('Error when adding note page', e);
         });
@@ -148,11 +152,11 @@ export default {
     },
     closeNotes(){
       if (this.notes.id){
-        window.location.href=this.$notesService.getPathByNoteOwner(this.notes); 
+        window.location.href=this.$notesService.getPathByNoteOwner(this.notes);
       } else {
         this.$notesService.getNoteById(this.parentPageId).then(data => {
           window.location.href=this.$notesService.getPathByNoteOwner(data);
-        });      
+        });
       }
     },
     initCKEditor: function() {
