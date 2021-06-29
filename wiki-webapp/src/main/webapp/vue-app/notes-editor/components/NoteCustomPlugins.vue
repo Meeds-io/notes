@@ -49,14 +49,14 @@
 export default {
   data: () => ({
     plugins: [
-      { id: 'Image',title: 'Image', src: '' },
-      { id: 'Video',title: 'Video', src: '' },
-      { id: 'Table',title: 'Table', src: '' },
-      { id: 'Note',title: 'Note', src: '/wiki/images/wiki.png' },
-      { id: 'ToC',title: 'ToC', src: '' },
-      { id: 'Index',title: 'Index', src: '' },
-      { id: 'IFrame',title: 'IFrame', src: '' },
-      { id: 'Code',title: 'Code', src: '' },
+      { id: 'Image',title: 'Image', src: '/wiki/images/photo.png' },
+      { id: 'Video',title: 'Video', src: '/wiki/images/video.png' },
+      { id: 'Table',title: 'Table', src: '/wiki/images/table.png' },
+      { id: 'Note',title: 'Note', src: '/wiki/images/notes.png' },
+      { id: 'ToC',title: 'ToC', src: '/wiki/images/children.png' },
+      { id: 'Index',title: 'Index', src: '/wiki/images/index.png' },
+      { id: 'IFrame',title: 'IFrame', src: '/wiki/images/iframe.png' },
+      { id: 'Code',title: 'Code', src: '/wiki/images/code.png' },
     ],
     defaultImagePlugin: '/wiki/images/defaultPlugin.png'
   }),
