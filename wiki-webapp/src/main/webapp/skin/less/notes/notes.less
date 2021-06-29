@@ -113,15 +113,31 @@
 					}
 				}
 				.notesFormRightActions{
+          position: relative;
 					#notesUpdateAndPost,.notesCancel{
 						height: 36px;
 						min-width: 64px;
+            .publish-and-post-btn {
+              left: auto!important;
+              right: 20px;
+              top: 40px!important;
+              background: white;
+              min-width: 180px!important;
+            }
+            #notesPublichAndPost {
+              &:focus {
+                &::after {
+                  opacity: 0!important;
+                }
+              }
+            }
 					}
 				}
 			}
 		}
 	}
 }
+
 
 
 .notesApplication {
