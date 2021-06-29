@@ -213,6 +213,10 @@ public class NotesRestService implements ResourceContainer {
       if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
+
+      if ((!note_.getTitle().equals(note.getTitle())) && (noteBookService.isExisting(noteBookType,noteBookOwner,TitleResolver.getId(note.getTitle(), false)))){
+        return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
+      }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
