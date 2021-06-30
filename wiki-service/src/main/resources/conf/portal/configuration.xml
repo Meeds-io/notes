@@ -262,6 +262,15 @@
     </component-plugin>    
   </external-component-plugins>
 
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.attachments.service.AttachmentService</target-component>
+    <component-plugin profiles="ecms">
+      <name>NoteAttachmentACLPlugin</name>
+      <set-method>addACLPlugin</set-method>
+      <type>org.exoplatform.wiki.plugin.NoteAttachmentACLPlugin</type>
+    </component-plugin>
+  </external-component-plugins>
+
   <import>jar:/conf/portal/cache-configuration.xml</import>
   
 </configuration>

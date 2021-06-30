@@ -156,6 +156,12 @@
             {{ $t('notes.label.no-content') }}
           </p>
         </div>
+        <v-divider class="my-0" />
+        <div class="note-attachments d-flex">
+          <attachment-app
+            :entity-id="notes.id"
+            entity-type="note" />
+        </div>
       </div>
       <div v-else class="note-not-found-wrapper text-center mt-6">
         <v-img
