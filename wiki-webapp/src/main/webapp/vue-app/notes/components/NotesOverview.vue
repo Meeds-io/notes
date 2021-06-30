@@ -181,7 +181,7 @@
       :message="confirmMessage"
       :title="$t('popup.confirmation.delete')"
       :ok-label="$t('popup.ok')"
-      :cancel-label="$t('btn.cancel')"
+      :cancel-label="$t('notes.button.cancel')"
       persistent
       @ok="deleteNotes()"
       @dialog-opened="$emit('confirmDialogOpened')"

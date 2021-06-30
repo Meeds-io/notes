@@ -25,11 +25,34 @@
             <div class="notesFormRightActions pr-7">
               <button
                 id="notesUpdateAndPost"
-                class="btn btn-primary primary pl-4 pr-4 py-0"
-                size="16"
-                @click="postNotes">
-                {{ $t("btn.post") }}
+                class="btn btn-primary primary px-2 py-0"
+                @click="postNotes(false)">
+                {{ $t("notes.button.publish") }}
+                <v-icon
+                  id="notesPublichAndPost"
+                  dark
+                  @click="openPublishAndPost">
+                  mdi-menu-down
+                </v-icon>
               </button>
+              <v-menu
+                v-model="publishAndPost"
+                :attach="'#notesUpdateAndPost'"
+                transition="scroll-y-transition"
+                content-class="publish-and-post-btn width-full"
+                offset-y
+                left>
+                <v-list-item
+                  @click.stop="postNotes(true)"
+                  class="px-2">
+                  <v-icon
+                    size="19"
+                    class="primary--text clickable pr-2">
+                    mdi-arrow-collapse-up
+                  </v-icon>
+                  <span class="body-2 text-color">{{ $t("notes.button.publishAndPost") }}</span>
+                </v-list-item>
+              </v-menu>
             </div>
           </div>
         </div>
@@ -75,12 +98,20 @@ export default {
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
       notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}*`,
+      publishAndPost: false
     };
   },
   mounted() {
     this.initCKEditor();
   },
   created() {
+    $(document).on('mousedown', () => {
+      if (this.publishAndPost) {
+        window.setTimeout(() => {
+          this.publishAndPost = false;
+        }, this.waitTimeUntilCloseMenu);
+      }
+    });
     document.addEventListener('note-custom-plugins', () => {
       this.$refs.noteCustomPlugins.open();
     });
@@ -103,7 +134,7 @@ export default {
         this.notes = data || [];
       });
     },
-    postNotes(){
+    postNotes(toPost){
       if (this.validateForm()){
         const notes = {
           id: this.notes.id,
@@ -113,6 +144,7 @@ export default {
           wikiOwner: this.notes.wikiOwner,
           content: this.notes.content,
           parentPageId: this.notes.parentPageId,
+          toBePublished: toPost,
         };
         if (this.notes.id){
           this.$notesService.updateNote(notes).then(() => {
@@ -136,6 +168,13 @@ export default {
             });
           });
         }
+      } 
+    },
+    openPublishAndPost(event) {
+      this.publishAndPost = !this.publishAndPost;
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
     },
     initCKEditor: function() {
