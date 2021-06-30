@@ -20,9 +20,9 @@
 <script>
 export default {
   data: () => ({
-    useNewApp: false,
+    useNewApp: true,
     imageLoaded: false,
-    notesApplicationClass: 'wikiPortlet',
+    notesApplicationClass: 'notesApplication',
     notesPageName: '',
   }),
   computed: {
@@ -34,33 +34,49 @@ export default {
       }
     }
   },
-  watch: {
+  /*   watch: {
     useNewApp() {
-      if (this.useNewApp) {
-        this.notesApplicationClass='notesApplication';
-        $('.uiWikiPortlet').hide();
-      } else {
+      
+    },
+  }, */
+  created() {
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if ( urlParams.has('appView') ){
+      const appView = urlParams.get('appView');
+      if (appView ==='old'){
+        this.useNewApp = false; 
         this.notesApplicationClass='WikiPortlet';
         $('.uiWikiPortlet').show();
+        const theURL= new URL(window.location.href);
+        theURL.searchParams.delete('appView');
+        window.history.pushState('wiki', '', theURL.href);
       }
-    },
+    }
   },
   methods: {
     switchNotesApp() {
+      document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
       this.useNewApp = !this.useNewApp;
       let toApp = 'old';
       if (this.useNewApp){
         toApp = 'new';
       }
-      this.$notesService.switchNoteApp(toApp).then(() => {
-        if (!this.useNewApp) {
-          window.location.reload();
-        }
-      }).catch(() => {
-        if (!this.useNewApp) {
-          window.location.reload();
-        }
-      });
+      this.$notesService.switchNoteApp(toApp);
+      if (!this.useNewApp) {
+        const theURL= new URL(window.location.href);
+        theURL.searchParams.set('appView', 'old');
+        window.location.href=theURL.href;
+      } else {
+        this.notesApplicationClass='notesApplication';
+        $('.uiWikiPortlet').hide();
+        const theURL= new URL(window.location.href);
+        theURL.searchParams.delete('appView');
+        window.history.pushState('wiki', '', theURL.href);
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+      }
+        
+      
 
     },
     displayText() {
