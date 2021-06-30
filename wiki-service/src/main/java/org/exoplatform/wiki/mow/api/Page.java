@@ -61,6 +61,16 @@ public class Page {
 
   private boolean isMinorEdit;
 
+  public boolean isToBePublished() {
+    return toBePublished;
+  }
+
+  public void setToBePublished(boolean toBePublished) {
+    this.toBePublished = toBePublished;
+  }
+
+  private boolean toBePublished;
+
   private List<BreadcrumbData> breadcrumb;
 
   public Page() {

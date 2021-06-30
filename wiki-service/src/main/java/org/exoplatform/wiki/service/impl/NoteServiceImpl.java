@@ -117,6 +117,8 @@ public class NoteServiceImpl implements NoteService {
 
       Page createdPage = createNote(noteBook, parentPage, note);
 
+      createdPage.setToBePublished(note.isToBePublished());
+
       invalidateCache(parentPage);
       invalidateCache(note);
 
