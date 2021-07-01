@@ -47,9 +47,6 @@
 .wiki-body {
   overflow-x: hidden;
 }
-.uiWikiPortlet {
-    display: none;
-}
 </style>
 
 <!--  -->

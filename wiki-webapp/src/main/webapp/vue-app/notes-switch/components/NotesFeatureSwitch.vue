@@ -34,11 +34,7 @@ export default {
       }
     }
   },
-  /*   watch: {
-    useNewApp() {
-      
-    },
-  }, */
+
   created() {
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
