@@ -68,7 +68,7 @@
         </div>
       </div>
     </div>
-    <note-custom-plugins ref="noteCustomPlugins" />
+    <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
   </v-app>
 </template>
 
@@ -76,6 +76,10 @@
 
 export default {
   props: {
+    instance: {
+      type: Object,
+      default: () => null,
+    },
   },
   data() {
     return {
@@ -215,7 +219,7 @@ export default {
           { name: 'colors', items: [ 'TextColor' ] },
           { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
           { name: 'insert' },
-          { name: 'links', items: [ 'simpleLink', 'selectImage', 'Video' , 'Table' ,'InsertOptions'] },
+          { name: 'links', items: [ 'simpleLink' , 'InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
@@ -240,6 +244,7 @@ export default {
           }
         }
       });
+      this.instance =CKEDITOR.instances['notesContent'];
     },
     validateForm() {
       if (!this.notes.title) {

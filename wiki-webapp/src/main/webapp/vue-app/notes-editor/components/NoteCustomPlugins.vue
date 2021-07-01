@@ -21,7 +21,8 @@
                 class="pluginItem pa-4">
                 <a
                   :id="plugin.id"
-                  :target="plugin.title">
+                  :target="plugin.title"
+                  @click="openPlugin(plugin.id)">
                   <img
                     v-if="plugin.src && plugin.src.length"
                     class="pluginImage bloc"
@@ -49,17 +50,23 @@
 export default {
   data: () => ({
     plugins: [
-      { id: 'Image',title: 'Image', src: '/wiki/images/photo.png' },
-      { id: 'Video',title: 'Video', src: '/wiki/images/video.png' },
-      { id: 'Table',title: 'Table', src: '/wiki/images/table.png' },
-      { id: 'Note',title: 'Note', src: '/wiki/images/notes.png' },
+      { id: 'selectImage',title: 'Image', src: '/wiki/images/photo.png' },
+      { id: 'video',title: 'Video', src: '/wiki/images/video.png' },
+      { id: 'table',title: 'Table', src: '/wiki/images/table.png' },
+      /*{ id: 'note',title: 'Note', src: '/wiki/images/notes.png' },
       { id: 'ToC',title: 'ToC', src: '/wiki/images/children.png' },
-      { id: 'Index',title: 'Index', src: '/wiki/images/index.png' },
-      { id: 'IFrame',title: 'IFrame', src: '/wiki/images/iframe.png' },
-      { id: 'Code',title: 'Code', src: '/wiki/images/code.png' },
+      { id: 'index',title: 'Index', src: '/wiki/images/index.png' },
+      { id: 'iframe',title: 'IFrame', src: '/wiki/images/iframe.png' },
+      { id: 'code',title: 'Code', src: '/wiki/images/code.png' },*/
     ],
     defaultImagePlugin: '/wiki/images/defaultPlugin.png'
   }),
+  props: {
+    instance: {
+      type: Object,
+      default: () => null,
+    },
+  },
   methods: {
     open() {
       this.$refs.customPluginsDrawer.open();
@@ -67,6 +74,10 @@ export default {
     close() {
       this.$refs.customPluginsDrawer.close();
     },
+    openPlugin(id){
+      this.instance.execCommand(id);
+      this.close();
+    }
   }
 };
 </script>
