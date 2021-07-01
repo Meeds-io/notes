@@ -4,6 +4,11 @@
   ExoFeatureService featureService = uicomponent.getApplicationComponent(ExoFeatureService.class);
   if (featureService.isFeatureActiveForUser("NewNotes", _ctx.getRequestContext().getRemoteUser())) {
 %>
+<style type="text/css">
+.uiWikiPortlet {
+    display: none;
+}
+</style>
 <div class="VuetifyApp">
   <div id="NotesApp"
     class="v-application transparent v-application--is-ltr theme--light peopleList"
