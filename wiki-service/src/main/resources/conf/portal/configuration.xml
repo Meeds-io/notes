@@ -267,7 +267,7 @@
     <component-plugin profiles="ecms">
       <name>NoteAttachmentACLPlugin</name>
       <set-method>addACLPlugin</set-method>
-      <type>org.exoplatform.wiki.plugin.NoteAttachmentACLPlugin</type>
+      <type>org.exoplatform.wiki.plugin.NoteAttachementACLPlugin</type>
     </component-plugin>
   </external-component-plugins>
 
