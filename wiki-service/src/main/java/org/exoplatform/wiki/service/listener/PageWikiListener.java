@@ -21,7 +21,7 @@ public abstract class PageWikiListener extends BaseComponentPlugin {
 
   public abstract void postgetPagefromBreadCrumb(final String wikiType, final String wikiOwner, final String pageId, Page page) throws WikiException;
 
-  public abstract void postSwitchToOldApp() ;
+  public abstract void postSwitchToOldApp(Page page) ;
 
-  public abstract void postSwitchToNewApp() ;
+  public abstract void postSwitchToNewApp(Page page) ;
 }
