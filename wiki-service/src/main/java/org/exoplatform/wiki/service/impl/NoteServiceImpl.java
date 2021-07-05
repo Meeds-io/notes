@@ -452,12 +452,13 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public void triggerSwitchEvent (String toApp)  {
+  public void triggerSwitchEvent (String toApp,  String noteType, String noteOwner, String notesPageName)  throws WikiException   {
+    Page page = getNoteOfNoteBookByName(noteType, noteOwner, notesPageName);
     if(toApp.equals("old")){
-      postSwitchToOldApp();
+      postSwitchToOldApp(page);
     }
     if(toApp.equals("new")){
-      postSwitchToNewApp();
+      postSwitchToNewApp(page);
     }
   }
 
@@ -775,16 +776,16 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  public void postSwitchToOldApp() {
+  public void postSwitchToOldApp(Page note) {
     List<PageWikiListener> listeners = wikiService.getPageListeners();
     for (PageWikiListener l : listeners) {
-        l.postSwitchToOldApp();
+        l.postSwitchToOldApp(note);
     }
   }
-  public void postSwitchToNewApp() {
+  public void postSwitchToNewApp(Page note) {
     List<PageWikiListener> listeners = wikiService.getPageListeners();
     for (PageWikiListener l : listeners) {
-        l.postSwitchToNewApp();
+        l.postSwitchToNewApp(note);
     }
   }
 

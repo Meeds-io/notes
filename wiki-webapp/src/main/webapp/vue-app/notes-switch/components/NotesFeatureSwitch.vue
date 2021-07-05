@@ -24,6 +24,9 @@ export default {
     imageLoaded: false,
     notesApplicationClass: 'notesApplication',
     notesPageName: '',
+    noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
+    noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : `${eXo.env.portal.portalName}`,
+    currentPath: window.location.pathname, 
   }),
   computed: {
     buttonText() {
@@ -31,6 +34,22 @@ export default {
         return this.$t('notes.switchToOldApp');
       } else {
         return this.$t('notes.switchToNewApp');
+      }
+    },
+    notesPageName() {
+      if (this.currentPath.endsWith('/wiki')){
+        return 'WikiHome';
+      } else {
+        if (!(this.currentPath.includes('/wiki/'))) {
+          return;
+        } else {
+          const noteId = this.currentPath.split('/').pop();
+          if (noteId) {
+            return noteId;
+          } else {
+            return 'WikiHome';
+          }
+        }
       }
     }
   },
@@ -58,7 +77,7 @@ export default {
       if (this.useNewApp){
         toApp = 'new';
       }
-      this.$notesService.switchNoteApp(toApp);
+      this.$notesService.switchNoteApp(toApp,this.noteBookType, this.noteBookOwner , this.notesPageName);
       if (!this.useNewApp) {
         const theURL= new URL(window.location.href);
         theURL.searchParams.set('appView', 'old');
