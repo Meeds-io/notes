@@ -85,7 +85,7 @@
 		position: fixed;
 		height: 100%;
 		top: 0;
-		z-index: 10000;
+		z-index: 9999;
 		.formInputGroup{
 			height: calc(~"100vh - 120px");
 			background: white;
@@ -201,6 +201,10 @@
       }
     }
   }
+}
+
+.breadcrumbDrawer {
+  z-index: 10001!important;
 }
 
 .tooltip-chevron {
