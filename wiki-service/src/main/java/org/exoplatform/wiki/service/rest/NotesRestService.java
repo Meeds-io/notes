@@ -22,10 +22,10 @@ import java.util.*;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -37,7 +37,9 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.mow.api.PermissionType;
+import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
@@ -52,6 +54,8 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
+import io.swagger.annotations.*;
+import io.swagger.jaxrs.PATCH;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -59,18 +63,13 @@ import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
 public class NotesRestService implements ResourceContainer {
 
-
-  private final NoteService   noteService;
-
-  private final WikiService   noteBookService;
-
-  private final ResourceBundleService resourceBundleService;
-
   private static Log                  log = ExoLogger.getLogger(NotesRestService.class);
-
+  private final NoteService           noteService;
+  private final WikiService           noteBookService;
+  private final ResourceBundleService resourceBundleService;
   private final CacheControl          cc;
 
-  public NotesRestService(NoteService noteService, WikiService   noteBookService, ResourceBundleService resourceBundleService) {
+  public NotesRestService(NoteService noteService, WikiService noteBookService, ResourceBundleService resourceBundleService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.resourceBundleService = resourceBundleService;
@@ -85,26 +84,26 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Get note by notes params", httpMethod = "GET", response = Response.class, notes = "This get the not if the authenticated user has permissions to view the objects linked to this note.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response getNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
                           @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
                           @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                           @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity,source);
+      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadcumb(noteBookType,noteBookOwner,noteId));
+      note.setBreadcrumb(noteService.getBreadcumb(noteBookType, noteBookOwner, noteId));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}:{}:{}",noteBookType,noteBookOwner,noteId,e);
+      log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
-      log.error("Can't get note {}:{}:{}",noteBookType,noteBookOwner,noteId,e);
+      log.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -115,8 +114,8 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Get note by id", httpMethod = "GET", response = Response.class, notes = "This get the not if the authenticated user has permissions to view the objects linked to this note.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                               @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
@@ -126,13 +125,13 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(),note.getWikiOwner(),noteId));
+      note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(), note.getWikiOwner(), noteId));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}",noteId,e);
+      log.error("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception e) {
-      log.error("Can't get note {}",noteId, e);
+    } catch (Exception e) {
+      log.error("Can't get note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -142,30 +141,30 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Add a new note", httpMethod = "POST", response = Response.class, notes = "This adds a new note.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response createNote(@ApiParam(value = "note object to be created", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
-    String noteBookType=note.getWikiType();
-    String noteBookOwner=note.getWikiOwner();
+    String noteBookType = note.getWikiType();
+    String noteBookOwner = note.getWikiOwner();
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      if(StringUtils.isNotEmpty(note.getParentPageId())){
-        Page note_=noteService.getNoteById(note.getParentPageId(), identity);
-        if(note_!=null){
-          noteBookType=note_.getWikiType();
-          noteBookOwner=note_.getWikiOwner();
+      if (StringUtils.isNotEmpty(note.getParentPageId())) {
+        Page note_ = noteService.getNoteById(note.getParentPageId(), identity);
+        if (note_ != null) {
+          noteBookType = note_.getWikiType();
+          noteBookOwner = note_.getWikiOwner();
           note.setParentPageName(note_.getName());
-        }else{
+        } else {
           return Response.status(Response.Status.BAD_REQUEST).build();
         }
       }
-      if(StringUtils.isEmpty(noteBookType) || StringUtils.isEmpty(noteBookOwner)){
+      if (StringUtils.isEmpty(noteBookType) || StringUtils.isEmpty(noteBookOwner)) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (noteBookService.isExisting(noteBookType,noteBookOwner,TitleResolver.getId(note.getTitle(), false))){
+      if (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false))) {
         return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
       }
       /* TODO: check noteBook permissions */
@@ -183,10 +182,10 @@ public class NotesRestService implements ResourceContainer {
       Page createdNote = noteService.createNote(noteBook, note.getParentPageName(), note, identity);
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}",note.getName(),e);
+      log.error("User does not have view permissions on the note {}", note.getName(), e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception ex) {
-      log.warn("Failed to perform save noteBook note {}:{}:{}",noteBookType,noteBookOwner,note.getId(),ex);
+    } catch (Exception ex) {
+      log.warn("Failed to perform save noteBook note {}:{}:{}", noteBookType, noteBookOwner, note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -196,12 +195,12 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Updates a specific note by note's params", httpMethod = "PUT", response = Response.class, notes = "This updates the note if the authenticated user has UPDATE permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response updateNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
                              @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
                              @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                             @ApiParam(value = "note object to be updated", required = true)  Page note) {
+                             @ApiParam(value = "note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -216,7 +215,8 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
 
-      if ((!note_.getTitle().equals(note.getTitle())) && (noteBookService.isExisting(noteBookType,noteBookOwner,TitleResolver.getId(note.getTitle(), false)))){
+      if ((!note_.getTitle().equals(note.getTitle()))
+          && (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
@@ -224,7 +224,7 @@ public class NotesRestService implements ResourceContainer {
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
+            && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -232,21 +232,21 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          //noteService.removeDraftOfNote(noteParams);
+          // noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
+            && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
         note_.setTitle(note.getTitle());
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE,identity);
+        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          //noteService.removeDraftOfPage(noteParams);
+          // noteService.removeDraftOfPage(noteParams);
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
@@ -255,24 +255,23 @@ public class NotesRestService implements ResourceContainer {
       }
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}",noteId,e);
+      log.error("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception ex) {
-      log.error("Failed to perform update noteBook note {}:{}:{}",note.getWikiType(),note.getWikiOwner(),note.getId(),ex);
+    } catch (Exception ex) {
+      log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
-  
 
   @PUT
   @Path("/note/{noteId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Updates a specific note by id", httpMethod = "PUT", response = Response.class, notes = "This updates the note if the authenticated user has UPDATE permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response updateNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                             @ApiParam(value = "note object to be updated", required = true) Page note) {
+                                 @ApiParam(value = "note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -287,7 +286,7 @@ public class NotesRestService implements ResourceContainer {
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
+            && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -300,7 +299,7 @@ public class NotesRestService implements ResourceContainer {
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
-                && !note.getName().equals(newNoteName)) {
+            && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -318,23 +317,21 @@ public class NotesRestService implements ResourceContainer {
       }
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have edit permissions on the note {}",noteId,e);
+      log.error("User does not have edit permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception ex) {
-      log.error("Failed to perform update noteBook note {}:{}:{}",note.getWikiType(),note.getWikiOwner(),note.getId(),ex);
+    } catch (Exception ex) {
+      log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
-  
-  
 
   @DELETE
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response deleteNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
                              @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
                              @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
@@ -348,21 +345,21 @@ public class NotesRestService implements ResourceContainer {
       noteService.deleteNote(noteBookType, noteBookOwner, noteId, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have delete permissions on the note {}",noteId,e);
+      log.error("User does not have delete permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception ex) {
-      log.warn("Failed to perform Delete of noteBook note {}:{}:{}",noteBookType,noteBookOwner,noteId,ex);
+    } catch (Exception ex) {
+      log.warn("Failed to perform Delete of noteBook note {}:{}:{}", noteBookType, noteBookOwner, noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
-  }  
+  }
 
   @DELETE
   @Path("/note/{noteId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response deleteNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
 
     try {
@@ -375,24 +372,32 @@ public class NotesRestService implements ResourceContainer {
       noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have delete permissions on the note {}",noteId,e);
+      log.error("User does not have delete permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
-    }catch (Exception ex) {
+    } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
 
   @GET
-  @Path("/switch/{toApp}")
+  @Path("/switch/{toApp}/{noteBookType}/{noteBookOwner:.+}/{notesPageName}")
   @RolesAllowed("users")
   @ApiOperation(value = "Trigger switch event", httpMethod = "GET", response = Response.class, notes = "This Triggers switch n ote app event")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
-  public Response triggerSwitchEvent(@ApiParam(value = "toApp", required = true) @PathParam("toApp") String toApp) {
-      noteService.triggerSwitchEvent(toApp);
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response triggerSwitchEvent(@ApiParam(value = "toApp", required = true) @PathParam("toApp") String toApp,
+                                     @ApiParam(value = "noteBookType", required = true) @PathParam("noteBookType") String noteBookType,
+                                     @ApiParam(value = "noteBookOwner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
+                                     @ApiParam(value = "notesPageName", required = true) @PathParam("notesPageName") String notesPageName) {
+    try {
+      noteService.triggerSwitchEvent(toApp, noteBookType, noteBookOwner, notesPageName);
       return Response.ok().build();
+    } catch (Exception ex) {
+      log.warn("Failed to add switch stat", ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
   }
 
   @PATCH
@@ -400,14 +405,14 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Move note under the destination one", httpMethod = "PUT", response = Response.class, notes = "This moves the note if the authenticated user has EDIT permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response moveNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                            @ApiParam(value = "Destination Note id", required = true) @PathParam("destinationNoteId") String toNoteId) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteById(noteId,identity);
+      Page note = noteService.getNoteById(noteId, identity);
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -417,21 +422,20 @@ public class NotesRestService implements ResourceContainer {
       }
       WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteId);
       WikiPageParams newLocationParams = new WikiPageParams(toNote.getWikiType(), toNote.getWikiOwner(), toNoteId);
-      boolean isMoved =noteService.moveNote(currentLocationParams, newLocationParams, identity);
-      if(isMoved){
+      boolean isMoved = noteService.moveNote(currentLocationParams, newLocationParams, identity);
+      if (isMoved) {
         return Response.ok().build();
-      }else{
+      } else {
         return Response.notModified().build();
       }
     } catch (IllegalAccessException e) {
-      log.error("User does not have move permissions on the note {}",noteId,e);
+      log.error("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform move of noteBook note {} under {}",noteId,toNoteId,ex);
+      log.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
-
 
   @GET
   @Path("/tree/{type}")
@@ -439,8 +443,8 @@ public class NotesRestService implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Get node's tree", httpMethod = "GET", response = Response.class, notes = "Display the current tree of a noteBook based on is path")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found") })
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
   public Response getTreeData(@PathParam("type") String type,
                               @QueryParam(TreeNode.PATH) String path,
                               @QueryParam(TreeNode.CURRENT_PATH) String currentPath,
@@ -457,8 +461,9 @@ public class NotesRestService implements ResourceContainer {
         context.put(TreeNode.CURRENT_PATH, currentPath);
         WikiPageParams currentNoteParam = TreeUtils.getPageParamsFromPath(currentPath);
         Page currentNote = noteService.getNoteOfNoteBookByName(currentNoteParam.getType(),
-                currentNoteParam.getOwner(),
-                currentNoteParam.getPageName(), identity);
+                                                               currentNoteParam.getOwner(),
+                                                               currentNoteParam.getPageName(),
+                                                               identity);
         context.put(TreeNode.CURRENT_PAGE, currentNote);
       }
 
@@ -469,17 +474,16 @@ public class NotesRestService implements ResourceContainer {
       path = URLDecoder.decode(path, "utf-8");
       context.put(TreeNode.PATH, path);
       WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
-      Page note = noteService.getNoteOfNoteBookByName(noteParam.getType(),
-              noteParam.getOwner(),
-              noteParam.getPageName(), identity);
+      Page note =
+                noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
       if (note == null) {
         log.warn("User [{}] can not get noteBook path [{}]. Wiki Home is used instead",
-                ConversationState.getCurrent().getIdentity().getUserId(),
-                path);
+                 ConversationState.getCurrent().getIdentity().getUserId(),
+                 path);
         note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
-                  request.getLocale());
+                                                                                  request.getLocale());
           String errorMessage = "";
           if (resourceBundle != null) {
             errorMessage = resourceBundle.getString("UIWikiMovePageForm.msg.no-permission-at-wiki-destination");
@@ -505,8 +509,8 @@ public class NotesRestService implements ResourceContainer {
 
       encodeWikiTree(responseData, request.getLocale());
       return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
-    }  catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}",path,e);
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
       log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);

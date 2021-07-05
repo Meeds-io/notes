@@ -130,8 +130,8 @@ export function deleteNotes(note) {
 }
 
 
-export function switchNoteApp(toApp) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/switch/${toApp}`, {
+export function switchNoteApp(toApp, noteBookType, noteBookOwner , notesPageName) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/switch/${toApp}/${noteBookType}/${noteBookOwner}/${notesPageName}`, {
     credentials: 'include',
   }).then((resp) => {
     if (resp && resp.ok) {

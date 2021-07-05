@@ -73,12 +73,12 @@ public class UnifiedSearchPageWikiListener extends PageWikiListener {
   }
 
   @Override
-  public void postSwitchToOldApp() {
+  public void postSwitchToOldApp(Page page) {
 
   }
 
   @Override
-  public void postSwitchToNewApp() {
+  public void postSwitchToNewApp(Page page) {
 
   }
 }
