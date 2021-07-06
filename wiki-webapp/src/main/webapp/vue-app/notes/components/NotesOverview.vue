@@ -10,7 +10,7 @@
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="22"
-                    class="clickable"
+                    class="clickable add-note-click"
                     @click="addNotes"
                     v-bind="attrs"
                     v-on="on">
@@ -24,7 +24,7 @@
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
-                    class="clickable"
+                    class="clickable edit-note-click"
                     @click="editNotes"
                     v-bind="attrs"
                     v-on="on">
@@ -73,7 +73,7 @@
                       v-bind="attrs"
                       v-on="on"
                       @click="getNoteById(note.id,'breadCrumb')"
-                      class="caption text-truncate "
+                      class="caption text-truncate breadCrumb-link"
                       :class="index < notebreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
                   </template>
                   <span class="caption">{{ note.title }}</span>
@@ -86,7 +86,7 @@
                 <v-tooltip max-width="300" bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <a
-                      class="caption text-color text-truncate path-clickable"
+                      class="caption text-color text-truncate path-clickable breadCrumb-link"
                       v-bind="attrs"
                       v-on="on"
                       @click="getNoteById(notebreadcrumb[0].id,'breadCrumb')">{{ notebreadcrumb[0].title }}</a>
@@ -118,7 +118,7 @@
                 <v-tooltip max-width="300" bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <a
-                      class="caption text-color text-truncate path-clickable"
+                      class="caption text-color text-truncate path-clickable breadCrumb-link"
                       v-bind="attrs"
                       v-on="on"
                       @click="getNoteById(notebreadcrumb[notebreadcrumb.length-2].id,'breadCrumb')">{{ notebreadcrumb[notebreadcrumb.length-2].title }}</a>
@@ -131,7 +131,7 @@
                 <v-tooltip max-width="300" bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <a
-                      class="caption text-color text-truncate text-sub-title"
+                      class="caption text-color text-truncate text-sub-title breadCrumb-link"
                       v-bind="attrs"
                       v-on="on"
                       @click="getNoteById(notebreadcrumb[notebreadcrumb.length-1].id,'breadCrumb')">{{ notebreadcrumb[notebreadcrumb.length-1].title }}</a>
@@ -284,6 +284,7 @@ export default {
     this.$root.$on('delete-note', () => {
       this.confirmDeleteNote();
     });
+    
   },
   mounted() {
     this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);

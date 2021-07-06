@@ -1,8 +1,20 @@
 <template>
   <v-app class="white">
     <div :class="notesApplicationClass">
-      <div class="white my-3 py-2 primary--text">
+      <div v-if="!useNewApp" class="white my-3 py-2 primary--text">
         <v-btn
+          id="switchToNewNotesApp"
+          link
+          text
+          class="primary--text font-weight-bold text-capitalize"
+          @click="switchNotesApp">
+          <v-icon class="me-3" size="16">far fa-window-restore</v-icon>
+          {{ buttonText }}
+        </v-btn>
+      </div>
+      <div v-else class="white my-3 py-2 primary--text">
+        <v-btn
+          id="switchToOldWikiApp"
           link
           text
           class="primary--text font-weight-bold text-capitalize"
@@ -73,11 +85,6 @@ export default {
     switchNotesApp() {
       document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
       this.useNewApp = !this.useNewApp;
-      let toApp = 'old';
-      if (this.useNewApp){
-        toApp = 'new';
-      }
-      this.$notesService.switchNoteApp(toApp,this.noteBookType, this.noteBookOwner , this.notesPageName);
       if (!this.useNewApp) {
         const theURL= new URL(window.location.href);
         theURL.searchParams.set('appView', 'old');
@@ -89,10 +96,7 @@ export default {
         theURL.searchParams.delete('appView');
         window.history.pushState('wiki', '', theURL.href);
         document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
-      }
-        
-      
-
+      }     
     },
     displayText() {
       window.setTimeout(() => this.imageLoaded = true, 200);
