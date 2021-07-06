@@ -56,7 +56,7 @@
                   class="uiIcon uiTreeviewIcon primary--text me-3"
                   v-bind="attrs"
                   v-on="on" 
-                  @click="openTreeView = !openTreeView; retrieveNoteTree()"></i>
+                  @click="$refs.notesBreadcrumb.open(notes.id, 'displayNote')"></i>
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
@@ -174,8 +174,7 @@
       </div>
     </div>
     <notes-actions-menu :note="notes" :default-path="defaultPath" />
-    <note-breadcrumb-drawer 
-      ref="notesBreadcrumb" />
+    <note-breadcrumb-drawer ref="notesBreadcrumb" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -317,59 +316,13 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$emit('application-loaded');
+        this.$root.$emit('refresh-treeview-items',this.notes.id);
       });
-      
     },
     getNoteById(noteId,source) {
       this.getNotes(this.noteBookType,this.noteBookOwner, noteId,source);
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${noteId}`;
       window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
-      this.currentPath = window.location.pathname;
-      this.retrieveNoteTree();
-    },
-    retrieveNoteTree() {
-      let noteChildren = '';
-      let openedTreeviewItem = '';
-      this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree , this.notesPageName,'ALL').then(data => {
-        this.noteTree = data && data.jsonList || [];
-        noteChildren = this.makeNoteChildren(this.noteTree);
-        openedTreeviewItem = this.getOpenedTreeviewItems(this.notes.breadcrumb);
-
-      }).finally(() => {
-        if (this.openTreeView) {
-          this.$refs.notesBreadcrumb.open(noteChildren, this.noteBookType, this.noteBookOwnerTree, openedTreeviewItem);
-          this.openTreeView = false;
-        } else {
-          this.$root.$emit('refresh-treeview-items',noteChildren, this.noteBookType, this.noteBookOwnerTree, openedTreeviewItem);
-        }
-      });
-    },
-    makeNoteChildren(childrenArray) {
-      const treeviewArray = [];
-      childrenArray.forEach(child => {
-        if ( child.hasChild ) {
-          treeviewArray.push ({
-            id: child.path.split('%2F').pop(),
-            hasChild: child.hasChild,
-            name: child.name,
-            children: this.makeNoteChildren(child.children)
-          });
-        } else {
-          treeviewArray.push({
-            id: child.path.split('%2F').pop(),
-            hasChild: child.hasChild,
-            name: child.name
-          });
-        }
-      });
-      return treeviewArray;
-    },
-    getOpenedTreeviewItems(breadcrumArray) {
-      const activatedNotes = [];
-      for (let index = 1; index < breadcrumArray.length; index++) {
-        activatedNotes.push(breadcrumArray[index].id);
-      }
-      return activatedNotes;
     },
     confirmDeleteNote: function () {
       let parentsBreadcrumb = '';

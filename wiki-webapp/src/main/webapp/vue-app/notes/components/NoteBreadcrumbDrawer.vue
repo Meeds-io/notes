@@ -1,6 +1,7 @@
 <template>
   <exo-drawer
     ref="breadcrumbDrawer"
+    class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
     right>
     <template slot="title">
@@ -44,7 +45,8 @@ export default {
     noteBookType: '',
     noteBookOwnerTree: '',
     openNotes: [],
-    activeItem: []
+    activeItem: [],
+    isIncludePage: false
   }),
   computed: {
     items() {
@@ -58,30 +60,24 @@ export default {
     },
     active() {
       return this.activeItem;
+    },
+    includePage () {
+      return this.isIncludePage;
     }
   },
   created() {
-    this.$root.$on('refresh-treeview-items', (noteChildren, noteBookType, noteBookOwnerTree, openedTreeviewItems )=> {
-      this.openNotes = openedTreeviewItems;
-      this.activeItem = [this.openNotes[this.openNotes.length-1]];
-      this.breadcrumbItems = noteChildren;
-      this.noteBookType = noteBookType;
-      this.noteBookOwnerTree = noteBookOwnerTree;
+    this.$root.$on('refresh-treeview-items', (noteId)=> {
+      this.getNoteById(noteId);
     });
   },
   methods: {
-    open(noteTreeview, noteBookType, noteBookOwnerTree, openedNotes) {
-      if (this.openNotes && !this.openNotes.length) {
-        this.openNotes = openedNotes;
+    open(noteId, source) {
+      this.getNoteById(noteId);
+      if (source === 'includePages') {
+        this.isIncludePage = true;
+      } else {
+        this.isIncludePage = false;
       }
-      if (this.activeItem && !this.activeItem.length) {
-        this.activeItem = [this.openNotes[this.openNotes.length-1]];
-      }
-      if (this.breadcrumbItems && !this.breadcrumbItems.length) {
-        this.breadcrumbItems = noteTreeview;
-      }
-      this.noteBookType = noteBookType;
-      this.noteBookOwnerTree = noteBookOwnerTree;
       this.$nextTick().then(() => {
         this.$refs.breadcrumbDrawer.open();
       });
@@ -105,9 +101,15 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
-      this.activeItem = [note.id];
-      this.$root.$emit('open-note-by-id',note.id);
-      this.$refs.breadcrumbDrawer.close();
+      if (!this.includePage ) {
+        this.activeItem = [note.id];
+        this.$root.$emit('open-note-by-id',note.id);
+        this.$refs.breadcrumbDrawer.close();
+      } else {
+        this.$root.$emit('include-page',note);
+        document.dispatchEvent(new CustomEvent ('test'));
+      }
+      
     },
     makeChildren(noteChildren, childrenArray) {
       if ( noteChildren.hasChild ) {
@@ -124,6 +126,56 @@ export default {
           name: noteChildren.name
         });
       }
+    },
+    getNoteById(id,source) {
+      return this.$notesService.getNoteById(id).then(data => {
+        this.note = data || [];
+        this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , this.note.name,source).then(data => {
+          this.note.breadcrumb = data && data.breadcrumb || [];
+        });
+      }).then(() => {
+        this.note.wikiOwner =  this.note.wikiOwner.substring(1);
+        this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
+      });
+    },
+    retrieveNoteTree(noteType, noteOwner, noteName) {
+      this.$notesService.getNoteTree(noteType, noteOwner , noteName,'ALL').then(data => {
+        this.noteTree = data && data.jsonList || [];
+        const noteChildren = this.makeNoteChildren(this.noteTree);
+        const openedTreeviewItem = this.getOpenedTreeviewItems(this.note.breadcrumb);
+        this.openNotes = openedTreeviewItem;
+        this.activeItem = [openedTreeviewItem[openedTreeviewItem.length-1]];
+        this.breadcrumbItems = noteChildren;
+        this.noteBookType = noteType;
+        this.noteBookOwnerTree = noteOwner;
+      });
+    },
+    getOpenedTreeviewItems(breadcrumArray) {
+      const activatedNotes = [];
+      for (let index = 1; index < breadcrumArray.length; index++) {
+        activatedNotes.push(breadcrumArray[index].id);
+      }
+      return activatedNotes;
+    },
+    makeNoteChildren(childrenArray) {
+      const treeviewArray = [];
+      childrenArray.forEach(child => {
+        if ( child.hasChild ) {
+          treeviewArray.push ({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name,
+            children: this.makeNoteChildren(child.children)
+          });
+        } else {
+          treeviewArray.push({
+            id: child.path.split('%2F').pop(),
+            hasChild: child.hasChild,
+            name: child.name
+          });
+        }
+      });
+      return treeviewArray;
     },
   }
 };

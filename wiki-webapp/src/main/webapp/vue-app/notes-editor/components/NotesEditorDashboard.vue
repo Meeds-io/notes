@@ -70,6 +70,7 @@
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
     <note-table-plugins-drawer ref="noteTablePlugins" :instance="instance" />
+    <note-breadcrumb-drawer ref="notesBreadcrumb" />
   </v-app>
 </template>
 
@@ -116,7 +117,7 @@ export default {
     document.addEventListener('note-custom-plugins', () => {
       this.$refs.noteCustomPlugins.open();
     });
-    document.addEventListener('note-table-plugins', () => {
+    this.$root.$on('note-table-plugins', () => {
       this.$refs.noteTablePlugins.open();
     });
     this.$root.$on('show-alert', message => {
@@ -131,6 +132,16 @@ export default {
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
     }
+    this.$root.$on('display-treeview-items', () => {
+      if ( urlParams.has('noteId') ) {
+        this.$refs.notesBreadcrumb.open(this.noteId, 'includePages');
+      } else if (urlParams.has('parentNoteId')) {
+        this.$refs.notesBreadcrumb.open(this.parentPageId, 'includePages');
+      }
+    });
+    this.$root.$on('include-page', (note) => {
+      $('textarea#notesContent').ckeditor().editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name} </a>`);
+    });
   },
   methods: {
     getNotes(id) {
@@ -245,6 +256,15 @@ export default {
           },
           change: function (evt) {
             self.notes.content = evt.editor.getData();
+          },
+          doubleclick: function(evt) {
+            const element = evt.data.element;
+            if ( element && element.is('a') && element.getAttribute( 'class' ) === 'noteLink') {
+              const noteName = element.getAttribute( 'href' );
+              self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(data => {
+                self.$refs.notesBreadcrumb.open(data.id, 'includePages');
+              });
+            }
           }
         }
       });
@@ -274,7 +294,7 @@ export default {
       this.type=message.type;
       this.alert = true;
       window.setTimeout(() => this.alert = false, 5000);
-    }
+    },
   }
 };
 </script>
