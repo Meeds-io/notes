@@ -75,8 +75,9 @@ export default {
       this.$refs.customPluginsDrawer.close();
     },
     openPlugin(id){
-      this.close();
-      if ( id === 'ToC') {
+      if (id==='table'){
+        this.$root.$emit('note-table-plugins');
+      } else if ( id === 'ToC') {
         this.$root.$emit('display-treeview-items');
       } else {
         this.instance.execCommand(id);
