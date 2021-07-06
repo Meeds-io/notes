@@ -400,13 +400,10 @@ public class NoteServiceImpl implements NoteService {
     }
     if(StringUtils.isNotEmpty(source)) {
       if (source.equals("tree")) {
-        postOpenToEdit(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+        postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
       }
       if (source.equals("breadCrumb")) {
         postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-      }
-      if (source.equals("edit")) {
-        postOpenToEdit(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
       }
     }
     return page;
@@ -451,16 +448,6 @@ public class NoteServiceImpl implements NoteService {
     return resultList;
   }
 
-  @Override
-  public void triggerSwitchEvent (String toApp,  String noteType, String noteOwner, String notesPageName)  throws WikiException   {
-    Page page = getNoteOfNoteBookByName(noteType, noteOwner, notesPageName);
-    if(toApp.equals("old")){
-      postSwitchToOldApp(page);
-    }
-    if(toApp.equals("new")){
-      postSwitchToNewApp(page);
-    }
-  }
 
 
   @Override
@@ -740,18 +727,7 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
-  public void postOpenToEdit(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    List<PageWikiListener> listeners = wikiService.getPageListeners();
-    for (PageWikiListener l : listeners) {
-      try {
-        l.postGetToEdit(wikiType, wikiOwner, pageId, page);
-      } catch (WikiException e) {
-        if (log.isWarnEnabled()) {
-          log.warn(String.format("Executing listener [%s] on [%s] failed", l, page.getName()), e);
-        }
-      }
-    }
-  }  public void postOpenByTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+  public void postOpenByTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
     List<PageWikiListener> listeners = wikiService.getPageListeners();
     for (PageWikiListener l : listeners) {
       try {
@@ -773,19 +749,6 @@ public class NoteServiceImpl implements NoteService {
           log.warn(String.format("Executing listener [%s] on [%s] failed", l, page.getName()), e);
         }
       }
-    }
-  }
-
-  public void postSwitchToOldApp(Page note) {
-    List<PageWikiListener> listeners = wikiService.getPageListeners();
-    for (PageWikiListener l : listeners) {
-        l.postSwitchToOldApp(note);
-    }
-  }
-  public void postSwitchToNewApp(Page note) {
-    List<PageWikiListener> listeners = wikiService.getPageListeners();
-    for (PageWikiListener l : listeners) {
-        l.postSwitchToNewApp(note);
     }
   }
 
