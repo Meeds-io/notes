@@ -57,10 +57,6 @@ public class UnifiedSearchPageWikiListener extends PageWikiListener {
     }
   }
 
-  @Override
-  public void postGetToEdit(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
-  }
 
   @Override
   public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
@@ -72,13 +68,4 @@ public class UnifiedSearchPageWikiListener extends PageWikiListener {
 
   }
 
-  @Override
-  public void postSwitchToOldApp(Page page) {
-
-  }
-
-  @Override
-  public void postSwitchToNewApp(Page page) {
-
-  }
 }

@@ -380,26 +380,6 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  @GET
-  @Path("/switch/{toApp}/{noteBookType}/{noteBookOwner:.+}/{notesPageName}")
-  @RolesAllowed("users")
-  @ApiOperation(value = "Trigger switch event", httpMethod = "GET", response = Response.class, notes = "This Triggers switch n ote app event")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response triggerSwitchEvent(@ApiParam(value = "toApp", required = true) @PathParam("toApp") String toApp,
-                                     @ApiParam(value = "noteBookType", required = true) @PathParam("noteBookType") String noteBookType,
-                                     @ApiParam(value = "noteBookOwner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
-                                     @ApiParam(value = "notesPageName", required = true) @PathParam("notesPageName") String notesPageName) {
-    try {
-      noteService.triggerSwitchEvent(toApp, noteBookType, noteBookOwner, notesPageName);
-      return Response.ok().build();
-    } catch (Exception ex) {
-      log.warn("Failed to add switch stat", ex);
-      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
-    }
-  }
-
   @PATCH
   @Path("/note/move/{noteId}/{destinationNoteId}")
   @RolesAllowed("users")

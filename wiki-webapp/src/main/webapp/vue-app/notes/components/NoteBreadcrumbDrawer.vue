@@ -9,7 +9,7 @@
     <template slot="content">
       <v-layout column>
         <template v-if="wikiHome" class="ma-0 border-box-sizing">
-          <v-list-item @click="openNote(event,wikiHome)">
+          <v-list-item  @click="openNote(event,wikiHome)">
             <v-list-item-content>
               <v-list-item-title>{{ wikiHome.name }}</v-list-item-title>
             </v-list-item-content>
