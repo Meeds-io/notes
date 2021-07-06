@@ -75,8 +75,13 @@ export default {
       this.$refs.customPluginsDrawer.close();
     },
     openPlugin(id){
-      this.instance.execCommand(id);
-      this.close();
+      if (id==='table'){
+        document.dispatchEvent(new CustomEvent('note-table-plugins'));
+      } else {
+        this.instance.execCommand(id);
+        this.close();
+      }
+
     }
   }
 };

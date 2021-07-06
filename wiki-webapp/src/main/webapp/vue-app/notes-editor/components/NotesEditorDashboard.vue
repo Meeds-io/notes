@@ -69,6 +69,7 @@
       </div>
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
+    <note-table-plugins-drawer ref="noteTablePlugins" :instance="instance" />
   </v-app>
 </template>
 
@@ -114,6 +115,9 @@ export default {
     });
     document.addEventListener('note-custom-plugins', () => {
       this.$refs.noteCustomPlugins.open();
+    });
+    document.addEventListener('note-table-plugins', () => {
+      this.$refs.noteTablePlugins.open();
     });
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
@@ -219,7 +223,7 @@ export default {
           { name: 'colors', items: [ 'TextColor' ] },
           { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
           { name: 'insert' },
-          { name: 'links', items: [ 'simpleLink' , 'InsertOptions'] },
+          { name: 'links', items: [ 'simpleLink' , 'Table'  , 'InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
