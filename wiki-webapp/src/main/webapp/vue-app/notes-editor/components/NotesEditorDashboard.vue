@@ -223,7 +223,7 @@ export default {
           { name: 'colors', items: [ 'TextColor' ] },
           { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
           { name: 'insert' },
-          { name: 'links', items: [ 'simpleLink' , 'Table'  , 'InsertOptions'] },
+          { name: 'links', items: [ 'simpleLink' , 'InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
