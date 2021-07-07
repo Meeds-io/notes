@@ -84,15 +84,21 @@
 </template>
 <script>
 export default {
+  props: {
+    noteBreadcrumb: {
+      type: Array,
+      default: () => null
+    }
+  },
   data() {
     return {
-      noteBreadcrumb: []
+      //noteBreadcrumb: []
     };
   },
-  created() {
+  /*created() {
     this.$root.$on('update-breadcrumb', noteBreadcrumbArray => {
       this.noteBreadcrumb = noteBreadcrumbArray;
     });
-  },
+  },*/
 };
 </script>

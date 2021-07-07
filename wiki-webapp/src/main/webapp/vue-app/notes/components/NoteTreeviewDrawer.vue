@@ -30,6 +30,18 @@
             </div>
           </div>
         </v-list-item>
+        <v-list-item>
+          <div class="py-2">
+            <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
+            <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
+          </div>
+        </v-list-item>
+        <v-list-item>
+          <div class="py-2">
+            <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
+            <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
+          </div>
+        </v-list-item>
       </v-layout>
       <v-layout column>
         <template v-if="wikiHome" class="ma-0 border-box-sizing">
@@ -56,6 +68,19 @@
         </template>
       </v-layout>
     </template>
+    <template v-if="movePage" slot="footer">
+      <div class="d-flex">
+        <v-spacer />
+        <v-btn
+          class="btn ml-2">
+          {{ $t('notes.button.cancel') }}
+        </v-btn>
+        <v-btn
+          class="btn btn-primary ml-2">
+          {{ $t('notes.menu.label.movePage') }}
+        </v-btn>
+      </div>
+    </template>
   </exo-drawer>
 </template>
 
@@ -71,7 +96,8 @@ export default {
     activeItem: [],
     isIncludePage: false,
     movePage: false,
-    spaceDisplayName: eXo.env.portal.spaceDisplayName
+    spaceDisplayName: eXo.env.portal.spaceDisplayName,
+    breadcrumb: []
   }),
   computed: {
     items() {
@@ -88,6 +114,9 @@ export default {
     },
     includePage () {
       return this.isIncludePage;
+    },
+    currentBreadcrumb() {
+      return this.breadcrumb;
     }
   },
   created() {
@@ -131,15 +160,19 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
-      if (!this.includePage ) {
+      if ( !this.includePage && !this.movePage ) {
         this.activeItem = [note.id];
         this.$root.$emit('open-note-by-id',note.id);
         this.$refs.breadcrumbDrawer.close();
-      } else {
-        this.$root.$emit('include-page',note);
-        document.dispatchEvent(new CustomEvent ('test'));
       }
-      
+      if (this.includePage) {
+        this.$root.$emit('include-page',note);
+      }
+      if (this.movePage) {
+        this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
+          this.breadcrumb = data && data.breadcrumb || [];
+        });
+      }
     },
     makeChildren(noteChildren, childrenArray) {
       if ( noteChildren.hasChild ) {
@@ -162,6 +195,7 @@ export default {
         this.note = data || [];
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , this.note.name,source).then(data => {
           this.note.breadcrumb = data && data.breadcrumb || [];
+          this.breadcrumb = this.note.breadcrumb;
         });
       }).then(() => {
         this.note.wikiOwner =  this.note.wikiOwner.substring(1);
