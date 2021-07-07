@@ -1,11 +1,13 @@
 import NotesOverview from './components/NotesOverview.vue';
-import NoteBreadcrumbDrawer from './components/NoteBreadcrumbDrawer.vue';
+import NoteTreeviewDrawer from './components/NoteTreeviewDrawer.vue';
 import NotesActionsMenu from './components/NotesActionsMenu.vue';
+import NoteBreadcrumb from './components/NoteBreadcrumb.vue';
 
 const components = {
   'notes-overview': NotesOverview,
-  'note-breadcrumb-drawer': NoteBreadcrumbDrawer,
-  'notes-actions-menu': NotesActionsMenu
+  'note-treeview-drawer': NoteTreeviewDrawer,
+  'notes-actions-menu': NotesActionsMenu,
+  'note-breadcrumb': NoteBreadcrumb
 };
 
 for (const key in components) {

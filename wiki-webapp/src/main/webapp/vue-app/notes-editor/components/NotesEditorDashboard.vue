@@ -70,7 +70,7 @@
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
     <note-table-plugins-drawer ref="noteTablePlugins" :instance="instance" />
-    <note-breadcrumb-drawer ref="notesBreadcrumb" />
+    <note-treeview-drawer ref="notesBreadcrumb" />
   </v-app>
 </template>
 

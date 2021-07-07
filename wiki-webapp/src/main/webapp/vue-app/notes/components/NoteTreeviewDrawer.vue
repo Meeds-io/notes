@@ -4,13 +4,36 @@
     class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
     right>
-    <template slot="title">
+    <template v-if="movePage" slot="title">
+      {{ $t('notes.label.movePageTitle') }}
+    </template>
+    <template v-else slot="title">
       {{ $t('notes.label.breadcrumbTitle') }}
     </template>
     <template slot="content">
+      <v-layout v-if="movePage" column>
+        <v-list-item>
+          <v-list-item-content>
+            <v-list-item-title class="font-weight-bold text-color">{{ note.name }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item>
+          <div class="d-flex align-center">
+            <div class="pr-4"><span class="font-weight-bold text-color">{{ $t('notes.label.movePageSpace') }}</span></div>
+            <div class="identitySuggester no-border mt-0">
+              <v-chip
+                class="identitySuggesterItem me-2 mt-2">
+                <span class="text-truncate">
+                  {{ spaceDisplayName }}
+                </span>
+              </v-chip>
+            </div>
+          </div>
+        </v-list-item>
+      </v-layout>
       <v-layout column>
         <template v-if="wikiHome" class="ma-0 border-box-sizing">
-          <v-list-item  @click="openNote(event,wikiHome)">
+          <v-list-item @click="openNote(event,wikiHome)">
             <v-list-item-content>
               <v-list-item-title>{{ wikiHome.name }}</v-list-item-title>
             </v-list-item-content>
@@ -46,7 +69,9 @@ export default {
     noteBookOwnerTree: '',
     openNotes: [],
     activeItem: [],
-    isIncludePage: false
+    isIncludePage: false,
+    movePage: false,
+    spaceDisplayName: eXo.env.portal.spaceDisplayName
   }),
   computed: {
     items() {
@@ -77,6 +102,11 @@ export default {
         this.isIncludePage = true;
       } else {
         this.isIncludePage = false;
+      }
+      if (source === 'movePage') {
+        this.movePage = true;
+      } else {
+        this.movePage = false;
       }
       this.$nextTick().then(() => {
         this.$refs.breadcrumbDrawer.open();
