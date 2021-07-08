@@ -76,7 +76,7 @@ public class PageEntity {
 
 
   @Override
-  public PageEntity clone() { // NOSONAR
+  public PageEntity clone() {
     return new PageEntity(id,name,owner,author,createdDate,updatedDate,content,syntax,title,comment,permissions,url,activityId,wikiId,wikiType,wikiOwner,parentPageName,parentPageId,isMinorEdit,canEdit,toBePublished, breadcrumb);
   }
 }
