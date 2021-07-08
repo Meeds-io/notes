@@ -73,6 +73,8 @@ public class Page {
 
   private List<BreadcrumbData> breadcrumb;
 
+  private boolean canEdit;
+
   public Page() {
   }
 
@@ -244,5 +246,13 @@ public class Page {
 
   public void setParentPageId(String parentPageId) {
     this.parentPageId = parentPageId;
+  }
+
+  public boolean canEdit() {
+    return canEdit;
+  }
+
+  public void setCanEdit(boolean canEdit) {
+    this.canEdit = canEdit;
   }
 }
