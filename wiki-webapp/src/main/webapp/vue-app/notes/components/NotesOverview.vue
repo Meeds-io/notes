@@ -209,6 +209,9 @@ export default {
     this.$root.$on('delete-note', () => {
       this.confirmDeleteNote();
     });
+    this.$root.$on('move-page', (note, newParentNote) => {
+      this.moveNotes(note, newParentNote);
+    });
     
   },
   mounted() {
@@ -226,6 +229,20 @@ export default {
         this.getNoteById(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
       }).catch(e => {
         console.error('Error when deleting notes', e);
+      });
+    },
+    moveNotes(note, newParentNote){
+      note.parentPageId=newParentNote.id;
+      this.$notesService.moveNotes(note, newParentNote).then(() => {
+        this.getNoteById(note.name);
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.noteMoved')});
+      }).catch(e => {
+        console.error('Error when move note page', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
       });
     },
     retrieveUserInformations(userName) {

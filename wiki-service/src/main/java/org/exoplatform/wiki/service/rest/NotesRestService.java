@@ -400,8 +400,8 @@ public class NotesRestService implements ResourceContainer {
       if (toNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteId);
-      WikiPageParams newLocationParams = new WikiPageParams(toNote.getWikiType(), toNote.getWikiOwner(), toNoteId);
+      WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
+      WikiPageParams newLocationParams = new WikiPageParams(toNote.getWikiType(), toNote.getWikiOwner(), toNote.getName());
       boolean isMoved = noteService.moveNote(currentLocationParams, newLocationParams, identity);
       if (isMoved) {
         return Response.ok().build();

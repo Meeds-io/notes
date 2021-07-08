@@ -76,6 +76,7 @@
           {{ $t('notes.button.cancel') }}
         </v-btn>
         <v-btn
+          @click="moveNote()"
           class="btn btn-primary ml-2">
           {{ $t('notes.menu.label.movePage') }}
         </v-btn>
@@ -97,7 +98,8 @@ export default {
     isIncludePage: false,
     movePage: false,
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
-    breadcrumb: []
+    breadcrumb: [],
+    destinationNote: {},
   }),
   computed: {
     items() {
@@ -122,6 +124,9 @@ export default {
   created() {
     this.$root.$on('refresh-treeview-items', (noteId)=> {
       this.getNoteById(noteId);
+    });
+    this.$root.$on('close-note-tree-drawer', () => {
+      this.close();
     });
   },
   methods: {
@@ -170,7 +175,8 @@ export default {
       }
       if (this.movePage) {
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
-          this.breadcrumb = data && data.breadcrumb || [];
+          this.breadcrumb = data && data.breadcrumb || []; 
+          this.destinationNote = data;      
         });
       }
     },
@@ -241,6 +247,12 @@ export default {
       });
       return treeviewArray;
     },
+    moveNote(){
+      this.$root.$emit('move-page',this.note,this.destinationNote);
+    },
+    close(){
+      this.$refs.breadcrumbDrawer.close();
+    }
   }
 };
 </script>
