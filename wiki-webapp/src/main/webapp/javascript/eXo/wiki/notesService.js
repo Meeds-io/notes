@@ -128,3 +128,16 @@ export function deleteNotes(note) {
     }
   });
 }
+
+export function moveNotes(note,destination) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/move/${note.id}/${destination.id}`, {
+    credentials: 'include',
+    method: 'PATCH',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when deleting notes from label');
+    }
+  });
+}

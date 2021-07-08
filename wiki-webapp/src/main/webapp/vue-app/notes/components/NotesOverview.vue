@@ -60,86 +60,7 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <div v-if="notebreadcrumb.length <= 4" class="notes-tree-items d-flex">
-              <div
-                v-for="(note, index) in notebreadcrumb"
-                :key="index"
-                :class="notebreadcrumb.length === 1 && 'single-path-element' || ''"
-                class="notes-tree-item d-flex text-truncate"
-                :style="`max-width: ${100 / (notebreadcrumb.length)}%`">
-                <v-tooltip max-width="300" bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <a 
-                      v-bind="attrs"
-                      v-on="on"
-                      @click="getNoteById(note.id,'breadCrumb')"
-                      class="caption text-truncate breadCrumb-link"
-                      :class="index < notebreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
-                  </template>
-                  <span class="caption">{{ note.title }}</span>
-                </v-tooltip>
-                <v-icon v-if="index < notebreadcrumb.length-1" size="18">mdi-chevron-right</v-icon>
-              </div>
-            </div>
-            <div v-else class="notes-tree-items notes-long-path d-flex align-center">
-              <div class="notes-tree-item long-path-first-item d-flex text-truncate">
-                <v-tooltip max-width="300" bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <a
-                      class="caption text-color text-truncate path-clickable breadCrumb-link"
-                      v-bind="attrs"
-                      v-on="on"
-                      @click="getNoteById(notebreadcrumb[0].id,'breadCrumb')">{{ notebreadcrumb[0].title }}</a>
-                  </template>
-                  <span class="caption">{{ notebreadcrumb[0].title }}</span>
-                </v-tooltip>
-                <v-icon size="18">mdi-chevron-right</v-icon>
-              </div>
-              <div class="notes-tree-item long-path-second-item d-flex">
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-icon
-                      v-bind="attrs"
-                      v-on="on"
-                      size="24">
-                      mdi-dots-horizontal
-                    </v-icon>
-                  </template>
-                  <p
-                    v-for="(note, index) in notebreadcrumb"
-                    :key="index"
-                    class="mb-0">
-                    <span v-if="index > 0 && index <notebreadcrumb.length-2" class="caption"><v-icon size="18" class="tooltip-chevron">mdi-chevron-right</v-icon> {{ note.title }}</span>
-                  </p>
-                </v-tooltip>
-                <v-icon class="clickable" size="18">mdi-chevron-right</v-icon>
-              </div>
-              <div class="notes-tree-item long-path-third-item d-flex text-truncate">
-                <v-tooltip max-width="300" bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <a
-                      class="caption text-color text-truncate path-clickable breadCrumb-link"
-                      v-bind="attrs"
-                      v-on="on"
-                      @click="getNoteById(notebreadcrumb[notebreadcrumb.length-2].id,'breadCrumb')">{{ notebreadcrumb[notebreadcrumb.length-2].title }}</a>
-                  </template>
-                  <span class="caption">{{ notebreadcrumb[notebreadcrumb.length-2].title }}</span>
-                </v-tooltip>
-                <v-icon size="18">mdi-chevron-right</v-icon>
-              </div>
-              <div class="notes-tree-item d-flex text-truncate">
-                <v-tooltip max-width="300" bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <a
-                      class="caption text-color text-truncate text-sub-title breadCrumb-link"
-                      v-bind="attrs"
-                      v-on="on"
-                      @click="getNoteById(notebreadcrumb[notebreadcrumb.length-1].id,'breadCrumb')">{{ notebreadcrumb[notebreadcrumb.length-1].title }}</a>
-                  </template>
-                  <span class="caption">{{ notebreadcrumb[notebreadcrumb.length-1].title }}</span>
-                </v-tooltip>
-              </div>
-            </div>
+            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteById($event, source)" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
@@ -173,8 +94,11 @@
         </a>
       </div>
     </div>
-    <notes-actions-menu :note="notes" :default-path="defaultPath" />
-    <note-breadcrumb-drawer ref="notesBreadcrumb" />
+    <notes-actions-menu
+      :note="notes" 
+      :default-path="defaultPath" 
+      @open-treeview="$refs.notesBreadcrumb.open(notes.id, 'movePage')" />
+    <note-treeview-drawer ref="notesBreadcrumb" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -231,6 +155,7 @@ export default {
       this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
       this.currentNoteBreadcrumb = this.notes.breadcrumb;
       this.lastUpdatedTime = this.notes.updatedDate.time && this.$dateUtil.formatDateObjectToDisplay(new Date(this.notes.updatedDate.time), this.dateTimeFormat, this.lang) || '';
+      this.$root.$emit('update-breadcrumb', this.currentNoteBreadcrumb);
     }
   },
   computed: {
@@ -284,6 +209,9 @@ export default {
     this.$root.$on('delete-note', () => {
       this.confirmDeleteNote();
     });
+    this.$root.$on('move-page', (note, newParentNote) => {
+      this.moveNotes(note, newParentNote);
+    });
     
   },
   mounted() {
@@ -301,6 +229,20 @@ export default {
         this.getNoteById(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
       }).catch(e => {
         console.error('Error when deleting notes', e);
+      });
+    },
+    moveNotes(note, newParentNote){
+      note.parentPageId=newParentNote.id;
+      this.$notesService.moveNotes(note, newParentNote).then(() => {
+        this.getNoteById(note.name);
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.noteMoved')});
+      }).catch(e => {
+        console.error('Error when move note page', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
       });
     },
     retrieveUserInformations(userName) {

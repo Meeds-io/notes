@@ -12,7 +12,7 @@
         class="px-2 text-left action-menu-item draftButton"
         @click="$root.$emit('delete-note')">
         <v-icon
-          size="19"
+          size="18"
           class="primary--text clickable pr-2">
           mdi-trash-can-outline
         </v-icon>
@@ -20,9 +20,19 @@
       </v-list-item>
       <v-list-item
         class="px-2 text-left action-menu-item draftButton"
+        @click="$emit('open-treeview')">
+        <v-icon
+          size="18"
+          class="primary--text clickable pr-2">
+          mdi-cursor-move
+        </v-icon>
+        <span>{{ $t('notes.menu.label.movePage') }}</span>
+      </v-list-item>
+      <v-list-item
+        class="px-2 text-left action-menu-item draftButton"
         @click="copyLink">
         <v-icon
-          size="19"
+          size="18"
           class="primary--text clickable pr-2">
           mdi-link-variant
         </v-icon>

@@ -4,13 +4,48 @@
     class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
     right>
-    <template slot="title">
+    <template v-if="movePage" slot="title">
+      {{ $t('notes.label.movePageTitle') }}
+    </template>
+    <template v-else slot="title">
       {{ $t('notes.label.breadcrumbTitle') }}
     </template>
     <template slot="content">
+      <v-layout v-if="movePage" column>
+        <v-list-item>
+          <v-list-item-content>
+            <v-list-item-title class="font-weight-bold text-color">{{ note.name }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item>
+          <div class="d-flex align-center">
+            <div class="pr-4"><span class="font-weight-bold text-color">{{ $t('notes.label.movePageSpace') }}</span></div>
+            <div class="identitySuggester no-border mt-0">
+              <v-chip
+                class="identitySuggesterItem me-2 mt-2">
+                <span class="text-truncate">
+                  {{ spaceDisplayName }}
+                </span>
+              </v-chip>
+            </div>
+          </div>
+        </v-list-item>
+        <v-list-item>
+          <div class="py-2">
+            <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
+            <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
+          </div>
+        </v-list-item>
+        <v-list-item>
+          <div class="py-2">
+            <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
+            <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
+          </div>
+        </v-list-item>
+      </v-layout>
       <v-layout column>
         <template v-if="wikiHome" class="ma-0 border-box-sizing">
-          <v-list-item  @click="openNote(event,wikiHome)">
+          <v-list-item @click="openNote(event,wikiHome)">
             <v-list-item-content>
               <v-list-item-title>{{ wikiHome.name }}</v-list-item-title>
             </v-list-item-content>
@@ -33,6 +68,20 @@
         </template>
       </v-layout>
     </template>
+    <template v-if="movePage" slot="footer">
+      <div class="d-flex">
+        <v-spacer />
+        <v-btn
+          class="btn ml-2">
+          {{ $t('notes.button.cancel') }}
+        </v-btn>
+        <v-btn
+          @click="moveNote()"
+          class="btn btn-primary ml-2">
+          {{ $t('notes.menu.label.movePage') }}
+        </v-btn>
+      </div>
+    </template>
   </exo-drawer>
 </template>
 
@@ -46,7 +95,11 @@ export default {
     noteBookOwnerTree: '',
     openNotes: [],
     activeItem: [],
-    isIncludePage: false
+    isIncludePage: false,
+    movePage: false,
+    spaceDisplayName: eXo.env.portal.spaceDisplayName,
+    breadcrumb: [],
+    destinationNote: {},
   }),
   computed: {
     items() {
@@ -63,11 +116,17 @@ export default {
     },
     includePage () {
       return this.isIncludePage;
+    },
+    currentBreadcrumb() {
+      return this.breadcrumb;
     }
   },
   created() {
     this.$root.$on('refresh-treeview-items', (noteId)=> {
       this.getNoteById(noteId);
+    });
+    this.$root.$on('close-note-tree-drawer', () => {
+      this.close();
     });
   },
   methods: {
@@ -77,6 +136,11 @@ export default {
         this.isIncludePage = true;
       } else {
         this.isIncludePage = false;
+      }
+      if (source === 'movePage') {
+        this.movePage = true;
+      } else {
+        this.movePage = false;
       }
       this.$nextTick().then(() => {
         this.$refs.breadcrumbDrawer.open();
@@ -101,15 +165,20 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
-      if (!this.includePage ) {
+      if ( !this.includePage && !this.movePage ) {
         this.activeItem = [note.id];
         this.$root.$emit('open-note-by-id',note.id);
         this.$refs.breadcrumbDrawer.close();
-      } else {
-        this.$root.$emit('include-page',note);
-        document.dispatchEvent(new CustomEvent ('test'));
       }
-      
+      if (this.includePage) {
+        this.$root.$emit('include-page',note);
+      }
+      if (this.movePage) {
+        this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
+          this.breadcrumb = data && data.breadcrumb || []; 
+          this.destinationNote = data;      
+        });
+      }
     },
     makeChildren(noteChildren, childrenArray) {
       if ( noteChildren.hasChild ) {
@@ -132,6 +201,7 @@ export default {
         this.note = data || [];
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , this.note.name,source).then(data => {
           this.note.breadcrumb = data && data.breadcrumb || [];
+          this.breadcrumb = this.note.breadcrumb;
         });
       }).then(() => {
         this.note.wikiOwner =  this.note.wikiOwner.substring(1);
@@ -177,6 +247,12 @@ export default {
       });
       return treeviewArray;
     },
+    moveNote(){
+      this.$root.$emit('move-page',this.note,this.destinationNote);
+    },
+    close(){
+      this.$refs.breadcrumbDrawer.close();
+    }
   }
 };
 </script>

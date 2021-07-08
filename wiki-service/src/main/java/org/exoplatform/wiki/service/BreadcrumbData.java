@@ -12,11 +12,21 @@ public class BreadcrumbData {
   
   private String wikiOwner;
 
+  private String noteId;
+
   public BreadcrumbData(String id, String title, String wikiType, String wikiOwner) {
     this.id = id;
     this.title = title;
     this.wikiType = wikiType;
     this.wikiOwner = wikiOwner;
+  }
+
+  public BreadcrumbData(String id, String noteId, String title, String wikiType, String wikiOwner) {
+    this.id = id;
+    this.title = title;
+    this.wikiType = wikiType;
+    this.wikiOwner = wikiOwner;
+    this.noteId = noteId;
   }
 
   public String getId() {
@@ -50,5 +60,12 @@ public class BreadcrumbData {
   public void setWikiOwner(String wikiOwner) {
     this.wikiOwner = wikiOwner;
   }
-  
+
+  public String getNoteId() {
+    return noteId;
+  }
+
+  public void setNoteId(String noteId) {
+    this.noteId = noteId;
+  }
 }

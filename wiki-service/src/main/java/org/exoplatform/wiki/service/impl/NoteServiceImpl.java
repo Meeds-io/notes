@@ -796,7 +796,7 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       return list;
     }
-    list.add(0, new BreadcrumbData(note.getName(), note.getTitle(), noteType, noteOwner));
+    list.add(0, new BreadcrumbData(note.getName(),note.getId(), note.getTitle(), noteType, noteOwner));
     Page parentNote = getParentNoteOf(note);
     if (parentNote != null) {
       getBreadcumb(list, noteType, noteOwner, parentNote.getName());
