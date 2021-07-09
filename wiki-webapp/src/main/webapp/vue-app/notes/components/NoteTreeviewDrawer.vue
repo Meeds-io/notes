@@ -4,7 +4,13 @@
     class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
     right>
-    <template v-if="movePage" slot="title">
+    <template v-if="isIncludePage" slot="title">
+      <div class="d-flex">
+        <v-icon size="19" @click="close()">mdi-arrow-left</v-icon>
+        <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
+      </div>
+    </template>
+    <template v-else-if="movePage" slot="title">
       {{ $t('notes.label.movePageTitle') }}
     </template>
     <template v-else slot="title">
@@ -57,6 +63,7 @@
             :open="openedItems"
             :active="active"
             :load-children="fetchNoteChildren"
+            class="treeview-item"
             item-key="id"
             hoverable
             open-on-click
@@ -171,6 +178,7 @@ export default {
         this.$refs.breadcrumbDrawer.close();
       }
       if (this.includePage) {
+        this.activeItem = [note.id];
         this.$root.$emit('include-page',note);
       }
       if (this.movePage) {
