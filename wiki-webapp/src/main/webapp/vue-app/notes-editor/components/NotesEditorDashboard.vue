@@ -140,7 +140,13 @@ export default {
       }
     });
     this.$root.$on('include-page', (note) => {
-      $('textarea#notesContent').ckeditor().editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name} </a>`);
+      const editor = $('textarea#notesContent').ckeditor().editor;
+      if (editor.getSelection().getSelectedText()) {
+        editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${editor.getSelection().getSelectedText()} </a>`);
+      } else {
+        editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name} </a>`);
+      }
+
     });
   },
   methods: {
@@ -261,9 +267,21 @@ export default {
             const element = evt.data.element;
             if ( element && element.is('a') && element.getAttribute( 'class' ) === 'noteLink') {
               const noteName = element.getAttribute( 'href' );
-              self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(data => {
-                self.$refs.notesBreadcrumb.open(data.id, 'includePages');
-              });
+              const queryPath = window.location.search;
+              const urlParams = new URLSearchParams(queryPath);
+              if ( urlParams.has('noteId') ){
+                self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(data => {
+                  self.$refs.notesBreadcrumb.open(data.id, 'includePages');
+                });
+              } else if (urlParams.has('parentNoteId')){
+                self.$notesService.getNoteById(self.parentPageId).then(data => {
+                  self.notes = data || [];
+                  self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(note => {
+                    self.$refs.notesBreadcrumb.open(note.id, 'includePages');
+                  });
+                });
+                
+              }
             }
           }
         }
