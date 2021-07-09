@@ -7,7 +7,7 @@
     <template slot="title">
       <div class="d-flex">
         <i class="uiIcon uiArrowBAckIcon" @click="close"></i>
-        <span class="ps-2">{{ $t('notes.plugin.table') }}</span>
+        <span class="ps-2 pt-1">{{ $t('notes.plugin.table') }}</span>
       </div>
     </template>
     <template slot="content">
@@ -29,6 +29,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="lines"
+              class="pa-0"
               type="number"
               :rules="maxRules"
               dense
@@ -44,6 +45,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="columns"
+              class="pa-0"
               type="number"
               :rules="maxRules"
               dense
@@ -59,6 +61,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="width"
+              class="pa-0"
               :rules="maxRules"
               dense
               min-height
@@ -73,6 +76,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="height"
+              class="pa-0"
               :rules="maxRules"
               dense
               min-height
@@ -117,6 +121,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="border"
+              class="pa-0"
               type="number"
               :rules="maxRules"
               dense
@@ -132,6 +137,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="spacing"
+              class="pa-0"
               type="number"
               :rules="maxRules"
               dense
@@ -147,6 +153,7 @@
           <v-col cols="3">
             <v-text-field
               v-model="internal"
+              class="pa-0"
               type="number"
               :rules="maxRules"
               dense
@@ -198,7 +205,7 @@
 
             <v-btn class="btn btn-primary" @click="insertTable">
               <template>
-                {{ $t('label.confirm') }}
+                {{ $t('label.table.ok') }}
               </template>
             </v-btn>
           </div>
@@ -243,6 +250,7 @@ export default {
       this.$refs.customTableDrawer.open();
     },
     close() {
+      this.$root.$emit('close-drawer');
       this.$refs.customTableDrawer.close();
     },
     insertTable() {
