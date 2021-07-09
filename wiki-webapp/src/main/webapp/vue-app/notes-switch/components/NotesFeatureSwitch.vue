@@ -1,18 +1,7 @@
 <template>
   <v-app class="white">
     <div :class="notesApplicationClass">
-      <div v-if="!useNewApp" class="white my-3 py-2 primary--text">
-        <v-btn
-          id="switchToNewNotesApp"
-          link
-          text
-          class="primary--text font-weight-bold text-capitalize"
-          @click="switchNotesApp">
-          <v-icon class="me-3" size="16">far fa-window-restore</v-icon>
-          {{ buttonText }}
-        </v-btn>
-      </div>
-      <div v-else class="white my-3 py-2 primary--text">
+      <div v-show="useNewApp"  class="white my-3 py-2 primary--text">
         <v-btn
           id="switchToOldWikiApp"
           link
@@ -20,7 +9,18 @@
           class="primary--text font-weight-bold text-capitalize"
           @click="switchNotesApp">
           <v-icon class="me-3" size="16">far fa-window-restore</v-icon>
-          {{ buttonText }}
+          {{ $t('notes.switchToOldApp') }}
+        </v-btn>
+      </div>
+      <div v-show="!useNewApp" class="white my-3 py-2 primary--text">
+        <v-btn
+          id="switchToNewNotesApp"
+          link
+          text
+          class="primary--text font-weight-bold text-capitalize"
+          @click="switchNotesApp">
+          <v-icon class="me-3" size="16">far fa-window-restore</v-icon>
+          {{ $t('notes.switchToNewApp') }}
         </v-btn>
       </div>
       <div v-if="useNewApp" class="d-flex flex-column pb-4 notes-wrapper">
@@ -41,13 +41,6 @@ export default {
     currentPath: window.location.pathname, 
   }),
   computed: {
-    buttonText() {
-      if (this.useNewApp) {
-        return this.$t('notes.switchToOldApp');
-      } else {
-        return this.$t('notes.switchToNewApp');
-      }
-    },
     notesPageName() {
       if (this.currentPath.endsWith('/wiki')){
         return 'WikiHome';
@@ -84,8 +77,8 @@ export default {
   methods: {
     switchNotesApp() {
       document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
-      this.useNewApp = !this.useNewApp;
-      if (!this.useNewApp) {
+      
+      if (this.useNewApp) {
         const theURL= new URL(window.location.href);
         theURL.searchParams.set('appView', 'old');
         window.location.href=theURL.href;
@@ -96,7 +89,9 @@ export default {
         theURL.searchParams.delete('appView');
         window.history.pushState('wiki', '', theURL.href);
         document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
-      }     
+        this.useNewApp = !this.useNewApp;
+      }  
+        
     },
     displayText() {
       window.setTimeout(() => this.imageLoaded = true, 200);
