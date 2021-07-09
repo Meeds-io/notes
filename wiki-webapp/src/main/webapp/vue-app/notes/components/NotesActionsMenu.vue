@@ -8,7 +8,7 @@
     left>
     <v-list>
       <v-list-item
-        v-if="note.name !== defaultPath"
+        v-if="note.name !== defaultPath && note.canEdit"
         class="px-2 text-left action-menu-item draftButton"
         @click="$root.$emit('delete-note')">
         <v-icon

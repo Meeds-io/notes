@@ -46,6 +46,7 @@ import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.service.rest.model.PageEntity;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
@@ -98,7 +99,8 @@ public class NotesRestService implements ResourceContainer {
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadcumb(noteBookType, noteBookOwner, noteId));
-      return Response.ok(note).build();
+      PageEntity pageEntity = getPageDetails(note);
+      return Response.ok(pageEntity).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -106,6 +108,17 @@ public class NotesRestService implements ResourceContainer {
       log.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
+  }
+
+  private PageEntity getPageDetails(Page page) {
+
+    PageEntity pageEntity = new PageEntity(page.getId(),page.getName(),page.getOwner(),page.getAuthor(),page.getCreatedDate(),
+            page.getUpdatedDate(),page.getContent(),page.getSyntax(),page.getTitle(),page.getComment(),
+            page.getPermissions(),page.getUrl(),page.getActivityId(),page.getWikiId(),page.getWikiType(),
+            page.getOwner(),page.getParentPageName(),page.getParentPageId(),page.isMinorEdit(),page.canEdit(),
+            page.isToBePublished(),page.getBreadcrumb());
+
+    return pageEntity;
   }
 
   @GET

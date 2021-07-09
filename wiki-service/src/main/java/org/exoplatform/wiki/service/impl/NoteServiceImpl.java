@@ -358,6 +358,8 @@ public class NoteServiceImpl implements NoteService {
       if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
+      boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
+      page.setCanEdit(canEdit);
     }
     return page;
   }
