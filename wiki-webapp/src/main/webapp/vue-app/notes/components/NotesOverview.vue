@@ -60,7 +60,7 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteById($event, source)" />
+            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteById($event,'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
