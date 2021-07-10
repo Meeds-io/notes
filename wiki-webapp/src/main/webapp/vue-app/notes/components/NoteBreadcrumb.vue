@@ -12,7 +12,7 @@
             <a 
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',note.id,'breadCrumb')"
+              @click="$emit('open-note',note.id)"
               class="caption text-truncate breadCrumb-link"
               :class="index < noteBreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
           </template>
@@ -29,7 +29,7 @@
               class="caption text-color text-truncate path-clickable breadCrumb-link"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[0].id,'breadCrumb')">{{ noteBreadcrumb[0].title }}</a>
+              @click="$emit('open-note',noteBreadcrumb[0].id)">{{ noteBreadcrumb[0].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb[0].title }}</span>
         </v-tooltip>
@@ -61,7 +61,7 @@
               class="caption text-color text-truncate path-clickable breadCrumb-link"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-2].id,'breadCrumb')">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</a>
+              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-2].id)">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</span>
         </v-tooltip>
@@ -74,7 +74,7 @@
               class="caption text-color text-truncate text-sub-title breadCrumb-link"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-1].id,'breadCrumb')">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</a>
+              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-1].id)">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</span>
         </v-tooltip>
