@@ -113,6 +113,7 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
+    closeAllDrawer: true
   }),
   computed: {
     items() {
@@ -141,9 +142,17 @@ export default {
     this.$root.$on('close-note-tree-drawer', () => {
       this.close();
     });
+
+    document.addEventListener('drawerClosed', () => {
+      if ( this.closeAllDrawer ) {
+        document.dispatchEvent(new CustomEvent('closeAllDrawers'));
+      }
+    });
+
   },
   methods: {
     open(noteId, source) {
+      this.closeAllDrawer = true;
       this.getNoteById(noteId);
       if (source === 'includePages') {
         this.isIncludePage = true;
@@ -264,6 +273,7 @@ export default {
       this.$root.$emit('move-page',this.note,this.destinationNote);
     },
     close(){
+      this.closeAllDrawer = false;
       this.$refs.breadcrumbDrawer.close();
     }
   }
