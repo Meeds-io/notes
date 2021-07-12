@@ -51,26 +51,6 @@ public class MockIndexingService implements IndexingService {
     increaseCount("unindex");
   }
 
-  @Override
-  public void reindexAll(String s) {
-    increaseCount("reindexAll");
-  }
-
-  @Override
-  public void unindexAll(String s) {
-    increaseCount("unindexAll");
-  }
-
-  @Override
-  public void clearQueue() {
-    increaseCount("clearQueue");
-  }
-
-  @Override
-  public void clearQueue(String entityType) {
-    increaseCount("clearQueueByEntityType");
-  }
-
   private synchronized void increaseCount(String name) {
     Integer v = count.get(name);
     if (v == null) {

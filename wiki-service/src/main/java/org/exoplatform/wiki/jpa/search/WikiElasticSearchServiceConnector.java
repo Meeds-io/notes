@@ -97,7 +97,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   protected List<SearchResult> filteredWikiSearch(SearchContext context, String query, List<ElasticSearchFilter> filters, Collection<String> sites,
                                                   int offset, int limit, String sort, String order) {
     String esQuery = buildFilteredQuery(query, sites, filters, offset, limit, sort, order);
-    String jsonResponse = getClient().sendRequest(esQuery, getIndex(), getType());
+    String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
 

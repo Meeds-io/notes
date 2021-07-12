@@ -33,7 +33,7 @@ public class WikiElasticSearchServiceConnectorTest {
   @Test
   public void shouldReturnResultsWithoutExcerptWhenNoHighlight() {
     // Given
-    Mockito.when(elasticSearchingClient.sendRequest(Matchers.any(), Matchers.any(), Matchers.any()))
+    Mockito.when(elasticSearchingClient.sendRequest(Matchers.any(), Matchers.any()))
             .thenReturn("{\n" +
                     "  \"took\": 939,\n" +
                     "  \"timed_out\": false,\n" +

@@ -93,7 +93,7 @@ public class WikiElasticUnifiedSearchServiceConnectorTest {
     when(wService.getWikiWebappUri()).thenReturn("wiki");
 
     // Given
-    Mockito.when(elasticSearchingClient.sendRequest(Matchers.any(), Matchers.any(), Matchers.any()))
+    Mockito.when(elasticSearchingClient.sendRequest(Matchers.any(), Matchers.any()))
             .thenReturn("{\n" +
                     "  \"took\": 939,\n" +
                     "  \"timed_out\": false,\n" +
