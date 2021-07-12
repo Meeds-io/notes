@@ -1,7 +1,7 @@
 <template>
   <v-app class="white">
     <div :class="notesApplicationClass">
-      <div v-show="useNewApp"  class="white my-3 py-2 primary--text">
+      <div v-show="useNewApp" class="white my-3 py-2 primary--text">
         <v-btn
           id="switchToOldWikiApp"
           link
@@ -30,6 +30,7 @@
   </v-app>
 </template>
 <script>
+import { notesConstants } from '../../../javascript/eXo/wiki/notesConstants.js';
 export default {
   data: () => ({
     useNewApp: true,
@@ -79,9 +80,27 @@ export default {
       document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
       
       if (this.useNewApp) {
-        const theURL= new URL(window.location.href);
-        theURL.searchParams.set('appView', 'old');
-        window.location.href=theURL.href;
+        let noteId = 0;
+        let currentUrl = window.location.href;
+        if (currentUrl.includes('/wiki/')) {
+          const nId = this.currentPath.split('wiki/')[1].split(/[^0-9]/)[0];
+          noteId = nId && Number(nId) || 0;
+        }
+        if (noteId!==0){
+          this.$notesService.getNoteById(noteId).then(data => {
+            const note = data || [];
+            currentUrl = `${currentUrl.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${note.name}`;
+            const theURL= new URL(currentUrl);
+            theURL.searchParams.set('appView', 'old');
+            window.location.href=theURL.href;
+          }).catch(e => {
+            console.error('Error when getting note', e);
+          });
+        } else {
+          const theURL= new URL(window.location.href);
+          theURL.searchParams.set('appView', 'old');
+          window.location.href=theURL.href;
+        }        
       } else {
         this.notesApplicationClass='notesApplication';
         $('.uiWikiPortlet').hide();
