@@ -60,7 +60,7 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteById($event,'breadCrumb')" />
+            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
@@ -187,6 +187,13 @@ export default {
           }
         }
       }
+    },
+    noteId() {
+      if (this.currentPath.includes('/wiki/')) {
+        const nId = this.currentPath.split('wiki/')[1].split(/[^0-9]/)[0];
+        return (nId && Number(nId) || 0);
+      }
+      return 0;
     }
   },
   created() {
@@ -198,7 +205,7 @@ export default {
       window.location.pathname = notesConstants.PORTAL_BASE_URL;
     });
     this.$root.$on('open-note-by-id', noteId => {
-      this.getNoteById(noteId,'tree');
+      this.getNoteByName(noteId,'tree');
     });
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
@@ -215,7 +222,12 @@ export default {
     
   },
   mounted() {
-    this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
+    if (this.noteId){
+      this.getNotesById(this.noteId);
+    } else {
+      this.getNoteByName(this.notesPageName);
+    }
+
   },
   methods: {
     addNotes(){
@@ -226,7 +238,7 @@ export default {
     },
     deleteNotes(){
       this.$notesService.deleteNotes(this.notes).then(() => {
-        this.getNoteById(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
+        this.getNoteByName(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
       }).catch(e => {
         console.error('Error when deleting notes', e);
       });
@@ -234,7 +246,7 @@ export default {
     moveNotes(note, newParentNote){
       note.parentPageId=newParentNote.id;
       this.$notesService.moveNotes(note, newParentNote).then(() => {
-        this.getNoteById(note.name);
+        this.getNoteByName(note.name);
         this.$root.$emit('close-note-tree-drawer');
         this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.noteMoved')});
       }).catch(e => {
@@ -262,10 +274,31 @@ export default {
         this.$root.$emit('refresh-treeview-items',this.notes.id);
       });
     },
-    getNoteById(noteId,source) {
-      this.getNotes(this.noteBookType,this.noteBookOwner, noteId,source);
-      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${noteId}`;
-      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+    getNotesById(noteId,source) {
+      return this.$notesService.getNoteById(noteId,source).then(data => {
+        this.notes = data || [];
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting notes', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$emit('application-loaded');
+        this.$root.$emit('refresh-treeview-items',this.notes.id);
+      });
+    },
+    getNoteByName(noteName,source) {
+      return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner, noteName,source).then(data => {
+        this.notes = data || [];
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${this.notes.id}`;
+        window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting notes', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$emit('application-loaded');
+        this.$root.$emit('refresh-treeview-items',this.notes.id);
+      });
     },
     confirmDeleteNote: function () {
       let parentsBreadcrumb = '';
