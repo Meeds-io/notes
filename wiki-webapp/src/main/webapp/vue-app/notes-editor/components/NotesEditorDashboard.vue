@@ -45,6 +45,7 @@
         </div>
       </div>
     </div>
+    <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
   </v-app>
 </template>
 
@@ -52,6 +53,10 @@
 
 export default {
   props: {
+    instance: {
+      type: Object,
+      default: () => null,
+    },
   },
   data() {
     return {
@@ -76,6 +81,9 @@ export default {
     this.initCKEditor();
   },
   created() {
+    document.addEventListener('note-custom-plugins', () => {
+      this.$refs.noteCustomPlugins.open();
+    });
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
     });
@@ -135,8 +143,10 @@ export default {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
       CKEDITOR.plugins.addExternal('video','/wiki/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
+      CKEDITOR.plugins.addExternal('insertOptions','/wiki/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
+
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,table,font,justify,widget,video,insertOptions';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -166,7 +176,8 @@ export default {
           { name: 'fontsize', items: ['FontSize'] },
           { name: 'colors', items: [ 'TextColor' ] },
           { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
-          { name: 'links', items: [ 'simpleLink', 'selectImage', 'Video'] },
+          { name: 'insert' },
+          { name: 'links', items: [ 'simpleLink' , 'InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
@@ -191,6 +202,7 @@ export default {
           }
         }
       });
+      this.instance =CKEDITOR.instances['notesContent'];
     },
     validateForm() {
       if (!this.notes.title) {
