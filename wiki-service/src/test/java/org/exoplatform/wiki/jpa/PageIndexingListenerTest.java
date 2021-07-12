@@ -19,20 +19,12 @@
 
 package org.exoplatform.wiki.jpa;
 
-import org.exoplatform.component.test.ConfigurationUnit;
-import org.exoplatform.component.test.ConfiguredBy;
-import org.exoplatform.component.test.ContainerScope;
-import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.wiki.jpa.dao.PageAttachmentDAO;
 import org.exoplatform.wiki.jpa.mock.MockIndexingService;
 import org.exoplatform.wiki.jpa.search.PageIndexingListener;
-import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.impl.WikiServiceImpl;
 
 /**
@@ -48,7 +40,7 @@ public class PageIndexingListenerTest extends BaseTest {
 
     wikiService = getService(WikiServiceImpl.class);
     indexingService = new MockIndexingService();
-    wikiService.addComponentPlugin(new PageIndexingListener(getService(PageAttachmentDAO.class), indexingService));
+    wikiService.addComponentPlugin(new PageIndexingListener(indexingService));
 
   }
 
