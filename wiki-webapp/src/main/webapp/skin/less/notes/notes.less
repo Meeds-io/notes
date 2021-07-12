@@ -190,29 +190,35 @@
             content: "\e698";
           }
         }
-        .notes-tree-items {
-          max-width: 95%!important;
-          width: 95%!important;
-          .notes-tree-item {
-            .path-clickable {
-              max-width: 97% !important;
-              &:hover {
-                color: @primaryColor!important;
-              }
-            }
-          }
+      }
+    }
+  }
+  .notes-tree-items {
+    max-width: 100%!important;
+    width: 100%!important;
+    .notes-tree-item {
+      .path-clickable {
+        max-width: 97% !important;
+        &:hover {
+          color: @primaryColor!important;
         }
-        .notes-long-path {
-          .long-path-first-item {
-            max-width: 100px;
-         }
-         .long-path-second-item {
-          max-width: 42px;
-         }
-         .long-path-third-item {
-          max-width: 50%;
-         }
-        }
+      }
+    }
+  }
+  .note-breadcrumb-wrapper {
+    max-width: 95%!important;
+    width: 95%!important;
+    .notes-long-path {
+      .long-path-first-item {
+        max-width: 100px;
+        min-width: 60px;
+      }
+      .long-path-second-item {
+        max-width: 42px;
+      }
+      .long-path-third-item {
+        max-width: 50%;
+        min-width: 60px;
       }
     }
   }
@@ -233,6 +239,7 @@
         }
       }
       .v-treeview-node__root {
+        min-height: 38px !important;
         &:hover {
           &::before {
             opacity: 0!important;
@@ -252,6 +259,9 @@
           }
         }
       }
+    }
+    .position-title {
+      min-height: 30px!important;
     }
   }
 }

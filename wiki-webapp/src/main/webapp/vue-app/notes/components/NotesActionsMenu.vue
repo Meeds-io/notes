@@ -20,16 +20,6 @@
       </v-list-item>
       <v-list-item
         class="px-2 text-left action-menu-item draftButton"
-        @click="$emit('open-treeview')">
-        <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-cursor-move
-        </v-icon>
-        <span>{{ $t('notes.menu.label.movePage') }}</span>
-      </v-list-item>
-      <v-list-item
-        class="px-2 text-left action-menu-item draftButton"
         @click="copyLink">
         <v-icon
           size="18"
@@ -37,6 +27,17 @@
           mdi-link-variant
         </v-icon>
         <span>{{ $t('notes.menu.label.copyLink') }}</span>
+      </v-list-item>
+      <v-list-item
+        v-if="note.name !== defaultPath"
+        class="px-2 text-left action-menu-item draftButton"
+        @click="$emit('open-treeview')">
+        <v-icon
+          size="18"
+          class="primary--text clickable pr-2">
+          mdi-cursor-move
+        </v-icon>
+        <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
     </v-list>
   </v-menu>

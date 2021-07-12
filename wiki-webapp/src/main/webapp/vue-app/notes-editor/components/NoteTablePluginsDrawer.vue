@@ -205,7 +205,7 @@
 
             <v-btn class="btn btn-primary" @click="insertTable">
               <template>
-                {{ $t('label.table.ok') }}
+                {{ $t('notes.button.ok') }}
               </template>
             </v-btn>
           </div>

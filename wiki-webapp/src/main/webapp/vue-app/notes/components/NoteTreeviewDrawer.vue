@@ -37,15 +37,20 @@
           </div>
         </v-list-item>
         <v-list-item>
-          <div class="py-2">
+          <div class="py-2 width-full">
             <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
             <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
           </div>
         </v-list-item>
         <v-list-item>
-          <div class="py-2">
+          <div class="py-2  width-full">
             <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
             <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
+          </div>
+        </v-list-item>
+        <v-list-item class="position-title">
+          <div class="py-2">
+            <span class="font-weight-bold text-color">{{ $t('notes.label.movePagePosition') }}</span>
           </div>
         </v-list-item>
       </v-layout>
@@ -53,7 +58,7 @@
         <template v-if="wikiHome" class="ma-0 border-box-sizing">
           <v-list-item @click="openNote(event,wikiHome)">
             <v-list-item-content>
-              <v-list-item-title>{{ wikiHome.name }}</v-list-item-title>
+              <v-list-item-title class="body-2">{{ wikiHome.name }}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
         </template>
@@ -69,7 +74,7 @@
             open-on-click
             transition>
             <template v-slot:label="{ item }">
-              <v-list-item-title @click="openNote(event,item)">{{ item.name }}</v-list-item-title>
+              <v-list-item-title @click="openNote(event,item)" class="body-2">{{ item.name }}</v-list-item-title>
             </template>
           </v-treeview>
         </template>
@@ -79,13 +84,14 @@
       <div class="d-flex">
         <v-spacer />
         <v-btn
+          @click="close"
           class="btn ml-2">
           {{ $t('notes.button.cancel') }}
         </v-btn>
         <v-btn
           @click="moveNote()"
           class="btn btn-primary ml-2">
-          {{ $t('notes.menu.label.movePage') }}
+          {{ $t('notes.button.ok') }}
         </v-btn>
       </div>
     </template>
@@ -172,13 +178,12 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
+      this.activeItem = [note.id];
       if ( !this.includePage && !this.movePage ) {
-        this.activeItem = [note.id];
         this.$root.$emit('open-note-by-id',note.id);
         this.$refs.breadcrumbDrawer.close();
       }
       if (this.includePage) {
-        this.activeItem = [note.id];
         this.$root.$emit('include-page',note);
       }
       if (this.movePage) {

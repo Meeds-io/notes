@@ -1,7 +1,7 @@
 <template>
   <v-app class="white">
     <div :class="notesApplicationClass">
-      <div v-show="useNewApp"  class="white my-3 py-2 primary--text">
+      <div v-show="useNewApp" class="white my-3 py-2 primary--text">
         <v-btn
           id="switchToOldWikiApp"
           link
