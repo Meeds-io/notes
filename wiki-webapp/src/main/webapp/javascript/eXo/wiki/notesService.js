@@ -17,10 +17,14 @@ export function getNotes(noteBookType, noteBookOwner, noteId,source) {
   });
 } 
 
-export function getNoteById(noteId,source) {
+export function getNoteById(noteId,source,type, owner) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
-    url=`${url}?source=${source}`;
+    url=`${url}${getSeparator(url)}source=${source}`;
+  } if (type){
+    url=`${url}${getSeparator(url)}noteBookType=${type}`;
+  } if (owner){
+    url=`${url}${getSeparator(url)}noteBookOwner=${owner}`;
   }
   return fetch(url, {
     method: 'GET',
@@ -33,6 +37,10 @@ export function getNoteById(noteId,source) {
     }
   });
 } 
+
+export function getSeparator(url) {
+  return url.indexOf('?') !== -1 ? '&' : '?';
+}
 
 export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/wiki/tree/${treeType}?path=${noteBookType}/${noteBookOwner}/${noteId}`, {
@@ -110,9 +118,9 @@ export function updateNoteById(note) {
 export function getPathByNoteOwner(note) {
   if (note.wikiType==='group'){
     const spaceName = note.wikiOwner.split('/spaces/')[1];
-    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/wiki/${note.name}`;
+    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/wiki/${note.id}`;
   } else {
-    return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes/${note.name}`;
+    return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes/${note.id}`;
   }
 }
 

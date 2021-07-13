@@ -130,11 +130,19 @@ public class NotesRestService implements ResourceContainer {
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
   public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                              @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
+                              @ApiParam(value = "noteBookType", required = false) @QueryParam("noteBookType") String noteBookType,
+                              @ApiParam(value = "noteBookOwner", required = false) @QueryParam("noteBookOwner") String noteBookOwner,
+                              @ApiParam(value = "source", required = false) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity, source);
       if (note == null) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if(StringUtils.isNotEmpty(noteBookType) && !note.getWikiType().equals(noteBookType)) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if(StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
