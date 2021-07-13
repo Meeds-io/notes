@@ -275,7 +275,7 @@ export default {
       });
     },
     getNotesById(noteId,source) {
-      return this.$notesService.getNoteById(noteId,source).then(data => {
+      return this.$notesService.getNoteById(noteId,source,this.noteBookType, this.noteBookOwner).then(data => {
         this.notes = data || [];
         return this.$nextTick();
       }).catch(e => {

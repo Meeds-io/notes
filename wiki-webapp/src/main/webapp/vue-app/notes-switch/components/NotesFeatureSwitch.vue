@@ -83,7 +83,7 @@ export default {
         let noteId = 0;
         let currentUrl = window.location.href;
         if (currentUrl.includes('/wiki/')) {
-          const nId = this.currentPath.split('wiki/')[1].split(/[^0-9]/)[0];
+          const nId = currentUrl.split('wiki/')[1].split(/[^0-9]/)[0];
           noteId = nId && Number(nId) || 0;
         }
         if (noteId!==0){
