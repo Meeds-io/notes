@@ -17,6 +17,7 @@
           getSummary: (activity) => activity.templateParams
                                     && Vue.prototype.$utils.htmlToText(activity.templateParams.page_exceprt),
           getSourceLink: (activity) => activity.templateParams.page_url,
+          canShare: () => true,
         },
       });
     },
