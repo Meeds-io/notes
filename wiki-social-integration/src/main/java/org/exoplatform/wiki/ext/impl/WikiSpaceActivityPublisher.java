@@ -1,18 +1,20 @@
 package org.exoplatform.wiki.ext.impl;
 
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.common.http.HTTPStatus;
+
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.services.security.*;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -22,19 +24,10 @@ import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.ext.impl.WikiUIActivity.CommentType;
 import org.exoplatform.wiki.mow.api.*;
-import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.IDType;
-import org.exoplatform.wiki.service.PageUpdateType;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
-
-import javax.ws.rs.core.Response;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WikiSpaceActivityPublisher extends PageWikiListener {
 
@@ -431,7 +424,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
         if (space != null) {
           if (!isPublicInSpace(page, space))
             return;
-          ownerStream = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
+          ownerStream = identityManager.getOrCreateUserIdentity(space.getPrettyName());
           spaceUrl = space.getUrl();
           spaceName = space.getDisplayName();
         }
