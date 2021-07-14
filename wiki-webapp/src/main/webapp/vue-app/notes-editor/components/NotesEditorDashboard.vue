@@ -120,6 +120,9 @@ export default {
     this.$root.$on('note-table-plugins', () => {
       this.$refs.noteTablePlugins.open();
     });
+    this.$root.$on('updateData', data => {
+      this.notes.content= data;
+    });
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
     });
@@ -221,7 +224,7 @@ export default {
       CKEDITOR.plugins.addExternal('insertOptions','/wiki/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,table,font,justify,widget,video,insertOptions';
+      let extraPlugins = 'sharedspace,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -252,7 +255,7 @@ export default {
           { name: 'colors', items: [ 'TextColor' ] },
           { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
           { name: 'insert' },
-          { name: 'links', items: [ 'simpleLink' , 'InsertOptions'] },
+          { name: 'links', items: [  'InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.notesFormContentHeight,
@@ -264,6 +267,13 @@ export default {
         },
         on: {
           instanceReady: function() {
+            CKEDITOR.instances['notesContent'].removeMenuItem('simpleLink');
+            CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
+              exec: function() {
+                const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
+                self.$refs.noteTablePlugins.open(table);
+              }
+            });
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
