@@ -12,7 +12,10 @@ import java.util.Stack;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.api.notification.plugin.NotificationPluginUtils;
 import org.exoplatform.commons.api.settings.ExoFeatureService;
@@ -21,6 +24,16 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.space.SpaceApplication;
+import org.exoplatform.social.core.space.SpaceTemplate;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.core.space.spi.SpaceTemplateService;
+import org.exoplatform.social.service.rest.SpaceRest;
+import org.exoplatform.web.WebAppController;
+import org.exoplatform.web.controller.QualifiedName;
+import org.exoplatform.web.controller.router.Router;
+import org.exoplatform.web.controller.router.URIWriter;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
 import org.exoplatform.commons.diff.DiffResult;
@@ -611,5 +624,64 @@ public class Utils {
    */
   public static String getRestContextName() {
     return PortalContainer.getCurrentRestContextName();
+  }
+
+  public static String getPageUrl(Page page){
+    String spaceUri = getSpacesURI(page);
+    StringBuilder spaceUrl = new StringBuilder(spaceUri);
+    spaceUrl.append("/");
+    spaceUrl.append(getWikiAppNameInSpace(page.getWikiOwner()));
+    spaceUrl.append("/");
+    if (!StringUtils.isEmpty(page.getId())) {
+      spaceUrl.append(page.getId());
+    }
+    return spaceUrl.toString();
+  }
+
+  public static String getSpacesURI(Page page) {
+    try {
+    QualifiedName REQUEST_HANDLER = QualifiedName.create("gtn", "handler");
+    QualifiedName REQUEST_SITE_TYPE = QualifiedName.create("gtn", "sitetype");
+    QualifiedName REQUEST_SITE_NAME = QualifiedName.create("gtn", "sitename");
+    QualifiedName PATH = QualifiedName.create("gtn", "path");
+    SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+    WebAppController webAppController = CommonsUtils.getService(WebAppController.class);
+    Router router = webAppController.getRouter();
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if(space==null){
+        return "";
+      }
+      Map<QualifiedName, String> qualifiedName = new HashedMap();
+      qualifiedName.put(REQUEST_HANDLER, "portal");
+      qualifiedName.put(REQUEST_SITE_TYPE, "group");
+
+        StringBuilder urlBuilder = new StringBuilder();
+        qualifiedName.put(REQUEST_SITE_NAME, space.getGroupId());
+        qualifiedName.put(PATH, space.getPrettyName());
+        router.render(qualifiedName, new URIWriter(urlBuilder));
+        return(urlBuilder.toString());
+
+    } catch (Exception e) {
+      return "";
+    }
+  }
+  public static String getWikiAppNameInSpace(String spaceId) {
+    try {
+      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+      Space space = spaceService.getSpaceByGroupId(spaceId);
+      SpaceTemplateService spaceTemplateService = CommonsUtils.getService(SpaceTemplateService.class);
+      SpaceTemplate spaceTemplate = spaceTemplateService.getSpaceTemplateByName(space.getTemplate());
+      List<SpaceApplication> spaceTemplateApplications = spaceTemplate.getSpaceApplicationList();
+      if (spaceTemplateApplications != null) {
+        for (SpaceApplication spaceApplication : spaceTemplateApplications) {
+          if ("WikiPortlet".equals(spaceApplication.getPortletName())) {
+            return spaceApplication.getUri();
+          }
+        }
+      }
+    } catch (Exception e) {
+      log_.warn("Cannot get Wiki App anme");
+    }
+    return "wiki";
   }
 }

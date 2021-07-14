@@ -92,7 +92,7 @@ export function updateNote(note) {
         throw new Error('error', resp);
       }
     } else {
-      return resp;
+      return resp.json();
     }
   });
 }
@@ -111,7 +111,7 @@ export function updateNoteById(note) {
         throw new Error(text);
       });
     } else {
-      return resp;
+      return resp.json();
     }
   });
 }

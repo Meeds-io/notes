@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
@@ -114,11 +115,9 @@ public class NoteServiceImpl implements NoteService {
         }
         note.setPermissions(permissions);
       }
-
       Page createdPage = createNote(noteBook, parentPage, note);
-
       createdPage.setToBePublished(note.isToBePublished());
-
+      createdPage.setUrl(Utils.getPageUrl(createdPage));
       invalidateCache(parentPage);
       invalidateCache(note);
 
@@ -172,8 +171,12 @@ public class NoteServiceImpl implements NoteService {
         log.error("Error while broadcasting wiki edition event", e);
       }
     }
-    postUpdatePage(note.getWikiType(), note.getWikiOwner(), note.getName(), note, type);
-    return getNoteById(note.getId());
+
+    Page updatedPage = getNoteById(note.getId());
+    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
+    postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
+
+    return updatedPage;
   }
 
 

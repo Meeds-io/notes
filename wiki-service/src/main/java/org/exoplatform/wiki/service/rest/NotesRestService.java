@@ -249,7 +249,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
@@ -263,7 +263,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_.setTitle(note.getTitle());
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
@@ -271,10 +271,10 @@ public class NotesRestService implements ResourceContainer {
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_);
       }
-      return Response.ok().build();
+      return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -311,7 +311,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
@@ -325,7 +325,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_.setTitle(note.getTitle());
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_);
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
@@ -333,10 +333,10 @@ public class NotesRestService implements ResourceContainer {
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
-        noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_);
       }
-      return Response.ok().build();
+      return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have edit permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
