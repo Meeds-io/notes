@@ -64,7 +64,7 @@
             :placeholder="notesBodyPlaceholder"
             class="notesFormInput"
             name="notesContent">
-            </textarea>
+              </textarea>
         </div>
       </div>
     </div>
@@ -216,7 +216,7 @@ export default {
         // Disable suggester on smart-phone landscape
         extraPlugins = 'simpleLink,selectImage';
       }
-      CKEDITOR.addCss('.cke_editable { font-size: 18px; }');
+      CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
 
       // this line is mandatory when a custom skin is defined
 
