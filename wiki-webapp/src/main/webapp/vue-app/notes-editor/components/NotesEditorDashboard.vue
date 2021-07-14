@@ -169,9 +169,12 @@ export default {
         };
         let notePath = '';
         if (this.notes.id){
-          this.$notesService.updateNote(notes).then(() => {
-            notes.name=notes.title;
-            notePath = this.$notesService.getPathByNoteOwner(notes).replace(/ /g, '_');
+          this.$notesService.updateNoteById(notes).then(data => {
+            if (data.url){
+              notePath = `${eXo.env.portal.context}${data.url}`;
+            } else {
+              notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+            }            
             window.location.href= notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
@@ -182,7 +185,11 @@ export default {
           });
         } else {
           this.$notesService.createNote(notes).then(data => {
-            notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+            if (data.url){
+              notePath = `${eXo.env.portal.context}${data.url}`;
+            } else {
+              notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+            }
             window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
