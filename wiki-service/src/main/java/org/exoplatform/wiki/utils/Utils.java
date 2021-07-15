@@ -628,7 +628,8 @@ public class Utils {
 
   public static String getPageUrl(Page page){
     String spaceUri = getSpacesURI(page);
-    StringBuilder spaceUrl = new StringBuilder(spaceUri);
+    StringBuilder spaceUrl = new StringBuilder("/portal");
+    spaceUrl.append(spaceUri);
     spaceUrl.append("/");
     spaceUrl.append(getWikiAppNameInSpace(page.getWikiOwner()));
     spaceUrl.append("/");

@@ -208,13 +208,15 @@ export default {
           id: noteChildren.path.split('%2F').pop(),
           hasChild: noteChildren.hasChild,
           name: noteChildren.name,
+          noteId: noteChildren.noteId,
           children: []
         });
       } else {
         childrenArray.push({
           id: noteChildren.path.split('%2F').pop(),
           hasChild: noteChildren.hasChild,
-          name: noteChildren.name
+          name: noteChildren.name,
+          noteId: noteChildren.noteId
         });
       }
     },
@@ -257,13 +259,15 @@ export default {
             id: child.path.split('%2F').pop(),
             hasChild: child.hasChild,
             name: child.name,
+            noteId: child.noteId,
             children: this.makeNoteChildren(child.children)
           });
         } else {
           treeviewArray.push({
             id: child.path.split('%2F').pop(),
             hasChild: child.hasChild,
-            name: child.name
+            name: child.name,
+            noteId: child.noteId
           });
         }
       });

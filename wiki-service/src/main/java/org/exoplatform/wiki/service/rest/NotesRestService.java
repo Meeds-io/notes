@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -46,7 +47,6 @@ import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
-import org.exoplatform.wiki.service.rest.model.PageEntity;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
@@ -99,8 +99,7 @@ public class NotesRestService implements ResourceContainer {
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadcumb(noteBookType, noteBookOwner, noteId));
-      PageEntity pageEntity = getPageDetails(note);
-      return Response.ok(pageEntity).build();
+      return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -108,17 +107,6 @@ public class NotesRestService implements ResourceContainer {
       log.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
-  }
-
-  private PageEntity getPageDetails(Page page) {
-
-    PageEntity pageEntity = new PageEntity(page.getId(),page.getName(),page.getOwner(),page.getAuthor(),page.getCreatedDate(),
-            page.getUpdatedDate(),page.getContent(),page.getSyntax(),page.getTitle(),page.getComment(),
-            page.getPermissions(),page.getUrl(),page.getActivityId(),page.getWikiId(),page.getWikiType(),
-            page.getOwner(),page.getParentPageName(),page.getParentPageId(),page.isMinorEdit(),page.canEdit(),
-            page.isToBePublished(),page.getBreadcrumb());
-
-    return pageEntity;
   }
 
   @GET
@@ -146,7 +134,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(), note.getWikiOwner(), noteId));
+      note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(), note.getWikiOwner(), note.getName()));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
@@ -167,6 +155,10 @@ public class NotesRestService implements ResourceContainer {
   public Response createNote(@ApiParam(value = "note object to be created", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (NumberUtils.isNumber(note.getTitle())) {
+      log.warn("Note's title should not be number");
+      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     String noteBookType = note.getWikiType();
     String noteBookOwner = note.getWikiOwner();
@@ -224,6 +216,10 @@ public class NotesRestService implements ResourceContainer {
                              @ApiParam(value = "note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (NumberUtils.isNumber(note.getTitle())) {
+      log.warn("Note's title should not be number");
+      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -295,6 +291,10 @@ public class NotesRestService implements ResourceContainer {
                                  @ApiParam(value = "note object to be updated", required = true) Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (NumberUtils.isNumber(note.getTitle())) {
+      log.warn("Note's title should not be number");
+      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
