@@ -67,11 +67,6 @@ export default {
       default: () => null,
     },
   },
-  created() {
-    this.$root.$on('close-drawer', () => {
-      this.close();
-    });
-  },
   methods: {
     open() {
       this.$refs.customPluginsDrawer.open();
