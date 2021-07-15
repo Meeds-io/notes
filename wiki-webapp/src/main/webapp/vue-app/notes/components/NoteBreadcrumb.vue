@@ -90,15 +90,5 @@ export default {
       default: () => null
     }
   },
-  data() {
-    return {
-      //noteBreadcrumb: []
-    };
-  },
-  /*created() {
-    this.$root.$on('update-breadcrumb', noteBreadcrumbArray => {
-      this.noteBreadcrumb = noteBreadcrumbArray;
-    });
-  },*/
 };
 </script>

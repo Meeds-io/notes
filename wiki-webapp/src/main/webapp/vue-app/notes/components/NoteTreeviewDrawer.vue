@@ -4,7 +4,7 @@
     class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
     right>
-    <template v-if="isIncludePage" slot="title">
+    <template v-if="isIncludePage && displayArrow" slot="title">
       <div class="d-flex">
         <v-icon size="19" @click="close()">mdi-arrow-left</v-icon>
         <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
@@ -64,6 +64,7 @@
         </template>
         <template v-if="items && items.length">
           <v-treeview
+            v-if="reload"
             :items="items[0].children"
             :open="openedItems"
             :active="active"
@@ -113,7 +114,9 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
-    closeAllDrawer: true
+    closeAllDrawer: true,
+    displayArrow: true,
+    render: true
   }),
   computed: {
     items() {
@@ -133,6 +136,9 @@ export default {
     },
     currentBreadcrumb() {
       return this.breadcrumb;
+    },
+    reload () {
+      return this.render;
     }
   },
   created() {
@@ -144,6 +150,7 @@ export default {
     });
 
     document.addEventListener('drawerClosed', () => {
+      this.render = false;
       if ( this.closeAllDrawer ) {
         document.dispatchEvent(new CustomEvent('closeAllDrawers'));
       }
@@ -151,13 +158,17 @@ export default {
 
   },
   methods: {
-    open(noteId, source) {
+    open(noteId, source, includeDisplay) {
       this.closeAllDrawer = true;
+      this.render = false;
       this.getNoteById(noteId);
       if (source === 'includePages') {
         this.isIncludePage = true;
       } else {
         this.isIncludePage = false;
+      }
+      if (includeDisplay) {
+        this.displayArrow =false;
       }
       if (source === 'movePage') {
         this.movePage = true;
@@ -165,6 +176,8 @@ export default {
         this.movePage = false;
       }
       this.$nextTick().then(() => {
+        this.$forceUpdate();
+        this.render = true;
         this.$refs.breadcrumbDrawer.open();
       });
     },
@@ -194,6 +207,7 @@ export default {
       }
       if (this.includePage) {
         this.$root.$emit('include-page',note);
+        this.$refs.breadcrumbDrawer.close();
       }
       if (this.movePage) {
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
@@ -278,6 +292,7 @@ export default {
     },
     close(){
       this.closeAllDrawer = false;
+      this.render = false;
       this.$refs.breadcrumbDrawer.close();
     }
   }
