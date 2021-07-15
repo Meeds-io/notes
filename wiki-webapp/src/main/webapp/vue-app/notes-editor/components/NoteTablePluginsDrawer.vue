@@ -34,7 +34,8 @@
               :rules="maxRules"
               dense
               min-height
-              outlined />
+              outlined
+              :disabled="table ? true : false " />
           </v-col>
           <v-col cols="3">
             <v-subheader>
@@ -50,7 +51,8 @@
               :rules="maxRules"
               dense
               min-height
-              outlined />
+              outlined
+              :disabled="table ? true : false " />
           </v-col>
           <v-col cols="3">
             <v-subheader>
@@ -228,6 +230,7 @@ export default {
     spacing: 1,
     internal: 0,
     alignmentSelected: '',
+    table: '',
     alignment: [
       {name: ''},{name: 'left'},{name: 'center'},{name: 'right'}
     ],
@@ -246,7 +249,17 @@ export default {
     this.maxRules = [v => v >= 0];
   },
   methods: {
-    open() {
+    open(table) {
+      this.table = table;
+      if (table) {
+        this.width = table.width;
+        this.height = table.height;
+        this.border = table.border;
+        this.internal = table.cellpadding;
+        this.spacing = table.cellspacing;
+        this.alignmentSelected = table.align;
+        this.headerSelected = table.tHead;
+      }
       this.$refs.customTableDrawer.open();
     },
     close() {
@@ -254,36 +267,49 @@ export default {
       this.$refs.customTableDrawer.close();
     },
     insertTable() {
-      this.addTable();
       this.close();
+      this.addTable();
     },
     addTable() {
-      const div = document.createElement('DIV');
-      const table = document.createElement('TABLE');
-      div.appendChild(table);
-      table.width = this.width;
-      table.setAttribute( 'border', this.border );
-      table.setAttribute( 'cellPadding', this.internal );
-      table.setAttribute( 'height', this.height );
-      table.setAttribute( 'cellSpacing', this.spacing );
-      table.setAttribute( 'align', this.alignmentSelected );
-      table.setAttribute( 'tHead', this.headerSelected );
+      if (!this.table) {
+        const div = document.createElement('DIV');
+        const table = document.createElement('TABLE');
+        table.setAttribute('id', 'table');
+        div.appendChild(table);
+        table.setAttribute('width', this.width);
+        table.setAttribute('border', this.border);
+        table.setAttribute('cellPadding', this.internal);
+        table.setAttribute('height', this.height);
+        table.setAttribute('cellSpacing', this.spacing);
+        table.setAttribute('align', this.alignmentSelected);
+        table.setAttribute('tHead', this.headerSelected);
 
-      const tableBody = document.createElement('TBODY');
-      table.appendChild(tableBody);
+        const tableBody = document.createElement('TBODY');
+        table.appendChild(tableBody);
 
-      for (let i = 0; i < this.lines; i++) {
-        const tr = document.createElement('TR');
-        tableBody.appendChild(tr);
+        for (let i = 0; i < this.lines; i++) {
+          const tr = document.createElement('TR');
+          tableBody.appendChild(tr);
 
-        for (let j = 0; j < this.columns; j++) {
-          const td = document.createElement('TD');
-          td.width = '50';
-          td.height = '25';
-          tr.appendChild(td);
+          for (let j = 0; j < this.columns; j++) {
+            const td = document.createElement('TD');
+            td.width = '50';
+            td.height = '25';
+            tr.appendChild(td);
+          }
         }
+        this.instance.insertHtml(div.innerHTML);
+      } else {
+        this.instance.elementPath().contains('table', 1).setAttribute('width', this.width);
+        this.instance.elementPath().contains('table', 1).setAttribute('height', this.height);
+        this.instance.elementPath().contains('table', 1).setAttribute('border', this.border);
+        this.instance.elementPath().contains('table', 1).setAttribute('cellPadding', this.internal);
+        this.instance.elementPath().contains('table', 1).setAttribute('cellSpacing', this.spacing);
+        this.instance.elementPath().contains('table', 1).setAttribute('align', this.alignmentSelected);
+        this.instance.elementPath().contains('table', 1).setAttribute('tHead', this.headerSelected);
+        this.$root.$emit('updateData', this.instance.getData());
       }
-      this.instance.insertHtml(div.innerHTML);    }
+    },
   }
 };
 </script>
