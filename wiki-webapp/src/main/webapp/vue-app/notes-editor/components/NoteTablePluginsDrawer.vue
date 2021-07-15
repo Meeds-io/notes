@@ -238,6 +238,7 @@ export default {
     header: [
       {name: ''},{name: 'FIRST.ROW'},{name: 'FIRST.COLUMN'},{name: 'BOTH'}
     ],
+    closeAllDrawer: true
   }),
   props: {
     instance: {
@@ -247,9 +248,15 @@ export default {
   },
   created() {
     this.maxRules = [v => v >= 0];
+    document.addEventListener('drawerClosed', () => {
+      if ( this.closeAllDrawer ) {
+        document.dispatchEvent(new CustomEvent('closeAllDrawers'));
+      }
+    });
   },
   methods: {
     open(table) {
+      this.closeAllDrawer = true;
       this.table = table;
       if (table) {
         this.width = table.width;
@@ -263,7 +270,7 @@ export default {
       this.$refs.customTableDrawer.open();
     },
     close() {
-      this.$root.$emit('close-drawer');
+      this.closeAllDrawer = false;
       this.$refs.customTableDrawer.close();
     },
     insertTable() {

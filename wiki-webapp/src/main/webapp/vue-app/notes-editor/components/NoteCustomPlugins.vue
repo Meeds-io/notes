@@ -67,11 +67,11 @@ export default {
       default: () => null,
     },
   },
-  created() {
+  /*created() {
     this.$root.$on('close-drawer', () => {
       this.close();
     });
-  },
+  },*/
   methods: {
     open() {
       this.$refs.customPluginsDrawer.open();
