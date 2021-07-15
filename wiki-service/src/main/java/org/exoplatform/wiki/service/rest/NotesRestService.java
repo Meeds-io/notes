@@ -47,7 +47,6 @@ import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
-import org.exoplatform.wiki.service.rest.model.PageEntity;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
