@@ -147,12 +147,12 @@ export default {
       const editorSelectedElement = editor.getSelection().getStartElement();
       if ( editor.getSelection().getSelectedText() ) {
         if (editorSelectedElement.is('a') && editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
-          editor.getSelection().getStartElement().setHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+          editor.getSelection().getStartElement().setHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
         } else {
-          editor.insertHtml(`<a href='${note.id}' class='labelLink' target='_blank'>${editor.getSelection().getSelectedText()}</a>`);
+          editor.insertHtml(`<a href='${note.noteId}' class='labelLink' target='_blank'>${editor.getSelection().getSelectedText()}</a>`);
         }
       } else {
-        editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+        editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
       }
 
     });
@@ -179,7 +179,7 @@ export default {
         if (this.notes.id){
           this.$notesService.updateNoteById(notes).then(data => {
             if (data.url){
-              notePath = `${eXo.env.portal.context}${data.url}`;
+              notePath = data.url;
             } else {
               notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
             }            
@@ -194,7 +194,7 @@ export default {
         } else {
           this.$notesService.createNote(notes).then(data => {
             if (data.url){
-              notePath = `${eXo.env.portal.context}${data.url}`;
+              notePath = data.url;
             } else {
               notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
             }
@@ -315,6 +315,13 @@ export default {
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.missingTitle')
+        });
+        return false;
+      }
+      if (!isNaN(this.notes.title)) {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.numericTitle')
         });
         return false;
       }

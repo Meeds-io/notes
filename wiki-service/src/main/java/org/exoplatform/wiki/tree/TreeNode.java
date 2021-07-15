@@ -32,6 +32,8 @@ public class TreeNode {
 
   protected String           name;
 
+  protected String           id;
+
   protected String           path;
   
   protected boolean          isRetricted     = false;
@@ -76,7 +78,15 @@ public class TreeNode {
     this.name = name;
     this.nodeType = nodeType;
   }
-  
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
   public TreeNodeType getNodeType() {
     return nodeType;
   }

@@ -108,4 +108,8 @@ public class WikiHomeTreeNode extends TreeNode {
       return null;
     }
   }
+
+  public void setWikiHome(Page wikiHome) {
+    this.wikiHome = wikiHome;
+  }
 }

@@ -44,6 +44,7 @@ public class PageTreeNode extends TreeNode {
     this.wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
 
     this.page = page;
+    this.id = page.getId();
     this.path = buildPath();
     this.hasChild = !wikiService.getChildrenPageOf(page).isEmpty();
   }

@@ -27,6 +27,8 @@ public class JsonNodeData {
 
   protected String           name;
 
+  protected String           noteId;
+
   protected String           path;
 
   protected String           currentPath;
@@ -57,6 +59,10 @@ public class JsonNodeData {
                       String currentPath, String excerpt,
                       HashMap<String, Object> context) throws Exception {
     this.name = treeNode.getName();
+    this.noteId = treeNode.getId();
+    if (treeNode instanceof WikiHomeTreeNode){
+      this.noteId = ((WikiHomeTreeNode) treeNode).getWikiHome().getId();
+    }
     if(treeNode.getPath() != null) {
       this.path = URLEncoder.encode(treeNode.getPath(), "utf-8");
     }
@@ -170,5 +176,13 @@ public class JsonNodeData {
 
   public void setChildren(List<JsonNodeData> children) {
     this.children = children;
+  }
+
+  public String getNoteId() {
+    return noteId;
+  }
+
+  public void setNoteId(String noteId) {
+    this.noteId = noteId;
   }
 }

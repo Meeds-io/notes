@@ -387,6 +387,8 @@ public class NoteServiceImpl implements NoteService {
       if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
+      boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
+      page.setCanEdit(canEdit);
     }
     return page;
   }
@@ -403,6 +405,8 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have view the note.");
       }
     }
+    boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
+    page.setCanEdit(canEdit);
     if(StringUtils.isNotEmpty(source)) {
       if (source.equals("tree")) {
         postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
