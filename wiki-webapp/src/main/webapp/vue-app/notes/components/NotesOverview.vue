@@ -60,7 +60,7 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
+            <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
@@ -197,13 +197,6 @@ export default {
     }
   },
   created() {
-    this.$root.$on('open-note', notePath => {
-      const noteName = notePath.split('%2F').pop();
-      this.getNotes(this.noteBookType, this.noteBookOwner , noteName);
-      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
-      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteName);
-      window.location.pathname = notesConstants.PORTAL_BASE_URL;
-    });
     this.$root.$on('open-note-by-id', noteId => {
       this.getNoteByName(noteId,'tree');
     });
@@ -227,7 +220,7 @@ export default {
     } else {
       this.getNoteByName(this.notesPageName);
     }
-
+    this.currentNoteBreadcrumb = this.notes.breadcrumb;
   },
   methods: {
     addNotes(){
@@ -262,22 +255,10 @@ export default {
         this.lastUpdatedUser =  user.fullname;
       });
     },
-    getNotes(noteBookType,noteBookOwner,notesPageName,source) {
-      return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName,source).then(data => {
-        this.notes = data || [];
-        return this.$nextTick();
-      }).catch(e => {
-        console.error('Error when getting notes', e);
-        this.existingNote = false;
-      }).finally(() => {
-        this.$root.$emit('application-loaded');
-        this.$root.$emit('refresh-treeview-items',this.notes.id);
-      });
-    },
     getNotesById(noteId,source) {
       return this.$notesService.getNoteById(noteId,source,this.noteBookType, this.noteBookOwner).then(data => {
-        this.notes = data || [];
-        return this.$nextTick();
+        const note = data || [];
+        this.getNoteByName(note.name, source);
       }).catch(e => {
         console.error('Error when getting notes', e);
         this.existingNote = false;
