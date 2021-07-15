@@ -20,7 +20,7 @@
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom>
+              <v-tooltip bottom v-if="notes.canEdit">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
@@ -60,7 +60,7 @@
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <note-breadcrumb :note-breadcrumb="notes.breadcrumb" @open-note="getNoteById($event,'breadCrumb')" />
+            <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
@@ -190,15 +190,8 @@ export default {
     }
   },
   created() {
-    this.$root.$on('open-note', notePath => {
-      const noteName = notePath.split('%2F').pop();
-      this.getNotes(this.noteBookType, this.noteBookOwner , noteName);
-      const value = notesConstants.PORTAL_BASE_URL.substring(notesConstants.PORTAL_BASE_URL.lastIndexOf('/') + 1);
-      notesConstants.PORTAL_BASE_URL = notesConstants.PORTAL_BASE_URL.replace(value, noteName);
-      window.location.pathname = notesConstants.PORTAL_BASE_URL;
-    });
     this.$root.$on('open-note-by-id', noteId => {
-      this.getNoteById(noteId,'tree');
+      this.getNoteByName(noteId,'tree');
     });
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
@@ -215,7 +208,12 @@ export default {
     
   },
   mounted() {
-    this.getNotes(this.noteBookType, this.noteBookOwner , this.notesPageName);
+    if (this.noteId){
+      this.getNotesById(this.noteId);
+    } else {
+      this.getNoteByName(this.notesPageName);
+    }
+    this.currentNoteBreadcrumb = this.notes.breadcrumb;
   },
   methods: {
     addNotes(){
@@ -250,10 +248,10 @@ export default {
         this.lastUpdatedUser =  user.fullname;
       });
     },
-    getNotes(noteBookType,noteBookOwner,notesPageName,source) {
-      return this.$notesService.getNotes(noteBookType, noteBookOwner , notesPageName,source).then(data => {
-        this.notes = data || [];
-        return this.$nextTick();
+    getNotesById(noteId,source) {
+      return this.$notesService.getNoteById(noteId,source,this.noteBookType, this.noteBookOwner).then(data => {
+        const note = data || [];
+        this.getNoteByName(note.name, source);
       }).catch(e => {
         console.error('Error when getting notes', e);
         this.existingNote = false;
@@ -262,10 +260,19 @@ export default {
         this.$root.$emit('refresh-treeview-items',this.notes.id);
       });
     },
-    getNoteById(noteId,source) {
-      this.getNotes(this.noteBookType,this.noteBookOwner, noteId,source);
-      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${noteId}`;
-      window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+    getNoteByName(noteName,source) {
+      return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner, noteName,source).then(data => {
+        this.notes = data || [];
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${this.notes.id}`;
+        window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting notes', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$emit('application-loaded');
+        this.$root.$emit('refresh-treeview-items',this.notes.id);
+      });
     },
     confirmDeleteNote: function () {
       let parentsBreadcrumb = '';

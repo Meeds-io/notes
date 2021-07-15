@@ -69,7 +69,8 @@
       </div>
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
-    <note-treeview-drawer ref="notesBreadcrumb" />
+    <note-table-plugins-drawer ref="noteTablePlugins" :instance="instance" />
+    <note-treeview-drawer ref="noteTreeview" />
   </v-app>
 </template>
 
@@ -130,24 +131,31 @@ export default {
     }
     this.$root.$on('display-treeview-items', () => {
       if ( urlParams.has('noteId') ) {
-        this.$refs.notesBreadcrumb.open(this.noteId, 'includePages');
+        this.$refs.noteTreeview.open(this.noteId, 'includePages');
       } else if (urlParams.has('parentNoteId')) {
-        this.$refs.notesBreadcrumb.open(this.parentPageId, 'includePages');
+        this.$refs.noteTreeview.open(this.parentPageId, 'includePages');
       }
     });
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
-      if ( editor.getSelection().getSelectedText() ) {
-        if (editorSelectedElement.is('a') && editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
-          editor.getSelection().getStartElement().setHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+      if (editor.getSelection().getSelectedText()) {
+        if (editorSelectedElement.is('a')) {
+          if (editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
+            editor.getSelection().getStartElement().remove();
+            editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+          }
+          if (editorSelectedElement.getAttribute( 'class' ) === 'labelLink') {
+            const linkText = editorSelectedElement.getHtml();
+            editor.getSelection().getStartElement().remove();
+            editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${linkText}</a>`);
+          }
         } else {
-          editor.insertHtml(`<a href='${note.id}' class='labelLink' target='_blank'>${editor.getSelection().getSelectedText()}</a>`);
+          editor.insertHtml(`<a href='${note.noteId}' class='labelLink' target='_blank'>${editor.getSelection().getSelectedText()}</a>`);
         }
       } else {
-        editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+        editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
       }
-
     });
   },
   methods: {
@@ -272,13 +280,13 @@ export default {
               const urlParams = new URLSearchParams(queryPath);
               if ( urlParams.has('noteId') ){
                 self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(data => {
-                  self.$refs.notesBreadcrumb.open(data.id, '');
+                  self.$refs.noteTreeview.open(data.id, 'includePages', 'no-arrow');
                 });
               } else if (urlParams.has('parentNoteId')){
                 self.$notesService.getNoteById(self.parentPageId).then(data => {
                   const notes = data || [];
                   self.$notesService.getNotes(notes.wikiType, notes.wikiOwner , noteName).then(note => {
-                    self.$refs.notesBreadcrumb.open(note.id, '');
+                    self.$refs.noteTreeview.open(note.id, 'includePages', 'no-arrow');
                   });
                 });
                 
