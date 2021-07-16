@@ -20,7 +20,7 @@
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom v-if="notes.canEdit">
+              <v-tooltip bottom v-if="notes.canEdit && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
@@ -164,6 +164,9 @@ export default {
     },
     displayedDate() {
       return this.lastUpdatedTime;
+    },
+    isMobile() {
+      return this.$vuetify.breakpoint.name === 'xs';
     },
 
     isAvailableNote() {
