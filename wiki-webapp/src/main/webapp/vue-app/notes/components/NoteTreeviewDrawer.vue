@@ -234,13 +234,10 @@ export default {
         });
       }
     },
-    getNoteById(id,source) {
+    getNoteById(id) {
       return this.$notesService.getNoteById(id).then(data => {
         this.note = data || [];
-        this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , this.note.name,source).then(data => {
-          this.note.breadcrumb = data && data.breadcrumb || [];
-          this.breadcrumb = this.note.breadcrumb;
-        });
+        this.breadcrumb = this.note.breadcrumb;
       }).then(() => {
         this.note.wikiOwner =  this.note.wikiOwner.substring(1);
         this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
