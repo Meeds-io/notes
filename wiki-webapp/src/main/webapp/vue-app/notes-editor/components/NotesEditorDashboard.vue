@@ -149,12 +149,12 @@ export default {
         if (editorSelectedElement.is('a')) {
           if (editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
             editor.getSelection().getStartElement().remove();
-            editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${note.name}</a>`);
+            editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
           }
           if (editorSelectedElement.getAttribute( 'class' ) === 'labelLink') {
             const linkText = editorSelectedElement.getHtml();
             editor.getSelection().getStartElement().remove();
-            editor.insertHtml(`<a href='${note.id}' class='noteLink' target='_blank'>${linkText}</a>`);
+            editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${linkText}</a>`);
           }
         } else {
           editor.insertHtml(`<a href='${note.noteId}' class='labelLink' target='_blank'>${editor.getSelection().getSelectedText()}</a>`);
@@ -189,7 +189,7 @@ export default {
               notePath = data.url;
             } else {
               notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
-            }            
+            }           
             window.location.href= notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
@@ -295,22 +295,8 @@ export default {
           doubleclick: function(evt) {
             const element = evt.data.element;
             if ( element && element.is('a')) {
-              const noteName = element.getAttribute( 'href' );
-              const queryPath = window.location.search;
-              const urlParams = new URLSearchParams(queryPath);
-              if ( urlParams.has('noteId') ){
-                self.$notesService.getNotes(self.notes.wikiType, self.notes.wikiOwner , noteName).then(data => {
-                  self.$refs.noteTreeview.open(data.id, 'includePages', 'no-arrow');
-                });
-              } else if (urlParams.has('parentNoteId')){
-                self.$notesService.getNoteById(self.parentPageId).then(data => {
-                  const notes = data || [];
-                  self.$notesService.getNotes(notes.wikiType, notes.wikiOwner , noteName).then(note => {
-                    self.$refs.noteTreeview.open(note.id, 'includePages', 'no-arrow');
-                  });
-                });
-                
-              }
+              const noteId = element.getAttribute( 'href' );
+              self.$refs.noteTreeview.open(noteId, 'includePages', 'no-arrow');
             }
           }
         }
