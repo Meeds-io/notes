@@ -443,11 +443,6 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       }
     }
 
-    if (ownerStream == null) {
-      // if the page is public, publishing the activity in the user stream.
-      ownerStream = userIdentity;
-    }
-
     if (ownerStream != null) {
       activity = generateActivity(ownerStream,
                                   authorActivity,
