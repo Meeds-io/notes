@@ -107,14 +107,17 @@ export function updateNoteById(note) {
     body: JSON.stringify(note),
   }).then(resp => {
     if (!resp || !resp.ok) {
-      return resp.text().then((text) => {
-        throw new Error(text);
-      });
+      if (resp.status===409){
+        throw new Error('error.duplicate.title', resp);
+      } else {
+        throw new Error('error', resp);
+      }
     } else {
       return resp.json();
     }
   });
 }
+
 export function getPathByNoteOwner(note) {
   if (note.wikiType==='group'){
     const spaceName = note.wikiOwner.split('/spaces/')[1];

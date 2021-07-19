@@ -21,6 +21,7 @@ import org.exoplatform.wiki.service.BreadcrumbData;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 @Data
 public class Page {
@@ -76,6 +77,8 @@ public class Page {
   private List<BreadcrumbData> breadcrumb;
 
   private boolean canEdit;
+
+  private Locale userLocale;
 
   public Page() {
   }

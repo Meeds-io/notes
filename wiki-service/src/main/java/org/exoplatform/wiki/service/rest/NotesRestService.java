@@ -231,7 +231,10 @@ public class NotesRestService implements ResourceContainer {
       if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-
+      note_.setToBePublished(note.isToBePublished());
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
+      note_.setUserLocale(request.getLocale());
       if ((!note_.getTitle().equals(note.getTitle()))
           && (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
@@ -270,6 +273,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_);
       }
+      note_.setUserLocale(null);
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
@@ -292,6 +296,7 @@ public class NotesRestService implements ResourceContainer {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
+
     if (NumberUtils.isNumber(note.getTitle())) {
       log.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
@@ -302,6 +307,13 @@ public class NotesRestService implements ResourceContainer {
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
+      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+      note_.setToBePublished(note.isToBePublished());
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
+      note_.setUserLocale(request.getLocale());
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
@@ -336,6 +348,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_);
       }
+      note_.setUserLocale(null);
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have edit permissions on the note {}", noteId, e);

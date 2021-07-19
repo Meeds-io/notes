@@ -148,7 +148,7 @@ public class NoteServiceImpl implements NoteService {
           EntityNotFoundException {
     Page note_ = getNoteById(note.getId());
     if (note_ == null) {
-      throw new EntityNotFoundException("Note to update not foond");
+      throw new EntityNotFoundException("Note to update not found");
     }
     if (note_ != null) {
       if (!hasPermissionOnNote(note_, PermissionType.EDITPAGE, userIdentity)) {
@@ -174,6 +174,8 @@ public class NoteServiceImpl implements NoteService {
 
     Page updatedPage = getNoteById(note.getId());
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
+    updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setUserLocale(note.getUserLocale());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
     return updatedPage;

@@ -27,7 +27,7 @@
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
                 @click="postNotes(false)">
-                {{ $t("notes.button.publish") }}
+                {{ publishButtonText }}
                 <v-icon
                   id="notesPublichAndPost"
                   dark
@@ -50,7 +50,7 @@
                     class="primary--text clickable pr-2">
                     mdi-arrow-collapse-up
                   </v-icon>
-                  <span class="body-2 text-color">{{ $t("notes.button.publishAndPost") }}</span>
+                  <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
                 </v-list-item>
               </v-menu>
             </div>
@@ -164,6 +164,22 @@ export default {
       }
     });
   },
+  computed: {
+    publishAndPostButtonText() {
+      if (this.notes.id) {
+        return this.$t('notes.button.updateAndPost');
+      } else {
+        return this.$t('notes.button.publishAndPost');
+      }
+    },
+    publishButtonText() {
+      if (this.notes.id) {
+        return this.$t('notes.button.update');
+      } else {
+        return this.$t('notes.button.publish');
+      }
+    },
+  }, 
   methods: {
     getNotes(id) {
       return this.$notesService.getNoteById(id).then(data => {
