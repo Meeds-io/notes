@@ -9,7 +9,7 @@
               id="note-actions-menu"
               v-if="loadData"
               class="notes-header-icons text-right">
-              <v-tooltip bottom>
+              <v-tooltip bottom v-if="!isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="22"
