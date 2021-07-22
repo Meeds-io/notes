@@ -78,7 +78,6 @@ public class Page {
 
   private boolean canEdit;
 
-  private Locale userLocale;
 
   public Page() {
   }
