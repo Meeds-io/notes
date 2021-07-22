@@ -424,7 +424,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
         if (space != null) {
           if (!isPublicInSpace(page, space))
             return;
-          ownerStream = identityManager.getOrCreateUserIdentity(space.getPrettyName());
+          ownerStream = identityManager.getOrCreateSpaceIdentity(space.getPrettyName());
           spaceUrl = space.getUrl();
           spaceName = space.getDisplayName();
         }
