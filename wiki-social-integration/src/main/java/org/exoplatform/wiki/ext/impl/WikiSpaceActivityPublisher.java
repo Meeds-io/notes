@@ -156,58 +156,8 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       if (PageUpdateType.MOVE_PAGE.equals(activityType)) {
         activity.setStreamOwner(ownerStream.getRemoteId());
       }
+      activity.setUpdated(new Date().getTime());
       activityManager.updateActivity(activity);
-    }
-
-    // Check to add comment to activity
-    if (!PageUpdateType.ADD_PAGE.equals(activityType)) {
-      Locale locale = Locale.getDefault();
-      if(page.getUserLocale()!=null){
-        locale = page.getUserLocale();
-      }
-      if (PageUpdateType.EDIT_PAGE_TITLE.equals(activityType) && !page.isMinorEdit()) {
-        createAndSaveSystemComment(activity, ownerIdentity.getId(), "WikiUIActivity.msg.update-page-title", locale, page.getTitle());
-      } else if (PageUpdateType.EDIT_PAGE_CONTENT.equals(activityType) && !page.isMinorEdit()) {
-        String comment = page.getComment();
-        if (StringUtils.isEmpty(comment)) {
-          createAndSaveSystemComment(activity, ownerIdentity.getId(), "WikiUIActivity.msg.update-page-content", locale);
-        } else {
-          createAndSaveUserComment(activity, ownerIdentity.getId(), comment, locale);
-        }
-      } else if (PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(activityType) && !page.isMinorEdit()) {
-        String comment = page.getComment();
-        if (StringUtils.isEmpty(comment)) {
-          createAndSaveComment(activity,
-                               CommentType.SYSTEM_GROUP,
-                               ownerIdentity.getId(),
-                               null,
-                               "WikiUIActivity.msg.update-page-title",
-                               new String[] { page.getTitle() },
-                               "WikiUIActivity.msg.update-page-content",
-                  new String[] { "" }, locale);
-        } else {
-          createAndSaveComment(activity,
-                               CommentType.SYSTEM_GROUP,
-                               ownerIdentity.getId(),
-                               null,
-                               "WikiUIActivity.msg.update-page-title",
-                               new String[] { page.getTitle() },
-                               comment,
-                               null,
-                               locale);
-        }
-      } else if (PageUpdateType.MOVE_PAGE.equals(activityType)) {
-        List<BreadcrumbData> breadcrumbDatas = wikiService.getBreadcumb(wikiType, wikiOwner, pageId);
-        StringBuilder breadcrumText = new StringBuilder();
-        breadcrumText.append((StringUtils.isEmpty(spaceName) ? wikiOwner : spaceName)).append(" > ");
-        for (int i = 0; i < breadcrumbDatas.size(); i++) {
-          breadcrumText.append(breadcrumbDatas.get(i).getTitle());
-          if (i < breadcrumbDatas.size() - 1) {
-            breadcrumText.append(" > ");
-          }
-        }
-        createAndSaveSystemComment(activity, ownerIdentity.getId(), "WikiUIActivity.msg.move-page", locale, breadcrumText.toString());
-      }
     }
     return activity;
   }
