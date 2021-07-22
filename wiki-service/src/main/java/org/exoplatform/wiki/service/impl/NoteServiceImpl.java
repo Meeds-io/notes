@@ -175,7 +175,6 @@ public class NoteServiceImpl implements NoteService {
     Page updatedPage = getNoteById(note.getId());
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
-    updatedPage.setUserLocale(note.getUserLocale());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
     return updatedPage;
