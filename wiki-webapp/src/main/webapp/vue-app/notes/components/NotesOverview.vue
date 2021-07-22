@@ -5,7 +5,10 @@
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class="title text-color mt-n1">{{ notes.title }}</span>
-            <div id="note-actions-menu" class="notes-header-icons text-right">
+            <div
+              id="note-actions-menu"
+              v-if="loadData"
+              class="notes-header-icons text-right">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
@@ -20,7 +23,7 @@
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom v-if="notes.canEdit && !isMobile">
+              <v-tooltip bottom v-if="notes && notes.canEdit && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
@@ -147,6 +150,7 @@ export default {
       alert: false,
       type: '',
       message: '',
+      loadData: false,
       openTreeView: false
     };
   },
@@ -273,6 +277,7 @@ export default {
     getNoteByName(noteName,source) {
       return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner, noteName,source).then(data => {
         this.notes = data || [];
+        this.loadData = true;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${this.notes.id}`;
         window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
