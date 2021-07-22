@@ -69,8 +69,13 @@
       </div>
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
-    <note-table-plugins-drawer ref="noteTablePlugins" :instance="instance" />
-    <note-treeview-drawer ref="noteTreeview" />
+    <note-table-plugins-drawer
+      ref="noteTablePlugins"
+      :instance="instance"
+      @closed="closePluginsDrawer()" />
+    <note-treeview-drawer 
+      ref="noteTreeview"
+      @closed="closePluginsDrawer()" />
   </v-app>
 </template>
 
@@ -238,6 +243,9 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
+    },
+    closePluginsDrawer() {
+      this.$refs.noteCustomPlugins.close();
     },
     initCKEditor: function() {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
