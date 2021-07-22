@@ -3,10 +3,11 @@
     ref="customTableDrawer"
     class="customTableDrawer"
     body-classes="hide-scroll decrease-z-index-more"
+    @closed="closeAllDrawer()" 
     right>
     <template slot="title">
       <div class="d-flex">
-        <i class="uiIcon uiArrowBAckIcon" @click="close"></i>
+        <i class="uiIcon uiArrowBAckIcon" @click="backToPlugins(); close()"></i>
         <span class="ps-2 pt-1">{{ $t('notes.plugin.table') }}</span>
       </div>
     </template>
@@ -238,7 +239,7 @@ export default {
     header: [
       {name: ''},{name: 'FIRST.ROW'},{name: 'FIRST.COLUMN'},{name: 'BOTH'}
     ],
-    closeAllDrawer: true
+    closeAll: true,
   }),
   props: {
     instance: {
@@ -248,15 +249,12 @@ export default {
   },
   created() {
     this.maxRules = [v => v >= 0];
-    document.addEventListener('drawerClosed', () => {
-      if ( this.closeAllDrawer ) {
-        document.dispatchEvent(new CustomEvent('closeAllDrawers'));
-      }
+    this.$root.$on('note-table-plugins', () => {
+      this.closeAll = true;
     });
   },
   methods: {
     open(table) {
-      this.closeAllDrawer = true;
       this.table = table;
       if (table) {
         this.width = table.width;
@@ -270,8 +268,15 @@ export default {
       this.$refs.customTableDrawer.open();
     },
     close() {
-      this.closeAllDrawer = false;
       this.$refs.customTableDrawer.close();
+    },
+    closeAllDrawer() {
+      if (this.closeAll) {
+        this.$emit('closed');
+      }
+    },
+    backToPlugins() {
+      this.closeAll = false;
     },
     insertTable() {
       this.close();

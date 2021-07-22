@@ -3,10 +3,11 @@
     ref="breadcrumbDrawer"
     class="breadcrumbDrawer"
     body-classes="hide-scroll decrease-z-index-more"
+    @closed="closeAllDrawer()" 
     right>
     <template v-if="isIncludePage && displayArrow" slot="title">
       <div class="d-flex">
-        <v-icon size="19" @click="close()">mdi-arrow-left</v-icon>
+        <v-icon size="19" @click="backToPlugins(); close()">mdi-arrow-left</v-icon>
         <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
       </div>
     </template>
@@ -114,9 +115,9 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
-    closeAllDrawer: true,
     displayArrow: true,
-    render: true
+    render: true,
+    closeAll: true,
   }),
   computed: {
     items() {
@@ -148,18 +149,12 @@ export default {
     this.$root.$on('close-note-tree-drawer', () => {
       this.close();
     });
-
-    document.addEventListener('drawerClosed', () => {
-      this.render = false;
-      if ( this.closeAllDrawer ) {
-        document.dispatchEvent(new CustomEvent('closeAllDrawers'));
-      }
+    this.$root.$on('display-treeview-items', () => {
+      this.closeAll = true;
     });
-
   },
   methods: {
     open(noteId, source, includeDisplay) {
-      this.closeAllDrawer = true;
       this.render = false;
       this.getNoteById(noteId);
       if (source === 'includePages') {
@@ -169,6 +164,8 @@ export default {
       }
       if (includeDisplay) {
         this.displayArrow =false;
+      } else {
+        this.displayArrow =true;
       }
       if (source === 'movePage') {
         this.movePage = true;
@@ -180,6 +177,9 @@ export default {
         this.render = true;
         this.$refs.breadcrumbDrawer.open();
       });
+    },
+    backToPlugins() {
+      this.closeAll = false;
     },
     fetchNoteChildren(childItem) {
       if ( !childItem.hasChild ) 
@@ -212,6 +212,7 @@ export default {
       if (this.movePage) {
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
           this.breadcrumb = data && data.breadcrumb || []; 
+          this.breadcrumb[0].name = this.$t('portal.global.noteHome');
           this.destinationNote = data;      
         });
       }
@@ -237,6 +238,7 @@ export default {
     getNoteById(id) {
       return this.$notesService.getNoteById(id).then(data => {
         this.note = data || [];
+        this.note.breadcrumb[0].title = this.$t('portal.global.noteHome');
         this.breadcrumb = this.note.breadcrumb;
       }).then(() => {
         this.note.wikiOwner =  this.note.wikiOwner.substring(1);
@@ -251,6 +253,7 @@ export default {
         this.openNotes = openedTreeviewItem;
         this.activeItem = [openedTreeviewItem[openedTreeviewItem.length-1]];
         this.breadcrumbItems = noteChildren;
+        this.breadcrumbItems[0].name = this.$t('portal.global.noteHome');
         this.noteBookType = noteType;
         this.noteBookOwnerTree = noteOwner;
       });
@@ -288,10 +291,14 @@ export default {
       this.$root.$emit('move-page',this.note,this.destinationNote);
     },
     close(){
-      this.closeAllDrawer = false;
       this.render = false;
       this.$refs.breadcrumbDrawer.close();
-    }
+    },
+    closeAllDrawer() {
+      if (this.closeAll) {
+        this.$emit('closed');
+      }
+    },
   }
 };
 </script>
