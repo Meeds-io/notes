@@ -1,103 +1,111 @@
 <template>
-  <exo-drawer
-    ref="breadcrumbDrawer"
-    class="breadcrumbDrawer"
-    body-classes="hide-scroll decrease-z-index-more"
-    @closed="closeAllDrawer()" 
-    right>
-    <template v-if="isIncludePage && displayArrow" slot="title">
-      <div class="d-flex">
-        <v-icon size="19" @click="backToPlugins(); close()">mdi-arrow-left</v-icon>
-        <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
-      </div>
-    </template>
-    <template v-else-if="movePage" slot="title">
-      {{ $t('notes.label.movePageTitle') }}
-    </template>
-    <template v-else slot="title">
-      {{ $t('notes.label.breadcrumbTitle') }}
-    </template>
-    <template slot="content">
-      <v-layout v-if="movePage" column>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title class="font-weight-bold text-color">{{ note.name }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item>
-          <div class="d-flex align-center">
-            <div class="pr-4"><span class="font-weight-bold text-color">{{ $t('notes.label.movePageSpace') }}</span></div>
-            <div class="identitySuggester no-border mt-0">
-              <v-chip
-                class="identitySuggesterItem me-2 mt-2">
-                <span class="text-truncate">
-                  {{ spaceDisplayName }}
-                </span>
-              </v-chip>
-            </div>
-          </div>
-        </v-list-item>
-        <v-list-item>
-          <div class="py-2 width-full">
-            <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
-            <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
-          </div>
-        </v-list-item>
-        <v-list-item>
-          <div class="py-2  width-full">
-            <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
-            <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
-          </div>
-        </v-list-item>
-        <v-list-item class="position-title">
-          <div class="py-2">
-            <span class="font-weight-bold text-color">{{ $t('notes.label.movePagePosition') }}</span>
-          </div>
-        </v-list-item>
-      </v-layout>
-      <v-layout column>
-        <template v-if="wikiHome" class="ma-0 border-box-sizing">
-          <v-list-item @click="openNote(event,wikiHome)">
+  <div>
+    <v-overlay
+      z-index="1031"
+      :value="drawer"
+      @click.native="drawer = false" />
+
+    <exo-drawer
+      ref="breadcrumbDrawer"
+      class="breadcrumbDrawer"
+      v-model="drawer"
+      show-overlay
+      @closed="closeAllDrawer()" 
+      right>
+      <template v-if="isIncludePage && displayArrow" slot="title">
+        <div class="d-flex">
+          <v-icon size="19" @click="backToPlugins(); close()">mdi-arrow-left</v-icon>
+          <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
+        </div>
+      </template>
+      <template v-else-if="movePage" slot="title">
+        {{ $t('notes.label.movePageTitle') }}
+      </template>
+      <template v-else slot="title">
+        {{ $t('notes.label.breadcrumbTitle') }}
+      </template>
+      <template slot="content">
+        <v-layout v-if="movePage" column>
+          <v-list-item>
             <v-list-item-content>
-              <v-list-item-title class="body-2">{{ wikiHome.name }}</v-list-item-title>
+              <v-list-item-title class="font-weight-bold text-color">{{ note.name }}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
-        </template>
-        <template v-if="items && items.length">
-          <v-treeview
-            v-if="reload"
-            :items="items[0].children"
-            :open="openedItems"
-            :active="active"
-            :load-children="fetchNoteChildren"
-            class="treeview-item"
-            item-key="id"
-            hoverable
-            open-on-click
-            transition>
-            <template v-slot:label="{ item }">
-              <v-list-item-title @click="openNote(event,item)" class="body-2">{{ item.name }}</v-list-item-title>
-            </template>
-          </v-treeview>
-        </template>
-      </v-layout>
-    </template>
-    <template v-if="movePage" slot="footer">
-      <div class="d-flex">
-        <v-spacer />
-        <v-btn
-          @click="close"
-          class="btn ml-2">
-          {{ $t('notes.button.cancel') }}
-        </v-btn>
-        <v-btn
-          @click="moveNote()"
-          class="btn btn-primary ml-2">
-          {{ $t('notes.button.ok') }}
-        </v-btn>
-      </div>
-    </template>
-  </exo-drawer>
+          <v-list-item>
+            <div class="d-flex align-center">
+              <div class="pr-4"><span class="font-weight-bold text-color">{{ $t('notes.label.movePageSpace') }}</span></div>
+              <div class="identitySuggester no-border mt-0">
+                <v-chip
+                  class="identitySuggesterItem me-2 mt-2">
+                  <span class="text-truncate">
+                    {{ spaceDisplayName }}
+                  </span>
+                </v-chip>
+              </div>
+            </div>
+          </v-list-item>
+          <v-list-item>
+            <div class="py-2 width-full">
+              <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
+              <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
+            </div>
+          </v-list-item>
+          <v-list-item>
+            <div class="py-2  width-full">
+              <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
+              <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
+            </div>
+          </v-list-item>
+          <v-list-item class="position-title">
+            <div class="py-2">
+              <span class="font-weight-bold text-color">{{ $t('notes.label.movePagePosition') }}</span>
+            </div>
+          </v-list-item>
+        </v-layout>
+        <v-layout column>
+          <template v-if="wikiHome" class="ma-0 border-box-sizing">
+            <v-list-item @click="openNote(event,wikiHome)">
+              <v-list-item-content>
+                <v-list-item-title class="body-2">{{ wikiHome.name }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </template>
+          <template v-if="items && items.length">
+            <v-treeview
+              v-if="reload"
+              :items="items[0].children"
+              :open="openedItems"
+              :active="active"
+              :load-children="fetchNoteChildren"
+              class="treeview-item"
+              item-key="id"
+              hoverable
+              open-on-click
+              transition>
+              <template v-slot:label="{ item }">
+                <v-list-item-title @click="openNote(event,item)" class="body-2">{{ item.name }}</v-list-item-title>
+              </template>
+            </v-treeview>
+          </template>
+        </v-layout>
+      </template>
+      <template v-if="movePage" slot="footer">
+        <div class="d-flex">
+          <v-spacer />
+          <v-btn
+            @click="close"
+            class="btn ml-2">
+            {{ $t('notes.button.cancel') }}
+          </v-btn>
+          <v-btn
+            @click="moveNote()"
+            class="btn btn-primary ml-2">
+            {{ $t('notes.button.ok') }}
+          </v-btn>
+        </div>
+      </template>
+    </exo-drawer>
+  </div>
 </template>
 
 <script>
@@ -118,6 +126,7 @@ export default {
     displayArrow: true,
     render: true,
     closeAll: true,
+    drawer: false,
   }),
   computed: {
     items() {
