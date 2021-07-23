@@ -31,25 +31,25 @@
   <name>eXo PLF:: Notes - Addon Packaging</name>
   <dependencies>
     <dependency>
-      <groupId>org.exoplatform.addons.notes</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>notes-service</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.addons.notes</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>notes-webui</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.addons.notes</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>notes-social-integration</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.addons.notes</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>notes-webapp</artifactId>
       <version>${project.version}</version>
       <type>war</type>

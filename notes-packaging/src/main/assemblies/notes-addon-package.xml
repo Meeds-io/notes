@@ -30,7 +30,7 @@
     <dependencySet>
       <outputDirectory>/webapps</outputDirectory>
       <includes>
-        <include>org.exoplatform.addons.notes:*:war</include>
+        <include>${project.groupId}:*:war</include>
       </includes>
       <scope>provided</scope>
       <outputFileNameMapping>${artifact.build.finalName}.${artifact.extension}</outputFileNameMapping>
@@ -40,7 +40,7 @@
     <dependencySet>
       <outputDirectory>/lib</outputDirectory>
       <includes>
-        <include>org.exoplatform.addons.notes:*:jar</include>
+        <include>${project.groupId}:*:jar</include>
         <include>commons-configuration:commons-configuration:jar</include>
         <include>org.bouncycastle:bctsp-jdk15:jar</include>
         <include>net.sourceforge.cssparser:cssparser:jar</include>

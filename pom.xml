@@ -65,41 +65,41 @@
       </dependency>
       <!-- Declare our own artifacts -->
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes</artifactId>
         <version>${project.version}</version>
         <classifier>source-release</classifier>
         <type>zip</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-service</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-webui</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-social-integration</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-webapp</artifactId>
         <version>${project.version}</version>
         <type>war</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-webapp</artifactId>
         <version>${project.version}</version>
         <type>pom</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.addons.notes</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>notes-packaging</artifactId>
         <version>${project.version}</version>
         <type>zip</type>
