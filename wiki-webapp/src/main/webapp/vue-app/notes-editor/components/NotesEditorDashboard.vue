@@ -298,11 +298,23 @@ export default {
         },
         on: {
           instanceReady: function() {
-            CKEDITOR.instances['notesContent'].removeMenuItem('simpleLink');
+            CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
+            CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
+
+
+            CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
+              if ( element.getAscendant( 'table', true ) ) {
+                return {
+                  tableProperties: CKEDITOR.TRISTATE_ON
+                };
+              }});
             CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
               exec: function() {
-                const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
-                self.$refs.noteTablePlugins.open(table);
+                if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
+                  const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
+                  self.$refs.noteTablePlugins.open(table);
+                }
+
               }
             });
             $(CKEDITOR.instances['notesContent'].document.$)
