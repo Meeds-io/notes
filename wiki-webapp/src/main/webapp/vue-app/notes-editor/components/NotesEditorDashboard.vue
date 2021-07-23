@@ -255,12 +255,12 @@ export default {
       CKEDITOR.plugins.addExternal('insertOptions','/wiki/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      const extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
         // Disable suggester on smart-phone landscape
-        //extraPlugins = 'simpleLink,selectImage';
+        extraPlugins = 'simpleLink,selectImage';
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
 
@@ -276,7 +276,6 @@ export default {
         allowedContent: true,
         spaceURL: self.spaceURL,
         toolbarLocation: 'top',
-        removeMenuItem: 'image',
         extraAllowedContent: 'img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*]',
         removeButtons: '',
         toolbar: [
