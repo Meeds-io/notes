@@ -19,11 +19,13 @@
           getSourceLink: (activity) => {
             try {
               const templateParams = activity.templateParams || {};
-              if (templateParams.page_url) {
-                return activity.templateParams.page_url;
-              }
-              if (templateParams.page_type === 'group') {
-                return `${eXo.env.portal.context}/g/${templateParams.page_owner.replace(/\//g, ':')}/${templateParams.page_owner.replace('/spaces/', ':')}/wiki/${templateParams.page_id}`;
+              if (templateParams.page_type === 'group' && activity.activityStream && activity.activityStream.space) {
+                const spaceApplications = activity.activityStream.space.dataEntity.applications;
+                const spaceApp = spaceApplications.find(app => app.id === 'WikiPortlet');
+                const spaceAppUri = spaceApp && spaceApp.displayName || 'wiki';
+                const spacePrettyName = activity.activityStream.space.prettyName;
+                const spaceGroupUriPart = templateParams.page_owner.replace(/\//g, ':');
+                return `${eXo.env.portal.context}/g/${spaceGroupUriPart}/${spacePrettyName}/${spaceAppUri}/${templateParams.page_id}`;
               } else if(templateParams.page_type === 'portal') {
                 return `${eXo.env.portal.context}/${templateParams.page_owner}/wiki/${templateParams.page_id}`;
               }
