@@ -24,15 +24,15 @@
    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
-  <import>war:/conf/wiki/application-registry-configuration.xml</import>
-  <import>war:/conf/wiki/portal-configuration.xml</import>
-  <import>war:/conf/wiki/organization-configuration.xml</import>
-  <import>war:/conf/wiki/webui-configuration.xml</import>
-  <import>war:/conf/wiki/wiki-configuration.xml</import>
-  <import>war:/conf/wiki/resource-bundle-configuration.xml</import>
-  <import>war:/conf/wiki/spaces-templates-configuration.xml</import>
-  <import>war:/conf/wiki/notification-configuration.xml</import>
-  <import>war:/conf/wiki/dynamic-container-configuration.xml</import>
-  <import>war:/conf/wiki/search-configuration.xml</import>
+  <import>war:/conf/notes/application-registry-configuration.xml</import>
+  <import>war:/conf/notes/portal-configuration.xml</import>
+  <import>war:/conf/notes/organization-configuration.xml</import>
+  <import>war:/conf/notes/webui-configuration.xml</import>
+  <import>war:/conf/notes/wiki-configuration.xml</import>
+  <import>war:/conf/notes/resource-bundle-configuration.xml</import>
+  <import>war:/conf/notes/spaces-templates-configuration.xml</import>
+  <import>war:/conf/notes/notification-configuration.xml</import>
+  <import>war:/conf/notes/dynamic-container-configuration.xml</import>
+  <import>war:/conf/notes/search-configuration.xml</import>
 
 </configuration>
