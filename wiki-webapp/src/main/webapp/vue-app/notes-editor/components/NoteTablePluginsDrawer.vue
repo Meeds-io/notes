@@ -1,221 +1,228 @@
 <template>
-  <exo-drawer
-    ref="customTableDrawer"
-    class="customTableDrawer"
-    body-classes="hide-scroll decrease-z-index-more"
-    @closed="closeAllDrawer()" 
-    right>
-    <template slot="title">
-      <div class="d-flex">
-        <i class="uiIcon uiArrowBAckIcon" @click="backToPlugins(); close()"></i>
-        <span class="ps-2 pt-1">{{ $t('notes.plugin.table') }}</span>
-      </div>
-    </template>
-    <template slot="content">
-      <v-container fluid>
+  <div>
+    <v-overlay
+      z-index="1031"
+      :value="drawer"
+      @click.native="drawer = false" />
+    <exo-drawer
+      ref="customTableDrawer"
+      v-model="drawer"
+      show-overlay
+      class="customTableDrawer"
+      @closed="closeAllDrawer()" 
+      right>
+      <template slot="title">
         <div class="d-flex">
-          <v-subheader class="px-0">
-            {{ $t('notes.plugin.table.size') }}
-          </v-subheader>
-          <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
+          <i class="uiIcon uiArrowBAckIcon" @click="backToPlugins(); close()"></i>
+          <span class="ps-2 pt-1">{{ $t('notes.plugin.table') }}</span>
         </div>
-
-        <v-row align="center">
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.lines') }}
+      </template>
+      <template slot="content">
+        <v-container fluid>
+          <div class="d-flex">
+            <v-subheader class="px-0">
+              {{ $t('notes.plugin.table.size') }}
             </v-subheader>
-          </v-col>
+            <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
+          </div>
 
-          <v-col cols="3">
-            <v-text-field
-              v-model="lines"
-              class="pa-0"
-              type="number"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined
-              :disabled="table ? true : false " />
-          </v-col>
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.columns') }}
+          <v-row align="center">
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.lines') }}
+              </v-subheader>
+            </v-col>
+
+            <v-col cols="3">
+              <v-text-field
+                v-model="lines"
+                class="pa-0"
+                type="number"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined
+                :disabled="table ? true : false " />
+            </v-col>
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.columns') }}
+              </v-subheader>
+            </v-col>
+
+            <v-col cols="3">
+              <v-text-field
+                v-model="columns"
+                class="pa-0"
+                type="number"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined
+                :disabled="table ? true : false " />
+            </v-col>
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.width') }}
+              </v-subheader>
+            </v-col>
+
+            <v-col cols="3">
+              <v-text-field
+                v-model="width"
+                class="pa-0"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined />
+            </v-col>
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.height') }}
+              </v-subheader>
+            </v-col>
+
+            <v-col cols="3">
+              <v-text-field
+                v-model="height"
+                class="pa-0"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined />
+            </v-col>
+          </v-row>
+        </v-container>
+        <v-container fluid>
+          <div class="d-flex">
+            <v-subheader class="px-0">
+              {{ $t('notes.plugin.table.adjustment') }}
             </v-subheader>
-          </v-col>
+            <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
+          </div>
 
-          <v-col cols="3">
-            <v-text-field
-              v-model="columns"
-              class="pa-0"
-              type="number"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined
-              :disabled="table ? true : false " />
-          </v-col>
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.width') }}
-            </v-subheader>
-          </v-col>
+          <v-row align="center">
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.header') }}
+              </v-subheader>
+            </v-col>
 
-          <v-col cols="3">
-            <v-text-field
-              v-model="width"
-              class="pa-0"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined />
-          </v-col>
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.height') }}
-            </v-subheader>
-          </v-col>
+            <v-col cols="3">
+              <select
+                v-model="headerSelected"
+                name="priority"
+                class="input-block-level ignore-vuetify-classes my-3">
+                <option
+                  v-for="item in header"
+                  :key="item.name"
+                  :value="item.name">
+                  {{ $t('label.header.'+item.name.toLowerCase()) }}
+                </option>
+              </select>
+            </v-col>
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.border') }}
+              </v-subheader>
+            </v-col>
 
-          <v-col cols="3">
-            <v-text-field
-              v-model="height"
-              class="pa-0"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined />
-          </v-col>
-        </v-row>
-      </v-container>
-      <v-container fluid>
-        <div class="d-flex">
-          <v-subheader class="px-0">
-            {{ $t('notes.plugin.table.adjustment') }}
-          </v-subheader>
-          <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
-        </div>
+            <v-col cols="3">
+              <v-text-field
+                v-model="border"
+                class="pa-0"
+                type="number"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined />
+            </v-col>
+            <v-col cols="9">
+              <v-subheader>
+                {{ $t('notes.plugin.table.spacing') }}
+              </v-subheader>
+            </v-col>
 
-        <v-row align="center">
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.header') }}
-            </v-subheader>
-          </v-col>
+            <v-col cols="3">
+              <v-text-field
+                v-model="spacing"
+                class="pa-0"
+                type="number"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined />
+            </v-col>
+            <v-col cols="9">
+              <v-subheader>
+                {{ $t('notes.plugin.table.internal') }}
+              </v-subheader>
+            </v-col>
 
-          <v-col cols="3">
-            <select
-              v-model="headerSelected"
-              name="priority"
-              class="input-block-level ignore-vuetify-classes my-3">
-              <option
-                v-for="item in header"
-                :key="item.name"
-                :value="item.name">
-                {{ $t('label.header.'+item.name.toLowerCase()) }}
-              </option>
-            </select>
-          </v-col>
-          <v-col cols="3">
-            <v-subheader>
-              {{ $t('notes.plugin.table.border') }}
-            </v-subheader>
-          </v-col>
-
-          <v-col cols="3">
-            <v-text-field
-              v-model="border"
-              class="pa-0"
-              type="number"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined />
-          </v-col>
-          <v-col cols="9">
-            <v-subheader>
-              {{ $t('notes.plugin.table.spacing') }}
-            </v-subheader>
-          </v-col>
-
-          <v-col cols="3">
-            <v-text-field
-              v-model="spacing"
-              class="pa-0"
-              type="number"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined />
-          </v-col>
-          <v-col cols="9">
-            <v-subheader>
-              {{ $t('notes.plugin.table.internal') }}
-            </v-subheader>
-          </v-col>
-
-          <v-col cols="3">
-            <v-text-field
-              v-model="internal"
-              class="pa-0"
-              type="number"
-              :rules="maxRules"
-              dense
-              min-height
-              outlined />
-          </v-col>
-        </v-row>
-      </v-container>
-      <v-container fluid>
-        <div class="d-flex">
-          <v-subheader class="px-0">
-            {{ $t('notes.plugin.table.alignment') }}
-          </v-subheader>
-          <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
-        </div>
-
-        <v-row align="center">
-          <v-col cols="3">
-            <v-subheader>
+            <v-col cols="3">
+              <v-text-field
+                v-model="internal"
+                class="pa-0"
+                type="number"
+                :rules="maxRules"
+                dense
+                min-height
+                outlined />
+            </v-col>
+          </v-row>
+        </v-container>
+        <v-container fluid>
+          <div class="d-flex">
+            <v-subheader class="px-0">
               {{ $t('notes.plugin.table.alignment') }}
             </v-subheader>
-          </v-col>
-          <v-col cols="3">
-            <select
-              v-model="alignmentSelected"
-              name="priority"
-              class="input-block-level ignore-vuetify-classes my-3">
-              <option
-                v-for="item in alignment"
-                :key="item.name"
-                :value="item.name">
-                {{ $t('label.alignment.'+item.name.toLowerCase()) }}
-              </option>
-            </select>
-          </v-col>
-        </v-row>
-      </v-container>
-    </template>
-    <template slot="footer">
-      <div class="d-flex">
-        <v-spacer />
-        <div class="VuetifyApp d-flex">
-          <div class="d-btn">
-            <v-btn class="btn mr-2" @click="close">
-              <template>
-                {{ $t('popup.cancel') }}
-              </template>
-            </v-btn>
+            <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
+          </div>
 
-            <v-btn class="btn btn-primary" @click="insertTable">
-              <template>
-                {{ $t('notes.button.ok') }}
-              </template>
-            </v-btn>
+          <v-row align="center">
+            <v-col cols="3">
+              <v-subheader>
+                {{ $t('notes.plugin.table.alignment') }}
+              </v-subheader>
+            </v-col>
+            <v-col cols="3">
+              <select
+                v-model="alignmentSelected"
+                name="priority"
+                class="input-block-level ignore-vuetify-classes my-3">
+                <option
+                  v-for="item in alignment"
+                  :key="item.name"
+                  :value="item.name">
+                  {{ $t('label.alignment.'+item.name.toLowerCase()) }}
+                </option>
+              </select>
+            </v-col>
+          </v-row>
+        </v-container>
+      </template>
+      <template slot="footer">
+        <div class="d-flex">
+          <v-spacer />
+          <div class="VuetifyApp d-flex">
+            <div class="d-btn">
+              <v-btn class="btn mr-2" @click="close">
+                <template>
+                  {{ $t('popup.cancel') }}
+                </template>
+              </v-btn>
+
+              <v-btn class="btn btn-primary" @click="insertTable">
+                <template>
+                  {{ $t('notes.button.ok') }}
+                </template>
+              </v-btn>
+            </div>
           </div>
         </div>
-      </div>
-    </template>
-  </exo-drawer>
+      </template>
+    </exo-drawer>
+  </div>
 </template>
 
 <script>
@@ -240,6 +247,7 @@ export default {
       {name: ''},{name: 'FIRST.ROW'},{name: 'FIRST.COLUMN'},{name: 'BOTH'}
     ],
     closeAll: true,
+    drawer: false,
   }),
   props: {
     instance: {

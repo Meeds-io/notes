@@ -1,49 +1,56 @@
 <template>
-  <exo-drawer
-    ref="customPluginsDrawer"
-    class="customPluginsDrawer"
-    body-classes="hide-scroll decrease-z-index-more"
-    right>
-    <template slot="title">
-      {{ $t('notes.label.customPlugins') }}
-    </template>
-    <template slot="content">
-      <div slot="content" class="content">
-        <v-row class="mandatory pluginsContainer d-flex flex-wrap width-full ml-0">
-          <v-col v-model="plugins" class="pluginsList d-flex flex-wrap width-full ">
-            <div
-              v-for="(plugin, index) in plugins"
-              :id="'plugin-' + index"
-              :key="index"
-              class="pluginsItemContainer">
+  <div>
+    <v-overlay
+      z-index="1031"
+      :value="drawer"
+      @click.native="drawer = false" />
+    <exo-drawer
+      ref="customPluginsDrawer"
+      v-model="drawer"
+      show-overlay
+      class="customPluginsDrawer"
+      right>
+      <template slot="title">
+        {{ $t('notes.label.customPlugins') }}
+      </template>
+      <template slot="content">
+        <div slot="content" class="content">
+          <v-row class="mandatory pluginsContainer d-flex flex-wrap width-full ml-0">
+            <v-col v-model="plugins" class="pluginsList d-flex flex-wrap width-full ">
               <div
-                :id="'pluginItem-' + index"
-                class="pluginItem pa-4">
-                <a
-                  :id="plugin.id"
-                  :target="plugin.title"
-                  @click="openPlugin(plugin.id)">
-                  <img
-                    v-if="plugin.src && plugin.src.length"
-                    class="pluginImage bloc"
-                    :src="plugin.src">
-                  <img
-                    v-else
-                    class="pluginImage block"
-                    :src="defaultImagePlugin">
-                  <span
-                    v-exo-tooltip.bottom.body="plugin.title"
-                    class="pluginTitle text-truncate">
-                    {{ $t(`notes.label.${plugin.title}`) }}
-                  </span>
-                </a>
+                v-for="(plugin, index) in plugins"
+                :id="'plugin-' + index"
+                :key="index"
+                class="pluginsItemContainer">
+                <div
+                  :id="'pluginItem-' + index"
+                  class="pluginItem pa-4">
+                  <a
+                    :id="plugin.id"
+                    :target="plugin.title"
+                    @click="openPlugin(plugin.id)">
+                    <img
+                      v-if="plugin.src && plugin.src.length"
+                      class="pluginImage bloc"
+                      :src="plugin.src">
+                    <img
+                      v-else
+                      class="pluginImage block"
+                      :src="defaultImagePlugin">
+                    <span
+                      v-exo-tooltip.bottom.body="plugin.title"
+                      class="pluginTitle text-truncate">
+                      {{ $t(`notes.label.${plugin.title}`) }}
+                    </span>
+                  </a>
+                </div>
               </div>
-            </div>
-          </v-col>
-        </v-row>
-      </div>
-    </template>
-  </exo-drawer>
+            </v-col>
+          </v-row>
+        </div>
+      </template>
+    </exo-drawer>
+  </div>
 </template>
 
 <script>
@@ -59,7 +66,8 @@ export default {
       { id: 'iframe',title: 'IFrame', src: '/wiki/images/iframe.png' },
       { id: 'code',title: 'Code', src: '/wiki/images/code.png' },*/
     ],
-    defaultImagePlugin: '/wiki/images/defaultPlugin.png'
+    defaultImagePlugin: '/wiki/images/defaultPlugin.png',
+    drawer: false,
   }),
   props: {
     instance: {
