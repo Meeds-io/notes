@@ -1,0 +1,15 @@
+<div id="$uicomponent.id" class="uiWikiHistorySpaceArea wikiBox">
+<%
+ if(!uicomponent.isShowVersion()) {
+%>
+  <h4 class="historyLabel"><%= _ctx.appRes("UIWikiPageVersionsList.label.CompareLabel"); %></h4>
+<%
+  }
+  List children = uicomponent.getChildren() ;
+  for(component in children) {
+    if(component.isRendered()){
+      uicomponent.renderChild(component.getClass()) ;
+    }
+  }
+%>
+</div>

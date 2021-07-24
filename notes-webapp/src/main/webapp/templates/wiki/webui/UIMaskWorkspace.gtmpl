@@ -1,0 +1,36 @@
+<%
+  component = uicomponent.getUIComponent();
+  String maskId = uicomponent.getId() ;
+  def rcontext = _ctx.getRequestContext() ;		
+	
+	int width = uicomponent.getWindowWidth();
+	int height = uicomponent.getWindowHeight();
+	boolean isShow = uicomponent.isShow();
+	String id = uicomponent.getId();
+	
+	String init = "eXo.wiki.UIWikiMaskWorkspace.init('"+id+"', "+isShow+", "+width+", "+height+");";
+	String initHeight = "eXo.wiki.UIWikiPagePreview.init('"+id+"');";
+	String resize = "eXo.wiki.UIWikiMaskWorkspace.resetPosition('"+id+"');";
+	
+	def requireJs = rcontext.getJavascriptManager().getRequireJS();
+	requireJs.require("SHARED/UIWikiMaskWorkspace", "UIWikiMaskWorkspace");
+	requireJs.require("SHARED/UIWikiPagePreview", "UIWikiPagePreview");
+	requireJs.require("SHARED/UIWikiMaskLayer", "UIWikiMaskLayer");
+	
+	requireJs.addScripts("UIWikiMaskWorkspace.init('" + id + "', " + isShow + ", " + width + ", " + height + ") ;");
+  requireJs.addScripts("UIWikiPagePreview.init('" + uicomponent.id + "') ;");
+  requireJs.addScripts("UIWikiMaskWorkspace.resetPosition() ;");
+%>
+<div class="uiWikiMaskWorkspace" id="$maskId" style="display: none;">
+	<div class="wikiPreviewHeader clearfix">
+	<% String action = "";
+     if(component != null){
+       action = component.getActions()[0];
+       action = component.event(action);
+	   }
+	%>
+		<a href="javascript:void(0);" onclick="$action" class="actionIcon pull-right"><i class="uiIconClose uiIconLightGray"></i></a>
+		<div class="popupTitle"><%=uicomponent.getPopupTitle();%></div>
+	</div>
+	<%uicomponent.renderChildren();%>
+</div>

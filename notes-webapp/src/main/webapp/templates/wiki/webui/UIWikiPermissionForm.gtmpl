@@ -1,0 +1,34 @@
+<%
+  import org.exoplatform.web.application.JavascriptManager;
+  
+  JavascriptManager jsmanager = _ctx.getRequestContext().getJavascriptManager();
+  def requireJs = jsmanager.getRequireJS();
+  requireJs.require("SHARED/UIWikiPermissionForm", "UIWikiPermissionForm");
+  requireJs.require("SHARED/jquery", "gj");
+  requireJs.addScripts("UIWikiPermissionForm.init('" + uicomponent.id + "') ;");
+  requireJs.addScripts("gj('#uiWikiPermissionOwner').ready(function() { gj(\"*[rel='tooltip']\").tooltip();});");
+  uicomponent.renderChild(uicomponent.createIdByScope(uicomponent.USER_PERMISSION_POPUP_SELECTOR)) ;
+%>
+<div class="uiWikiPagePermission">
+  <%uiform.begin()%>
+  <div class="resizable">
+		<%
+		  List children = uicomponent.getChildren() ;
+		  for(component in children) {
+		    if(component.isRendered() && component.getId() != uicomponent.createIdByScope(uicomponent.USER_PERMISSION_POPUP_SELECTOR)){
+		      uicomponent.renderChild(component) ;
+		    }
+		  }
+		%>
+	</div>
+	<div class="uiAction uiActionBorder">
+	<% for(action in uicomponent.getActions()) { 
+	             String actionLabel = _ctx.appRes(uicomponent.getName() + ".action." + action);
+	             String link = uicomponent.event(action);
+	        %>
+	  <button type="button" onclick="$link" href="javascript:void(0);" class="btn">$actionLabel</button>
+	  <%}%>  
+	</div>
+	   
+  <% uiform.end();%>
+</div>
