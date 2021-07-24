@@ -52,7 +52,7 @@
               <string>portal</string>
             </field>
             <field name="location">
-              <string>war:/conf/notes</string>
+              <string>war:/conf/wiki</string>
             </field>
             <field name="override">
               <boolean>${exo.wiki.portalConfig.metadata.override:true}</boolean>
