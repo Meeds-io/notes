@@ -118,10 +118,13 @@ export function updateNoteById(note) {
   });
 }
 
-export function getPathByNoteOwner(note) {
+export function getPathByNoteOwner(note,noteAppName) {
+  if (!noteAppName){
+    noteAppName = 'notes';
+  }
   if (note.wikiType==='group'){
     const spaceName = note.wikiOwner.split('/spaces/')[1];
-    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/wiki/${note.id}`;
+    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/${noteAppName}/${note.id}`;
   } else {
     return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes/${note.id}`;
   }

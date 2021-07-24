@@ -40,13 +40,13 @@
                 <value>
                   <object type="org.exoplatform.social.core.space.SpaceApplication">
                     <field name="portletApp">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                     <field name="portletName">
                       <string>Notes</string>
                     </field>
                     <field name="appTitle">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                     <field name="removable">
                       <boolean>true</boolean>
@@ -55,7 +55,7 @@
                       <int>300</int>
                     </field>
                     <field name="uri">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                   </object>
                 </value>
@@ -80,13 +80,13 @@
                 <value>
                   <object type="org.exoplatform.social.core.space.SpaceApplication">
                     <field name="portletApp">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                     <field name="portletName">
                       <string>Notes</string>
                     </field>
                     <field name="appTitle">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                     <field name="removable">
                       <boolean>true</boolean>
@@ -95,7 +95,7 @@
                       <int>400</int>
                     </field>
                     <field name="uri">
-                      <string>wiki</string>
+                      <string>notes</string>
                     </field>
                   </object>
                 </value>

@@ -151,7 +151,7 @@ export default {
       type: '',
       message: '',
       loadData: false,
-      openTreeView: false
+      openTreeView: false,
     };
   },
   watch: {
@@ -189,10 +189,10 @@ export default {
       }
     },
     notesPageName() {
-      if (this.currentPath.endsWith('/wiki')){
+      if (this.currentPath.endsWith('/wiki')||this.currentPath.endsWith('/notes')){
         return 'WikiHome';
       } else {
-        if (!(this.currentPath.includes('/wiki/'))) {
+        if (!(this.currentPath.includes('/wiki/'))&&!(this.currentPath.includes('/notes/'))) {
           return;
         } else {
           const noteId = this.currentPath.split('/').pop();
@@ -209,7 +209,17 @@ export default {
         const nId = this.currentPath.split('wiki/')[1].split(/[^0-9]/)[0];
         return (nId && Number(nId) || 0);
       }
+      if (this.currentPath.includes('/notes/')) {
+        const nId = this.currentPath.split('notes/')[1].split(/[^0-9]/)[0];
+        return (nId && Number(nId) || 0);
+      }
       return 0;
+    },
+    appName() {
+      if (this.currentPath.includes('/wiki')) {
+        return ('wiki');
+      }
+      return 'notes';
     }
   },
   created() {
@@ -241,10 +251,10 @@ export default {
   },
   methods: {
     addNotes(){
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}`,'_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}&appName=${this.appName}`,'_blank');
     },
     editNotes(){
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}`,'_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}&appName=${this.appName}`,'_blank');
     },
     deleteNotes(){
       this.$notesService.deleteNotes(this.notes).then(() => {
@@ -288,7 +298,7 @@ export default {
       return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner, noteName,source).then(data => {
         this.notes = data || [];
         this.loadData = true;
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(notesConstants.NOTES_PAGE_NAME)[0]}${notesConstants.NOTES_PAGE_NAME}/${this.notes.id}`;
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.notes.id}`;
         window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
       }).catch(e => {

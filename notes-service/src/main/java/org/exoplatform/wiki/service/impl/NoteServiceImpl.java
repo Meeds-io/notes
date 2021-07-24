@@ -117,6 +117,7 @@ public class NoteServiceImpl implements NoteService {
       }
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setToBePublished(note.isToBePublished());
+      createdPage.setAppName(note.getAppName());
       createdPage.setUrl(Utils.getPageUrl(createdPage));
       invalidateCache(parentPage);
       invalidateCache(note);
@@ -175,6 +176,7 @@ public class NoteServiceImpl implements NoteService {
     Page updatedPage = getNoteById(note.getId());
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setAppName(note.getAppName());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
     return updatedPage;

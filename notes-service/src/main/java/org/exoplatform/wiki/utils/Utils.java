@@ -627,11 +627,15 @@ public class Utils {
   }
 
   public static String getPageUrl(Page page){
+    String appName= page.getAppName();
+    if(StringUtils.isEmpty(appName)){
+      appName = getWikiAppNameInSpace(page.getWikiOwner());
+    }
     String spaceUri = getSpacesURI(page);
     StringBuilder spaceUrl = new StringBuilder("/portal");
     spaceUrl.append(spaceUri);
     spaceUrl.append("/");
-    spaceUrl.append(getWikiAppNameInSpace(page.getWikiOwner()));
+    spaceUrl.append(appName);
     spaceUrl.append("/");
     if (!StringUtils.isEmpty(page.getId())) {
       spaceUrl.append(page.getId());

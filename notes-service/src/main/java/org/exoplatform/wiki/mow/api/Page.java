@@ -62,6 +62,8 @@ public class Page {
 
   private String parentPageId;
 
+  private String appName;
+
   private boolean isMinorEdit;
 
   public boolean isToBePublished() {

@@ -101,6 +101,7 @@ export default {
       message: '',
       noteId: '',
       parentPageId: '',
+      appName: 'notes',
       srcImageNote: '/notes/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
@@ -133,6 +134,9 @@ export default {
     });
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
+    if ( urlParams.has('appName') ){
+      this.appName = urlParams.get('appName');
+    }
     if ( urlParams.has('noteId') ){
       this.noteId = urlParams.get('noteId');
       this.getNotes(this.noteId);
@@ -202,6 +206,7 @@ export default {
           content: this.notes.content,
           parentPageId: this.notes.parentPageId,
           toBePublished: toPost,
+          appName: this.appName,
         };
         let notePath = '';
         if (this.notes.id){
@@ -209,7 +214,7 @@ export default {
             if (data.url){
               notePath = data.url;
             } else {
-              notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+              notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
             }           
             window.location.href= notePath;
           }).catch(e => {
@@ -224,7 +229,7 @@ export default {
             if (data.url){
               notePath = data.url;
             } else {
-              notePath = this.$notesService.getPathByNoteOwner(data).replace(/ /g, '_');
+              notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
             }
             window.location.href = notePath;
           }).catch(e => {
