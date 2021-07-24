@@ -1,3 +1,0 @@
-<div class="uiWikiTemplateDescriptionContainer">
-  <%  uicomponent.renderChildren() ;%>
-</div>

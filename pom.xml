@@ -2,23 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>maven-parent-pom</artifactId>
-    <groupId>org.exoplatform</groupId>
-    <version>23-RC01</version>
+    <artifactId>addons-parent-pom</artifactId>
+    <groupId>org.exoplatform.addons</groupId>
+    <version>14-M15</version>
     <relativePath />
   </parent>
-  <groupId>org.exoplatform.wiki</groupId>
-  <artifactId>wiki</artifactId>
-  <version>6.3.x-SNAPSHOT</version>
+  <groupId>org.exoplatform.addons.notes</groupId>
+  <artifactId>notes</artifactId>
+  <version>1.0.x-notes-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>eXo PLF:: Notes</name>
   <description>eXo Notes</description>
   <modules>
-    <module>wiki-service</module>
-    <module>wiki-webapp</module>
-    <module>wiki-webui</module>
-    <module>wiki-social-integration</module>
-    <module>wiki-packaging</module>
+    <module>notes-service</module>
+    <module>notes-webapp</module>
+    <module>notes-webui</module>
+    <module>notes-social-integration</module>
+    <module>notes-packaging</module>
   </modules>
   <scm>
     <connection>scm:git:git://github.com/meeds-io/notes.git</connection>
@@ -30,9 +30,9 @@
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-    <org.exoplatform.social.version>6.3.x-SNAPSHOT</org.exoplatform.social.version>
-    <org.exoplatform.platform-ui.version>6.3.x-SNAPSHOT</org.exoplatform.platform-ui.version>
-    <addon.exo.gamification.version>2.3.x-SNAPSHOT</addon.exo.gamification.version>
+    <org.exoplatform.social.version>6.2.x-notes-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.platform-ui.version>6.2.x-notes-SNAPSHOT</org.exoplatform.platform-ui.version>
+    <addon.exo.gamification.version>2.2.x-notes-SNAPSHOT</addon.exo.gamification.version>
   </properties>
   <dependencyManagement>
     <!-- ### NEVER CHANGE THIS ORDER OF DEPMGT ### -->
@@ -65,42 +65,42 @@
       </dependency>
       <!-- Declare our own artifacts -->
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes</artifactId>
         <version>${project.version}</version>
         <classifier>source-release</classifier>
         <type>zip</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-service</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-service</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-webui</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-webui</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-social-integration</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-social-integration</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-webapp</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-webapp</artifactId>
         <version>${project.version}</version>
         <type>war</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-webapp</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-webapp</artifactId>
         <version>${project.version}</version>
         <type>pom</type>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.wiki</groupId>
-        <artifactId>wiki-packaging</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>notes-packaging</artifactId>
         <version>${project.version}</version>
         <type>zip</type>
       </dependency>

@@ -1,0 +1,22 @@
+<%
+  def rcontext = _ctx.getRequestContext() ;
+  String inputId = uicomponent.TEXT;  
+  def requireJs = rcontext.getJavascriptManager().getRequireJS();
+  requireJs.require("SHARED/UIWikiAdvanceSearchForm", "UIWikiAdvanceSearchForm");
+  requireJs.addScripts("UIWikiAdvanceSearchForm.init(\"" + inputId + "\");");
+%>
+
+<div class="uiWikiAdvanceSearchForm">
+	<% uiform.begin() %>
+			<%uiform.renderChild("text")%>
+			<% for(action in uicomponent.getActions()) { 
+				String actionLabel = _ctx.appRes(uicomponent.getName() + ".action." + action); 
+				String link = uicomponent.event(action) ;
+		    %>
+				<button type="button" class="btn btn-primary" type="button" onclick="$link">$actionLabel</button>
+		    <%}%>
+			<br />
+			<%uiform.renderChild(uicomponent.WIKIS)%>
+		    	     
+	<% uiform.end() %>
+</div>

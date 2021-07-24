@@ -1,0 +1,140 @@
+<%
+import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.mow.api.Attachment;
+import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.commons.Utils;
+import org.exoplatform.wiki.webui.core.UIAdvancePageIterator;
+import org.exoplatform.wiki.webui.UIWikiAdvanceSearchForm;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.webui.UIWikiPortlet;
+import org.apache.commons.lang.StringEscapeUtils;
+
+
+  UIWikiPortlet wikiPortlet = uicomponent.getAncestorOfType(UIWikiPortlet.class);
+  UIWikiAdvanceSearchForm advanceSearchForm = wikiPortlet.findFirstComponentOfType(UIWikiAdvanceSearchForm.class);
+
+  PageList<SearchResult> results = uicomponent.getResults() ;     
+	def int[] maxItemPerPageList = [10, 20, 30, 40, 50];
+  def maxPageSize = uicomponent.getItemsPerPage();
+  if(results != null &&   results.getAll().size() > 0) {
+%>		
+		<div class="uiWikiAdvanceSearchResult" id="$uicomponent.id">
+			<h4 class="titleWithBorder"><%=_ctx.appRes("UIWikiAdvanceSearchResult.label.SearchResult");%></h4>
+			<div class="resultInfo">
+				<span class="resultNumber"><%=advanceSearchForm.getNumberOfSearchResult()%></span>&nbsp; 
+				<%=_ctx.appRes("UIWikiAdvanceSearchResult.label.ResultsFor");%>&nbsp;
+				<strong><%=StringEscapeUtils.escapeHtml(uicomponent.getKeyword())%></strong>&nbsp;<span class="split"></span>&nbsp;
+				<%=_ctx.appRes("UIWikiAdvanceSearchResult.label.Show");%>&nbsp;
+				
+				<!--dropdownlist-->
+				<div class="btn-group">
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="java:void(0)">$maxPageSize<i class="uiIconMiniArrowDown"></i></a>
+				<ul class="dropdown-menu">
+				<% for (maxItemPerPage in maxItemPerPageList) {%>
+						<li><a href="<%=uicomponent.event("ChangeMaxSizePage","$maxItemPerPage")%>">$maxItemPerPage</a></li>
+				<%}%>
+				</ul>
+				</div>
+				<%=_ctx.appRes("UIWikiAdvanceSearchResult.label.ResultsOnPage");%>&nbsp;
+			</div>
+			<ul>
+			<%
+				for(SearchResult result in results.getAll()) {
+                    def page = uicomponent.getPage(result);
+                    if(page == null) {
+                      continue;
+                    }
+				    WikiPageParams pageParams = new WikiPageParams(result.getWikiType(), result.getWikiOwner(), result.getPageName());
+					String pageURI = Utils.getURLFromParams(pageParams);
+					pageParams.setPageName(WikiPageParams.WIKI_HOME);
+					String wikiURI = Utils.getURLFromParams(pageParams);
+					String space = result.getWikiOwner();
+					String wikiType= result.getWikiType();
+					String wikiLabel = _ctx.appRes("UIWikiAdvanceSearchResult.label.Wiki");
+					String timeMsg = _ctx.appRes("UIWikiAdvanceSearchResult.label.time");
+					timeMsg = timeMsg.replace("{0}", uicomponent.getDateFormat(result.getCreatedDate())).replace("{1}", uicomponent.getDateFormat(result.getUpdatedDate()));
+					wikiLabel = wikiLabel.replace("{0}", wikiType);					
+					String pageTitle = result.getTitle();
+					String pageOldTitle = uicomponent.getOldPageTitleInSearchResult(page, pageTitle);
+					if(SearchResultType.PAGE_CONTENT.equals(result.getType())) {
+			%>						
+						<li>
+							<h6><i class="uiIconFile"></i><a href="$pageURI">
+							<% if(pageOldTitle.length() > 0) { %>
+								<%=pageOldTitle%>
+								<span class="txtMark"> is renamed to </span>
+							<% } %>
+								<%=pageTitle%>
+							</a></h6>
+							<% if (result.getExcerpt()!=null){ %>				
+							<%=result.getExcerpt()%>
+							<% } %>
+							<p>
+								<strong>$wikiLabel: </strong><a class="txtMark" href="$wikiURI">$space</a>
+								<br />
+								<span class="txtMark">$timeMsg</span>
+							</p>
+							
+						</li>
+						<%	
+					} else if (SearchResultType.ATTACHMENT.equals(result.getType())){
+					  // TODO need getAttachmentbyPath ?
+            Attachment att = new Attachment();
+						String downloadlink = att.getDownloadURL();						
+						String extension = Utils.getExtension(att.getName()) ;
+						if (extension != null && !extension.equals("")) {
+							extension = new StringBuilder(extension.substring(0, 1)).toString().toUpperCase() + extension.substring(1);
+							
+						}
+						%>				 
+						<li>
+							<h6><i class="<%=org.exoplatform.wiki.utils.Utils.getAttachmentCssClass(att,"uiIcon16x16")%>"></i>&nbsp;<a href="$downloadlink"><%=att.getFullTitle()%></a></h6>
+							<% if (result.getExcerpt()!=null){ %>						
+							<%=result.getExcerpt()%>
+							<% } %>
+							<p>
+								<strong>$wikiLabel: </strong><a class="txtMark" href="$wikiURI">$space</a>  <a class="txtMark" href="$pageURI"><%=att.getParentPage().getTitle()%></a>
+							<br />
+							<span class="txtMark"><%=uicomponent.getDateFormat(result.getUpdatedDate()); %></span>
+							</p>
+						</li>			
+						<%
+					} else if (SearchResultType.PAGE.equals(result.getType())) {
+						%>
+						<li>
+							<h6><i class="uiIconFile"></i><a href="$pageURI">
+								<% if(pageOldTitle.length() > 0) { %>
+								<%=pageOldTitle%>
+								<span class="txtMark"> is renamed to </span>
+							<% } %>
+								<%=pageTitle%>
+							</a></h6>
+							<p>
+								<strong>$wikiLabel: </strong><a class="txtMark" href="$wikiURI">$space</a>
+								<br />
+								<span class="txtMark">$timeMsg</span>
+							</p>
+						</li>
+						<%
+					}		 
+				}
+			%>	
+</ul>			
+			<%
+				String prev = uicomponent.event("PrevPage") ;
+				String next = uicomponent.event("NextPage") ;
+			%>
+			<% uicomponent.renderChild(UIAdvancePageIterator.class) ; %>
+			
+	</div>	
+	
+	<%} else { %>
+		<div class="uiWikiAdvanceSearchResult" id="$uicomponent.id">
+			<h4 class="titleWithBorder"><%=_ctx.appRes("UIWikiAdvanceSearchResult.label.SearchResult");%></h4> 
+			<div class="resultInfo noResult">
+				<span class="resultNumber">0</span>&nbsp;<%= _ctx.appRes("UIWikiAdvanceSearchResult.msg.there-is-no-search-result"); %>&nbsp;<strong><%=StringEscapeUtils.escapeHtml(uicomponent.getKeyword())%></strong>
+			</div>
+		</div>
+	<%} %>
