@@ -16,7 +16,7 @@
         </value-param>
         <values-param>
           <name>add.profiles</name>
-          <value>wiki</value>
+          <value>notes</value>
         </values-param>
         <object-param>
           <name>change</name>
@@ -24,7 +24,7 @@
             <field name="dependencies">
               <collection type="java.util.ArrayList">
                  <value>
-                    <string>wiki</string>
+                    <string>notes</string>
                  </value>
               </collection>
             </field>

@@ -251,8 +251,8 @@ export default {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('video','/wiki/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
-      CKEDITOR.plugins.addExternal('insertOptions','/wiki/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
+      CKEDITOR.plugins.addExternal('video','/notes/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
+      CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
       let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
