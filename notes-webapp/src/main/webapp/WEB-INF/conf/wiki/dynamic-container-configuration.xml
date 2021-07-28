@@ -41,7 +41,7 @@
           <description></description>
           <object type="org.exoplatform.commons.addons.PortletModel">
             <field name="contentId">
-              <string>wiki/WikiPortlet</string>
+              <string>notes/WikiPortlet</string>
             </field>
             <field name="permissions">
               <collection type="java.util.ArrayList">
@@ -85,7 +85,7 @@
           <description></description>
           <object type="org.exoplatform.commons.addons.PortletModel">
             <field name="contentId">
-              <string>wiki/Notes</string>
+              <string>notes/Notes</string>
             </field>
             <field name="permissions">
               <collection type="java.util.ArrayList">
@@ -173,7 +173,7 @@
           <description></description>
           <object type="org.exoplatform.commons.addons.PortletModel">
             <field name="contentId">
-              <string>wiki/NotesExtensions</string>
+              <string>notes/NotesExtensions</string>
             </field>
             <field name="permissions">
               <collection type="java.util.ArrayList">
