@@ -245,14 +245,16 @@ export default {
       }
     },
     getNoteById(id) {
-      return this.$notesService.getNoteById(id).then(data => {
-        this.note = data || [];
-        this.note.breadcrumb[0].title = this.$t('portal.global.noteHome');
-        this.breadcrumb = this.note.breadcrumb;
-      }).then(() => {
-        this.note.wikiOwner =  this.note.wikiOwner.substring(1);
-        this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
-      });
+      if (id) {
+        return this.$notesService.getNoteById(id).then(data => {
+          this.note = data || [];
+          this.note.breadcrumb[0].title = this.$t('portal.global.noteHome');
+          this.breadcrumb = this.note.breadcrumb;
+        }).then(() => {
+          this.note.wikiOwner =  this.note.wikiOwner.substring(1);
+          this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
+        });
+      }
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
       this.$notesService.getNoteTree(noteType, noteOwner , noteName,'ALL').then(data => {

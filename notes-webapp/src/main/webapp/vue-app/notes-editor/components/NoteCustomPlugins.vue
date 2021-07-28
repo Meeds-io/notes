@@ -56,19 +56,26 @@
 <script>
 export default {
   data: () => ({
-    plugins: [
-      { id: 'selectImage',title: 'Image', src: '/notes/images/photo.png' },
-      { id: 'video',title: 'Video', src: '/notes/images/video.png' },
-      { id: 'table',title: 'Table', src: '/notes/images/table.png' },
-      { id: 'note',title: 'Note', src: '/notes/images/notes.png' },
+    defaultImagePlugin: '/notes/images/defaultPlugin.png',
+    drawer: false,
+  }),
+  computed: {
+    plugins() {
+      const pluginsList = [
+        { id: 'video',title: 'Video', src: '/notes/images/video.png' },
+        { id: 'table',title: 'Table', src: '/notes/images/table.png' },
+        { id: 'note',title: 'Note', src: '/notes/images/notes.png' },
       /*{ id: 'ToC',title: 'ToC', src: '/notes/images/children.png' },
       { id: 'index',title: 'Index', src: '/notes/images/index.png' },
       { id: 'iframe',title: 'IFrame', src: '/notes/images/iframe.png' },
       { id: 'code',title: 'Code', src: '/notes/images/code.png' },*/
-    ],
-    defaultImagePlugin: '/notes/images/defaultPlugin.png',
-    drawer: false,
-  }),
+      ];
+      if (eXo.ecm){
+        pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png' });
+      }
+      return pluginsList;
+    },
+  },
   props: {
     instance: {
       type: Object,
