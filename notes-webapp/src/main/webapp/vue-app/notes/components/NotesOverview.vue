@@ -189,37 +189,29 @@ export default {
       }
     },
     notesPageName() {
-      if (this.currentPath.endsWith('/wiki')||this.currentPath.endsWith('/notes')){
+      if (this.currentPath.endsWith(eXo.env.portal.selectedNodeUri)){
         return 'WikiHome';
       } else {
-        if (!(this.currentPath.includes('/wiki/'))&&!(this.currentPath.includes('/notes/'))) {
-          return;
+        const noteId = this.currentPath.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
+        if (noteId) {
+          return noteId;
         } else {
-          const noteId = this.currentPath.split('/').pop();
-          if (noteId) {
-            return noteId;
-          } else {
-            return 'WikiHome';
-          }
+          return 'WikiHome';
         }
+        
       }
     },
     noteId() {
-      if (this.currentPath.includes('/wiki/')) {
-        const nId = this.currentPath.split('wiki/')[1].split(/[^0-9]/)[0];
+      const nId = this.currentPath.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
+      if (nId) {
         return (nId && Number(nId) || 0);
+      } else {
+        return 0;
       }
-      if (this.currentPath.includes('/notes/')) {
-        const nId = this.currentPath.split('notes/')[1].split(/[^0-9]/)[0];
-        return (nId && Number(nId) || 0);
-      }
-      return 0;
+        
     },
     appName() {
-      if (this.currentPath.includes('/wiki')) {
-        return ('wiki');
-      }
-      return 'notes';
+      return eXo.env.portal.selectedNodeUri.split('/')[1];
     }
   },
   created() {
