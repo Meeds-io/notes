@@ -46,8 +46,12 @@
     <display-name xml:lang="EN">Notes Application</display-name>
     <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
     <init-param>
-    <name>portlet-view-dispatched-file-path</name>
-    <value>/html/notes.html</value>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/notes.html</value>
+    </init-param>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.portlet.notes.notesPortlet,locale.portlet.wiki.WikiPortlet</value>
     </init-param>
     <expiration-cache>-1</expiration-cache>
     <cache-scope>PUBLIC</cache-scope>
@@ -70,6 +74,10 @@
     <name>portlet-view-dispatched-file-path</name>
     <value>/html/notesEditor.html</value>
     </init-param>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.portlet.notes.notesPortlet,locale.portlet.wiki.WikiPortlet</value>
+    </init-param>
     <expiration-cache>-1</expiration-cache>
     <cache-scope>PUBLIC</cache-scope>
     <supports>
@@ -88,8 +96,8 @@
     <display-name>Notes Extensions Application</display-name>
     <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
     <init-param>
-    <name>portlet-view-dispatched-file-path</name>
-    <value>/html/notesExtensions.html</value>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/notesExtensions.html</value>
     </init-param>
     <expiration-cache>-1</expiration-cache>
     <cache-scope>PUBLIC</cache-scope>
