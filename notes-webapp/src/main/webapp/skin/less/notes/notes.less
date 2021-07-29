@@ -153,11 +153,19 @@
   .notes-wrapper {
     min-height: calc(~"100vh - 170px");
   }
+  .notes-application-content{
+	overflow: auto;
+  }
   table{
-	table-layout: fixed;
-	width: 100%;
-	word-break: break-all;
-	border: 1px solid var(--allPagesBorderColor,#e1e8ee);
+	  border: 1px solid var(--allPagesBorderColor,#e1e8ee);
+	  border-right: none;
+	  border-top: none;
+	  width: auto;
+	  td {
+		  border-right: 1px solid var(--allPagesBorderColor,#e1e8ee);
+		  border-top: 1px solid var(--allPagesBorderColor,#e1e8ee);
+		  padding: 5px;
+	  }
   }
   .notes-application {
     min-height: calc(~"100vh - 170px");
