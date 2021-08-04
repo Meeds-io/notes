@@ -298,7 +298,7 @@ public class TestWikiRestService {
     String wikiType = wiki.getType();
     String wikiOwner = wiki.getOwner();
 
-    Page wikiHomePage = new Page("WikiHome", "Wiki Home");
+    Page wikiHomePage = new Page("Home", "Home");
     wikiHomePage.setId("1");
     wikiHomePage.setWikiId("1");
     wikiHomePage.setSyntax("xhtml/1.0");

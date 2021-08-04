@@ -57,7 +57,7 @@ public class WikiSpaceAccessLifecycle extends BaseComponentPlugin implements App
         if ((params.length > 1) && params[1].equals(WIKI_PORTLET_NAME)) {
           String spaceId = params[0];
           String owner = siteName;
-          String pageId = "WikiHome";
+          String pageId = "Home";
           if (params.length > 2) {
             pageId = params[2];
           }

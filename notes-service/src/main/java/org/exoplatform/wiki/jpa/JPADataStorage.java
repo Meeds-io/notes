@@ -165,7 +165,7 @@ public class JPADataStorage implements DataStorage {
     WikiEntity createdWikiEntity = wikiDAO.create(convertWikiToWikiEntity(wiki, wikiDAO));
     Wiki createdWiki = convertWikiEntityToWiki(createdWikiEntity);
 
-    // create wiki home page
+    // create Home page
     Page wikiHomePage = new Page();
     wikiHomePage.setWikiType(wiki.getType());
     wikiHomePage.setWikiOwner(wiki.getOwner());
@@ -177,7 +177,7 @@ public class JPADataStorage implements DataStorage {
     wikiHomePage.setContent("<h1> Welcome to " + wiki.getOwner() + " </h1>");
     // inherit syntax from wiki
     wikiHomePage.setSyntax(createdWiki.getPreferences().getWikiPreferencesSyntax().getDefaultSyntax());
-    // set default wiki home page permissions
+    // set default Home page permissions
     List<PermissionEntry> homePagePermissions = getWikiHomePageDefaultPermissions(wiki.getType(), wiki.getOwner());
     
     wikiHomePage.setPermissions(homePagePermissions);
@@ -220,7 +220,7 @@ public class JPADataStorage implements DataStorage {
 
     PageEntity createdPageEntity = pageDAO.create(pageEntity);
 
-    // if the page to create is the wiki home, update the wiki
+    // if the page to create is the Home, update the wiki
     if (parentPage == null) {
       wikiEntity.setWikiHome(createdPageEntity);
       wikiDAO.update(wikiEntity);

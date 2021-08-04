@@ -34,21 +34,21 @@ public class TestURLResolver extends AbstractResolverTestcase {
   }
   
   public void testResolvePortalURL() throws Exception{
-    //http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
-    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "wiki");
-    String url = "http://hostname/$CONTAINER/$ACCESS/classic/wiki" ;
+    //http://hostname/$CONTAINER/$ACCESS/$SITE/note/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
+    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "note");
+    String url = "http://hostname/$CONTAINER/$ACCESS/classic/note" ;
     WikiPageParams params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.PORTAL_TYPE, params.getType()) ;
     assertEquals("classic", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/classic/wiki/WikiHome" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/classic/note/Home" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.PORTAL_TYPE, params.getType()) ;
     assertEquals("classic", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/classic/wiki/pageId" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/classic/note/pageId" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.PORTAL_TYPE, params.getType()) ;
     assertEquals("classic", params.getOwner()) ;
@@ -56,73 +56,73 @@ public class TestURLResolver extends AbstractResolverTestcase {
   }
   
   public void testResolveGroupURL() throws Exception{
-    //http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
-    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "wiki");
-    String url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform/" ;
+    //http://hostname/$CONTAINER/$ACCESS/$SITE/note/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
+    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "note");
+    String url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform/" ;
     WikiPageParams params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform/users/pageId/" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform/users/pageId/" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform/users", params.getOwner()) ;
     assertEquals("pageId", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform/users/pageId" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform/users/pageId" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform/users", params.getOwner()) ;
     assertEquals("pageId", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform/users/WikiHome" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform/users/Home" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform/users", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/group/platform/users" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/group/platform/users" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.GROUP_TYPE, params.getType()) ;
     assertEquals("/platform/users", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
   }
   
   public void testResolveUserURL() throws Exception{
-    //http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
-    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "wiki");
-    String url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/user/john" ;
+    //http://hostname/$CONTAINER/$ACCESS/$SITE/note/[$OWNER_TYPE/$OWNER]/$WIKI_PAGE_URI
+    UserNode usernode = createUserNode(MockDataStorage.PORTAL_CLASSIC__WIKI[0], "note");
+    String url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/user/john" ;
     WikiPageParams params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.USER_TYPE, params.getType()) ;
     assertEquals("john", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/user/john/" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/user/john/" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.USER_TYPE, params.getType()) ;
     assertEquals("john", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/user/john/WikiHome" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/user/john/Home" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.USER_TYPE, params.getType()) ;
     assertEquals("john", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
-    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/wiki/user/john/WikiHome/" ;
+    url = "http://hostname/$CONTAINER/$ACCESS/$SITE/note/user/john/Home/" ;
     params = resolver.extractPageParams(url, null, usernode) ;
     assertEquals(PortalConfig.USER_TYPE, params.getType()) ;
     assertEquals("john", params.getOwner()) ;
-    assertEquals("WikiHome", params.getPageName()) ;
+    assertEquals("Home", params.getPageName()) ;
     
   }
 }

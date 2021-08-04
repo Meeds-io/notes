@@ -232,6 +232,37 @@
     </component-plugin>    
   </external-component-plugins>
 
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
+    <component-plugin>
+      <name>Wiki To Notes Redirect Filter</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <priority>2</priority>
+      <init-params>
+        <object-param>
+          <name>Software register to Tribe</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="org.exoplatform.wiki.filter.WikiToNotesRedirectFilter" />
+            </field>
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value>
+                  <string>/.*/wiki.*</string>
+                </value>
+                <value>
+                  <string>/.*/WikiPortlet.*</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
   <import>jar:/conf/portal/cache-configuration.xml</import>
   
 </configuration>

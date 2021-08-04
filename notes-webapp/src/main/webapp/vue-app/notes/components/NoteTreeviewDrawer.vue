@@ -63,10 +63,10 @@
           </v-list-item>
         </v-layout>
         <v-layout column>
-          <template v-if="wikiHome" class="ma-0 border-box-sizing">
-            <v-list-item @click="openNote(event,wikiHome)">
+          <template v-if="home" class="ma-0 border-box-sizing">
+            <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
-                <v-list-item-title class="body-2">{{ wikiHome.name }}</v-list-item-title>
+                <v-list-item-title class="body-2">{{ home.name }}</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </template>
@@ -132,7 +132,7 @@ export default {
     items() {
       return this.breadcrumbItems;
     },
-    wikiHome() {
+    home() {
       return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
     },
     openedItems() {

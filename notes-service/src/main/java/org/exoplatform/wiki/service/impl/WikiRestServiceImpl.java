@@ -272,7 +272,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       WikiPageParams pageParam = TreeUtils.getPageParamsFromPath(path);
       org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(pageParam.getType(), pageParam.getOwner(), pageParam.getPageName());
       if (page == null) {
-        log.warn("User [{}] can not get wiki path [{}]. Wiki Home is used instead",
+        log.warn("User [{}] can not get wiki path [{}]. Home is used instead",
                  ConversationState.getCurrent().getIdentity().getUserId(), path);
         page = wikiService.getPageOfWikiByName(pageParam.getType(), pageParam.getOwner(), pageParam.WIKI_HOME);
         if(page == null) {

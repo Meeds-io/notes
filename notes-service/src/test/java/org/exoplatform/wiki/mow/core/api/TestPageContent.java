@@ -38,7 +38,7 @@ public class TestPageContent extends BaseTest {
     Page page = new Page("AddPageContent-001", "AddPageContent-001");
     page.setSyntax("xhtml/1.0");
     page.setContent("This is a content of page");
-    wikiService.createPage(wiki, "WikiHome", page);
+    wikiService.createPage(wiki, "Home", page);
 
     page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), "AddPageContent-001");
     assertNotNull(page);
@@ -52,7 +52,7 @@ public class TestPageContent extends BaseTest {
 //    Page page = new Page("UpdatePageContent-001", "UpdatePageContent-001");
 //    page.setSyntax("xwiki_2.0");
 //    page.setContent("This is a content of page");
-//    wikiService.createPage(wiki, "WikiHome", page);
+//    wikiService.createPage(wiki, "Home", page);
 //
 //    page.setContent("This is a content of page - edited");
 //    page.setSyntax("xwiki_2.1");
