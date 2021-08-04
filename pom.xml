@@ -33,6 +33,9 @@
     <org.exoplatform.social.version>6.3.x-SNAPSHOT</org.exoplatform.social.version>
     <org.exoplatform.platform-ui.version>6.3.x-SNAPSHOT</org.exoplatform.platform-ui.version>
     <addon.exo.gamification.version>2.3.x-SNAPSHOT</addon.exo.gamification.version>
+    
+    <!-- Sonar properties -->
+    <sonar.organization>meeds-io</sonar.organization>
   </properties>
   <dependencyManagement>
     <!-- ### NEVER CHANGE THIS ORDER OF DEPMGT ### -->
@@ -106,4 +109,33 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+  
+  <profiles>
+       <profile>
+         <id>project-repositories</id>
+         <activation>
+            <property>
+               <name>!skip-project-repositories</name>
+            </property>
+         </activation>
+         <repositories>
+            <repository>
+               <snapshots>
+                  <enabled>true</enabled>
+               </snapshots>
+               <id>repository.exoplatform.org</id>
+               <url>https://repository.exoplatform.org/public</url>
+            </repository>
+         </repositories>
+         <pluginRepositories>
+            <pluginRepository>
+               <snapshots>
+                  <enabled>true</enabled>
+               </snapshots>
+               <id>repository.exoplatform.org</id>
+               <url>https://repository.exoplatform.org/public</url>
+            </pluginRepository>
+         </pluginRepositories>
+      </profile>
+   </profiles>
 </project>
