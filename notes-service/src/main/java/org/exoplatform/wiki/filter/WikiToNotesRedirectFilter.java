@@ -23,31 +23,40 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.exoplatform.web.filter.Filter;
 
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.web.filter.Filter;
 
 public class WikiToNotesRedirectFilter implements Filter {
 
-    public WikiToNotesRedirectFilter() {
-    }
+  public WikiToNotesRedirectFilter() {
+  }
 
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-        String reqUri = httpServletRequest.getRequestURI();
-        List resList = Arrays.asList(reqUri.split("/"));
-        int i = resList.indexOf("wiki");
-        int j = resList.indexOf("WikiPortlet");
-        if (i>0 || j>0) {
-            if (i>0) resList.set(i,"notes");
-            if (j>0) resList.set(j,"notes");
-            reqUri=String.join("/", resList);
-            httpServletResponse.sendRedirect(reqUri);
-            return;
-        }
-        chain.doFilter(request, response);
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+    HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+    String reqUri = httpServletRequest.getRequestURI();
+    boolean isRestUri = reqUri.contains(ExoContainerContext.getCurrentContainer().getContext().getRestContextName());
+    if (!isRestUri) {
+      List resList = Arrays.asList(reqUri.split("/"));
+      int i = resList.indexOf("wiki");
+      int j = resList.indexOf("WikiPortlet");
+      if (i > 0 || j > 0) {
+        if (i > 0)
+          resList.set(i, "notes");
+        if (j > 0)
+          resList.set(j, "notes");
+        reqUri = String.join("/", resList);
+        httpServletResponse.sendRedirect(reqUri);
+        return;
+      }
     }
+    chain.doFilter(request, response);
+  }
 }
