@@ -189,22 +189,22 @@ export default {
       }
     },
     notesPageName() {
-      if (this.currentPath.endsWith(eXo.env.portal.selectedNodeUri)){
-        return 'WikiHome';
+      if (this.currentPath.endsWith(eXo.env.portal.selectedNodeUri)||this.currentPath.endsWith(`${eXo.env.portal.selectedNodeUri}/`)){
+        return 'homeNote';
       } else {
         const noteId = this.currentPath.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
         if (noteId) {
           return noteId;
         } else {
-          return 'WikiHome';
+          return 'homeNote';
         }
         
       }
     },
     noteId() {
       const nId = this.currentPath.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
-      if (nId) {
-        return (nId && Number(nId) || 0);
+      if (!isNaN(nId)) {
+        return nId;
       } else {
         return 0;
       }

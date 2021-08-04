@@ -423,7 +423,7 @@ public class Utils {
         Page expandPage = wikiService.getPageByRootPermission(wikiType, wikiOwner, wikiPageId);
         return expandPage;
       } else {
-        // Object is a wiki home page
+        // Object is a Home page
         Wiki wiki = wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner);
         if(wiki != null) {
           Page wikiHome = wiki.getWikiHome();

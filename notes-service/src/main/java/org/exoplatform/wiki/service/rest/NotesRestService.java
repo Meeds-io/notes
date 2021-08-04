@@ -16,21 +16,25 @@
  */
 package org.exoplatform.wiki.service.rest;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.util.*;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.exoplatform.commons.file.model.FileItem;
 import org.apache.commons.lang.StringUtils;
 
 import org.apache.commons.lang.math.NumberUtils;
 import org.exoplatform.common.http.HTTPStatus;
+import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.commons.file.services.FileStorageException;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -98,7 +102,12 @@ public class NotesRestService implements ResourceContainer {
       if(noteBook == null) {
         noteBook = noteBookService.createWiki(noteBookType, noteBookOwner);
       }
-      Page note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
+      Page note = null;
+      if(noteId.equals("homeNote")){
+        note = noteBook.getWikiHome();
+      }else{
+        note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
+      }
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -488,7 +497,7 @@ public class NotesRestService implements ResourceContainer {
       Page note =
                 noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
       if (note == null) {
-        log.warn("User [{}] can not get noteBook path [{}]. Wiki Home is used instead",
+        log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                  ConversationState.getCurrent().getIdentity().getUserId(),
                  path);
         note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);

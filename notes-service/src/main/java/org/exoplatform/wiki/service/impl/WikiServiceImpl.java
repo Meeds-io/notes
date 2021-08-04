@@ -409,7 +409,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     } else if (wikiType.equals(PortalConfig.USER_TYPE)) {
       wikiLabel = this.getUserDisplayName(wiki.getOwner());
     }
-    sb.append(wikiLabel).append(" Note Book </h1>");
+    sb.append(wikiLabel).append(" Notes Home </h1>");
     createdWiki.getWikiHome().setContent(sb.toString());
     updatePage(createdWiki.getWikiHome(), null);
     // init templates
