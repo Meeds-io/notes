@@ -24,18 +24,6 @@
   <priority>2</priority>
   <page-nodes>
     <node>
-      <name>wiki</name>
-      <label>#{portal.global.wiki}</label>
-      <visibility>SYSTEM</visibility>
-      <page-reference>portal::global::wiki</page-reference>
-    </node>
-    <node>
-      <name>notes</name>
-      <label>#{portal.global.notes}</label>
-      <visibility>SYSTEM</visibility>
-      <page-reference>portal::global::notes</page-reference>
-    </node>
-    <node>
       <name>notes-editor</name>
       <label>#{portal.global.notes-editor}</label>
       <visibility>SYSTEM</visibility>
