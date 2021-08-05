@@ -228,7 +228,7 @@ UITreeExplorer.prototype.buildNode = function(data) {
   var nodeType = data.nodeType;
   var nodeTypeCSS = nodeType.toLowerCase();
   var iconClass = "uiIconFileMini uiIconLightGray";
-  if (nodeType == "WIKIHOME") {
+  if (nodeType == "Home") {
     iconClass = "uiIconWiki uiIconWikiLightGray";
   }
   

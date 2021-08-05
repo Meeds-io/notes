@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class WikiPageParams {
 
-  public static final String  WIKI_HOME  = "WikiHome";
+  public static final String  WIKI_HOME  = "Home";
 
   private String              type;
 

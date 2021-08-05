@@ -109,7 +109,7 @@ public class TestPageAttachment extends BaseTest {
 //    attachment3.setCreator("me");
 //    wikiService.addAttachmentToPage(attachment3, page1);
 //	  
-//    Page page = wikiService.getPageOfWikiByName(PortalConfig.PORTAL_TYPE, "wikiAttachement3", "WikiHome");
+//    Page page = wikiService.getPageOfWikiByName(PortalConfig.PORTAL_TYPE, "wikiAttachement3", "Home");
 //    List<Attachment> attachments = wikiService.getAttachmentsOfPage(page);
 //    assertNotNull(attachments);
 //    assertEquals(attachments.size(), 1);
