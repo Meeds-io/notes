@@ -303,7 +303,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
   @Override
   public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(pageId) || !page.isToBePublished()) {
+    if (WikiConstants.WIKI_HOME_NAME.equals(pageId) || !page.getWikiType().toUpperCase().equals(WikiType.GROUP.name())|| !page.isToBePublished()) {
       // catch the case of the Wiki Home added as it's created by the system, not by
       // users.
       return;
