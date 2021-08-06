@@ -329,6 +329,8 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
+
+            self.$root.$applicationLoaded();
           },
           change: function (evt) {
             self.notes.content = evt.editor.getData();

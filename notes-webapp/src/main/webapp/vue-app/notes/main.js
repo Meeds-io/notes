@@ -30,10 +30,10 @@ export function init() {
     const appElement = document.createElement('div');
     appElement.id = appId;
     // init Vue app when locale ressources are ready
-    new Vue({
+    Vue.createApp({
       template: `<notes-overview v-cacheable id="${appId}" />`,
       vuetify,
       i18n
-    }).$mount(appElement);
+    }, appElement, 'Notes Overview');
   });
 }

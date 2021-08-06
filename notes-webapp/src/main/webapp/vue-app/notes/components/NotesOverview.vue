@@ -282,7 +282,7 @@ export default {
         console.error('Error when getting notes', e);
         this.existingNote = false;
       }).finally(() => {
-        this.$root.$emit('application-loaded');
+        this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeview-items',this.notes.id);
       });
     },
@@ -297,7 +297,7 @@ export default {
         console.error('Error when getting notes', e);
         this.existingNote = false;
       }).finally(() => {
-        this.$root.$emit('application-loaded');
+        this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeview-items',this.notes.id);
       });
     },
