@@ -29,10 +29,10 @@ window.Object.defineProperty(Vue.prototype, '$notesService', {
 export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     // init Vue app when locale ressources are ready
-    new Vue({
+    Vue.createApp({
       template: `<notes-editor-dashboard id="${appId}" />`,
       vuetify,
       i18n
-    }).$mount(`#${appId}`);
+    }, `#${appId}`, 'Notes Editor Dashboard');
   });
 }
