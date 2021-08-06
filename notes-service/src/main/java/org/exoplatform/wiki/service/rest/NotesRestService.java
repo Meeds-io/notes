@@ -68,6 +68,7 @@ import io.swagger.jaxrs.PATCH;
 
 public class NotesRestService implements ResourceContainer {
 
+  private static final String         NOTE_NAME_EXISTS = "Note name already exists";
   private static Log                  log = ExoLogger.getLogger(NotesRestService.class);
   private final NoteService           noteService;
   private final WikiService           noteBookService;
@@ -192,7 +193,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       if (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false))) {
-        return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
+        return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       /* TODO: check noteBook permissions */
       Wiki noteBook = noteBookService.getWikiByTypeAndOwner(noteBookType, noteBookOwner);
@@ -248,7 +249,7 @@ public class NotesRestService implements ResourceContainer {
       note_.setToBePublished(note.isToBePublished());
       if ((!note_.getTitle().equals(note.getTitle()))
           && (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
-        return Response.status(Response.Status.CONFLICT).entity("Note name already exists").build();
+        return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
@@ -319,6 +320,10 @@ public class NotesRestService implements ResourceContainer {
       }
       if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
         return Response.status(Response.Status.FORBIDDEN).build();
+      }
+      if ((!note_.getTitle().equals(note.getTitle()))
+          && (noteBookService.isExisting(note.getWikiType(), note.getWikiOwner(), TitleResolver.getId(note.getTitle(), false)))) {
+        return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
