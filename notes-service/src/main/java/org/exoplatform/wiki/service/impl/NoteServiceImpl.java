@@ -7,7 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
@@ -115,6 +117,17 @@ public class NoteServiceImpl implements NoteService {
         }
         note.setPermissions(permissions);
       }
+      HTMLUploadImageProcessor htmlUploadImageProcessor = CommonsUtils.getService(HTMLUploadImageProcessor.class);
+      try {
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.GROUP.name())) {
+          note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
+        }
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.USER.name())) {
+          note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), noteBook.getOwner(), "Notes"));
+        }
+      } catch (Exception e) {
+       log.warn("can't process note's images");
+      }
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setToBePublished(note.isToBePublished());
       createdPage.setAppName(note.getAppName());
@@ -161,6 +174,17 @@ public class NoteServiceImpl implements NoteService {
     // update updated date if the page content has been updated
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
+    }
+    HTMLUploadImageProcessor htmlUploadImageProcessor = CommonsUtils.getService(HTMLUploadImageProcessor.class);
+    try {
+      if (note.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
+        note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), note.getWikiOwner(), "Notes"));
+      }
+      if (note.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
+        note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), note.getWikiOwner(), "Notes"));
+      }
+    } catch (Exception e) {
+      log.warn("can't process note's images");
     }
     updateNote(note);
     invalidateCache(note);
