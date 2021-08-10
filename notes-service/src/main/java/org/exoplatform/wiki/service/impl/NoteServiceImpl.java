@@ -119,10 +119,10 @@ public class NoteServiceImpl implements NoteService {
       }
       HTMLUploadImageProcessor htmlUploadImageProcessor = CommonsUtils.getService(HTMLUploadImageProcessor.class);
       try {
-        if (note.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.GROUP.name())) {
           note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
         }
-        if (note.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.USER.name())) {
           note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), noteBook.getOwner(), "Notes"));
         }
       } catch (Exception e) {
