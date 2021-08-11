@@ -139,11 +139,11 @@ export default {
       displayActionMenu: false,
       parentPageName: '',
       confirmMessage: '',
-      noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
-      noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : `${eXo.env.portal.portalName}`,
-      noteBookOwnerTree: eXo.env.portal.spaceGroup ? `spaces/${eXo.env.portal.spaceGroup}` : `${eXo.env.portal.portalName}`,
+      noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
+      noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
+      noteBookOwnerTree: eXo.env.portal.spaceGroup ? `spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
       noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
-      defaultPath: 'WikiHome',
+      defaultPath: 'Home',
       existingNote: true,
       currentPath: window.location.pathname, 
       currentNoteBreadcrumb: [],
@@ -211,7 +211,8 @@ export default {
         
     },
     appName() {
-      return eXo.env.portal.selectedNodeUri.split('/')[1];
+      const uris = eXo.env.portal.selectedNodeUri.split('/');
+      return uris[uris.length - 1];
     }
   },
   created() {
@@ -291,7 +292,7 @@ export default {
         this.notes = data || [];
         this.loadData = true;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.notes.id}`;
-        window.history.pushState('wiki', '', notesConstants.PORTAL_BASE_URL);
+        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting notes', e);

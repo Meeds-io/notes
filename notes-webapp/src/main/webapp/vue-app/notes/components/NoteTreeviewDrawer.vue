@@ -251,7 +251,9 @@ export default {
           this.note.breadcrumb[0].title = this.$t('portal.global.noteHome');
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
-          this.note.wikiOwner =  this.note.wikiOwner.substring(1);
+          if (this.note.wikiType === 'group'){
+            this.note.wikiOwner = this.note.wikiOwner.substring(1);
+          }
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
         });
       }
