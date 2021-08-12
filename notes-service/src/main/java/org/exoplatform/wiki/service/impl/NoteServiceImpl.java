@@ -5,18 +5,13 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.container.xml.PropertiesParam;
-import org.exoplatform.container.xml.ValuesParam;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
@@ -28,8 +23,6 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
-import org.exoplatform.wiki.plugin.WikiEmotionIconsPlugin;
-import org.exoplatform.wiki.plugin.WikiTemplatePagePlugin;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
@@ -45,10 +38,8 @@ public class NoteServiceImpl implements NoteService {
 
   public static final String                              ATT_CACHE_NAME                   = "wiki.PageAttachmentCache";
 
-
   private static final Log                                log                              =
                                                               ExoLogger.getLogger(NoteServiceImpl.class);
-
 
   private final ConfigurationManager                      configManager;
 
@@ -58,9 +49,14 @@ public class NoteServiceImpl implements NoteService {
 
   private final UserACL                                   userACL;
 
+  private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
+
   private final DataStorage                               dataStorage;
+
   private final ExoCache<Integer, MarkupData>             renderingCache;
+
   private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
+
   private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                     = new ConcurrentHashMap<>();
 
 
@@ -69,12 +65,14 @@ public class NoteServiceImpl implements NoteService {
                          DataStorage dataStorage,
                          CacheService cacheService,
                          OrganizationService orgService,
-                         WikiService wikiService) {
+                         WikiService wikiService,
+                         HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.configManager = configManager;
     this.userACL = userACL;
     this.dataStorage = dataStorage;
     this.orgService = orgService;
     this.wikiService = wikiService;
+    this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
   }
@@ -114,6 +112,16 @@ public class NoteServiceImpl implements NoteService {
           permissions = wikiHomePage.getPermissions();
         }
         note.setPermissions(permissions);
+      }
+      try {
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.GROUP.name())) {
+          note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
+        }
+        if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.USER.name())) {
+          note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), noteBook.getOwner(), "Notes"));
+        }
+      } catch (Exception e) {
+       log.warn("can't process note's images");
       }
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setToBePublished(note.isToBePublished());
@@ -161,6 +169,16 @@ public class NoteServiceImpl implements NoteService {
     // update updated date if the page content has been updated
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
+    }
+    try {
+      if (note.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
+        note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), note.getWikiOwner(), "Notes"));
+      }
+      if (note.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
+        note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), note.getWikiOwner(), "Notes"));
+      }
+    } catch (Exception e) {
+      log.warn("can't process note's images");
     }
     updateNote(note);
     invalidateCache(note);

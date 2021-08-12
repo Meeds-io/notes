@@ -56,6 +56,11 @@
   </component>
 
   <component>
+    <key>org.exoplatform.social.common.service.HTMLUploadImageProcessor </key>
+    <type>org.exoplatform.social.common.service.impl.HTMLUploadImageProcessorImpl</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.wiki.service.NoteService</key>
     <type>org.exoplatform.wiki.service.impl.NoteServiceImpl</type>
   </component>

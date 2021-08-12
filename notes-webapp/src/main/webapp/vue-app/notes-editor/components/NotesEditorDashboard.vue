@@ -211,11 +211,7 @@ export default {
         let notePath = '';
         if (this.notes.id){
           this.$notesService.updateNoteById(notes).then(data => {
-            if (data.url){
-              notePath = data.url;
-            } else {
-              notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
-            }           
+            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
             window.location.href= notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
@@ -226,11 +222,7 @@ export default {
           });
         } else {
           this.$notesService.createNote(notes).then(data => {
-            if (data.url){
-              notePath = data.url;
-            } else {
-              notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
-            }
+            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
             window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
