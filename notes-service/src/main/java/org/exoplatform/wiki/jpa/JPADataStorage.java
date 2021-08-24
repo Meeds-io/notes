@@ -40,6 +40,10 @@ import org.exoplatform.portal.config.*;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.*;
 import org.exoplatform.wiki.jpa.entity.*;
@@ -119,6 +123,12 @@ public class JPADataStorage implements DataStorage {
         wikiSearchData.getLimit(),
         wikiSearchData.getSort(),
         wikiSearchData.getOrder());
+    SpaceService spaceService = PortalContainer.getInstance().getComponentInstanceOfType(SpaceService.class);
+    for (SearchResult res :searchResults) {
+      Space space = spaceService.getSpaceByGroupId(res.getWikiOwner()) ;
+      IdentityManager identityManager =  PortalContainer.getInstance().getComponentInstanceOfType(IdentityManager.class);
+      res.setWikiOwnerIdentity(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), true));
+    }
 
     return new ObjectPageList<>(searchResults, searchResults.size());
   }
