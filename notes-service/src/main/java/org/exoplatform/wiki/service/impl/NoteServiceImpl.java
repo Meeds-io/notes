@@ -111,13 +111,8 @@ public class NoteServiceImpl implements NoteService {
           Page wikiHomePage = noteBook.getWikiHome();
           permissions = wikiHomePage.getPermissions();
         }
+        note.setPermissions(permissions);
       }
-      for (PermissionEntry  permission : permissions ) {
-        if (permission.getId().startsWith("/spaces/")){
-          permission.setId("*:" + permission.getId());
-        }
-      }
-      note.setPermissions(permissions);
       try {
         if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.GROUP.name())) {
           note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
@@ -134,7 +129,7 @@ public class NoteServiceImpl implements NoteService {
       createdPage.setUrl(Utils.getPageUrl(createdPage));
       invalidateCache(parentPage);
       invalidateCache(note);
-      updateNote(createdPage);
+
       // call listeners
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
 

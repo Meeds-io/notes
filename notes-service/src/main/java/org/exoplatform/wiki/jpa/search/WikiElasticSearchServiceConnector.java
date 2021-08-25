@@ -27,6 +27,9 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -194,6 +197,59 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
     return wikiResults;
 
+  }
+
+  private String getCurrentUser() {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
+    } else if (ConversationState.getCurrent().getIdentity() == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent().getIdentity() is null");
+    } else {
+      return ConversationState.getCurrent().getIdentity().getUserId();
+    }
+  }
+
+  @Override
+  protected String getPermissionFilter() {
+    StringBuilder permissionSB = new StringBuilder();
+    Set<String> membershipSet = this.getUserMemberships();
+    if (!membershipSet.isEmpty()) {
+      String memberships = StringUtils.join(membershipSet.toArray(new String[membershipSet.size()]), "|");
+      permissionSB.append("{\n").append("  \"term\" : { \"permissions\" : \"").append(this.getCurrentUser()).append("\" }\n").append("},\n").append("{\n").append("  \"term\" : { \"permissions\" : \"").append(IdentityConstants.ANY).append("\" }\n").append("},\n").append("{\n").append("  \"regexp\" : { \"permissions\" : \"").append(memberships).append("\" }\n").append("}");
+    } else {
+      permissionSB.append("{\n").append("  \"term\" : { \"permissions\" : \"").append(this.getCurrentUser()).append("\" }\n").append("},\n").append("{\n").append("  \"term\" : { \"permissions\" : \"").append(IdentityConstants.ANY).append("\" }\n").append("}");
+    }
+
+    return permissionSB.toString();
+  }
+
+  private Set<String> getUserMemberships() {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
+    } else if (ConversationState.getCurrent().getIdentity() == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent().getIdentity() is null");
+    } else if (ConversationState.getCurrent().getIdentity().getMemberships() == null) {
+      throw new IllegalStateException("No Membership found: ConversationState.getCurrent().getIdentity().getMemberships() is null");
+    } else {
+      Set<String> entries = new HashSet();
+      Iterator var3 = ConversationState.getCurrent().getIdentity().getMemberships().iterator();
+
+      while(var3.hasNext()) {
+        MembershipEntry entry = (MembershipEntry)var3.next();
+        if (entry.getMembershipType().equals("*")) {
+          entries.add(entry.getGroup());
+        }
+        else if (entry.getMembershipType().equals("member")) {
+          entries.add(entry.getGroup());
+        } else {
+          entries.add(entry.toString());
+        }
+      }
+
+      return entries;
+    }
   }
 
 }
