@@ -1,5 +1,5 @@
 <%
-import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
+import org.exoplatform.commons.utils.HTMLSanitizer;
   def rcontext = _ctx.getRequestContext() ;  
   
   def requireJs = rcontext.getJavascriptManager().getRequireJS();
@@ -15,7 +15,7 @@ import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 %>
 <div class="uiWikiContentDisplay" id="$uicomponent.id">
   <div class="invalidChars" style="display:none">$msg</div>
-  <%=WikiHTMLSanitizer.markupSanitize(uicomponent.getHtmlOutput())%>
+  <%=HTMLSanitizer.sanitize(uicomponent.getHtmlOutput())%>
 </div>
 <script>
   require(['SHARED/wikiPageContent'], function() {
