@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Stack;
-import java.util.StringTokenizer;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
@@ -56,7 +55,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.social.rest.entity.IdentityEntity;
-import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -99,7 +97,6 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
-import org.exoplatform.wiki.utils.WikiNameValidator;
 
 /**
  * Wiki REST service
@@ -137,7 +134,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
   @Path("/content/")
   public Response getWikiPageContent(@FormParam("text") String text) {
     try {
-      String outputText = WikiHTMLSanitizer.markupSanitize(text);
+      String outputText = HTMLSanitizer.sanitize(text);
 
       return Response.ok(outputText, MediaType.TEXT_HTML).cacheControl(cc).build();
     } catch (Exception e) {
