@@ -199,32 +199,9 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   }
 
-  private String getCurrentUser() {
-    ConversationState conversationState = ConversationState.getCurrent();
-    if (conversationState == null) {
-      throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
-    } else if (ConversationState.getCurrent().getIdentity() == null) {
-      throw new IllegalStateException("No Identity found: ConversationState.getCurrent().getIdentity() is null");
-    } else {
-      return ConversationState.getCurrent().getIdentity().getUserId();
-    }
-  }
 
   @Override
-  protected String getPermissionFilter() {
-    StringBuilder permissionSB = new StringBuilder();
-    Set<String> membershipSet = this.getUserMemberships();
-    if (!membershipSet.isEmpty()) {
-      String memberships = StringUtils.join(membershipSet.toArray(new String[membershipSet.size()]), "|");
-      permissionSB.append("{\n").append("  \"term\" : { \"permissions\" : \"").append(this.getCurrentUser()).append("\" }\n").append("},\n").append("{\n").append("  \"term\" : { \"permissions\" : \"").append(IdentityConstants.ANY).append("\" }\n").append("},\n").append("{\n").append("  \"regexp\" : { \"permissions\" : \"").append(memberships).append("\" }\n").append("}");
-    } else {
-      permissionSB.append("{\n").append("  \"term\" : { \"permissions\" : \"").append(this.getCurrentUser()).append("\" }\n").append("},\n").append("{\n").append("  \"term\" : { \"permissions\" : \"").append(IdentityConstants.ANY).append("\" }\n").append("}");
-    }
-
-    return permissionSB.toString();
-  }
-
-  private Set<String> getUserMemberships() {
+  protected Set<String> getUserMemberships() {
     ConversationState conversationState = ConversationState.getCurrent();
     if (conversationState == null) {
       throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
@@ -247,7 +224,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
           entries.add(entry.toString());
         }
       }
-
       return entries;
     }
   }
