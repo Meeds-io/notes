@@ -1,9 +1,15 @@
 package org.exoplatform.wiki.jpa.search;
 
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,15 +18,20 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
  */
 @RunWith(MockitoJUnitRunner.class)
-public class WikiElasticSearchServiceConnectorTest {
+public class WikiElasticSearchServiceConnectorTest{
 
   private WikiElasticSearchServiceConnector searchServiceConnector;
 
@@ -102,5 +113,25 @@ public class WikiElasticSearchServiceConnectorTest {
     assertEquals(2, searchResults.size());
     assertEquals("", searchResults.get(0).getExcerpt());
     assertEquals("", searchResults.get(1).getExcerpt());
+  }
+
+  @Test
+  public void TestGetUserMemberships () {
+    List <MembershipEntry> memberships = new ArrayList<>();
+    MembershipEntry membershipEntry1 = new MembershipEntry("/space/test1" , "member") ;
+    MembershipEntry membershipEntry2 = new MembershipEntry("/space/test1", "manager") ;
+    MembershipEntry membershipEntry3 = new MembershipEntry("/platform/users" , "member") ;
+    MembershipEntry membershipEntry4 = new MembershipEntry("/space/test", "member") ;
+    memberships.add(membershipEntry1);
+    memberships.add(membershipEntry2);
+    memberships.add(membershipEntry3);
+    memberships.add(membershipEntry4);
+    Identity systemIdentity = new Identity(IdentityConstants.SYSTEM);
+    systemIdentity.setMemberships(memberships);
+    ConversationState.setCurrent(new ConversationState(systemIdentity));
+
+    this.searchServiceConnector = PortalContainer.getInstance().getComponentInstanceOfType(WikiElasticSearchServiceConnector.class);
+    Set<String> membershipSet = searchServiceConnector.getUserMemberships();
+    assertEquals(3,membershipSet.size());
   }
 }
