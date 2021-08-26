@@ -44,6 +44,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by The eXo Platform SAS
@@ -210,14 +211,8 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     } else if (ConversationState.getCurrent().getIdentity().getMemberships() == null) {
       throw new IllegalStateException("No Membership found: ConversationState.getCurrent().getIdentity().getMemberships() is null");
     } else {
-      Set<String> entries = new HashSet();
-      Iterator var3 = ConversationState.getCurrent().getIdentity().getMemberships().iterator();
+      return ConversationState.getCurrent().getIdentity().getMemberships().stream().map(membershipEntry -> membershipEntry.getGroup()).collect(Collectors.toSet());
 
-      while(var3.hasNext()) {
-        MembershipEntry entry = (MembershipEntry)var3.next();
-        entries.add(entry.getGroup());
-      }
-      return entries;
     }
   }
 
