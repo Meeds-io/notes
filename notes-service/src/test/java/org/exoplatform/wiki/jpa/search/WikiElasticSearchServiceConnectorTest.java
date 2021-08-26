@@ -118,10 +118,10 @@ public class WikiElasticSearchServiceConnectorTest{
   @Test
   public void TestGetUserMemberships () {
     List <MembershipEntry> memberships = new ArrayList<>();
-    MembershipEntry membershipEntry1 = new MembershipEntry("space/test1" , "member") ;
-    MembershipEntry membershipEntry2 = new MembershipEntry("space/test1", "manager") ;
-    MembershipEntry membershipEntry3 = new MembershipEntry("platform/users" , "member") ;
-    MembershipEntry membershipEntry4 = new MembershipEntry("space/test", "member") ;
+    MembershipEntry membershipEntry1 = new MembershipEntry("/space/test1" , "member") ;
+    MembershipEntry membershipEntry2 = new MembershipEntry("/space/test1", "manager") ;
+    MembershipEntry membershipEntry3 = new MembershipEntry("/platform/users" , "member") ;
+    MembershipEntry membershipEntry4 = new MembershipEntry("/space/test", "member") ;
     memberships.add(membershipEntry1);
     memberships.add(membershipEntry2);
     memberships.add(membershipEntry3);
