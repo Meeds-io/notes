@@ -208,9 +208,11 @@ export default {
           toBePublished: toPost,
           appName: this.appName,
         };
+        let notePath = '';
         if (this.notes.id){
           this.$notesService.updateNoteById(notes).then(data => {
-            window.location.href= data.url;
+            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
+            window.location.href= notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
             this.$root.$emit('show-alert', {
@@ -220,7 +222,8 @@ export default {
           });
         } else {
           this.$notesService.createNote(notes).then(data => {
-            window.location.href = data.url;
+            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
+            window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.$root.$emit('show-alert', {
