@@ -27,6 +27,9 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -41,6 +44,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by The eXo Platform SAS
@@ -194,6 +198,24 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
     return wikiResults;
 
+  }
+
+
+  @Override
+  protected Set<String> getUserMemberships() {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
+    } else if (ConversationState.getCurrent().getIdentity() == null) {
+      throw new IllegalStateException("No Identity found: ConversationState.getCurrent().getIdentity() is null");
+    } else if (ConversationState.getCurrent().getIdentity().getMemberships() == null) {
+      throw new IllegalStateException("No Membership found: ConversationState.getCurrent().getIdentity().getMemberships() is null");
+    } else {
+      return ConversationState.getCurrent().getIdentity().getMemberships().stream()
+                                                          .map(membershipEntry -> membershipEntry.getGroup())
+                                                          .collect(Collectors.toSet());
+
+    }
   }
 
 }
