@@ -215,14 +215,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
       while(var3.hasNext()) {
         MembershipEntry entry = (MembershipEntry)var3.next();
-        if (entry.getMembershipType().equals("*")) {
-          entries.add(entry.getGroup());
-        }
-        else if (entry.getMembershipType().equals("member")) {
-          entries.add(entry.getGroup());
-        } else {
-          entries.add(entry.toString());
-        }
+        entries.add(entry.getGroup());
       }
       return entries;
     }
