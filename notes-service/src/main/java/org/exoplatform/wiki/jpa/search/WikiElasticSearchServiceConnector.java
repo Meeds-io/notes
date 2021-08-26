@@ -211,7 +211,9 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     } else if (ConversationState.getCurrent().getIdentity().getMemberships() == null) {
       throw new IllegalStateException("No Membership found: ConversationState.getCurrent().getIdentity().getMemberships() is null");
     } else {
-      return ConversationState.getCurrent().getIdentity().getMemberships().stream().map(membershipEntry -> membershipEntry.getGroup()).collect(Collectors.toSet());
+      return ConversationState.getCurrent().getIdentity().getMemberships().stream()
+                                                          .map(membershipEntry -> membershipEntry.getGroup())
+                                                          .collect(Collectors.toSet());
 
     }
   }
