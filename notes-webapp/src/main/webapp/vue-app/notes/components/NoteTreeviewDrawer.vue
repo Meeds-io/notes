@@ -221,7 +221,7 @@ export default {
       if (this.movePage) {
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
           this.breadcrumb = data && data.breadcrumb || []; 
-          this.breadcrumb[0].name = this.$t('portal.global.noteHome');
+          this.breadcrumb[0].name = this.$t('notes.label.noteHome');
           this.destinationNote = data;      
         });
       }
@@ -248,7 +248,7 @@ export default {
       if (id) {
         return this.$notesService.getNoteById(id).then(data => {
           this.note = data || [];
-          this.note.breadcrumb[0].title = this.$t('portal.global.noteHome');
+          this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
           if (this.note.wikiType === 'group'){
@@ -266,7 +266,7 @@ export default {
         this.openNotes = openedTreeviewItem;
         this.activeItem = [openedTreeviewItem[openedTreeviewItem.length-1]];
         this.breadcrumbItems = noteChildren;
-        this.breadcrumbItems[0].name = this.$t('portal.global.noteHome');
+        this.breadcrumbItems[0].name = this.$t('notes.label.noteHome');
         this.noteBookType = noteType;
         this.noteBookOwnerTree = noteOwner;
       });

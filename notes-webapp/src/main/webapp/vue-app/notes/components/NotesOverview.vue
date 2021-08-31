@@ -158,7 +158,7 @@ export default {
     notes() {
       this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
       if ( this.notes && this.notes.breadcrumb && this.notes.breadcrumb.length ) {
-        this.notes.breadcrumb[0].title = this.$t('portal.global.noteHome');
+        this.notes.breadcrumb[0].title = this.$t('notes.label.noteHome');
         this.currentNoteBreadcrumb = this.notes.breadcrumb;
       }
       this.lastUpdatedTime = this.notes.updatedDate.time && this.$dateUtil.formatDateObjectToDisplay(new Date(this.notes.updatedDate.time), this.dateTimeFormat, this.lang) || '';
@@ -183,7 +183,7 @@ export default {
     },
     noteTitle() {
       if ( this.noteId === 1) {
-        return this.$t('portal.global.noteHome');
+        return this.$t('notes.label.noteHome');
       } else {
         return this.notes.title;
       }
