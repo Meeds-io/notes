@@ -241,6 +241,7 @@ export default {
       this.getNoteByName(this.notesPageName);
     }
     this.currentNoteBreadcrumb = this.notes.breadcrumb;
+    this.formatContent();
   },
   methods: {
     addNotes(){
@@ -327,6 +328,18 @@ export default {
       this.type=message.type;
       this.alert = true;
       window.setTimeout(() => this.alert = false, 5000);
+    },
+    formatContent(){
+      if (this.notes.content) {
+        const links = document.querySelectorAll('.notes-application-content a');
+        links.forEach(function (element) {
+          if (element && !element.href.includes(`${document.location.host}${eXo.env.portal.context}`)) {
+            element.setAttribute('target', '_blank');
+          }
+        });
+      } else {
+        setTimeout(this.formatContent, 1000);
+      }
     }
   }
 };
