@@ -16,8 +16,6 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -27,14 +25,11 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.exoplatform.commons.file.model.FileItem;
 import org.apache.commons.lang.StringUtils;
 
 import org.apache.commons.lang.math.NumberUtils;
 import org.exoplatform.common.http.HTTPStatus;
-import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.commons.file.services.FileStorageException;
-import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -57,7 +52,6 @@ import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiHTMLSanitizer;
 
 import io.swagger.annotations.*;
 import io.swagger.jaxrs.PATCH;
@@ -112,7 +106,7 @@ public class NotesRestService implements ResourceContainer {
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
+      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadcumb(noteBookType, noteBookOwner, noteId));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
@@ -148,7 +142,7 @@ public class NotesRestService implements ResourceContainer {
       if(StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      note.setContent(WikiHTMLSanitizer.markupSanitize(note.getContent()));
+      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadcumb(note.getWikiType(), note.getWikiOwner(), note.getName()));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
