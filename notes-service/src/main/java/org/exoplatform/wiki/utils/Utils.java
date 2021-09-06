@@ -687,6 +687,6 @@ public class Utils {
     } catch (Exception e) {
       log_.warn("Cannot get Wiki App anme");
     }
-    return "wiki";
+    return "notes";
   }
 }
