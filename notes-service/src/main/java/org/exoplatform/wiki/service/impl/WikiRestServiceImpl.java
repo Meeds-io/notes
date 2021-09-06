@@ -578,6 +578,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       for (SearchResult searchResult : results) {
         org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(searchResult.getWikiType(), searchResult.getWikiOwner(), searchResult.getPageName());
         if(page != null) {
+          page.setUrl(Utils.getPageUrl(page));
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
             org.exoplatform.wiki.mow.api.Attachment attachment = wikiService.getAttachmentOfPageByName(searchResult.getAttachmentName(), page);
             titleSearchResults.add(new TitleSearchResult(attachment.getName(), searchResult.getType(), attachment.getDownloadURL()));
