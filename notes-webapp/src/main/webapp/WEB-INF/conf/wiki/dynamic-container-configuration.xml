@@ -129,7 +129,7 @@
           <description></description>
           <object type="org.exoplatform.commons.addons.PortletModel">
             <field name="contentId">
-              <string>wiki/NotesEditor</string>
+              <string>notes/NotesEditor</string>
             </field>
             <field name="permissions">
               <collection type="java.util.ArrayList">
