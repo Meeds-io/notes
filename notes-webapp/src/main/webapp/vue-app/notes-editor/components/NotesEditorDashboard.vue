@@ -301,19 +301,19 @@ export default {
 
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
               if ( element.getAscendant( 'table', true ) ) {
+                CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
+                  exec: function() {
+                    if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
+                      const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
+                      self.$refs.noteTablePlugins.open(table);
+                    }
+                  }
+                });
                 return {
                   tableProperties: CKEDITOR.TRISTATE_ON
                 };
               }});
-            CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
-              exec: function() {
-                if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
-                  const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
-                  self.$refs.noteTablePlugins.open(table);
-                }
 
-              }
-            });
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
