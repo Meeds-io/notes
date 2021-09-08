@@ -44,6 +44,12 @@
         <path>/javascript/notes.bundle.js</path>
       </script>
       <depends>
+        <module>html2canvas</module>
+      </depends>
+      <depends>
+        <module>jspdf</module>
+      </depends>
+      <depends>
         <module>commonVueComponents</module>
       </depends>
       <depends>
@@ -854,5 +860,19 @@
       <module>extensionRegistry</module>
     </depends>
   </module>
+
+  <module>
+    <name>html2canvas</name>
+    <script>
+      <path>/javascript/eXo/wiki/html2canvas.js</path>
+    </script>
+   </module>
+  
+  <module>
+    <name>jspdf</name>
+    <script>
+      <path>/javascript/eXo/wiki/jspdf.js</path>
+    </script>
+   </module>
   
 </gatein-resources>
