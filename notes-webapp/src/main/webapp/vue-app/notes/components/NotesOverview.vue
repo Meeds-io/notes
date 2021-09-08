@@ -1,13 +1,16 @@
 <template>
   <v-app class="transparent" flat>
     <div>
-      <div v-if="isAvailableNote" class="notes-application white border-radius pa-6">
+      <div
+        v-if="isAvailableNote"
+        class="notes-application white border-radius pa-6"
+        ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
             <span class="title text-color mt-n1">{{ noteTitle }}</span>
             <div
               id="note-actions-menu"
-              v-if="loadData"
+              v-if="loadData && !hideActions"
               class="notes-header-icons text-right">
               <v-tooltip bottom v-if="!isMobile">
                 <template v-slot:activator="{ on, attrs }">
@@ -100,7 +103,8 @@
     <notes-actions-menu
       :note="notes" 
       :default-path="defaultPath" 
-      @open-treeview="$refs.notesBreadcrumb.open(notes.id, 'movePage')" />
+      @open-treeview="$refs.notesBreadcrumb.open(notes.id, 'movePage')" 
+      @export-pdf="createPDF(notes)" />
     <note-treeview-drawer ref="notesBreadcrumb" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
@@ -121,7 +125,11 @@
   </v-app>
 </template>
 <script>
+
 import { notesConstants } from '../../../javascript/eXo/wiki/notesConstants.js';
+import html2canvas from 'html2canvas';
+import JSPDF from 'jspdf';
+
 export default {
   data() {
     return {
@@ -152,6 +160,7 @@ export default {
       message: '',
       loadData: false,
       openTreeView: false,
+      hideActions: false,
     };
   },
   watch: {
@@ -321,6 +330,35 @@ export default {
             1: `<b>${parentsBreadcrumb}</b>`,
           })}</li>`;
       this.$refs.DeleteNoteDialog.open();
+    },
+    createPDF (note) {
+      this.hideActions= true;
+      setTimeout(() => {
+        const element = this.$refs.content;
+        html2canvas(element, {
+          useCORS: true
+        }).then(function (canvas) {
+          const pdf = new JSPDF('p', 'mm', 'a4');
+          const ctx = canvas.getContext('2d');
+          const a4w = 170; const a4h = 257;
+          const imgHeight = Math.floor(a4h * canvas.width / a4w);
+          let renderedHeight = 0;
+ 
+          while (renderedHeight < canvas.height) {
+            const page = document.createElement('canvas');
+            page.width = canvas.width;
+            page.height = Math.min(imgHeight, canvas.height-renderedHeight);
+ 
+            page.getContext('2d').putImageData(ctx.getImageData(0, renderedHeight, canvas.width, Math.min(imgHeight, canvas.height - renderedHeight)), 0, 0);
+            pdf.addImage(page.toDataURL('image/jpeg', 1.0), 'JPEG', 10, 10, a4w, Math.min(a4h, a4w * page.height / page.width));
+            renderedHeight += imgHeight;
+            if (renderedHeight <canvas.height) {pdf.addPage(); }
+          }
+          const filename = `${note.title}.pdf`;
+          pdf.save(filename);
+        });
+        this.hideActions= false;
+      }, 100);
     },
     displayMessage(message) {
       this.message=message.message;
