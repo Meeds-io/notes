@@ -312,7 +312,11 @@ export default {
                 return {
                   tableProperties: CKEDITOR.TRISTATE_ON
                 };
-              }});
+              } else {
+                const items = CKEDITOR.instances['notesContent'].contextMenu.items;
+                CKEDITOR.instances['notesContent'].contextMenu.items = $.grep(items, (item) => item.command !== 'tableProperties');
+              }
+            });
 
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
