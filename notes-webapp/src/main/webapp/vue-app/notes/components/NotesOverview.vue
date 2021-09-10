@@ -142,7 +142,7 @@ export default {
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
       noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
       noteBookOwnerTree: eXo.env.portal.spaceGroup ? `spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
-      noteNotFountImage: '/wiki/skin/images/notes_not_found.png',
+      noteNotFountImage: '/notes/skin/images/notes_not_found.png',
       defaultPath: 'Home',
       existingNote: true,
       currentPath: window.location.pathname, 
