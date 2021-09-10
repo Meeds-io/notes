@@ -253,7 +253,7 @@ export default {
   },
   methods: {
     addNotes(){
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}&appName=${this.appName}`,'_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.notes.id}&appName=${this.appName}`,'_blank');
     },
     editNotes(){
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.notes.id}&appName=${this.appName}`,'_blank');

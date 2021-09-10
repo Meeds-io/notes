@@ -10,62 +10,71 @@
       <div
         id="notesEditor"
         class="notesEditor width-full">
-        <div class="notesActions white">
-          <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
-            <div class="notesFormLeftActions d-inline-flex mr-10">
-              <img :src="srcImageNote">
-              <input
-                ref="autoFocusInput1"
-                id="notesTitle"
-                class="mb-0 pr-5"
-                v-model="notes.title"
-                :placeholder="notesTitlePlaceholder"
-                type="text">
-            </div>
-            <div class="notesFormRightActions pr-7">
-              <button
-                id="notesUpdateAndPost"
-                class="btn btn-primary primary px-2 py-0"
-                @click="postNotes(false)">
-                {{ publishButtonText }}
-                <v-icon
-                  id="notesPublichAndPost"
-                  dark
-                  @click="openPublishAndPost">
-                  mdi-menu-down
-                </v-icon>
-              </button>
-              <v-menu
-                v-model="publishAndPost"
-                :attach="'#notesUpdateAndPost'"
-                transition="scroll-y-transition"
-                content-class="publish-and-post-btn width-full"
-                offset-y
-                left>
-                <v-list-item
-                  @click.stop="postNotes(true)"
-                  class="px-2">
+        <div class="notes-topbar">
+          <div class="notesActions white">
+            <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
+              <div class="notesFormLeftActions d-inline-flex align-center me-10">
+                <img :src="srcImageNote">
+                <span class="notesFormTitle ps-2">{{ notesFormTitle }}</span>
+              </div>
+              <div class="notesFormRightActions pr-7">
+                <button
+                  id="notesUpdateAndPost"
+                  class="btn btn-primary primary px-2 py-0"
+                  @click="postNotes(false)">
+                  {{ publishButtonText }}
                   <v-icon
-                    size="19"
-                    class="primary--text clickable pr-2">
-                    mdi-arrow-collapse-up
+                    id="notesPublichAndPost"
+                    dark
+                    @click="openPublishAndPost">
+                    mdi-menu-down
                   </v-icon>
-                  <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
-                </v-list-item>
-              </v-menu>
+                </button>
+                <v-menu
+                  v-model="publishAndPost"
+                  :attach="'#notesUpdateAndPost'"
+                  transition="scroll-y-transition"
+                  content-class="publish-and-post-btn width-full"
+                  offset-y
+                  left>
+                  <v-list-item
+                    @click.stop="postNotes(true)"
+                    class="px-2">
+                    <v-icon
+                      size="19"
+                      class="primary--text clickable pr-2">
+                      mdi-arrow-collapse-up
+                    </v-icon>
+                    <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
+                  </v-list-item>
+                </v-menu>
+              </div>
             </div>
           </div>
+          <div id="notesTop" class="width-full"></div>
         </div>
-        <div id="notesTop" class="width-full"></div>
-        <div class="formInputGroup white overflow-auto ma-2 pa-2 flex">
-          <textarea
-            id="notesContent"
-            v-model="notes.content"
-            :placeholder="notesBodyPlaceholder"
-            class="notesFormInput"
-            name="notesContent">
-              </textarea>
-        </div>
+
+        <form class="notes-content">
+          <div class="notes-content-form px-4">
+            <div class="formInputGroup notesTitle mx-3">
+              <input
+                id="notesTitle"
+                v-model="notes.title"
+                :placeholder="notesTitlePlaceholder"
+                type="text"
+                class="py-0 px-1 mt-5 mb-0">
+            </div>
+            <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
+              <textarea
+                id="notesContent"
+                v-model="notes.content"
+                :placeholder="notesBodyPlaceholder"
+                class="notesFormInput"
+                name="notesContent">
+                     </textarea>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
@@ -106,7 +115,9 @@ export default {
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
       notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}*`,
-      publishAndPost: false
+      publishAndPost: false,
+      spaceId: '',
+      notesFormTitle: '',
     };
   },
   mounted() {
@@ -142,6 +153,7 @@ export default {
       this.getNotes(this.noteId);
     } else if (urlParams.has('parentNoteId')){
       this.parentPageId = urlParams.get('parentNoteId');
+      this.spaceId = urlParams.get('spaceId');
       this.notes.parentPageId=this.parentPageId;
     }
     this.$root.$on('display-treeview-items', () => {
@@ -172,6 +184,7 @@ export default {
         editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
       }
     });
+    this.displayFormTitle();
   },
   computed: {
     publishAndPostButtonText() {
@@ -369,6 +382,15 @@ export default {
       this.type=message.type;
       this.alert = true;
       window.setTimeout(() => this.alert = false, 5000);
+    },
+    displayFormTitle: function() {
+      if (this.noteId) {
+        this.notesFormTitle = this.$t('notes.edit.editNotes');
+      } else {
+        return this.$spaceService.getSpaceById(this.spaceId).then(space => {
+          this.notesFormTitle = this.$t('notes.composer.createNotes').replace('{0}', space.displayName);
+        });
+      }
     },
   }
 };
