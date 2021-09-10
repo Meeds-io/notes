@@ -10,7 +10,7 @@
             <span class="title text-color mt-n1">{{ noteTitle }}</span>
             <div
               id="note-actions-menu"
-              v-if="loadData && !hideActions"
+              v-show="loadData && !hideActions"
               class="notes-header-icons text-right">
               <v-tooltip bottom v-if="!isMobile">
                 <template v-slot:activator="{ on, attrs }">
