@@ -40,7 +40,6 @@
         <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note.name !== defaultPath"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('export-pdf')">
         <v-icon
