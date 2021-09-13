@@ -324,7 +324,6 @@ export default {
       })
       }`
           + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
-          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo3')}</li>`
           + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
           + `<li>${this.$t('popup.msg.confirmation.DeleteInfo5', {
             1: `<b>${parentsBreadcrumb}</b>`,
