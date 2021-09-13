@@ -287,6 +287,11 @@
 .breadcrumbDrawer {
   z-index: 99999!important;
   .drawerContent {
+		.treeview-home-link {
+			a {
+				color: inherit!important;
+			}
+		}
     .treeview-item {
       .v-treeview-node--active {
         &:before {
@@ -300,6 +305,11 @@
       }
       .v-treeview-node__root {
         min-height: 38px !important;
+        .v-list-item__title {
+        	a {
+        	 color:inherit!important;
+        	}
+        }
         &:hover {
           &::before {
             opacity: 0!important;
