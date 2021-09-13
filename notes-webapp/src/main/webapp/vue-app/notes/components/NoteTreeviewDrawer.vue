@@ -66,7 +66,9 @@
           <template v-if="home" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
-                <v-list-item-title class="body-2">{{ home.name }}</v-list-item-title>
+                <v-list-item-title class="body-2 treeview-home-link">
+                  <a :href="home.noteId">{{ home.name }}</a>
+                </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </template>
@@ -83,7 +85,9 @@
               open-on-click
               transition>
               <template v-slot:label="{ item }">
-                <v-list-item-title @click="openNote(event,item)" class="body-2">{{ item.name }}</v-list-item-title>
+                <v-list-item-title @click="openNote(event,item)" class="body-2">
+                  <a :href="item.noteId">{{ item.name }}</a>
+                </v-list-item-title>
               </template>
             </v-treeview>
           </template>
