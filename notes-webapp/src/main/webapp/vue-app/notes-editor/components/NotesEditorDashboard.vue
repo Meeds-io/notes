@@ -6,76 +6,74 @@
       dismissible>
       {{ message }}
     </v-alert>
-    <div>
-      <div
-        id="notesEditor"
-        class="notesEditor width-full">
-        <div class="notes-topbar">
-          <div class="notesActions white">
-            <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
-              <div class="notesFormLeftActions d-inline-flex align-center me-10">
-                <img :src="srcImageNote">
-                <span class="notesFormTitle ps-2">{{ notesFormTitle }}</span>
-              </div>
-              <div class="notesFormRightActions pr-7">
-                <button
-                  id="notesUpdateAndPost"
-                  class="btn btn-primary primary px-2 py-0"
-                  @click="postNotes(false)">
-                  {{ publishButtonText }}
+    <div
+      id="notesEditor"
+      class="notesEditor width-full">
+      <div class="notes-topbar">
+        <div class="notesActions white">
+          <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
+            <div class="notesFormLeftActions d-inline-flex align-center me-10">
+              <img :src="srcImageNote">
+              <span class="notesFormTitle ps-2">{{ notesFormTitle }}</span>
+            </div>
+            <div class="notesFormRightActions pr-7">
+              <button
+                id="notesUpdateAndPost"
+                class="btn btn-primary primary px-2 py-0"
+                @click="postNotes(false)">
+                {{ publishButtonText }}
+                <v-icon
+                  id="notesPublichAndPost"
+                  dark
+                  @click="openPublishAndPost">
+                  mdi-menu-down
+                </v-icon>
+              </button>
+              <v-menu
+                v-model="publishAndPost"
+                :attach="'#notesUpdateAndPost'"
+                transition="scroll-y-transition"
+                content-class="publish-and-post-btn width-full"
+                offset-y
+                left>
+                <v-list-item
+                  @click.stop="postNotes(true)"
+                  class="px-2">
                   <v-icon
-                    id="notesPublichAndPost"
-                    dark
-                    @click="openPublishAndPost">
-                    mdi-menu-down
+                    size="19"
+                    class="primary--text clickable pr-2">
+                    mdi-arrow-collapse-up
                   </v-icon>
-                </button>
-                <v-menu
-                  v-model="publishAndPost"
-                  :attach="'#notesUpdateAndPost'"
-                  transition="scroll-y-transition"
-                  content-class="publish-and-post-btn width-full"
-                  offset-y
-                  left>
-                  <v-list-item
-                    @click.stop="postNotes(true)"
-                    class="px-2">
-                    <v-icon
-                      size="19"
-                      class="primary--text clickable pr-2">
-                      mdi-arrow-collapse-up
-                    </v-icon>
-                    <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
-                  </v-list-item>
-                </v-menu>
-              </div>
+                  <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
+                </v-list-item>
+              </v-menu>
             </div>
           </div>
-          <div id="notesTop" class="width-full"></div>
         </div>
-
-        <form class="notes-content">
-          <div class="notes-content-form px-4">
-            <div class="formInputGroup notesTitle mx-3">
-              <input
-                id="notesTitle"
-                v-model="notes.title"
-                :placeholder="notesTitlePlaceholder"
-                type="text"
-                class="py-0 px-1 mt-5 mb-0">
-            </div>
-            <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
-              <textarea
-                id="notesContent"
-                v-model="notes.content"
-                :placeholder="notesBodyPlaceholder"
-                class="notesFormInput"
-                name="notesContent">
-                     </textarea>
-            </div>
-          </div>
-        </form>
+        <div id="notesTop" class="width-full"></div>
       </div>
+
+      <form class="notes-content">
+        <div class="notes-content-form px-4">
+          <div class="formInputGroup notesTitle mx-3">
+            <input
+              id="notesTitle"
+              v-model="notes.title"
+              :placeholder="notesTitlePlaceholder"
+              type="text"
+              class="py-0 px-1 mt-5 mb-0">
+          </div>
+          <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
+            <textarea
+              id="notesContent"
+              v-model="notes.content"
+              :placeholder="notesBodyPlaceholder"
+              class="notesFormInput"
+              name="notesContent">
+                     </textarea>
+          </div>
+        </div>
+      </form>
     </div>
     <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
     <note-table-plugins-drawer
@@ -122,6 +120,9 @@ export default {
   },
   mounted() {
     this.initCKEditor();
+    const elementNewTop = document.getElementById('notesTop');
+    elementNewTop.classList.add('darkComposerEffect');
+    this.setToolBarEffect();
   },
   created() {
     $(document).on('mousedown', () => {
@@ -273,6 +274,7 @@ export default {
         extraPlugins = 'simpleLink,selectImage';
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
+      CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
 
       // this line is mandatory when a custom skin is defined
 
@@ -336,6 +338,7 @@ export default {
               });
 
             self.$root.$applicationLoaded();
+            window.setTimeout(() => self.setFocus(), 50);
           },
           change: function (evt) {
             self.notes.content = evt.editor.getData();
@@ -350,6 +353,36 @@ export default {
         }
       });
       this.instance =CKEDITOR.instances['notesContent'];
+    },
+    setToolBarEffect() {
+      const element = CKEDITOR.instances['notesContent'] ;
+      const elementNewTop = document.getElementById('notesTop');
+      element.on('contentDom', function () {
+        this.document.on('click', function(){
+          elementNewTop.classList.add('darkComposerEffect');
+        });
+      });
+      element.on('contentDom', function () {
+        this.document.on('keyup', function(){
+          elementNewTop.classList.add('darkComposerEffect');
+        });
+      });
+      $('#notesEditor').parent().click(() => {
+        elementNewTop.classList.remove('darkComposerEffect');
+        elementNewTop.classList.add('greyComposerEffect');
+      });
+      $('#notesEditor').parent().keyup(() => {
+        elementNewTop.classList.remove('darkComposerEffect');
+        elementNewTop.classList.add('greyComposerEffect');
+      });
+    },
+    setFocus() {
+      if (CKEDITOR.instances['notesContent']) {
+        CKEDITOR.instances['notesContent'].status = 'ready';
+        window.setTimeout(() => {
+          this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
+        }, 200);
+      }
     },
     validateForm() {
       if (!this.notes.title) {

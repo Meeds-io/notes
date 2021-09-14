@@ -54,7 +54,7 @@
 					.pluginTitle{
 						display: -webkit-box;
 						text-align: center;
-						color: #333333;
+						color: @textColor;
 						height: 42px;
 						-webkit-line-clamp: 2;
 						-webkit-box-orient: vertical;
@@ -102,11 +102,10 @@
 					  #notesTitle {
 					    width: 100%;
               box-sizing: border-box;
-              font-weight: bold;
-              font-size: 18px;
+              font-size: 21px;
               letter-spacing: 0.3px;
-              border-bottom: solid 1px #e1e8ee !important;
-              color: #4d5466!important;
+              border-bottom: solid 1px @greyColor !important;
+              color: @greyColorLighten1!important;
               &:focus {
                 box-shadow: none!important;
               }
@@ -117,7 +116,7 @@
 		.notes-topbar {
 		  width: 100%;
       z-index: 10;
-      background-color: #FFFFFF;
+      background-color: @baseBackground;
       position: absolute;
 			.notesActions{
   			.notesFormButtons{
@@ -172,9 +171,6 @@
       background: #fdfdfd!important;
       background-image: none!important;
       border-bottom: 0;
-			 .cke_toolbar {
-				 opacity: 0.4;
-			}
     }
 
     .cke_shared {
