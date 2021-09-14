@@ -39,6 +39,16 @@
         </v-icon>
         <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
+      <v-list-item
+        class="px-2 text-left action-menu-item draftButton"
+        @click="$emit('export-pdf')">
+        <v-icon
+          size="18"
+          class="primary--text clickable pr-2">
+          mdi-file-pdf-box
+        </v-icon>
+        <span>{{ $t('notes.menu.label.export') }}</span>
+      </v-list-item>
     </v-list>
   </v-menu>
 </template>
