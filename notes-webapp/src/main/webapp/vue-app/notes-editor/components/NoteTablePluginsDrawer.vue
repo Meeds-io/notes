@@ -208,7 +208,7 @@
             <div class="d-btn">
               <v-btn class="btn mr-2" @click="close">
                 <template>
-                  {{ $t('popup.cancel') }}
+                  {{ $t('notes.button.cancel') }}
                 </template>
               </v-btn>
 
