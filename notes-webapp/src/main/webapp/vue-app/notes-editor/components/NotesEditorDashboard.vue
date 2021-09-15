@@ -143,6 +143,10 @@ export default {
     } else if (urlParams.has('parentNoteId')){
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
+    } else if (urlParams.has('wikiOwner') && this.notes.wikiOwner){
+      this.notes.wikiOwner = urlParams.get('wikiOwner');
+    } else if (urlParams.has('wikiType') && !this.notes.wikiType){
+      this.notes.wikiType = urlParams.get('wikiType');
     }
     this.$root.$on('display-treeview-items', () => {
       if ( urlParams.has('noteId') ) {
