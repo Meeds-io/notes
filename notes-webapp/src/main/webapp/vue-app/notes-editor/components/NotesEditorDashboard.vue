@@ -143,7 +143,8 @@ export default {
     } else if (urlParams.has('parentNoteId')){
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
-    } if (urlParams.has('wikiOwner') && !this.notes.wikiOwner){
+    }
+    if (urlParams.has('wikiOwner') && !this.notes.wikiOwner){
       this.notes.wikiOwner = urlParams.get('wikiOwner');
     } if (urlParams.has('wikiType') && !this.notes.wikiType){
       this.notes.wikiType = urlParams.get('wikiType');
