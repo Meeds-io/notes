@@ -281,8 +281,9 @@ export default {
     this.currentNoteBreadcrumb = this.note.breadcrumb;
   },
   methods: {
-    addNote(){
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&appName=${this.appName}`,'_blank');
+
+    addNotes(){
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}&appName=${this.appName}&wikiType=${this.notes.wikiType}&wikiOwner=${this.notes.wikiOwner}`,'_blank');
     },
     editNote(){
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&appName=${this.appName}`,'_blank');
