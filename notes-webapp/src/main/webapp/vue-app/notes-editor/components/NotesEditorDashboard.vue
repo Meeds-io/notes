@@ -144,6 +144,12 @@ export default {
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
     }
+    if (urlParams.has('wikiOwner') && !this.notes.wikiOwner){
+      this.notes.wikiOwner = urlParams.get('wikiOwner');
+    }
+    if (urlParams.has('wikiType') && !this.notes.wikiType){
+      this.notes.wikiType = urlParams.get('wikiType');
+    }
     this.$root.$on('display-treeview-items', () => {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.noteId, 'includePages');
