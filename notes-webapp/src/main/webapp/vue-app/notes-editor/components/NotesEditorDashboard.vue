@@ -146,7 +146,8 @@ export default {
     }
     if (urlParams.has('wikiOwner') && !this.notes.wikiOwner){
       this.notes.wikiOwner = urlParams.get('wikiOwner');
-    } if (urlParams.has('wikiType') && !this.notes.wikiType){
+    }
+    if (urlParams.has('wikiType') && !this.notes.wikiType){
       this.notes.wikiType = urlParams.get('wikiType');
     }
     this.$root.$on('display-treeview-items', () => {
