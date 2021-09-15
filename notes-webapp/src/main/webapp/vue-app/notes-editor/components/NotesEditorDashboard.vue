@@ -144,7 +144,7 @@ export default {
       this.parentPageId = urlParams.get('parentNoteId');
       this.notes.parentPageId=this.parentPageId;
     } else if (urlParams.has('wikiOwner') && this.notes.wikiOwner){
-      this.notes.wikiType = urlParams.get('wikiOwner');
+      this.notes.wikiOwner = urlParams.get('wikiOwner');
     } else if (urlParams.has('wikiType') && !this.notes.wikiType){
       this.notes.wikiType = urlParams.get('wikiType');
     }
