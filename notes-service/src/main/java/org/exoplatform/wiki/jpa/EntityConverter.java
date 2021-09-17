@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.commons.file.services.FileStorageException;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.wiki.WikiException;
@@ -398,6 +397,19 @@ public class EntityConverter {
       pageVersion.setUpdatedDate(pageVersionEntity.getUpdatedDate());
     }
     return pageVersion;
+  }
+
+  public static PageHistory convertPageVersionEntityToPageHistory(PageVersionEntity pageVersionEntity) {
+    PageHistory pageHistory = null;
+    if (pageVersionEntity != null) {
+      pageHistory = new PageHistory();
+      pageHistory.setVersionNumber(pageVersionEntity.getVersionNumber());
+      pageHistory.setAuthor(pageVersionEntity.getAuthor());
+      pageHistory.setContent(pageVersionEntity.getContent());
+      pageHistory.setCreatedDate(pageVersionEntity.getCreatedDate());
+      pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
+    }
+    return pageHistory;
   }
 
   public static Template convertTemplateEntityToTemplate(TemplateEntity templateEntity) {

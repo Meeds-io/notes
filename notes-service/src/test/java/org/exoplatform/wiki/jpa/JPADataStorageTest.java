@@ -1124,6 +1124,39 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
+  public void testPageVersionsHistory() throws WikiException {
+    // Given
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = storage.createWiki(wiki);
+
+    Page page = new Page();
+    page.setWikiId(wiki.getId());
+    page.setWikiType(wiki.getType());
+    page.setWikiOwner(wiki.getOwner());
+    page.setName("page1");
+    page.setTitle("Page 1");
+    page.setContent("Content Page 1");
+    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+
+    // When
+    storage.addPageVersion(createdPage);
+    List<PageHistory> pageVersions1 = storage.getHistoryOfPage(createdPage);
+    storage.addPageVersion(createdPage);
+    List<PageHistory> pageVersions2 = storage.getHistoryOfPage(createdPage);
+
+    // Then
+    assertNotNull(pageVersions1);
+    assertEquals(1, pageVersions1.size());
+    assertEquals("1", Long.toString(pageVersions1.get(0).getVersionNumber()));
+    assertNotNull(pageVersions2);
+    assertEquals(2, pageVersions2.size());
+    assertEquals("1", Long.toString(pageVersions2.get(0).getVersionNumber()));
+    assertEquals("2", Long.toString(pageVersions2.get(1).getVersionNumber()));
+  }
+
+  @Test
   public void testRestorePageVersions() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
