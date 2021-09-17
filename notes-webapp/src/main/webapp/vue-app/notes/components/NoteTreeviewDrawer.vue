@@ -10,7 +10,7 @@
       class="breadcrumbDrawer"
       v-model="drawer"
       show-overlay
-      @closed="closeAllDrawer()" 
+      @closed="closeAllDrawer()"
       right>
       <template v-if="isIncludePage && displayArrow" slot="title">
         <div class="d-flex">
@@ -164,6 +164,7 @@ export default {
   },
   methods: {
     open(noteId, source, includeDisplay) {
+      $('.spaceButtomNavigation').addClass('hidden');
       this.render = false;
       this.getNoteById(noteId);
       if (source === 'includePages') {
@@ -191,7 +192,7 @@ export default {
       this.closeAll = false;
     },
     fetchNoteChildren(childItem) {
-      if ( !childItem.hasChild ) 
+      if ( !childItem.hasChild )
       {return;}
       return this.$notesService.getNoteTree(this.noteBookType,this.noteBookOwnerTree , childItem.id,'CHILDREN').then(data => {
         if (data && data.jsonList) {
@@ -220,9 +221,9 @@ export default {
       }
       if (this.movePage) {
         this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
-          this.breadcrumb = data && data.breadcrumb || []; 
+          this.breadcrumb = data && data.breadcrumb || [];
           this.breadcrumb[0].name = this.$t('notes.label.noteHome');
-          this.destinationNote = data;      
+          this.destinationNote = data;
         });
       }
     },
@@ -308,6 +309,7 @@ export default {
       this.$refs.breadcrumbDrawer.close();
     },
     closeAllDrawer() {
+      $('.spaceButtomNavigation').removeClass('hidden');
       if (this.closeAll) {
         this.$emit('closed');
       }
