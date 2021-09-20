@@ -330,8 +330,8 @@ export default {
           })}</li>`;
       this.$refs.DeleteNoteDialog.open();
     },
-    createPDF (note) {
-      this.hideActions= true;
+    createPDF(note) {
+      this.hideActions = true;
       setTimeout(() => {
         const element = this.$refs.content;
         html2canvas(element, {
@@ -339,24 +339,34 @@ export default {
         }).then(function (canvas) {
           const pdf = new JSPDF('p', 'mm', 'a4');
           const ctx = canvas.getContext('2d');
-          const a4w = 170; const a4h = 257;
+          const a4w = 170;
+          const a4h = 257;
           const imgHeight = Math.floor(a4h * canvas.width / a4w);
           let renderedHeight = 0;
- 
+
           while (renderedHeight < canvas.height) {
             const page = document.createElement('canvas');
             page.width = canvas.width;
-            page.height = Math.min(imgHeight, canvas.height-renderedHeight);
- 
+            page.height = Math.min(imgHeight, canvas.height - renderedHeight);
+
             page.getContext('2d').putImageData(ctx.getImageData(0, renderedHeight, canvas.width, Math.min(imgHeight, canvas.height - renderedHeight)), 0, 0);
             pdf.addImage(page.toDataURL('image/jpeg', 1.0), 'JPEG', 10, 10, a4w, Math.min(a4h, a4w * page.height / page.width));
             renderedHeight += imgHeight;
-            if (renderedHeight <canvas.height) {pdf.addPage(); }
+            if (renderedHeight < canvas.height) {
+              pdf.addPage();
+            }
           }
           const filename = `${note.title}.pdf`;
           pdf.save(filename);
+        }).catch(e => {
+          const messageObject = {
+            type: 'error',
+            message: this.$t('notes.message.export.error')
+          };
+          this.displayMessage(messageObject);
+          console.error('Error when exporting note: ', e);
         });
-        this.hideActions= false;
+        this.hideActions = false;
       }, 100);
     },
     displayMessage(message) {
