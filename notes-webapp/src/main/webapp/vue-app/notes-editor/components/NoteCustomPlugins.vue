@@ -96,6 +96,7 @@ export default {
         this.$root.$emit('display-treeview-items');
       } else {
         this.instance.execCommand(id);
+        this.close();
       }
     }
   }
