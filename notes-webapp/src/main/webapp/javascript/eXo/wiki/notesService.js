@@ -155,3 +155,16 @@ export function moveNotes(note,destination) {
     }
   });
 }
+
+export function getNoteVersionsByNoteId(noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/versions/${noteId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
