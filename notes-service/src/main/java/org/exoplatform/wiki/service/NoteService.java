@@ -185,17 +185,6 @@ public interface NoteService {
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
 
-  /**
-   * Checks if the given user has the permission on a note
-   *
-   * @param user the user
-   * @param note the note to check
-   * @param permissionType type of permissions to chack
-   * @return true if user has permissions on the note
-   * @throws WikiException if an error occured
-   */
-  public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException;
-
 
   /**
    * Gets all the versions of the given note

@@ -338,7 +338,7 @@ public class NotesRestService implements ResourceContainer {
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
+      if (!note_.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       if ((!note_.getTitle().equals(note.getTitle()))

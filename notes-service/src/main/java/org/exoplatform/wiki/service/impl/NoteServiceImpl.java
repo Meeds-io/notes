@@ -495,10 +495,6 @@ public class NoteServiceImpl implements NoteService {
   }
 
 
-  @Override
-  public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException {
-    return dataStorage.hasPermissionOnPage(note, permissionType, user);
-  }
 
 
   @Override
