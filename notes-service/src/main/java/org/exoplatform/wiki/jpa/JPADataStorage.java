@@ -1174,7 +1174,7 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   @ExoTransactional
-  public void addPageVersion(Page page) throws WikiException {
+  public void addPageVersion(Page page , String userName) throws WikiException {
     if(page != null) {
       PageEntity pageEntity = fetchPageEntity(page);
 
@@ -1196,7 +1196,11 @@ public class JPADataStorage implements DataStorage {
       pageVersionEntity.setVersionNumber(versionNumber);
       pageVersionEntity.setName(pageEntity.getName());
       pageVersionEntity.setTitle(pageEntity.getTitle());
-      pageVersionEntity.setAuthor(pageEntity.getAuthor());
+      if(StringUtils.isNotEmpty(userName)){
+        pageVersionEntity.setAuthor(userName);
+      } else{
+        pageVersionEntity.setAuthor(pageEntity.getAuthor());
+      }
       pageVersionEntity.setContent(pageEntity.getContent());
       pageVersionEntity.setSyntax(pageEntity.getSyntax());
       pageVersionEntity.setMinorEdit(pageEntity.isMinorEdit());

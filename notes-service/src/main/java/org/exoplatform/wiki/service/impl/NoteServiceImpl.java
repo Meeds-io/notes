@@ -577,54 +577,32 @@ public class NoteServiceImpl implements NoteService {
         || hasAdminSpacePermission(wiki.getType(), wiki.getOwner(), currentIdentity);
   }
 
-  @Override
-  public List<PageVersion> getVersionsOfNote(Page note) throws WikiException {
-    List<PageVersion> versions = dataStorage.getVersionsOfPage(note);
-    if (versions == null || versions.isEmpty()) {
-      dataStorage.addPageVersion(note);
-      versions = dataStorage.getVersionsOfPage(note);
-    }
-    return versions;
-  }
 
   @Override
-  public List<PageHistory> getVersionsHistoryOfNote(Page note) throws WikiException {
+  public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
     List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
     if (versionsHistory == null || versionsHistory.isEmpty()) {
-      dataStorage.addPageVersion(note);
+      dataStorage.addPageVersion(note, userName);
       versionsHistory = dataStorage.getHistoryOfPage(note);
     }
     for( PageHistory version: versionsHistory ) {
-      org.exoplatform.social.core.identity.model.Identity authorIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, version.getAuthor());
-      version.setAuthorFullName(authorIdentity.getProfile().getFullName());
+      if (version.getAuthor() != null) {
+        org.exoplatform.social.core.identity.model.Identity authorIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, version.getAuthor());
+        version.setAuthorFullName(authorIdentity.getProfile().getFullName());
+      }
     }
     return versionsHistory;
   }
 
   @Override
-  public PageVersion getVersionOfNoteByName(String versionName, Page note) throws WikiException {
-    List<PageVersion> versions = getVersionsOfNote(note);
-    PageVersion pageVersion = null;
-    if (versions != null) {
-      for (PageVersion version : versions) {
-        if (version.getName().equals(versionName)) {
-          pageVersion = version;
-          break;
-        }
-      }
-    }
-    return pageVersion;
+  public void createVersionOfNote(Page note, String userName) throws WikiException {
+    dataStorage.addPageVersion(note, userName);
   }
 
   @Override
-  public void createVersionOfNote(Page note) throws WikiException {
-    dataStorage.addPageVersion(note);
-  }
-
-  @Override
-  public void restoreVersionOfNote(String versionName, Page note) throws WikiException {
+  public void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException {
     dataStorage.restoreVersionOfPage(versionName, note);
-    createVersionOfNote(note);
+    createVersionOfNote(note, userName);
     invalidateCache(note);
   }
 

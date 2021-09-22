@@ -882,7 +882,7 @@ public class WikiServiceImpl implements WikiService, Startable {
   public List<PageVersion> getVersionsOfPage(Page page) throws WikiException {
     List<PageVersion> versions = dataStorage.getVersionsOfPage(page);
     if(versions == null || versions.isEmpty()) {
-      dataStorage.addPageVersion(page);
+      dataStorage.addPageVersion(page,"");
       versions = dataStorage.getVersionsOfPage(page);
     }
     return versions;
@@ -905,7 +905,7 @@ public class WikiServiceImpl implements WikiService, Startable {
 
   @Override
   public void createVersionOfPage(Page page) throws WikiException {
-    dataStorage.addPageVersion(page);
+    dataStorage.addPageVersion(page,"");
   }
 
   @Override

@@ -69,7 +69,7 @@
             <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="$refs.noteVersionsHistoryDrawer.open()">V{{ lastNoteVersion }}</span>
+            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="$refs.noteVersionsHistoryDrawer.open(noteVersions)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -106,12 +106,11 @@
       :default-path="defaultPath" 
       @open-treeview="$refs.notesBreadcrumb.open(notes.id, 'movePage')" 
       @export-pdf="createPDF(notes)"
-      @open-history="$refs.noteVersionsHistoryDrawer.open(notes.id)" />
+      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions)" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <note-history-drawer
-      ref="noteVersionsHistoryDrawer"
-      :note-versions="noteVersions" />
+      ref="noteVersionsHistoryDrawer" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -167,12 +166,13 @@ export default {
       loadData: false,
       openTreeView: false,
       hideActions: false,
-      noteVersions: [],
+      noteVersions: []
     };
   },
   watch: {
     notes() {
       this.lastUpdatedUser = this.retrieveUserInformations(this.notes.author);
+      this.getNoteVersionByNoteId(this.notes.id);
       if ( this.notes && this.notes.breadcrumb && this.notes.breadcrumb.length ) {
         this.notes.breadcrumb[0].title = this.$t('notes.label.noteHome');
         this.currentNoteBreadcrumb = this.notes.breadcrumb;
@@ -182,7 +182,7 @@ export default {
   },
   computed: {
     lastNoteVersion() {
-      return this.noteVersions && this.noteVersions[0].versionNumber;
+      return this.noteVersions && this.noteVersions[0] && this.noteVersions[0].versionNumber;
     },
     lastNotesUpdatebBy() {
       return this.lastUpdatedUser;
@@ -256,7 +256,6 @@ export default {
   mounted() {
     if (this.noteId){
       this.getNotesById(this.noteId);
-      this.getNoteVersionByNoteId(this.noteId);
     } else {
       this.getNoteByName(this.notesPageName);
     }

@@ -169,7 +169,7 @@ public class NotesRestService implements ResourceContainer {
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      return Response.ok(noteService.getVersionsHistoryOfNote(note)).build();
+      return Response.ok(noteService.getVersionsHistoryOfNote(note, identity.getUserId())).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -280,7 +280,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_,identity.getUserId());
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
           // noteService.removeDraftOfNote(noteParams);
@@ -294,7 +294,7 @@ public class NotesRestService implements ResourceContainer {
         }
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
           // noteService.removeDraftOfPage(noteParams);
@@ -302,7 +302,7 @@ public class NotesRestService implements ResourceContainer {
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_, identity.getUserId());
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -355,7 +355,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
@@ -369,7 +369,7 @@ public class NotesRestService implements ResourceContainer {
         }
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!"__anonim".equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
@@ -377,7 +377,7 @@ public class NotesRestService implements ResourceContainer {
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_);
+        noteService.createVersionOfNote(note_, identity.getUserId());
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {

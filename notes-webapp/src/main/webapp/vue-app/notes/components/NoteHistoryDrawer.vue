@@ -33,13 +33,8 @@
 </template>
 <script>
 export default {
-  props: {
-    noteVersions: {
-      type: Array,
-      default: () => []
-    },
-  },
   data: () => ({
+    noteVersions: [],
     dateTimeFormat: {
       year: 'numeric',
       month: 'long',
@@ -49,7 +44,8 @@ export default {
     },
   }),
   methods: {
-    open() {
+    open(noteVersions) {
+      this.noteVersions = noteVersions;
       this.$refs.noteVersionsDrawer.open();
     },
   }
