@@ -1198,7 +1198,7 @@ public class JPADataStorage implements DataStorage {
       pageVersionEntity.setTitle(pageEntity.getTitle());
       if(StringUtils.isNotEmpty(userName)){
         pageVersionEntity.setAuthor(userName);
-      }else{
+      } else{
         pageVersionEntity.setAuthor(pageEntity.getAuthor());
       }
       pageVersionEntity.setContent(pageEntity.getContent());

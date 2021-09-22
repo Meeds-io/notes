@@ -245,6 +245,7 @@ public interface NoteService {
    * Gets all the Histories of the given note
    *
    * @param note The note
+   * @param userName the author name
    * @return All the histories of the note
    * @throws WikiException if an error occured
    */
@@ -255,6 +256,7 @@ public interface NoteService {
    * new version, it does not update the note data
    * 
    * @param note The note
+   * @param userName the author name
    * @throws WikiException if an error occured
    */
   public void createVersionOfNote(Page note, String userName) throws WikiException;
@@ -264,6 +266,7 @@ public interface NoteService {
    * 
    * @param versionName The name of the version to restore
    * @param note The note
+   * @param userName the other name
    * @throws WikiException if an error occured
    */
   public void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException;

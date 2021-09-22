@@ -596,7 +596,7 @@ public class NoteServiceImpl implements NoteService {
 
   @Override
   public void createVersionOfNote(Page note, String userName) throws WikiException {
-    dataStorage.addPageVersion(note,userName);
+    dataStorage.addPageVersion(note, userName);
   }
 
   @Override
