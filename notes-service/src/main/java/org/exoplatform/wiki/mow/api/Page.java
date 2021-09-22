@@ -78,7 +78,7 @@ public class Page {
 
   private List<BreadcrumbData> breadcrumb;
 
-  private boolean canEdit;
+  private boolean canManage;
 
   private boolean canView;
 

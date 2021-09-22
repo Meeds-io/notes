@@ -8,7 +8,7 @@
     left>
     <v-list>
       <v-list-item
-        v-if="note.name !== defaultPath && note.canEdit"
+        v-if="note.name !== defaultPath && note.canManage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$root.$emit('delete-note')">
         <v-icon
@@ -40,7 +40,7 @@
         <span>{{ $t('notes.menu.label.noteHistory') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note.name !== defaultPath && note.canEdit"
+        v-if="note.name !== defaultPath && note.canManage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-treeview')">
         <v-icon
