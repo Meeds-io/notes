@@ -746,14 +746,14 @@ public class NoteServiceImpl implements NoteService {
     if (space != null){
       return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser) || spaceService.isRedactor(space, authenticatedUser) ||
               spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
-    } else return page.getOwner()== authenticatedUser;
+    } else return page.getOwner().equals(authenticatedUser);
 
   }
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null){
       return space != null && spaceService.isMember(space, authenticatedUser);
-    } else return spaceService.isSuperManager(authenticatedUser) || page.getOwner()== authenticatedUser;
+    } else return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
   }
 
   /**
