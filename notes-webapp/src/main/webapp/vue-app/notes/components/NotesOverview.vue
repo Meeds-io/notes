@@ -12,7 +12,7 @@
               id="note-actions-menu"
               v-show="loadData && !hideActions"
               class="notes-header-icons text-right">
-              <v-tooltip bottom v-if="!isMobile">
+              <v-tooltip bottom v-if="!isMobile && notes.canEdit">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="22"

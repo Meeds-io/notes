@@ -5,10 +5,13 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
@@ -63,6 +66,8 @@ public class NoteServiceImpl implements NoteService {
 
   private IdentityManager identityManager;
 
+  private SpaceService spaceService;
+
 
   public NoteServiceImpl(ConfigurationManager configManager,
                          UserACL userACL,
@@ -71,7 +76,8 @@ public class NoteServiceImpl implements NoteService {
                          OrganizationService orgService,
                          WikiService wikiService,
                          IdentityManager identityManager,
-                         HTMLUploadImageProcessor htmlUploadImageProcessor) {
+                         HTMLUploadImageProcessor htmlUploadImageProcessor,
+                         SpaceService spaceService) {
     this.configManager = configManager;
     this.userACL = userACL;
     this.dataStorage = dataStorage;
@@ -81,6 +87,7 @@ public class NoteServiceImpl implements NoteService {
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
+    this.spaceService = spaceService;
   }
 
   public ExoCache<Integer, MarkupData> getRenderingCache() {
@@ -237,8 +244,9 @@ public class NoteServiceImpl implements NoteService {
         log.error("Can't delete note '" + noteName + "'. This note does not exist.");
         throw new EntityNotFoundException("Note to update not found");
       }
+      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       if (note != null) {
-        if (!hasPermissionOnNote(note, PermissionType.EDITPAGE, userIdentity)) {
+        if (!canCreateNotes(userIdentity.getUserId(), space)) {
           log.error("Can't delete note '" + noteName + "'. does not have edit permission on it.");
           throw new IllegalAccessException("User does not have edit permissions on the note.");
         }
@@ -384,12 +392,19 @@ public class NoteServiceImpl implements NoteService {
                                       Identity userIdentity) throws IllegalAccessException, WikiException {
     Page page = null;
     page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
+    if (page == null) {
+      throw new EntityNotFoundException("page not found");
+    }
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
-      boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
+      boolean canEdit = canCreateNotes( userIdentity.getUserId(),space);
+      boolean canView = canViewNotes( userIdentity.getUserId(),space);
+
       page.setCanEdit(canEdit);
+      page.setCanView(canView);
     }
     return page;
   }
@@ -411,11 +426,14 @@ public class NoteServiceImpl implements NoteService {
     Page page = null;
     page = getNoteById(id);
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
       boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
+      boolean canView = hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity);
       page.setCanEdit(canEdit);
+      page.setCanView(canView);
     }
     return page;
   }
@@ -428,18 +446,21 @@ public class NoteServiceImpl implements NoteService {
     Page page = null;
     page = getNoteById(id);
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
-    }
-    boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
-    page.setCanEdit(canEdit);
-    if(StringUtils.isNotEmpty(source)) {
-      if (source.equals("tree")) {
-        postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-      }
-      if (source.equals("breadCrumb")) {
-        postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+      boolean canEdit = canCreateNotes(userIdentity.getUserId(), space);
+      boolean canView = canViewNotes(userIdentity.getUserId(), space);
+      page.setCanEdit(canEdit);
+      page.setCanView(canView);
+      if (StringUtils.isNotEmpty(source)) {
+        if (source.equals("tree")) {
+          postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+        }
+        if (source.equals("breadCrumb")) {
+          postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+        }
       }
     }
     return page;
@@ -820,6 +841,16 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
+  }
+
+  private boolean canCreateNotes(String authenticatedUser, Space space) throws WikiException {
+    return space != null &&
+            (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser) || spaceService.isRedactor(space, authenticatedUser) ||
+                    spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+  }
+
+  private boolean canViewNotes(String authenticatedUser, Space space) throws WikiException {
+    return spaceService.isSuperManager(authenticatedUser) || (space != null && spaceService.isMember(space, authenticatedUser));
   }
 
   /**

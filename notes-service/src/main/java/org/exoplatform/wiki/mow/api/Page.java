@@ -80,6 +80,9 @@ public class Page {
 
   private boolean canEdit;
 
+  private boolean canView;
+
+
 
   public Page() {
   }

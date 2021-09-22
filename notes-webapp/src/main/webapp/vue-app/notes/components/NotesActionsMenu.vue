@@ -19,6 +19,7 @@
         <span>{{ $t('notes.menu.label.delete') }}</span>
       </v-list-item>
       <v-list-item
+        v-if="note && note.canView"
         class="px-2 text-left action-menu-item draftButton"
         @click="copyLink">
         <v-icon
@@ -39,7 +40,7 @@
         <span>{{ $t('notes.menu.label.noteHistory') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note.name !== defaultPath"
+        v-if="note.name !== defaultPath && note.canEdit"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-treeview')">
         <v-icon
@@ -50,6 +51,7 @@
         <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
       <v-list-item
+        v-if="note && note.canView"
         class="px-2 text-left noteExportPdf action-menu-item draftButton"
         @click="$emit('export-pdf')">
         <v-icon

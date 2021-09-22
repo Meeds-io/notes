@@ -99,8 +99,9 @@ public class NotesRestService implements ResourceContainer {
       }
       Page note = null;
       if(noteId.equals("homeNote")){
-        note = noteBook.getWikiHome();
-      }else{
+        noteId = noteBook.getWikiHome().getId();
+        note = noteService.getNoteById(noteId, identity, source);
+      } else {
         note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
       }
       if (note == null) {
