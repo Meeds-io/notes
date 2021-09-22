@@ -29,6 +29,16 @@
         <span>{{ $t('notes.menu.label.copyLink') }}</span>
       </v-list-item>
       <v-list-item
+        class="px-2 text-left action-menu-item draftButton"
+        @click="$emit('open-history')">
+        <v-icon
+          size="18"
+          class="primary--text clickable pr-2">
+          mdi-history
+        </v-icon>
+        <span>{{ $t('notes.menu.label.noteHistory') }}</span>
+      </v-list-item>
+      <v-list-item
         v-if="note.name !== defaultPath"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-treeview')">

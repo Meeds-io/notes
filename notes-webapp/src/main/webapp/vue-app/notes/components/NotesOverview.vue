@@ -69,6 +69,7 @@
             <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
+            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="$refs.noteVersionsHistoryDrawer.open()">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -104,8 +105,13 @@
       :note="notes" 
       :default-path="defaultPath" 
       @open-treeview="$refs.notesBreadcrumb.open(notes.id, 'movePage')" 
-      @export-pdf="createPDF(notes)" />
-    <note-treeview-drawer ref="notesBreadcrumb" />
+      @export-pdf="createPDF(notes)"
+      @open-history="$refs.noteVersionsHistoryDrawer.open(notes.id)" />
+    <note-treeview-drawer
+      ref="notesBreadcrumb" />
+    <note-history-drawer
+      ref="noteVersionsHistoryDrawer"
+      :note-versions="noteVersions" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -161,6 +167,7 @@ export default {
       loadData: false,
       openTreeView: false,
       hideActions: false,
+      noteVersions: [],
     };
   },
   watch: {
@@ -174,6 +181,9 @@ export default {
     }
   },
   computed: {
+    lastNoteVersion() {
+      return this.noteVersions && this.noteVersions[0].versionNumber;
+    },
     lastNotesUpdatebBy() {
       return this.lastUpdatedUser;
     },
@@ -246,6 +256,7 @@ export default {
   mounted() {
     if (this.noteId){
       this.getNotesById(this.noteId);
+      this.getNoteVersionByNoteId(this.noteId);
     } else {
       this.getNoteByName(this.notesPageName);
     }
@@ -374,6 +385,11 @@ export default {
       this.type=message.type;
       this.alert = true;
       window.setTimeout(() => this.alert = false, 5000);
+    },
+    getNoteVersionByNoteId(noteId) {
+      return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
+        this.noteVersions = data && data.reverse() || [];
+      });
     }
   }
 };

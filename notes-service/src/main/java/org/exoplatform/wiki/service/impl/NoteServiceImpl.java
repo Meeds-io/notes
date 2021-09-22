@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
@@ -59,6 +61,8 @@ public class NoteServiceImpl implements NoteService {
 
   private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                     = new ConcurrentHashMap<>();
 
+  private IdentityManager identityManager;
+
 
   public NoteServiceImpl(ConfigurationManager configManager,
                          UserACL userACL,
@@ -66,12 +70,14 @@ public class NoteServiceImpl implements NoteService {
                          CacheService cacheService,
                          OrganizationService orgService,
                          WikiService wikiService,
+                         IdentityManager identityManager,
                          HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.configManager = configManager;
     this.userACL = userACL;
     this.dataStorage = dataStorage;
     this.orgService = orgService;
     this.wikiService = wikiService;
+    this.identityManager = identityManager;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
@@ -579,6 +585,20 @@ public class NoteServiceImpl implements NoteService {
       versions = dataStorage.getVersionsOfPage(note);
     }
     return versions;
+  }
+
+  @Override
+  public List<PageHistory> getVersionsHistoryOfNote(Page note) throws WikiException {
+    List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
+    if (versionsHistory == null || versionsHistory.isEmpty()) {
+      dataStorage.addPageVersion(note);
+      versionsHistory = dataStorage.getHistoryOfPage(note);
+    }
+    for( PageHistory version: versionsHistory ) {
+      org.exoplatform.social.core.identity.model.Identity authorIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, version.getAuthor());
+      version.setAuthorFullName(authorIdentity.getProfile().getFullName());
+    }
+    return versionsHistory;
   }
 
   @Override

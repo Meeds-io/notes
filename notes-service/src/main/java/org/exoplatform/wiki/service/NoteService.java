@@ -251,6 +251,15 @@ public interface NoteService {
   public List<PageVersion> getVersionsOfNote(Page note) throws WikiException;
 
   /**
+   * Gets all the Histories of the given note
+   *
+   * @param note The note
+   * @return All the histories of the note
+   * @throws WikiException if an error occured
+   */
+  public List<PageHistory> getVersionsHistoryOfNote(Page note) throws WikiException;
+
+  /**
    * Gets a specific version by name of the given note
    * 
    * @param versionName The name of the version

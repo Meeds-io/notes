@@ -122,7 +122,7 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get note by id", httpMethod = "GET", response = Response.class, notes = "This get the not if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiOperation(value = "Get note by id", httpMethod = "GET", response = Response.class, notes = "This get the note if the authenticated user has permissions to view the objects linked to this note.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
@@ -150,6 +150,31 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
       log.error("Can't get note {}", noteId, e);
+      return Response.serverError().entity(e.getMessage()).build();
+    }
+  }
+
+  @GET
+  @Path("/versions/{noteId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @ApiOperation(value = "Get versions of note by id", httpMethod = "GET", response = Response.class, notes = "This get the versions of a note if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+    @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+    @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getNoteVersions(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note = noteService.getNoteById(noteId, identity);
+      if (note == null) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      return Response.ok(noteService.getVersionsHistoryOfNote(note)).build();
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}", noteId, e);
+      return Response.status(Response.Status.UNAUTHORIZED).build();
+    } catch (Exception e) {
+      log.error("Can't get versions list of note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }

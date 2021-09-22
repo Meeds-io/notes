@@ -72,7 +72,6 @@ public class JPADataStorage implements DataStorage {
   private EmotionIconDAO emotionIconDAO;
   private FileService fileService;
   private UserACL userACL;
-  
 
   public JPADataStorage(WikiDAO wikiDAO,
                         PageDAO pageDAO,
@@ -1151,6 +1150,26 @@ public class JPADataStorage implements DataStorage {
     Collections.sort(pageVersions, new VersionNameComparatorDesc());
 
     return pageVersions;
+  }
+
+  @Override
+  public List<PageHistory> getHistoryOfPage(Page page) throws WikiException {
+    PageEntity pageEntity = fetchPageEntity(page);
+
+    if (pageEntity == null) {
+      throw new WikiException("Cannot get versions of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" + page.getName()
+        + " because page does not exist.");
+    }
+
+    List<PageHistory> pageVersionsHistory = new ArrayList<>();
+    List<PageVersionEntity> pageVersionEntities = pageEntity.getVersions();
+    if(pageVersionEntities != null) {
+      for (PageVersionEntity pageVersionEntity : pageVersionEntities) {
+        PageHistory pageHistory = convertPageVersionEntityToPageHistory(pageVersionEntity);
+        pageVersionsHistory.add(pageHistory);
+      }
+    }
+    return pageVersionsHistory;
   }
 
   @Override
