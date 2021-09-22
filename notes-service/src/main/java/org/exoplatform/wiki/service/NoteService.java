@@ -242,32 +242,13 @@ public interface NoteService {
   public boolean canPublicAndRetrictNote(Page currentNote , Identity currentIdentity) throws WikiException;
 
   /**
-   * Gets all the versions of the given note
-   * 
-   * @param note The note
-   * @return All the versions of the note
-   * @throws WikiException if an error occured
-   */
-  public List<PageVersion> getVersionsOfNote(Page note) throws WikiException;
-
-  /**
    * Gets all the Histories of the given note
    *
    * @param note The note
    * @return All the histories of the note
    * @throws WikiException if an error occured
    */
-  public List<PageHistory> getVersionsHistoryOfNote(Page note) throws WikiException;
-
-  /**
-   * Gets a specific version by name of the given note
-   * 
-   * @param versionName The name of the version
-   * @param note The note
-   * @return The version of the note
-   * @throws WikiException if an error occured
-   */
-  public PageVersion getVersionOfNoteByName(String versionName, Page note) throws WikiException;
+  public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException;
 
   /**
    * Creates a version of a note. This method only tag the current note data as a
@@ -276,7 +257,7 @@ public interface NoteService {
    * @param note The note
    * @throws WikiException if an error occured
    */
-  public void createVersionOfNote(Page note) throws WikiException;
+  public void createVersionOfNote(Page note, String userName) throws WikiException;
 
   /**
    * Restores a version of a note
@@ -285,7 +266,7 @@ public interface NoteService {
    * @param note The note
    * @throws WikiException if an error occured
    */
-  public void restoreVersionOfNote(String versionName, Page note) throws WikiException;
+  public void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException;
 
 
   /**
