@@ -26,7 +26,7 @@
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom v-if="note.canEdit && !isMobile">
+              <v-tooltip bottom v-if="note.canManage && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
