@@ -185,61 +185,6 @@ public interface NoteService {
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
 
-  /**
-   * Checks if the given user has the permission on a note
-   * 
-   * @param user the user
-   * @param note the note to check
-   * @param permissionType type of permissions to chack
-   * @return true if user has permissions on the note
-   * @throws WikiException if an error occured
-   */
-  public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException;
-
-  /**
-   * Checks if the current user has the admin permission on a space or not.
-   *
-   * @param noteType It can be Portal, Group, or User.
-   * @param owner Owner of the space.
-   * @param user Identity of current user.
-   * @return The returned value is "true" if the current user has the admin
-   *         permission on the space, or "false" if not.
-   * @throws WikiException if an error occured
-   */
-  public boolean hasAdminSpacePermission(String noteType, String owner, Identity user) throws WikiException;
-
-  /**
-   * Checks if the current user has the admin permission on a note.
-   * 
-   * @param noteType It can be Portal, Group, or User.
-   * @param owner Owner of the noteBook.
-   * @param user Identity of current user.
-   * @return "True" if the current user has the admin permission on the note,
-   *         or "false" if not.
-   * @throws WikiException if an error occured
-   */
-  public boolean hasAdminNotePermission(String noteType, String owner, Identity user) throws WikiException;
-
-  /**
-   * Check if the given user can update the note
-   * 
-   * @param currentNote The note to update
-   * @param currentIdentity The identity of user user that needs to update the note
-   * @return true if the user can update the note
-   * @throws WikiException if an error occured
-   */
-  public boolean canModifyNotePermission(Page currentNote, Identity currentIdentity) throws WikiException;
-
-  /**
-   * Check if the given user can public or restrict the note
-   * 
-   * @param currentNote the note to chack permissions
-   * @param currentIdentity The identity of user
-   * @return true if the current user has EditNote permission or admin note or
-   *         admin space
-   * @throws WikiException if an error occured
-   */
-  public boolean canPublicAndRetrictNote(Page currentNote , Identity currentIdentity) throws WikiException;
 
   /**
    * Gets all the Histories of the given note

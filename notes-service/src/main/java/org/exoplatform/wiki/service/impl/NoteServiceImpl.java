@@ -5,10 +5,13 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
 
@@ -63,6 +66,8 @@ public class NoteServiceImpl implements NoteService {
 
   private IdentityManager identityManager;
 
+  private SpaceService spaceService;
+
 
   public NoteServiceImpl(ConfigurationManager configManager,
                          UserACL userACL,
@@ -71,7 +76,8 @@ public class NoteServiceImpl implements NoteService {
                          OrganizationService orgService,
                          WikiService wikiService,
                          IdentityManager identityManager,
-                         HTMLUploadImageProcessor htmlUploadImageProcessor) {
+                         HTMLUploadImageProcessor htmlUploadImageProcessor,
+                         SpaceService spaceService) {
     this.configManager = configManager;
     this.userACL = userACL;
     this.dataStorage = dataStorage;
@@ -81,6 +87,7 @@ public class NoteServiceImpl implements NoteService {
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
+    this.spaceService = spaceService;
   }
 
   public ExoCache<Integer, MarkupData> getRenderingCache() {
@@ -104,21 +111,7 @@ public class NoteServiceImpl implements NoteService {
 
     Page parentPage = getNoteOfNoteBookByName(noteBook.getType(), noteBook.getOwner(), parentNoteName);
     if (parentPage != null) {
-/*      if (!hasPermissionOnNote(note, PermissionType.EDITPAGE, userIdentity)) {
-        log.error("User does not have permission to add a note.");
-        throw new IllegalAccessException("User does not have permission to add a note.");
-      }*/
-      List<PermissionEntry> permissions = note.getPermissions();
-      // if permissions are not set, init with parent page permissions
-      if (permissions == null) {
-        if (parentPage.getPermissions() != null) {
-          permissions = parentPage.getPermissions();
-        } else {
-          Page wikiHomePage = noteBook.getWikiHome();
-          permissions = wikiHomePage.getPermissions();
-        }
-        note.setPermissions(permissions);
-      }
+      note.setOwner(userIdentity.getUserId());
       try {
         if (StringUtils.equalsIgnoreCase(note.getWikiType(),WikiType.GROUP.name())) {
           note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
@@ -166,7 +159,8 @@ public class NoteServiceImpl implements NoteService {
       throw new EntityNotFoundException("Note to update not found");
     }
     if (note_ != null) {
-      if (!hasPermissionOnNote(note_, PermissionType.EDITPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
+      if (!canManageNotes(userIdentity.getUserId(), space, note_)) {
         throw new IllegalAccessException("User does not have edit the note.");
       }
     }
@@ -237,8 +231,9 @@ public class NoteServiceImpl implements NoteService {
         log.error("Can't delete note '" + noteName + "'. This note does not exist.");
         throw new EntityNotFoundException("Note to update not found");
       }
+      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       if (note != null) {
-        if (!hasPermissionOnNote(note, PermissionType.EDITPAGE, userIdentity)) {
+        if (!canManageNotes(userIdentity.getUserId(), space, note)) {
           log.error("Can't delete note '" + noteName + "'. does not have edit permission on it.");
           throw new IllegalAccessException("User does not have edit permissions on the note.");
         }
@@ -323,7 +318,8 @@ public class NoteServiceImpl implements NoteService {
         throw new EntityNotFoundException("Note to update not found");
       }
       if (moveNote != null) {
-        if (!hasPermissionOnNote(moveNote, PermissionType.EDITPAGE, userIdentity)) {
+        Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
+        if (!canManageNotes( userIdentity.getUserId(), space, moveNote)) {
           throw new IllegalAccessException("User does not have edit the note.");
         }
       }
@@ -384,12 +380,16 @@ public class NoteServiceImpl implements NoteService {
                                       Identity userIdentity) throws IllegalAccessException, WikiException {
     Page page = null;
     page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
+    if (page == null) {
+      throw new EntityNotFoundException("page not found");
+    }
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
-      boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
-      page.setCanEdit(canEdit);
+      page.setCanManage(canManageNotes( userIdentity.getUserId(), space, page));
+      page.setCanView(canViewNotes( userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -411,11 +411,12 @@ public class NoteServiceImpl implements NoteService {
     Page page = null;
     page = getNoteById(id);
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
-      boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
-      page.setCanEdit(canEdit);
+      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanView(canViewNotes(userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -428,18 +429,19 @@ public class NoteServiceImpl implements NoteService {
     Page page = null;
     page = getNoteById(id);
     if (page != null) {
-      if (!hasPermissionOnNote(page, PermissionType.VIEWPAGE, userIdentity)) {
+      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
-    }
-    boolean canEdit = hasPermissionOnNote(page, PermissionType.EDITPAGE, userIdentity);
-    page.setCanEdit(canEdit);
-    if(StringUtils.isNotEmpty(source)) {
-      if (source.equals("tree")) {
-        postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-      }
-      if (source.equals("breadCrumb")) {
-        postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanView(canViewNotes(userIdentity.getUserId(), space, page));
+      if (StringUtils.isNotEmpty(source)) {
+        if (source.equals("tree")) {
+          postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+        }
+        if (source.equals("breadCrumb")) {
+          postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+        }
       }
     }
     return page;
@@ -493,89 +495,7 @@ public class NoteServiceImpl implements NoteService {
   }
 
 
-  @Override
-  public boolean hasPermissionOnNote(Page note, PermissionType permissionType, Identity user) throws WikiException {
-    return dataStorage.hasPermissionOnPage(note, permissionType, user);
-  }
 
-  @Override
-  public boolean hasAdminSpacePermission(String noteBookType, String owner, Identity user) throws WikiException {
-    if (user != null) {
-      if (userACL != null && userACL.getSuperUser().equals(user.getUserId())) {
-        return true;
-      }
-    } else {
-      user = new Identity(IdentityConstants.ANONIM);
-    }
-
-    return dataStorage.hasAdminSpacePermission(noteBookType, owner, user);
-  }
-
-  @Override
-  public boolean hasAdminNotePermission(String noteType, String owner, Identity user) throws WikiException {
-    if (user != null) {
-      if (userACL != null && userACL.getSuperUser().equals(user.getUserId())) {
-        return true;
-      }
-    } else {
-      user = new Identity(IdentityConstants.ANONIM);
-    }
-
-    return dataStorage.hasAdminPagePermission(noteType, owner, user);
-  }
-
-  @Override
-  public boolean canModifyNotePermission(Page currentNote, Identity currentIdentity) throws WikiException {
-    boolean canModifyPage = false;
-    String currentUser = currentIdentity.getUserId();
-    String owner = currentNote.getOwner();
-    boolean isPageOwner = owner != null && owner.equals(currentUser);
-    boolean hasEditPagePermissionOnPage = false;
-    if (currentNote.getPermissions() != null) {
-      for (PermissionEntry permissionEntry : currentNote.getPermissions()) {
-        if (permissionEntry.getId().equals(currentUser)) {
-          for (Permission permission : permissionEntry.getPermissions()) {
-            if (permission.getPermissionType().equals(PermissionType.EDITPAGE) && permission.isAllowed()) {
-              hasEditPagePermissionOnPage = true;
-              break;
-            }
-          }
-        }
-        if (hasEditPagePermissionOnPage) {
-          break;
-        }
-      }
-    }
-
-    if (isPageOwner && hasEditPagePermissionOnPage) {
-      canModifyPage = true;
-    } else {
-      Wiki wiki = wikiService.getWikiByTypeAndOwner(currentNote.getWikiType(), currentNote.getWikiOwner());
-      canModifyPage = (hasAdminSpacePermission(wiki.getType(), wiki.getOwner(), currentIdentity))
-          || hasAdminNotePermission(wiki.getType(), wiki.getOwner(), currentIdentity);
-    }
-
-    return canModifyPage;
-  }
-
-  @Override
-  public boolean canPublicAndRetrictNote(Page currentNote, Identity currentIdentity) throws WikiException {
-    String currentUser = currentIdentity.getUserId();
-    if (currentNote.getPermissions() != null) {
-      for (PermissionEntry permissionEntry : currentNote.getPermissions()) {
-        if (permissionEntry.getId().equals(currentUser)) {
-          for (Permission permission : permissionEntry.getPermissions()) {
-            if (permission.getPermissionType().equals(PermissionType.EDITPAGE) && permission.isAllowed()) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-    Wiki wiki = wikiService.getWikiByTypeAndOwner(currentNote.getWikiType(), currentNote.getWikiOwner());
-    return hasAdminNotePermission(wiki.getType(), wiki.getOwner(), currentIdentity)
-        || hasAdminSpacePermission(wiki.getType(), wiki.getOwner(), currentIdentity);
-  }
 
 
   @Override
@@ -798,6 +718,20 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
+  }
+
+  private boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+    if (space != null){
+      return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser) || spaceService.isRedactor(space, authenticatedUser) ||
+              spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+    } else return page.getOwner().equals(authenticatedUser);
+
+  }
+
+  private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+    if (space != null){
+      return space != null && spaceService.isMember(space, authenticatedUser);
+    } else return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
   }
 
   /**

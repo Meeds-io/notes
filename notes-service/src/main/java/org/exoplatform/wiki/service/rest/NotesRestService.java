@@ -99,8 +99,9 @@ public class NotesRestService implements ResourceContainer {
       }
       Page note = null;
       if(noteId.equals("homeNote")){
-        note = noteBook.getWikiHome();
-      }else{
+        noteId = noteBook.getWikiHome().getId();
+        note = noteService.getNoteById(noteId, identity, source);
+      } else {
         note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
       }
       if (note == null) {
@@ -262,7 +263,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
 
-      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
+      if (!note_.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       note_.setToBePublished(note.isToBePublished());
@@ -337,7 +338,7 @@ public class NotesRestService implements ResourceContainer {
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (!noteService.hasPermissionOnNote(note_, PermissionType.EDITPAGE, identity)) {
+      if (!note_.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       if ((!note_.getTitle().equals(note.getTitle()))

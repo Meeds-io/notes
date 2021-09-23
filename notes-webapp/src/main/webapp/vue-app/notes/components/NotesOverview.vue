@@ -12,7 +12,7 @@
               id="note-actions-menu"
               v-show="loadData && !hideActions"
               class="notes-header-icons text-right">
-              <v-tooltip bottom v-if="!isMobile">
+              <v-tooltip bottom v-if="!isMobile && notes.canManage">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="22"
@@ -26,7 +26,7 @@
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom v-if="notes.canEdit && !isMobile">
+              <v-tooltip bottom v-if="notes.canManage && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
                     size="19"
