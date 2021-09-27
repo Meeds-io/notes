@@ -11,6 +11,14 @@ if (extensionRegistry) {
   }
 }
 
+const objects = Object.keys(localStorage);
+for (const index in objects) {
+  if (objects[index].startsWith('draftNoteId-')) {
+    const draftNote = JSON.parse(localStorage[objects[index]]);
+    notesService.saveDraftNote(draftNote).then(() => localStorage.removeItem(objects[index]));
+  }
+}
+
 Vue.use(Vuetify);
 const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
 const appId = 'notesOverviewApplication';

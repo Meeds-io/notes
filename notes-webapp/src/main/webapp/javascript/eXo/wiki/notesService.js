@@ -76,7 +76,10 @@ export function createNote(page) {
   });
 }
 
-export function saveDraftNote(draftNote) {
+export function saveDraftNote(draftNote, parentPageId) {
+  if (parentPageId) {
+    draftNote.parentPageId = parentPageId;
+  }
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/saveDraft`, {
     headers: {
       Accept: 'application/json',

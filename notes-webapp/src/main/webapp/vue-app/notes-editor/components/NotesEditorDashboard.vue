@@ -134,14 +134,14 @@ export default {
   },
   computed: {
     publishAndPostButtonText() {
-      if (this.note.id) {
+      if (this.note.id && this.note.targetPageId || this.note.id) {
         return this.$t('notes.button.updateAndPost');
       } else {
         return this.$t('notes.button.publishAndPost');
       }
     },
     publishButtonText() {
-      if (this.note.id) {
+      if (this.note.id && this.note.targetPageId || this.note.id) {
         return this.$t('notes.button.update');
       } else {
         return this.$t('notes.button.publish');
@@ -164,6 +164,12 @@ export default {
     },
   },
   created() {
+    window.addEventListener('beforeunload', () => {
+      if (this.note.draftPage && this.note.id) {
+        this.removeLocalStorageCurrentDraft();
+        this.persistDraftNote(this.note);
+      }
+    });
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('appName')) {
@@ -250,7 +256,7 @@ export default {
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
         this.savingDraft = true;
-        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus'); //todo
+        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
         this.$nextTick(() => {
           this.saveNoteDraft();
         });
@@ -277,20 +283,36 @@ export default {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
       if (this.validateForm()) {
-        const note = {
-          id: this.note.targetPageId ? this.note.targetPageId : null,
-          title: this.note.title,
-          name: this.note.name,
-          wikiType: this.note.wikiType,
-          wikiOwner: this.note.wikiOwner,
-          content: this.note.content,
-          parentPageId: this.parentPageId,
-          toBePublished: toPublish,
-          appName: this.appName,
-        };
+        let note;
+        if (this.note.draftPage) {
+          note = {
+            id: this.note.targetPageId ? this.note.targetPageId : null,
+            title: this.note.title,
+            name: this.note.name,
+            wikiType: this.note.wikiType,
+            wikiOwner: this.note.wikiOwner,
+            content: this.note.content,
+            parentPageId: this.parentPageId,
+            toBePublished: toPublish,
+            appName: this.appName,
+          };
+        } else {
+          note = {
+            id: this.note.id,
+            title: this.note.title,
+            name: this.note.name,
+            wikiType: this.note.wikiType,
+            wikiOwner: this.note.wikiOwner,
+            content: this.note.content,
+            parentPageId: this.parentPageId,
+            toBePublished: toPublish,
+            appName: this.appName,
+          };
+        }
         let notePath = '';
         if (note.id) {
           this.$notesService.updateNoteById(note).then(data => {
+            this.removeLocalStorageCurrentDraft();
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.postingNote = false;
             this.draftSavingStatus = '';
@@ -307,11 +329,10 @@ export default {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.postingNote = false;
             // delete draft note
-            this.draftSavingStatus = '';
-            this.$notesService.deleteDraftNote(this.note).then(() => {
+            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
+            this.deleteDraftNote(draftNote).then(() => {
+              this.draftSavingStatus = '';
               window.location.href = notePath;
-            }).catch(e => {
-              console.error('Error when deleting draft note: ', e);
             });
           }).catch(e => {
             console.error('Error when creating note page', e);
@@ -350,33 +371,49 @@ export default {
       }
 
       if (this.note.title || this.note.content) {
-        this.persistDraftNote(draftNote);
+        // if draft page not created persist it only the first time else update it in browser's localStorage
+        if (this.note.draftPage && this.note.id) {
+          this.note.parentPageId = this.parentPageId;
+          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
+          this.actualNote = {
+            name: draftNote.name,
+            title: draftNote.title,
+            content: draftNote.content,
+          };
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+        } else {
+          this.persistDraftNote(draftNote);
+        }
       } else {
         // delete draft
         this.deleteDraftNote();
       }
     },
     persistDraftNote(draftNote) {
-      this.$notesService.saveDraftNote(draftNote).then(savedDraftNote => {
-        this.actualNote = {
-          id: savedDraftNote.id,
-          name: savedDraftNote.name,
-          title: savedDraftNote.title,
-          content: savedDraftNote.content,
-          author: savedDraftNote.author,
-          owner: savedDraftNote.owner,
-        };
-        this.note = savedDraftNote;
-      }).then(() => {
-        this.savingDraft = false;
-        this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-      }).catch(e => {
-        console.error('Error when creating note page', e);
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t(`notes.message.${e.message}`)
+      if (this.note.title || this.note.content) {
+        this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          this.actualNote = {
+            id: savedDraftNote.id,
+            name: savedDraftNote.name,
+            title: savedDraftNote.title,
+            content: savedDraftNote.content,
+            author: savedDraftNote.author,
+            owner: savedDraftNote.owner,
+          };
+          savedDraftNote.parentPageId = this.parentPageId;
+          this.note = savedDraftNote;
+          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
+        }).then(() => {
+          this.savingDraft = false;
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+        }).catch(e => {
+          console.error('Error when creating note page', e);
+          this.$root.$emit('show-alert', {
+            type: 'error',
+            message: this.$t(`notes.message.${e.message}`)
+          });
         });
-      });
+      }
     },
     closePluginsDrawer() {
       this.$refs.noteCustomPlugins.close();
@@ -572,9 +609,18 @@ export default {
             parentPageId: this.parentPageId,
             draftPage: true,
           };
+        }).then(() => {
+          this.removeLocalStorageCurrentDraft();
+          return Promise.resolve();
         }).catch(e => {
-          console.error('Error when deleting draft note', e);
+          console.error('Error when deleting note', e);
         });
+      }
+    },
+    removeLocalStorageCurrentDraft() {
+      const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+      if (currentDraft) {
+        localStorage.removeItem(`draftNoteId-${this.note.id}`);
       }
     },
   }
