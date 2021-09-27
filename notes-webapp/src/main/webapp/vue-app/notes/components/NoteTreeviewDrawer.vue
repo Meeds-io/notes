@@ -237,6 +237,7 @@ export default {
           hasChild: noteChildren.hasChild,
           name: noteChildren.name,
           noteId: noteChildren.noteId,
+          draftNote: noteChildren.draftNote,
           children: []
         });
       } else {
@@ -244,7 +245,8 @@ export default {
           id: noteChildren.path.split('%2F').pop(),
           hasChild: noteChildren.hasChild,
           name: noteChildren.name,
-          noteId: noteChildren.noteId
+          noteId: noteChildren.noteId,
+          draftNote: noteChildren.draftNote,
         });
       }
     },
@@ -291,6 +293,7 @@ export default {
             hasChild: child.hasChild,
             name: child.name,
             noteId: child.noteId,
+            draftNote: child.draftNote,
             children: this.makeNoteChildren(child.children)
           });
         } else {
@@ -298,7 +301,8 @@ export default {
             id: child.path.split('%2F').pop(),
             hasChild: child.hasChild,
             name: child.name,
-            noteId: child.noteId
+            noteId: child.noteId,
+            draftNote: child.draftNote,
           });
         }
       });

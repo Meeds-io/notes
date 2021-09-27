@@ -823,6 +823,9 @@ public class WikiServiceImpl implements WikiService, Startable {
 
   @Override
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
+    if (page.isDraftPage()) {
+      return page.getAuthor().equals(ConversationState.getCurrent().getIdentity().getUserId());
+    }
     return dataStorage.hasPermissionOnPage(page, permissionType, user);
   }
 

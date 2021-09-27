@@ -569,6 +569,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTitle(draftNoteToUpdate.getTitle());
     newDraftPage.setTargetPageId(draftNoteToUpdate.getTargetPageId());
     newDraftPage.setContent(draftNoteToUpdate.getContent());
+    newDraftPage.setSyntax(draftNoteToUpdate.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
     if (StringUtils.isEmpty(revision)) {
@@ -600,6 +601,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageId(draftNoteToUpdate.getTargetPageId());
     newDraftPage.setTargetPageRevision("1");
     newDraftPage.setContent(draftNoteToUpdate.getContent());
+    newDraftPage.setSyntax(draftNoteToUpdate.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
 
@@ -650,6 +652,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageId(draftPage.getTargetPageId());
     newDraftPage.setTargetPageRevision("1");
     newDraftPage.setContent(draftPage.getContent());
+    newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
 

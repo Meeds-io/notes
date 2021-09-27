@@ -5,6 +5,7 @@ import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ValuesParam;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
@@ -91,6 +92,15 @@ public interface DataStorage {
   public DraftPage getDraft(String draftName, String username) throws WikiException;
 
   public List<DraftPage> getDraftPagesOfUser(String username) throws WikiException;
+
+  /**
+   * Returns user's draft notes of a target page.
+   * 
+   * @param username
+   * @param targetPageId
+   * @return
+   */
+  List<DraftPageEntity> getDraftPagesByUserAndTargetPage(String username, Long targetPageId);
 
   /**
    * Creates a new draft note

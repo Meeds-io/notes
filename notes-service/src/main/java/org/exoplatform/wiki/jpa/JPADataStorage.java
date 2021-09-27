@@ -33,6 +33,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfig;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -286,6 +287,19 @@ public class JPADataStorage implements DataStorage {
       for (PageEntity childPageEntity : childrenPagesEntities) {
         childrenPages.add(convertPageEntityToPage(childPageEntity));
       }
+    }
+    boolean isRootPage = pageEntity.getParentPage() == null;
+    List<DraftPageEntity> draftPageEntities;
+    if (isRootPage) {
+      draftPageEntities = draftPageDAO.findRootDraftPagesByUser(ConversationState.getCurrent().getIdentity().getUserId());
+    } else {
+      draftPageEntities = draftPageDAO.findDraftPagesByUserAndTargetPage(page.getAuthor(), pageEntity.getId());
+    }
+    if (!draftPageEntities.isEmpty()) {
+      for (DraftPageEntity draftPageEntity : draftPageEntities) {
+        childrenPages.add(convertDraftPageEntityToDraftPage(draftPageEntity));
+      }
+
     }
 
     return childrenPages;
@@ -726,6 +740,11 @@ public class JPADataStorage implements DataStorage {
       }
     }
     return draftPages;
+  }
+
+  @Override
+  public List<DraftPageEntity> getDraftPagesByUserAndTargetPage(String username, Long targetPageId) {
+    return draftPageDAO.findDraftPagesByUserAndTargetPage(username, targetPageId);
   }
 
   @Override

@@ -134,14 +134,14 @@ export default {
   },
   computed: {
     publishAndPostButtonText() {
-      if (this.note.id && this.note.targetPageId || this.note.id) {
+      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
         return this.$t('notes.button.updateAndPost');
       } else {
         return this.$t('notes.button.publishAndPost');
       }
     },
     publishButtonText() {
-      if (this.note.id && this.note.targetPageId || this.note.id) {
+      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
         return this.$t('notes.button.update');
       } else {
         return this.$t('notes.button.publish');
@@ -165,9 +165,14 @@ export default {
   },
   created() {
     window.addEventListener('beforeunload', () => {
-      if (this.note.draftPage && this.note.id) {
-        this.removeLocalStorageCurrentDraft();
-        this.persistDraftNote(this.note);
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+        if (currentDraft) {
+          this.removeLocalStorageCurrentDraft();
+          const draftToPersist = JSON.parse(currentDraft);
+          draftToPersist.newPage = false;
+          this.persistDraftNote(draftToPersist);
+        }
       }
     });
     const queryPath = window.location.search;
@@ -314,7 +319,6 @@ export default {
           this.$notesService.updateNoteById(note).then(data => {
             this.removeLocalStorageCurrentDraft();
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
-            this.postingNote = false;
             this.draftSavingStatus = '';
             window.location.href = notePath;
           }).catch(e => {
@@ -327,13 +331,9 @@ export default {
         } else {
           this.$notesService.createNote(note).then(data => {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
-            this.postingNote = false;
             // delete draft note
             const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
-            this.deleteDraftNote(draftNote).then(() => {
-              this.draftSavingStatus = '';
-              window.location.href = notePath;
-            });
+            this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.$root.$emit('show-alert', {
@@ -380,7 +380,9 @@ export default {
             title: draftNote.title,
             content: draftNote.content,
           };
-          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          }, this.autoSaveDelay/2);
         } else {
           this.persistDraftNote(draftNote);
         }
@@ -405,9 +407,11 @@ export default {
           localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
         }).then(() => {
           this.savingDraft = false;
-          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          }, this.autoSaveDelay/2);
         }).catch(e => {
-          console.error('Error when creating note page', e);
+          console.error('Error when creating draft note: ', e);
           this.$root.$emit('show-alert', {
             type: 'error',
             message: this.$t(`notes.message.${e.message}`)
@@ -587,11 +591,12 @@ export default {
         });
       }
     },
-    deleteDraftNote(draftNote) {
+    deleteDraftNote(draftNote, notePath) {
       if (!draftNote) {
         draftNote = this.note;
       }
       if (this.note.draftPage && this.note.id) {
+        this.removeLocalStorageCurrentDraft();
         this.$notesService.deleteDraftNote(draftNote).then(() => {
           this.draftSavingStatus = '';
           //re-initialize data
@@ -610,8 +615,10 @@ export default {
             draftPage: true,
           };
         }).then(() => {
-          this.removeLocalStorageCurrentDraft();
-          return Promise.resolve();
+          this.draftSavingStatus = '';
+          if (notePath) {
+            window.location.href = notePath;
+          }
         }).catch(e => {
           console.error('Error when deleting note', e);
         });

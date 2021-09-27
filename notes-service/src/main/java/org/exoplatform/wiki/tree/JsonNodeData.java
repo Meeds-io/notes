@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
 public class JsonNodeData {  
@@ -36,6 +37,8 @@ public class JsonNodeData {
   protected boolean          hasChild;
 
   protected TreeNodeType     nodeType;
+
+  protected boolean          isDraftNote = false;
 
   protected boolean          isLastNode;
 
@@ -79,6 +82,10 @@ public class JsonNodeData {
     this.isRetricted = treeNode.isRetricted;
     if (this.children.size() > 0) {
       this.isExpanded = true;
+    }
+    if (treeNode.getNodeType().equals(TreeNodeType.PAGE)) {
+      Page page = ((PageTreeNode) treeNode).getPage();
+      this.isDraftNote = page.isDraftPage();
     }
   }
 
@@ -184,5 +191,13 @@ public class JsonNodeData {
 
   public void setNoteId(String noteId) {
     this.noteId = noteId;
+  }
+
+  public boolean isDraftNote() {
+    return isDraftNote;
+  }
+
+  public void setDraftNote(boolean draftNote) {
+    isDraftNote = draftNote;
   }
 }
