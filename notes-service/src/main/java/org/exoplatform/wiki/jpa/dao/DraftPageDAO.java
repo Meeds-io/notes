@@ -66,6 +66,13 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     return query.getResultList();
   }
 
+  public List<DraftPageEntity> findDraftPagesByUserAndParentPage(String username, long parentPageId) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPagesByUserAndParentPage", DraftPageEntity.class)
+            .setParameter("username", username)
+            .setParameter("parentPageId", parentPageId);
+    return query.getResultList();
+  }
+
   @ExoTransactional
   public void deleteDraftPagesByUserAndTargetPage(String username, long targetPageId) {
 

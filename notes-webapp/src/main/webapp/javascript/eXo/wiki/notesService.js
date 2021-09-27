@@ -76,6 +76,31 @@ export function createNote(page) {
   });
 }
 
+export function saveDraftNote(draftNote, parentPageId) {
+  if (parentPageId) {
+    draftNote.parentPageId = parentPageId;
+  }
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/saveDraft`, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify(draftNote)
+  }).then((resp) => {
+    if (!resp || !resp.ok) {
+      if (resp.status === 409) {
+        throw new Error('error.duplicate.title', resp);
+      } else {
+        throw new Error('error', resp);
+      }
+    } else {
+      return resp.json();
+    }
+  });
+}
+
 export function updateNote(note) {
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.wikiType}/${note.wikiOwner}/${note.name}`, {
     headers: {
@@ -132,6 +157,19 @@ export function getPathByNoteOwner(note,noteAppName) {
 
 export function deleteNotes(note) {
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.id}`, {
+    credentials: 'include',
+    method: 'DELETE',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when deleting notes from label');
+    }
+  });
+}
+
+export function deleteDraftNote(note) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/draftNote/${note.id}`, {
     credentials: 'include',
     method: 'DELETE',
   }).then((resp) => {

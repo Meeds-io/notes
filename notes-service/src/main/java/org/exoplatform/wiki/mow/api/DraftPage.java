@@ -1,7 +1,9 @@
 package org.exoplatform.wiki.mow.api;
 
+import lombok.Data;
 import org.exoplatform.commons.diff.DiffResult;
 
+@Data
 public class DraftPage extends Page {
   private String targetPageId;
 
@@ -11,35 +13,8 @@ public class DraftPage extends Page {
 
   private DiffResult changes;
 
-  public String getTargetPageId() {
-    return targetPageId;
-  }
-
-  public void setTargetPageId(String targetPageId) {
-    this.targetPageId = targetPageId;
-  }
-
-  public String getTargetPageRevision() {
-    return targetPageRevision;
-  }
-
-  public void setTargetPageRevision(String targetPageRevision) {
-    this.targetPageRevision = targetPageRevision;
-  }
-
-  public boolean isNewPage() {
-    return newPage;
-  }
-
-  public void setNewPage(boolean newPage) {
-    this.newPage = newPage;
-  }
-
-  public DiffResult getChanges() {
-    return changes;
-  }
-
-  public void setChanges(DiffResult changes) {
-    this.changes = changes;
+  @Override
+  public boolean isDraftPage() {
+    return true;
   }
 }

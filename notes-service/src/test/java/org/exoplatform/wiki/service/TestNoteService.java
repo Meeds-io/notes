@@ -17,9 +17,6 @@
 package org.exoplatform.wiki.service;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -27,6 +24,12 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.mow.api.*;
 import org.junit.Assert;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -213,6 +216,69 @@ public class TestNoteService extends BaseTest {
     noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT,root);
     assertNotNull(page);
     assertEquals("new page updated_", page.getTitle());
+  }
+
+  public void testDraftPage() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+
+    // Test create draft for new page
+    DraftPage draftOfNewPage = new DraftPage();
+    draftOfNewPage.setTitle("Draft page");
+    draftOfNewPage.setContent("Draft page content");
+    long now = new Date().getTime();
+    draftOfNewPage = noteService.createDraftForNewPage(new DraftPage(), now);
+    assertNotNull(draftOfNewPage);
+    String draftNameForNewPage = draftOfNewPage.getName();
+    assertTrue(draftOfNewPage.isNewPage());
+    assertTrue(draftOfNewPage.isDraftPage());
+    assertEquals("Untitled_" + getDraftNameSuffix(now), draftNameForNewPage);
+
+    // Create a wiki page for test
+    String pageName = "new page 10";
+    Page targetPage = new Page(pageName, pageName);
+    targetPage.setContent("Page content");
+    Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
+    targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage", "TestPage"), root);
+
+    // Test create draft for existing page
+    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
+    DraftPage draftPageTosave = new DraftPage();
+    String draftTitle = targetPage.getTitle() + "_draft";
+    String draftContent = targetPage.getContent() + "_draft";
+    draftPageTosave.setTitle(draftTitle);
+    draftPageTosave.setContent(draftContent);
+    String draftName = targetPage.getName() + "_" + getDraftNameSuffix(now);
+    DraftPage draftOfExistingPage = noteService.createDraftForExistPage(draftPageTosave, targetPage, null, now, root.getUserId());
+    assertNotNull(draftOfExistingPage);
+    assertFalse(draftOfExistingPage.isNewPage());
+    assertEquals(draftOfExistingPage.getName(), draftName);
+    assertEquals(targetPage.getId(), draftOfExistingPage.getTargetPageId());
+    assertEquals("1", draftOfExistingPage.getTargetPageRevision());
+
+    //Test Update draft page
+    draftOfNewPage.setTitle("Draft page updated");
+    draftOfNewPage.setContent("Draft page content updated");
+    DraftPage updatedDraftOfNewPage = noteService.updateDraftForNewPage(draftOfNewPage, now);
+    assertNotNull(updatedDraftOfNewPage);
+    assertEquals(updatedDraftOfNewPage.getTitle(), draftOfNewPage.getTitle());
+    assertEquals(updatedDraftOfNewPage.getContent(), draftOfNewPage.getContent());
+    assertTrue(updatedDraftOfNewPage.isNewPage());
+    assertTrue(updatedDraftOfNewPage.isDraftPage());
+
+    //Test Update draft of existing page
+    draftOfExistingPage.setTitle("Draft of page");
+    draftOfExistingPage.setContent("Draft of page updated");
+    DraftPage updatedDraftOfExistingPage = noteService.updateDraftForExistPage(draftOfExistingPage, targetPage, null, now, root.getUserId());
+    assertNotNull(updatedDraftOfExistingPage);
+    assertEquals(updatedDraftOfExistingPage.getTitle(), draftOfExistingPage.getTitle());
+    assertEquals(updatedDraftOfExistingPage.getContent(), draftOfExistingPage.getContent());
+    assertFalse(updatedDraftOfExistingPage.isNewPage());
+    assertTrue(updatedDraftOfExistingPage.isDraftPage());
+
+  }
+
+  private String getDraftNameSuffix(long clientTime) {
+    return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
   }
 
 }

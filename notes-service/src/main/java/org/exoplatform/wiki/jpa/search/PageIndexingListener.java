@@ -25,7 +25,7 @@ public class PageIndexingListener extends PageWikiListener {
 
   @Override
   public void postUpdatePage(String wikiType, String wikiOwner, String pageId, Page page, PageUpdateType wikiUpdateType) throws WikiException {
-    if (!(page instanceof DraftPage)) {
+    if (!page.isDraftPage()) {
       indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, page.getId());
     }
   }

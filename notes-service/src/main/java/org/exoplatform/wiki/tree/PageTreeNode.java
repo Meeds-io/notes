@@ -46,7 +46,7 @@ public class PageTreeNode extends TreeNode {
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
-    this.hasChild = !wikiService.getChildrenPageOf(page).isEmpty();
+    this.hasChild = page.isDraftPage() ? false : !wikiService.getChildrenPageOf(page).isEmpty();
   }
 
   public Page getPage() {

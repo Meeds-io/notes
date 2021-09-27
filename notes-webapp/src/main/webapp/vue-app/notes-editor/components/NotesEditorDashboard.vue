@@ -17,10 +17,11 @@
               <span class="notesFormTitle ps-2">{{ notesFormTitle }}</span>
             </div>
             <div class="notesFormRightActions pr-7">
+              <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
               <button
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
-                @click="postNotes(false)">
+                @click="postNote(false)">
                 {{ publishButtonText }}
                 <v-icon
                   id="notesPublichAndPost"
@@ -37,7 +38,7 @@
                 offset-y
                 left>
                 <v-list-item
-                  @click.stop="postNotes(true)"
+                  @click.stop="postNote(true)"
                   class="px-2">
                   <v-icon
                     size="19"
@@ -58,7 +59,7 @@
           <div class="formInputGroup notesTitle mx-3">
             <input
               id="notesTitle"
-              v-model="notes.title"
+              v-model="note.title"
               :placeholder="notesTitlePlaceholder"
               type="text"
               class="py-0 px-1 mt-5 mb-0">
@@ -66,7 +67,7 @@
           <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
             <textarea
               id="notesContent"
-              v-model="notes.content"
+              v-model="note.content"
               :placeholder="notesBodyPlaceholder"
               class="notesFormInput"
               name="notesContent">
@@ -97,7 +98,13 @@ export default {
   },
   data() {
     return {
-      notes: {
+      note: {
+        id: '',
+        title: '',
+        content: '',
+        parentPageId: '',
+      },
+      actualNote: {
         id: '',
         title: '',
         content: '',
@@ -115,16 +122,73 @@ export default {
       notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}*`,
       publishAndPost: false,
       spaceId: '',
-      notesFormTitle: '',
+      noteFormTitle: '',
+      postingNote: false,
+      savingDraft: false,
+      initDone: false,
+      initActualNoteDone: false,
+      draftSavingStatus: '',
+      autoSaveDelay: 1000,
+      saveDraft: '',
     };
   },
-  mounted() {
-    this.initCKEditor();
-    const elementNewTop = document.getElementById('notesTop');
-    elementNewTop.classList.add('darkComposerEffect');
-    this.setToolBarEffect();
+  computed: {
+    publishAndPostButtonText() {
+      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
+        return this.$t('notes.button.updateAndPost');
+      } else {
+        return this.$t('notes.button.publishAndPost');
+      }
+    },
+    publishButtonText() {
+      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
+        return this.$t('notes.button.update');
+      } else {
+        return this.$t('notes.button.publish');
+      }
+    },
+    initCompleted() {
+      return this.initDone && (this.initActualNoteDone || !this.noteId);
+    },
+  },
+  watch: {
+    'note.title'() {
+      if (this.note.title !== this.actualNote.title) {
+        this.autoSave();
+      }
+    },
+    'note.content'() {
+      if (this.note.content !== this.actualNote.content) {
+        this.autoSave();
+      }
+    },
   },
   created() {
+    window.addEventListener('beforeunload', () => {
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+        if (currentDraft) {
+          this.removeLocalStorageCurrentDraft();
+          const draftToPersist = JSON.parse(currentDraft);
+          this.persistDraftNote(draftToPersist);
+        }
+      }
+    });
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('appName')) {
+      this.appName = urlParams.get('appName');
+    }
+    if (urlParams.has('noteId')) {
+      this.noteId = urlParams.get('noteId');
+      this.getNote(this.noteId);
+    }
+    if (urlParams.has('parentNoteId')) {
+      this.parentPageId = urlParams.get('parentNoteId');
+      this.spaceId = urlParams.get('spaceId');
+      this.note.parentPageId = this.parentPageId;
+    }
+    this.displayFormTitle();
     $(document).on('mousedown', () => {
       if (this.publishAndPost) {
         window.setTimeout(() => {
@@ -139,30 +203,11 @@ export default {
       this.$refs.noteTablePlugins.open();
     });
     this.$root.$on('updateData', data => {
-      this.notes.content= data;
+      this.note.content= data;
     });
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
     });
-    const queryPath = window.location.search;
-    const urlParams = new URLSearchParams(queryPath);
-    if ( urlParams.has('appName') ){
-      this.appName = urlParams.get('appName');
-    }
-    if ( urlParams.has('noteId') ){
-      this.noteId = urlParams.get('noteId');
-      this.getNotes(this.noteId);
-    } else if (urlParams.has('parentNoteId')){
-      this.parentPageId = urlParams.get('parentNoteId');
-      this.spaceId = urlParams.get('spaceId');
-      this.notes.parentPageId=this.parentPageId;
-    }
-    if (urlParams.has('wikiOwner') && !this.notes.wikiOwner){
-      this.notes.wikiOwner = urlParams.get('wikiOwner');
-    }
-    if (urlParams.has('wikiType') && !this.notes.wikiType){
-      this.notes.wikiType = urlParams.get('wikiType');
-    }
     this.$root.$on('display-treeview-items', () => {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.noteId, 'includePages');
@@ -191,48 +236,90 @@ export default {
         editor.insertHtml(`<a href='${note.noteId}' class='noteLink' target='_blank'>${note.name}</a>`);
       }
     });
-    this.displayFormTitle();
   },
-  computed: {
-    publishAndPostButtonText() {
-      if (this.notes.id) {
-        return this.$t('notes.button.updateAndPost');
-      } else {
-        return this.$t('notes.button.publishAndPost');
-      }
-    },
-    publishButtonText() {
-      if (this.notes.id) {
-        return this.$t('notes.button.update');
-      } else {
-        return this.$t('notes.button.publish');
-      }
-    },
-  }, 
+  mounted() {
+    this.init();
+  },
   methods: {
-    getNotes(id) {
-      return this.$notesService.getNoteById(id).then(data => {
-        this.notes = data || [];
-      });
+    init() {
+      this.initCKEditor();
+      const elementNewTop = document.getElementById('notesTop');
+      elementNewTop.classList.add('darkComposerEffect');
+      this.setToolBarEffect();
+      this.initDone = true;
     },
-    postNotes(toPost){
-      if (this.validateForm()){
-        const notes = {
-          id: this.notes.id,
-          title: this.notes.title,
-          name: this.notes.name,
-          wikiType: this.notes.wikiType,
-          wikiOwner: this.notes.wikiOwner,
-          content: this.notes.content,
-          parentPageId: this.notes.parentPageId,
-          toBePublished: toPost,
-          appName: this.appName,
-        };
+    autoSave() {
+      // No draft saving if init not done or in edit mode for the moment
+      if (!this.initCompleted) {
+        return;
+      }
+      // if the Note is being posted, no need to autosave anymore
+      if (this.postingNote) {
+        return;
+      }
+      clearTimeout(this.saveDraft);
+      this.saveDraft = setTimeout(() => {
+        this.savingDraft = true;
+        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
+        this.$nextTick(() => {
+          this.saveNoteDraft();
+        });
+      }, this.autoSaveDelay);
+    },
+    getNote(id) {
+      return this.$notesService.getNoteById(id).then(data => {
+        if (data) {
+          this.note = data;
+          this.actualNote = {
+            id: this.note.id,
+            name: this.note.name,
+            title: this.note.title,
+            content: this.note.content,
+            author: this.note.author,
+            owner: this.note.owner,
+            breadcrumb: this.note.breadcrumb,
+            toBePublished: this.note.toBePublished,
+          };
+        }
+      }).finally(() => this.initActualNoteDone = true);
+    },
+    postNote(toPublish) {
+      this.postingNote = true;
+      clearTimeout(this.saveDraft);
+      if (this.validateForm()) {
+        let note;
+        if (this.note.draftPage) {
+          note = {
+            id: this.note.targetPageId ? this.note.targetPageId : null,
+            title: this.note.title,
+            name: this.note.name,
+            wikiType: this.note.wikiType,
+            wikiOwner: this.note.wikiOwner,
+            content: this.note.content,
+            parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
+            toBePublished: toPublish,
+            appName: this.appName,
+          };
+        } else {
+          note = {
+            id: this.note.id,
+            title: this.note.title,
+            name: this.note.name,
+            wikiType: this.note.wikiType,
+            wikiOwner: this.note.wikiOwner,
+            content: this.note.content,
+            parentPageId: this.parentPageId,
+            toBePublished: toPublish,
+            appName: this.appName,
+          };
+        }
         let notePath = '';
-        if (this.notes.id){
-          this.$notesService.updateNoteById(notes).then(data => {
-            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
-            window.location.href= notePath;
+        if (note.id) {
+          this.$notesService.updateNoteById(note).then(data => {
+            this.removeLocalStorageCurrentDraft();
+            notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
+            this.draftSavingStatus = '';
+            window.location.href = notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
             this.$root.$emit('show-alert', {
@@ -241,9 +328,11 @@ export default {
             });
           });
         } else {
-          this.$notesService.createNote(notes).then(data => {
-            notePath = this.$notesService.getPathByNoteOwner(data,this.appName).replace(/ /g, '_');
-            window.location.href = notePath;
+          this.$notesService.createNote(note).then(data => {
+            notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
+            // delete draft note
+            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
+            this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.$root.$emit('show-alert', {
@@ -252,13 +341,79 @@ export default {
             });
           });
         }
-      } 
+      }
     },
     openPublishAndPost(event) {
       this.publishAndPost = !this.publishAndPost;
       if (event) {
         event.preventDefault();
         event.stopPropagation();
+      }
+    },
+    saveNoteDraft() {
+      const draftNote = {
+        id: this.note.draftPage ? this.note.id : '',
+        title: this.note.title,
+        content: this.note.content,
+        name: this.note.name,
+        appName: this.appName,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        parentPageId: this.parentPageId,
+      };
+      if (this.note.draftPage && this.note.id) {
+        draftNote.targetPageId = this.note.targetPageId;
+      } else {
+        draftNote.targetPageId = this.note.id ? this.note.id : '';
+      }
+
+      if (this.note.title || this.note.content) {
+        // if draft page not created persist it only the first time else update it in browser's localStorage
+        if (this.note.draftPage && this.note.id) {
+          this.note.parentPageId = this.parentPageId;
+          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
+          this.actualNote = {
+            name: draftNote.name,
+            title: draftNote.title,
+            content: draftNote.content,
+          };
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          }, this.autoSaveDelay/2);
+        } else {
+          this.persistDraftNote(draftNote);
+        }
+      } else {
+        // delete draft
+        this.deleteDraftNote();
+      }
+    },
+    persistDraftNote(draftNote) {
+      if (this.note.title || this.note.content) {
+        this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          this.actualNote = {
+            id: savedDraftNote.id,
+            name: savedDraftNote.name,
+            title: savedDraftNote.title,
+            content: savedDraftNote.content,
+            author: savedDraftNote.author,
+            owner: savedDraftNote.owner,
+          };
+          savedDraftNote.parentPageId = this.parentPageId;
+          this.note = savedDraftNote;
+          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
+        }).then(() => {
+          this.savingDraft = false;
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          }, this.autoSaveDelay/2);
+        }).catch(e => {
+          console.error('Error when creating draft note: ', e);
+          this.$root.$emit('show-alert', {
+            type: 'error',
+            message: this.$t(`notes.message.${e.message}`)
+          });
+        });
       }
     },
     closePluginsDrawer() {
@@ -307,38 +462,37 @@ export default {
           { name: 'links', items: [ 'simpleLink','InsertOptions'] },
         ],
         format_tags: 'p;h1;h2;h3',
-        autoGrow_minHeight: self.notesFormContentHeight,
-        height: self.notesFormContentHeight,
+        autoGrow_minHeight: self.noteFormContentHeight,
+        height: self.noteFormContentHeight,
         bodyClass: 'notesContent',
         dialog_noConfirmCancel: true,
         sharedSpaces: {
           top: 'notesTop'
         },
         on: {
-          instanceReady: function() {
+          instanceReady: function (evt) {
+            self.note.content = evt.editor.getData();
+            self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
 
 
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
               if ( element.getAscendant( 'table', true ) ) {
-                CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
-                  exec: function() {
-                    if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
-                      const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
-                      self.$refs.noteTablePlugins.open(table);
-                    }
-                  }
-                });
                 return {
                   tableProperties: CKEDITOR.TRISTATE_ON
                 };
-              } else {
-                const items = CKEDITOR.instances['notesContent'].contextMenu.items;
-                CKEDITOR.instances['notesContent'].contextMenu.items = $.grep(items, (item) => item.command !== 'tableProperties');
               }
             });
+            CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
+              exec: function() {
+                if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
+                  const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
+                  self.$refs.noteTablePlugins.open(table);
+                }
 
+              }
+            });
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
@@ -351,7 +505,7 @@ export default {
             window.setTimeout(() => self.setFocus(), 50);
           },
           change: function (evt) {
-            self.notes.content = evt.editor.getData();
+            self.note.content = evt.editor.getData();
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
@@ -395,21 +549,20 @@ export default {
       }
     },
     validateForm() {
-      if (!this.notes.title) {
+      if (!this.note.title) {
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.missingTitle')
         });
         return false;
       }
-      if (!isNaN(this.notes.title)) {
+      if (!isNaN(this.note.title)) {
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.numericTitle')
         });
         return false;
-      }
-      else if (this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.notes.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
+      } else if (this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
         this.validateFor=false;
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -428,11 +581,52 @@ export default {
     },
     displayFormTitle: function() {
       if (this.noteId) {
-        this.notesFormTitle = this.$t('notes.edit.editNotes');
+        this.noteFormTitle = this.$t('notes.edit.editNotes');
       } else {
         return this.$spaceService.getSpaceById(this.spaceId).then(space => {
-          this.notesFormTitle = this.$t('notes.composer.createNotes').replace('{0}', space.displayName);
+          this.noteFormTitle = this.$t('notes.composer.createNotes').replace('{0}', space.displayName);
         });
+      }
+    },
+    deleteDraftNote(draftNote, notePath) {
+      if (!draftNote) {
+        draftNote = this.note;
+      }
+      if (this.note.draftPage && this.note.id) {
+        this.removeLocalStorageCurrentDraft();
+        this.$notesService.deleteDraftNote(draftNote).then(() => {
+          this.draftSavingStatus = '';
+          //re-initialize data
+          if (!notePath) {
+            this.note = {
+              id: '',
+              title: '',
+              content: '',
+              parentPageId: this.parentPageId,
+              draftPage: true,
+            };
+            this.actualNote = {
+              id: '',
+              title: '',
+              content: '',
+              parentPageId: this.parentPageId,
+              draftPage: true,
+            };
+          }
+        }).then(() => {
+          this.draftSavingStatus = '';
+          if (notePath) {
+            window.location.href = notePath;
+          }
+        }).catch(e => {
+          console.error('Error when deleting note', e);
+        });
+      }
+    },
+    removeLocalStorageCurrentDraft() {
+      const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+      if (currentDraft) {
+        localStorage.removeItem(`draftNoteId-${this.note.id}`);
       }
     },
   }

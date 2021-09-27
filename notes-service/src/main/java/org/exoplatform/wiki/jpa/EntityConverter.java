@@ -2,8 +2,8 @@ package org.exoplatform.wiki.jpa;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.model.FileInfo;
+import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -15,7 +15,6 @@ import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.IDType;
 
 import java.io.ByteArrayInputStream;
-
 import java.util.*;
 
 /**
@@ -80,6 +79,10 @@ public class EntityConverter {
         page.setWikiId(String.valueOf(wiki.getId()));
         page.setWikiType(wiki.getType());
         page.setWikiOwner(wiki.getOwner());
+      }
+      if (pageEntity.getParentPage() != null) {
+        page.setParentPageId(String.valueOf(pageEntity.getParentPage().getId()));
+        page.setParentPageName(pageEntity.getParentPage().getName());
       }
       page.setTitle(pageEntity.getTitle());
       page.setOwner(pageEntity.getOwner());
@@ -358,8 +361,21 @@ public class EntityConverter {
       if (targetPage != null) {
         draftPage.setTargetPageId(String.valueOf(targetPage.getId()));
         draftPage.setTargetPageRevision(draftPageEntity.getTargetRevision());
-        draftPage.setWikiType(WikiType.USER.toString());
-        draftPage.setWikiOwner(draftPageEntity.getAuthor());
+        
+        WikiEntity wiki = targetPage.getWiki();
+        if (wiki != null) {
+          draftPage.setWikiType(wiki.getType());
+          draftPage.setWikiOwner(wiki.getOwner());
+        }
+      }
+      PageEntity parentPage = draftPageEntity.getParentPage();
+      if (parentPage != null) {
+        draftPage.setParentPageId(String.valueOf(parentPage.getId()));
+        if (StringUtils.isEmpty(draftPage.getWikiType()) || StringUtils.isEmpty(draftPage.getWikiOwner())) {
+          WikiEntity wiki = parentPage.getWiki();
+          draftPage.setWikiType(wiki.getType());
+          draftPage.setOwner(wiki.getOwner());
+        }
       }
     }
     return draftPage;
@@ -369,6 +385,9 @@ public class EntityConverter {
     DraftPageEntity draftPageEntity = null;
     if (draftPage != null) {
       draftPageEntity = new DraftPageEntity();
+      if (StringUtils.isNotEmpty(draftPage.getId())) {
+        draftPageEntity.setId(Long.parseLong(draftPage.getId()));
+      }
       draftPageEntity.setName(draftPage.getName());
       draftPageEntity.setTitle(draftPage.getTitle());
       draftPageEntity.setAuthor(draftPage.getAuthor());
@@ -380,6 +399,10 @@ public class EntityConverter {
       String targetPageId = draftPage.getTargetPageId();
       if (StringUtils.isNotEmpty(targetPageId)) {
         draftPageEntity.setTargetPage(pageDAO.find(Long.valueOf(targetPageId)));
+      }
+      String parentPageId = draftPage.getParentPageId();
+      if (StringUtils.isNotEmpty(parentPageId)) {
+        draftPageEntity.setParentPage(pageDAO.find(Long.valueOf(parentPageId)));
       }
       draftPageEntity.setTargetRevision(draftPage.getTargetPageRevision());
     }

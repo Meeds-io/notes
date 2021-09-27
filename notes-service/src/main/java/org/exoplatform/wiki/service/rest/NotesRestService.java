@@ -16,18 +16,11 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import java.net.URLDecoder;
-import java.util.*;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-
+import io.swagger.annotations.*;
+import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
@@ -37,8 +30,8 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.PermissionType;
 import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.NoteService;
@@ -53,8 +46,14 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 
-import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.net.URLDecoder;
+import java.util.*;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -238,6 +237,78 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  @POST
+  @Path("saveDraft")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Add or update a new note draft page", httpMethod = "POST", response = Response.class, notes = "This adds a new note draft page or updates an existing one.")
+  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
+          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+          @ApiResponse(code = 404, message = "Resource not found")})
+  public Response saveDraft(@ApiParam(value = "Note draft page object to be created", required = true) DraftPage draftNoteToSave) {
+    if (draftNoteToSave == null) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (NumberUtils.isNumber(draftNoteToSave.getTitle())) {
+      log.warn("Draft Note's title should not be number");
+      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Draft Note's title should not be number}").build();
+    }
+
+    String noteBookType = draftNoteToSave.getWikiType();
+    String noteBookOwner = draftNoteToSave.getWikiOwner();
+    Page parentNote;
+    Page targetNote = null;
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      if (StringUtils.isNoneEmpty(draftNoteToSave.getParentPageId())) {
+        parentNote = noteService.getNoteById(draftNoteToSave.getParentPageId(), identity);
+        if (parentNote != null) {
+          noteBookType = parentNote.getWikiType();
+          noteBookOwner = parentNote.getWikiOwner();
+          draftNoteToSave.setParentPageName(parentNote.getName());
+        } else {
+          return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+      }
+      if (StringUtils.isEmpty(noteBookType) || StringUtils.isEmpty(noteBookOwner)) {
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      Wiki noteBook = noteBookService.getWikiByTypeAndOwner(noteBookType, noteBookOwner);
+      if (noteBook == null) {
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      if (StringUtils.isNoneEmpty(draftNoteToSave.getTargetPageId())) {
+        targetNote = noteService.getNoteById(draftNoteToSave.getTargetPageId());
+        if (targetNote == null) {
+          return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+      }
+
+      String syntaxId = noteBookService.getDefaultWikiSyntaxId();
+      String currentUser = identity.getUserId();
+      draftNoteToSave.setAuthor(currentUser);
+      draftNoteToSave.setSyntax(syntaxId);
+
+      if (StringUtils.isNoneEmpty(draftNoteToSave.getId())) {
+        if (targetNote != null) {
+          draftNoteToSave = noteService.updateDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser);
+        } else {
+          draftNoteToSave = noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+        }
+      } else {
+        if (targetNote != null) {
+          draftNoteToSave = noteService.createDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser);
+        } else {
+          draftNoteToSave = noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+        }
+      }
+
+      return Response.ok(draftNoteToSave, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (Exception ex) {
+      log.warn("Failed to perform save noteBook draft note {}:{}:{}", noteBookType, noteBookOwner, draftNoteToSave.getId(), ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
   @PUT
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @RolesAllowed("users")
@@ -334,6 +405,7 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
+      String currentUser = identity.getUserId();
       Page note_ = noteService.getNoteById(noteId, identity);
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -346,8 +418,8 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
+      String newNoteName = TitleResolver.getId(note.getTitle(), false);
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
-        String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
@@ -356,13 +428,8 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteService.removeDraftOfNote(noteParams);
-        }
+        noteService.createVersionOfNote(note_, currentUser);
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
@@ -370,15 +437,15 @@ public class NotesRestService implements ResourceContainer {
         }
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteService.removeDraftOfNote(noteParams);
-        }
+        noteService.createVersionOfNote(note_, currentUser);
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, currentUser);
+      }
+      if (!"__anonim".equals(currentUser)) {
+        WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
+        noteService.removeDraftOfNote(noteParams);
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -434,11 +501,39 @@ public class NotesRestService implements ResourceContainer {
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
+      // remove draft note
+      if (!"__anonim".equals(identity.getUserId())) {
+        WikiPageParams noteParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteName);
+        noteService.removeDraftOfNote(noteParams);
+      }
       noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
       log.error("User does not have delete permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (Exception ex) {
+      log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
+  @DELETE
+  @Path("/draftNote/{noteId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
+  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
+          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+          @ApiResponse(code = 404, message = "Resource not found")})
+  public Response deleteDraftNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+
+    try {
+      DraftPage draftNote = noteService.getDraftNoteById(noteId);
+      String draftNoteName = draftNote.getName();
+      if (draftNote == null) {
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      noteBookService.removeDraft(draftNoteName);
+      return Response.ok().build();
     } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();

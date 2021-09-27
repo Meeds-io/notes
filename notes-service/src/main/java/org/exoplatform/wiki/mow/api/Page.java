@@ -17,13 +17,14 @@
 package org.exoplatform.wiki.mow.api;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.exoplatform.wiki.service.BreadcrumbData;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 @Data
+@NoArgsConstructor
 public class Page {
 
   private String id;
@@ -66,13 +67,7 @@ public class Page {
 
   private boolean isMinorEdit;
 
-  public boolean isToBePublished() {
-    return toBePublished;
-  }
-
-  public void setToBePublished(boolean toBePublished) {
-    this.toBePublished = toBePublished;
-  }
+  private boolean isDraftPage = isDraftPage();
 
   private boolean toBePublished;
 
@@ -82,9 +77,8 @@ public class Page {
 
   private boolean canView;
 
-
-
-  public Page() {
+  public boolean isDraftPage() {
+    return false;
   }
 
   public Page(String name) {
