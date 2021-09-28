@@ -457,6 +457,44 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  @PUT
+  @Path("/restore/{noteVersion}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Restore a specific note version by version id", httpMethod = "PUT", response = Response.class, notes = "This restore the note if the authenticated user has UPDATE permissions.")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+    @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+    @ApiResponse(code = 404, message = "Resource not found") })
+  public Response RestoreNoteVersion(@ApiParam(value = "Version Number", required = true) @PathParam("noteVersion") String noteVersion,
+                                 @ApiParam(value = "note object to be updated", required = true) Page note) {
+    if (note == null) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    if (NumberUtils.isNumber(note.getTitle())) {
+      log.warn("Note's title should not be number");
+      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
+    }
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      String currentUser = identity.getUserId();
+      Page note_ = noteService.getNoteById(note.getId(), identity);
+      if (note_ == null) {
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      if (!note_.isCanManage()) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+      noteService.restoreVersionOfNote(noteVersion,note,currentUser);
+      return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (IllegalAccessException e) {
+      log.error("User does not have permissions to restore the note {} version", note.getId(), e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (Exception ex) {
+      log.error("Failed to perform restore note version {}", noteVersion, ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
   @DELETE
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @RolesAllowed("users")

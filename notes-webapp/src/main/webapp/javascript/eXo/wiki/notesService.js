@@ -143,6 +143,27 @@ export function updateNoteById(note) {
   });
 }
 
+export function restoreNoteVersion(note,version) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/restore/${version}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(note),
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      if (resp.status===409){
+        throw new Error('error.duplicate.title', resp);
+      } else {
+        throw new Error('error', resp);
+      }
+    } else {
+      return resp.json();
+    }
+  });
+}
+
 export function getPathByNoteOwner(note,noteAppName) {
   if (!noteAppName){
     noteAppName = 'notes';

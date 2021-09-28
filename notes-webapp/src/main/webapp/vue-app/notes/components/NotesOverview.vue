@@ -111,7 +111,8 @@
       ref="notesBreadcrumb" />
     <note-history-drawer
       ref="noteVersionsHistoryDrawer"
-      @open-version="displayVersion($event)" />
+      @open-version="displayVersion($event)"
+      @restore-version="restoreVersion($event)" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -405,6 +406,24 @@ export default {
     },
     displayVersion(version) {
       this.actualVersion = version;
+    },
+    restoreVersion(version) {
+      const note = {
+        id: this.note.id,
+        title: this.note.title,
+        content: version.content,
+        updatedDate: version.updatedDate,
+        owner: version.author
+      };
+      this.$notesService.restoreNoteVersion(note,version.versionNumber)
+        .catch(e => {
+          console.error('Error when restore note version', e);
+        })
+        .finally(() => {
+          this.getNoteVersionByNoteId(this.note.id);
+          this.displayVersion(this.noteVersions[0]);
+          this.$root.$emit('refresh-versions-history', this.noteVersions );
+        });
     }
   }
 };
