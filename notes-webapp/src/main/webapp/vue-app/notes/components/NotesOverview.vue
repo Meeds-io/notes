@@ -282,8 +282,8 @@ export default {
   },
   methods: {
 
-    addNotes(){
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.notes.id}&appName=${this.appName}&wikiType=${this.notes.wikiType}&wikiOwner=${this.notes.wikiOwner}`,'_blank');
+    addNote(){
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?parentNoteId=${this.note.id}&appName=${this.appName}&wikiType=${this.note.wikiType}&wikiOwner=${this.note.wikiOwner}`,'_blank');
     },
     editNote(){
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&appName=${this.appName}`,'_blank');
