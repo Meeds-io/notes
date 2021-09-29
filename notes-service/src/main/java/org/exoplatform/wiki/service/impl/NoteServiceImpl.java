@@ -651,6 +651,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTitle(draftPage.getTitle());
     newDraftPage.setTargetPageId(draftPage.getTargetPageId());
     newDraftPage.setTargetPageRevision("1");
+    newDraftPage.setParentPageId(draftPage.getParentPageId());
     newDraftPage.setContent(draftPage.getContent());
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));

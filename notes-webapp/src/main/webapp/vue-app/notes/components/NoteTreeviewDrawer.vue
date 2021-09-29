@@ -62,7 +62,21 @@
             </div>
           </v-list-item>
         </v-layout>
-        <v-layout column>
+        <v-col column>
+          <v-row class="justify-end">
+            <v-col class="filter" cols="4">
+              <div class="btn-group">
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                  {{ action }}
+                  <i class="uiIconMiniArrowDown uiIconLightGray"></i><span></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a href="#" @click="action = operationTypes[0]"> {{ operationTypes[0] }} </a></li>
+                  <li><a href="#" @click="action = operationTypes[1]"> {{ operationTypes[1] }} </a></li>
+                </ul>
+              </div>
+            </v-col>
+          </v-row>
           <template v-if="home" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
@@ -79,6 +93,9 @@
               :open="openedItems"
               :active="active"
               :load-children="fetchNoteChildren"
+              :search="action"
+              :filter="filterNotes"
+              :open-all="openAll"
               class="treeview-item"
               item-key="id"
               hoverable
@@ -91,7 +108,7 @@
               </template>
             </v-treeview>
           </template>
-        </v-layout>
+        </v-col>
       </template>
       <template v-if="movePage" slot="footer">
         <div class="d-flex">
@@ -131,6 +148,8 @@ export default {
     render: true,
     closeAll: true,
     drawer: false,
+    action: '',
+    operationTypes: [],
   }),
   computed: {
     items() {
@@ -153,7 +172,28 @@ export default {
     },
     reload () {
       return this.render;
-    }
+    },
+    filterNotes() {
+      return (item, search, textKey) => {
+        console.log('### item: ', item);
+        console.log('### item is draftNote: ', item.draftNote);
+        console.log('### typeof item is draftNote: ', typeof item.draftNote);
+        console.log('### search: ', search);
+        console.log('### textKey: ', textKey);
+        if (this.action === this.$t('notes.filter.label.drafts')) {
+          if (item.draftNote) {
+            this.activeItem.push(item.id);
+          }
+        } 
+        // else {
+        //   this.activeItem = [];
+        // }
+        return true;
+      };
+    },
+    openAll() {
+      return this.action === this.$t('notes.filter.label.drafts');
+    },
   },
   created() {
     this.$root.$on('refresh-treeview-items', (noteId)=> {
@@ -165,6 +205,13 @@ export default {
     this.$root.$on('display-treeview-items', () => {
       this.closeAll = true;
     });
+  },
+  mounted() {
+    this.action = this.$t('notes.filter.label.all.notes');
+    this.operationTypes = [
+      this.$t('notes.filter.label.all.notes'),
+      this.$t('notes.filter.label.drafts'),
+    ];
   },
   methods: {
     open(noteId, source, includeDisplay) {
@@ -195,15 +242,18 @@ export default {
       this.closeAll = false;
     },
     fetchNoteChildren(childItem) {
-      if ( !childItem.hasChild ) 
-      {return;}
-      return this.$notesService.getNoteTree(this.noteBookType,this.noteBookOwnerTree , childItem.id,'CHILDREN').then(data => {
+      if (!childItem.hasChild) {
+        return;
+      }
+      return this.$notesService.getNoteTree(this.noteBookType, this.noteBookOwnerTree, childItem.id, 'CHILDREN').then(data => {
+        console.log('###fetchNoteChildren data: ', data);
         if (data && data.jsonList) {
           const noteChildTree = data.jsonList;
           const temporaryNoteChildren = [];
           noteChildTree.forEach(noteChildren => {
-            this.makeChildren(noteChildren,temporaryNoteChildren);
+            this.makeChildren(noteChildren, temporaryNoteChildren);
           });
+          console.log('##### temporaryNoteChildren: ', temporaryNoteChildren);
           childItem.children.push(...temporaryNoteChildren);
         }
       });
@@ -266,6 +316,7 @@ export default {
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
       this.$notesService.getNoteTree(noteType, noteOwner , noteName,'ALL').then(data => {
+        console.log('###retrieveNoteTree data: ', data);
         this.noteTree = data && data.jsonList || [];
         const noteChildren = this.makeNoteChildren(this.noteTree);
         const openedTreeviewItem = this.getOpenedTreeviewItems(this.note.breadcrumb);

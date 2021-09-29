@@ -48,6 +48,10 @@ public class DraftPageEntity extends BasePageEntity {
   @JoinColumn(name = "TARGET_PAGE_ID")
   private PageEntity targetPage;
 
+  @ManyToOne
+  @JoinColumn(name = "PARENT_PAGE_ID")
+  private PageEntity parentPage;
+
   @Column(name = "TARGET_PAGE_REVISION")
   private String targetRevision;
 
@@ -63,6 +67,14 @@ public class DraftPageEntity extends BasePageEntity {
 
   public void setTargetPage(PageEntity targetPage) {
     this.targetPage = targetPage;
+  }
+
+  public PageEntity getParentPage() {
+    return parentPage;
+  }
+
+  public void setParentPage(PageEntity parentPage) {
+    this.parentPage = parentPage;
   }
 
   public String getTargetRevision() {

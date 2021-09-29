@@ -682,4 +682,13 @@
 
   </changeSet>
 
+
+  <changeSet id="1.0.0-58" author="wiki">
+    <addColumn tableName="WIKI_DRAFT_PAGES">
+      <column name="PARENT_PAGE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_PARENT_PAGE_ID" references="WIKI_PAGES(PAGE_ID)" nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
