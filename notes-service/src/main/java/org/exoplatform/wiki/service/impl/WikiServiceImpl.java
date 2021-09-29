@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -525,8 +524,8 @@ public class WikiServiceImpl implements WikiService, Startable {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page) throws WikiException {
-    return dataStorage.getChildrenPageOf(page);
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException {
+    return dataStorage.getChildrenPageOf(page, withDrafts);
   }
 
   @Override
@@ -549,7 +548,7 @@ public class WikiServiceImpl implements WikiService, Startable {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenPageOf(tempPage);
+          List<Page> childrenPages = getChildrenPageOf(tempPage, false);
           for(Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -732,7 +731,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenPageOf(currentPage);
+      List<Page> childrenPages = getChildrenPageOf(currentPage, false);
       for (Page child : childrenPages) {
         queue.add(child);
       }
@@ -809,7 +808,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenPages = getChildrenPageOf(parentPage);
+    List<Page> childrenPages = getChildrenPageOf(parentPage, false);
     for (Page page : childrenPages) {
       getDuplicatePages(page, targetWiki, resultList);
     }

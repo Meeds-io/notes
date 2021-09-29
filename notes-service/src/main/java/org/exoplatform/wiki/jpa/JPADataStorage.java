@@ -274,7 +274,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page) throws WikiException {
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     if (pageEntity == null) {
       throw new WikiException("Cannot get children of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -288,14 +288,16 @@ public class JPADataStorage implements DataStorage {
         childrenPages.add(convertPageEntityToPage(childPageEntity));
       }
     }
-    List<DraftPageEntity> draftPageEntities;
-    draftPageEntities = draftPageDAO.findDraftPagesByUserAndParentPage(ConversationState.getCurrent().getIdentity().getUserId(), pageEntity.getId());
+    
+    if (withDrafts) {
+      List<DraftPageEntity> draftPageEntities;
+      draftPageEntities = draftPageDAO.findDraftPagesByUserAndParentPage(ConversationState.getCurrent().getIdentity().getUserId(), pageEntity.getId());
 
-    if (!draftPageEntities.isEmpty()) {
-      for (DraftPageEntity draftPageEntity : draftPageEntities) {
-        childrenPages.add(convertDraftPageEntityToDraftPage(draftPageEntity));
+      if (!draftPageEntities.isEmpty()) {
+        for (DraftPageEntity draftPageEntity : draftPageEntities) {
+          childrenPages.add(convertDraftPageEntityToDraftPage(draftPageEntity));
+        }
       }
-
     }
 
     return childrenPages;

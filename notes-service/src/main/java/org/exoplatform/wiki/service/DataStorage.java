@@ -48,7 +48,15 @@ public interface DataStorage {
 
   public Page getParentPageOf(Page page) throws WikiException;
 
-  public List<Page> getChildrenPageOf(Page page) throws WikiException;
+  /**
+   * Get children notes and draft notes of page
+   * 
+   * @param page the target page to retrieve its children
+   * @param withDrafts if set to true returns the children notes and draft notes
+   * @return children notes of page
+   * @throws WikiException
+   */
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException;
 
   public void createTemplatePage(Wiki wiki, Template template) throws WikiException;
 

@@ -253,9 +253,9 @@ export default {
     }
   },
   created() {
-    this.$root.$on('open-note-by-id', noteId => {
-      this.noteId = noteId;
-      this.getNoteByName(noteId,'tree');
+    this.$root.$on('open-note-by-name', noteName => {
+      this.noteId = noteName;
+      this.getNoteByName(noteName,'tree');
     });
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();

@@ -249,7 +249,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createPage(wiki, wiki.getWikiHome(), parentPage);
     storage.createPage(wiki, parentPage, page1);
     storage.createPage(wiki, parentPage, page2);
-    List<Page> childrenPages = storage.getChildrenPageOf(parentPage);
+    List<Page> childrenPages = storage.getChildrenPageOf(parentPage, true);
 
     // Then
     assertEquals(4, pageDAO.findAll().size());
@@ -352,20 +352,20 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createPage(wiki1, page1, page11);
     storage.createPage(wiki1, wiki1.getWikiHome(), page2);
     assertEquals(5, pageDAO.findAll().size());
-    assertEquals(2, storage.getChildrenPageOf(wiki1.getWikiHome()).size());
+    assertEquals(2, storage.getChildrenPageOf(wiki1.getWikiHome(), true).size());
     storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), page1.getName()), new WikiPageParams(wiki2.getType(),
             wiki2.getOwner(),
             wiki2.getWikiHome().getName()));
 
     // Then
     assertEquals(5, pageDAO.findAll().size());
-    assertEquals(1, storage.getChildrenPageOf(wiki1.getWikiHome()).size());
-    List<Page> wiki2HomeChildrenPages = storage.getChildrenPageOf(wiki2.getWikiHome());
+    assertEquals(1, storage.getChildrenPageOf(wiki1.getWikiHome(), true).size());
+    List<Page> wiki2HomeChildrenPages = storage.getChildrenPageOf(wiki2.getWikiHome(), true);
     assertEquals(1, wiki2HomeChildrenPages.size());
     Page movedPage1 = wiki2HomeChildrenPages.get(0);
     assertEquals("page1", movedPage1.getName());
     assertEquals("Page 1", movedPage1.getTitle());
-    assertEquals(1, storage.getChildrenPageOf(movedPage1).size());
+    assertEquals(1, storage.getChildrenPageOf(movedPage1, true).size());
     Page fetchedPage11 = storage.getPageOfWikiByName(PortalConfig.PORTAL_TYPE, "wiki2", "page11");
     assertNotNull(fetchedPage11);
     assertEquals("page11", fetchedPage11.getName());

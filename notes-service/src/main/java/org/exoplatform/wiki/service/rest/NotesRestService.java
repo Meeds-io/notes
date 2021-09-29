@@ -54,6 +54,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -674,7 +675,7 @@ public class NotesRestService implements ResourceContainer {
 
       context.put(TreeNode.SHOW_EXCERPT, showExcerpt);
       if (type.equalsIgnoreCase(TREETYPE.ALL.toString())) {
-        Stack<WikiPageParams> stk = Utils.getStackParams(note);
+        Deque<WikiPageParams> stk = Utils.getStackParams(note);
         context.put(TreeNode.STACK_PARAMS, stk);
         responseData = getJsonTree(noteParam, context);
       } else if (type.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
@@ -687,6 +688,131 @@ public class NotesRestService implements ResourceContainer {
 
       encodeWikiTree(responseData, request.getLocale());
       return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}", path, e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
+      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
+    }
+  }
+
+  @GET
+  @Path("/tree/full")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get node's tree", httpMethod = "GET", response = Response.class, notes = "Display the current tree of a noteBook based on is path")
+  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
+          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+          @ApiResponse(code = 404, message = "Resource not found")})
+  public Response getFullTreeData(@ApiParam(value = "Note path", required = true) @QueryParam(TreeNode.PATH) String path,
+                                  @ApiParam(value = "With draft notes", required = true) @QueryParam("withDrafts") Boolean withDrafts) {
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      List<JsonNodeData> responseData;
+      HashMap<String, Object> context = new HashMap<>();
+      context.put(TreeNode.WITH_DRAFTS, withDrafts);
+
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
+
+      // Put select note to context
+      path = URLDecoder.decode(path, "utf-8");
+      context.put(TreeNode.PATH, path);
+      WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
+      Page note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
+      if (note == null) {
+        log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
+                ConversationState.getCurrent().getIdentity().getUserId(),
+                path);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
+        if (note == null) {
+          ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
+                  request.getLocale());
+          String errorMessage = "";
+          if (resourceBundle != null) {
+            errorMessage = resourceBundle.getString("UIWikiMovePageForm.msg.no-permission-at-wiki-destination");
+          }
+          return Response.serverError().entity("{ \"message\": \"" + errorMessage + "\"}").cacheControl(cc).build();
+        }
+      }
+
+      context.put(TreeNode.SELECTED_PAGE, note);
+      context.put(TreeNode.CAN_EDIT, null);
+      context.put(TreeNode.SHOW_EXCERPT, null)
+      ;
+      Deque<WikiPageParams> stk = Utils.getStackParams(note);
+      context.put(TreeNode.STACK_PARAMS, stk);
+
+      List<JsonNodeData> finalTree = new ArrayList<>();
+      responseData = getJsonTree(noteParam, context);
+      JsonNodeData rootNodeData = responseData.get(0);
+      finalTree.add(rootNodeData);
+      context.put(TreeNode.DEPTH, "1");
+
+      List<JsonNodeData> children = new ArrayList<>(rootNodeData.getChildren());
+      List<JsonNodeData> parents = new ArrayList<>();
+
+      do {
+        parents.addAll(children);
+        children.clear();
+        for (JsonNodeData parent : parents) {
+          if (parent.isHasChild()) {
+            // Put select note to context
+            path = URLDecoder.decode(parent.getPath(), "utf-8");
+            context.put(TreeNode.PATH, path);
+            noteParam = TreeUtils.getPageParamsFromPath(path);
+            Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
+            context.put(TreeNode.SELECTED_PAGE, parentNote);
+            List<JsonNodeData> childNotes = getJsonDescendants(noteParam, context);
+
+            children.addAll(childNotes);
+            parent.setChildren(childNotes);
+          }
+          finalTree.add(parent);
+        }
+        parents.clear();
+
+      } while (!children.isEmpty());
+
+      // from the bottom
+      List<JsonNodeData> bottomChildren = withDrafts ? finalTree.stream().filter(JsonNodeData::isDraftPage).collect(Collectors.toList()) :
+              finalTree.stream().filter(jsonNodeData -> !jsonNodeData.isHasChild()).collect(Collectors.toList());
+
+      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
+        for (JsonNodeData bottomChild : bottomChildren) {
+          String parentPageId = bottomChild.getParentPageId();
+          Optional<JsonNodeData> parentOptional = finalTree.stream().filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(), parentPageId)).findFirst();
+          if (parentOptional.isPresent()) {
+            JsonNodeData parent = parentOptional.get();
+            children = parent.getChildren();
+            children.remove(bottomChild);
+            children.add(bottomChild);
+            if (withDrafts) {
+              children = children.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || !jsonNodeData.getChildren().isEmpty()).collect(Collectors.toList());
+            }
+            parent.setChildren(children);
+
+            // update final tree
+            if (finalTree.contains(parent)) {
+              int index = finalTree.indexOf(parent);
+              finalTree.set(index, parent);
+            }
+            if (parents.contains(parent)) {
+              int index = parents.indexOf(parent);
+              parents.set(index, parent);
+            } else {
+              parents.add(parent);
+            }
+          }
+        }
+        bottomChildren.clear();
+        bottomChildren.addAll(parents);
+        parents.clear();
+      }
+
+      encodeWikiTree(bottomChildren, request.getLocale());
+      return Response.ok(new BeanToJsons(finalTree, bottomChildren), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -722,8 +848,8 @@ public class NotesRestService implements ResourceContainer {
       if (StringUtils.isBlank(data.getName())) {
         data.setName(untitledLabel);
       }
-      if (CollectionUtils.isNotEmpty(data.children)) {
-        encodeWikiTree(data.children, locale);
+      if (CollectionUtils.isNotEmpty(data.getChildren())) {
+        encodeWikiTree(data.getChildren(), locale);
       }
     }
   }

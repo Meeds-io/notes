@@ -16,16 +16,16 @@
  */
 package org.exoplatform.wiki.tree;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Stack;
-
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.utils.Utils;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
 
 
 public class TreeNode { 
@@ -47,6 +47,8 @@ public class TreeNode {
   final static public String STACK_PARAMS    = "stackParams";
   
   final static public String PATH            = "path";
+  
+  final static public String WITH_DRAFTS            = "withDrafts";
   
   public static final String SELECTED_PAGE   = "selectedPage";
 
@@ -208,11 +210,11 @@ public class TreeNode {
   }
   
   private void pushChildren(HashMap<String, Object> context) throws Exception {
-    Stack<WikiPageParams> paramsStk = (Stack<WikiPageParams>) context.get(STACK_PARAMS);
+    Deque<WikiPageParams> paramsStk = (Deque<WikiPageParams>) context.get(STACK_PARAMS);
     if (paramsStk == null) {
       pushChild(context);
     } else {
-      if (paramsStk.empty()) {
+      if (paramsStk.isEmpty()) {
         this.isSelected = true;
       } else {
         WikiPageParams params = new WikiPageParams();

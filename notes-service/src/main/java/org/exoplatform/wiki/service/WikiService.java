@@ -222,10 +222,11 @@ public interface WikiService {
   /**
    * Get all the children pages of a wiki page
    * @param page Wiki page.
+   * @param withDrafts if set to true returns the children notes and draft notes
    * @return The list of children pages
    * @throws WikiException if an error occured
    */
-  public List<Page> getChildrenPageOf(Page page) throws WikiException;
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException;
 
   /**
    * Gets a Wiki template.
