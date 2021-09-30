@@ -16,8 +16,8 @@
             v-model="model">
             <v-slide-y-transition group>
               <v-list-item
-                v-for="version in noteVersions"
-                :key="version"
+                v-for="(version,index) in noteVersionsArray"
+                :key="index"
                 class="history-line pa-2 mb-2 border-color border-radius d-block">
                 <div class="author-date-wrapper d-flex justify-space-between ">
                   <div class="version-author">
@@ -33,7 +33,7 @@
                 </div>
                 <div class="description-restore-wrapper d-flex justify-space-between pt-2">
                   <div class="note-version-description"></div>
-                  <div class="note-version-restore">
+                  <div v-if="index > 0" class="note-version-restore">
                     <v-icon
                       size="22"
                       class="primary--text clickable pa-0"
@@ -46,6 +46,16 @@
             </v-slide-y-transition>
           </v-list-item-group>
         </v-list>
+      </template>
+      <template v-if="hasMore" slot="footer">
+        <div class="d-flex mx-4">
+          <v-btn
+            class="primary--text mx-auto"
+            @click="loadMore"
+            text>
+            {{ $t('notes.button.loadMore') }}
+          </v-btn>
+        </div>
       </template>
     </exo-drawer>
   </div>
@@ -62,11 +72,18 @@ export default {
       minute: '2-digit'
     },
     model: 0,
+    pageSize: Math.round((window.innerHeight-79)/80)
   }),
   computed: {
     noteVersionsArray() {
-      return this.noteVersions;
-    }
+      return this.noteVersions.slice(0, this.pageSize);
+    },
+    allNoteVersionsCount() {
+      return this.noteVersions.length;
+    },
+    hasMore() {
+      return this.allNoteVersionsCount > this.pageSize;
+    },
   },
   created() {
     this.$root.$on('refresh-versions-history', (noteVersions) => {
@@ -77,6 +94,9 @@ export default {
     open(noteVersions) {
       this.noteVersions = noteVersions;
       this.$refs.noteVersionsDrawer.open();
+    },
+    loadMore(){
+      this.pageSize += this.pageSize;
     },
   }
 };
