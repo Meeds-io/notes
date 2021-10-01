@@ -278,7 +278,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     if (pageEntity == null) {
       throw new WikiException("Cannot get children of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-          + page.getName() + " because page does not exist.");
+              + page.getName() + " because page does not exist.");
     }
 
     List<Page> childrenPages = new ArrayList<>();
@@ -288,13 +288,9 @@ public class JPADataStorage implements DataStorage {
         childrenPages.add(convertPageEntityToPage(childPageEntity));
       }
     }
-    boolean isRootPage = pageEntity.getParentPage() == null;
     List<DraftPageEntity> draftPageEntities;
-    if (isRootPage) {
-      draftPageEntities = draftPageDAO.findRootDraftPagesByUser(ConversationState.getCurrent().getIdentity().getUserId());
-    } else {
-      draftPageEntities = draftPageDAO.findDraftPagesByUserAndTargetPage(page.getAuthor(), pageEntity.getId());
-    }
+    draftPageEntities = draftPageDAO.findDraftPagesByUserAndParentPage(ConversationState.getCurrent().getIdentity().getUserId(), pageEntity.getId());
+
     if (!draftPageEntities.isEmpty()) {
       for (DraftPageEntity draftPageEntity : draftPageEntities) {
         childrenPages.add(convertDraftPageEntityToDraftPage(draftPageEntity));
@@ -740,11 +736,6 @@ public class JPADataStorage implements DataStorage {
       }
     }
     return draftPages;
-  }
-
-  @Override
-  public List<DraftPageEntity> getDraftPagesByUserAndTargetPage(String username, Long targetPageId) {
-    return draftPageDAO.findDraftPagesByUserAndTargetPage(username, targetPageId);
   }
 
   @Override

@@ -170,7 +170,6 @@ export default {
         if (currentDraft) {
           this.removeLocalStorageCurrentDraft();
           const draftToPersist = JSON.parse(currentDraft);
-          draftToPersist.newPage = false;
           this.persistDraftNote(draftToPersist);
         }
       }
@@ -297,7 +296,7 @@ export default {
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
             content: this.note.content,
-            parentPageId: this.parentPageId,
+            parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
           };
@@ -363,11 +362,9 @@ export default {
         parentPageId: this.parentPageId,
       };
       if (this.note.draftPage && this.note.id) {
-        draftNote.newPage = false;
         draftNote.targetPageId = this.note.targetPageId;
       } else {
         draftNote.targetPageId = this.note.id ? this.note.id : '';
-        draftNote.newPage = true;
       }
 
       if (this.note.title || this.note.content) {
@@ -600,20 +597,22 @@ export default {
         this.$notesService.deleteDraftNote(draftNote).then(() => {
           this.draftSavingStatus = '';
           //re-initialize data
-          this.note = {
-            id: '',
-            title: '',
-            content: '',
-            parentPageId: this.parentPageId,
-            draftPage: true,
-          };
-          this.actualNote = {
-            id: '',
-            title: '',
-            content: '',
-            parentPageId: this.parentPageId,
-            draftPage: true,
-          };
+          if (!notePath) {
+            this.note = {
+              id: '',
+              title: '',
+              content: '',
+              parentPageId: this.parentPageId,
+              draftPage: true,
+            };
+            this.actualNote = {
+              id: '',
+              title: '',
+              content: '',
+              parentPageId: this.parentPageId,
+              draftPage: true,
+            };
+          }
         }).then(() => {
           this.draftSavingStatus = '';
           if (notePath) {
