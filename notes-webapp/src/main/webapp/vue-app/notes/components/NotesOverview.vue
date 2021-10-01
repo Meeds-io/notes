@@ -25,7 +25,6 @@
                 </template>
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
-
               <v-tooltip bottom v-if="note.canManage && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
                   <v-icon
@@ -69,7 +68,7 @@
             <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="$refs.noteVersionsHistoryDrawer.open(noteVersions)">V{{ lastNoteVersion }}</span>
+            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="$refs.noteVersionsHistoryDrawer.open(noteVersions, note.canManage)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -402,6 +401,8 @@ export default {
     getNoteVersionByNoteId(noteId) {
       return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
         this.noteVersions = data && data.reverse() || [];
+        this.displayVersion(this.noteVersions[0]);
+        this.$root.$emit('refresh-versions-history', this.noteVersions );
       });
     },
     displayVersion(version) {
@@ -421,8 +422,6 @@ export default {
         })
         .finally(() => {
           this.getNoteVersionByNoteId(this.note.id);
-          this.displayVersion(this.noteVersions[0]);
-          this.$root.$emit('refresh-versions-history', this.noteVersions );
         });
     }
   }

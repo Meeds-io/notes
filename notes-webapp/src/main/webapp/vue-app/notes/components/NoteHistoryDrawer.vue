@@ -33,7 +33,7 @@
                 </div>
                 <div class="description-restore-wrapper d-flex justify-space-between pt-2">
                   <div class="note-version-description"></div>
-                  <div v-if="index > 0" class="note-version-restore">
+                  <div v-if="index > 0 && canManage" class="note-version-restore">
                     <v-icon
                       size="22"
                       class="primary--text clickable pa-0"
@@ -72,7 +72,8 @@ export default {
       minute: '2-digit'
     },
     model: 0,
-    pageSize: Math.round((window.innerHeight-79)/80)
+    pageSize: Math.round((window.innerHeight-79)/80),
+    canManage: false
   }),
   computed: {
     noteVersionsArray() {
@@ -91,8 +92,9 @@ export default {
     });
   },
   methods: {
-    open(noteVersions) {
+    open(noteVersions,canManage) {
       this.noteVersions = noteVersions;
+      this.canManage = canManage;
       this.$refs.noteVersionsDrawer.open();
     },
     loadMore(){
