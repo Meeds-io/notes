@@ -185,12 +185,12 @@ public class TreeNode {
     return true;
   } 
   
-  public void pushDescendants(HashMap<String, Object> context) throws Exception {
-    addChildren(context);
-    pushChildren(context);
+  public void pushDescendants(HashMap<String, Object> context, String userId) throws Exception {
+    addChildren(context, userId);
+    pushChildren(context, userId);
   }
   
-  protected void addChildren(HashMap<String, Object> context) throws Exception {
+  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
   }
   
   protected int getNumberOfChildren(HashMap<String, Object> context, int size) {
@@ -207,10 +207,10 @@ public class TreeNode {
     return childrenNUm;
   }
   
-  private void pushChildren(HashMap<String, Object> context) throws Exception {
+  private void pushChildren(HashMap<String, Object> context, String userId) throws Exception {
     Stack<WikiPageParams> paramsStk = (Stack<WikiPageParams>) context.get(STACK_PARAMS);
     if (paramsStk == null) {
-      pushChild(context);
+      pushChild(context, userId);
     } else {
       if (paramsStk.empty()) {
         this.isSelected = true;
@@ -220,23 +220,23 @@ public class TreeNode {
         context.put(STACK_PARAMS, paramsStk);
         if (this instanceof RootTreeNode) {
           SpaceTreeNode spaceNode = new SpaceTreeNode(params.getType());
-          pushChild(spaceNode, context);
+          pushChild(spaceNode, context, userId);
         } else if (this instanceof SpaceTreeNode) {
           Wiki wiki = (Wiki) Utils.getObjectFromParams(params);
           WikiTreeNode wikiNode = new WikiTreeNode(wiki);
-          pushChild(wikiNode, context);
+          pushChild(wikiNode, context, userId);
         } else if (this instanceof WikiTreeNode) {
-          pushChild(context);
+          pushChild(context, userId);
         } else if (this instanceof WikiHomeTreeNode || this instanceof PageTreeNode) {
           Page page = (Page) Utils.getObjectFromParams(params);
           PageTreeNode pageNode = new PageTreeNode(page);
-          pushChild(pageNode, context);
+          pushChild(pageNode, context, userId);
         }
       }
     }
   }
   
-  private void pushChild(TreeNode child, HashMap<String, Object> context) throws Exception {
+  private void pushChild(TreeNode child, HashMap<String, Object> context, String userId) throws Exception {
     Boolean showDesCdt = (Boolean) context.get(SHOW_DESCENDANT);
 
     String depthCdt = (String) context.get(DEPTH);
@@ -251,9 +251,9 @@ public class TreeNode {
         for (int i = 0; i < children.size(); i++) {
           temp = children.get(i);
           if (child == null) {
-            temp.pushDescendants(context);
+            temp.pushDescendants(context, userId);
           } else if (child.equals(temp)) {
-            temp.pushDescendants(context);
+            temp.pushDescendants(context, userId);
             return;
           }
         }
@@ -261,8 +261,8 @@ public class TreeNode {
     }
   }
 
-  private void pushChild(HashMap<String, Object> context) throws Exception {
-    pushChild(null, context);
+  private void pushChild(HashMap<String, Object> context, String userId) throws Exception {
+    pushChild(null, context, userId);
   }
 
   public String buildPath() {

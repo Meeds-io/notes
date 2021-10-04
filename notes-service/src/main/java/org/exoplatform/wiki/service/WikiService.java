@@ -77,10 +77,11 @@ public interface WikiService {
    * @param wikiType It can be Portal, Group, or User.
    * @param wikiOwner The Wiki owner.
    * @param pageId Id of the wiki page.
+   * @param userId
    * @return "True" if deleting the wiki page is successful, or "false" if not.
    * @throws WikiException if an error occured if an error occured
    */
-  public boolean deletePage(String wikiType, String wikiOwner, String pageId) throws WikiException;
+  public boolean deletePage(String wikiType, String wikiOwner, String pageId, String userId) throws WikiException;
 
   /**
    * Deletes a Wiki template.
@@ -222,10 +223,11 @@ public interface WikiService {
   /**
    * Get all the children pages of a wiki page
    * @param page Wiki page.
+   * @param userId
    * @return The list of children pages
    * @throws WikiException if an error occured
    */
-  public List<Page> getChildrenPageOf(Page page) throws WikiException;
+  public List<Page> getChildrenPageOf(Page page, String userId) throws WikiException;
 
   /**
    * Gets a Wiki template.
@@ -281,10 +283,11 @@ public interface WikiService {
    * @param parentPage The page to check.
    * @param targetWiki The target Wiki to check.
    * @param resultList The list of duplicated wiki pages.
+   * @param userId
    * @return The list of duplicated wiki pages.
    * @throws WikiException if an error occured if an error occured
    */
-  public List<Page> getDuplicatePages(Page parentPage, Wiki targetWiki, List<Page> resultList) throws WikiException;
+  public List<Page> getDuplicatePages(Page parentPage, Wiki targetWiki, List<Page> resultList, String userId) throws WikiException;
 
   /**
    * Gets Id of a default Wiki syntax.

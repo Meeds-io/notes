@@ -68,10 +68,7 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.EmotionIcon;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.mow.api.WikiType;
+import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.Relations;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
@@ -288,13 +285,13 @@ public class WikiRestServiceImpl implements ResourceContainer {
       if (type.equalsIgnoreCase(TREETYPE.ALL.toString())) {
         Stack<WikiPageParams> stk = Utils.getStackParams(page);
         context.put(TreeNode.STACK_PARAMS, stk);
-        responseData = getJsonTree(pageParam, context);
+        responseData = getJsonTree(pageParam, context, ConversationState.getCurrent().getIdentity().getUserId());
       } else if (type.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
         // Get children only
         if (depth == null)
           depth = "1";
         context.put(TreeNode.DEPTH, depth);
-        responseData = getJsonDescendants(pageParam, context);
+        responseData = getJsonDescendants(pageParam, context, ConversationState.getCurrent().getIdentity().getUserId());
       }
 
       encodeWikiTree(responseData, request.getLocale());
@@ -450,10 +447,11 @@ public class WikiRestServiceImpl implements ResourceContainer {
    * @return List of pages
    */
   @GET
-  @Path("/{wikiType}/spaces/{wikiOwner:.+}/pages")
+  @Path("/{userId}/{wikiType}/spaces/{wikiOwner:.+}/pages")
   @Produces("application/xml")
   @RolesAllowed("users")
   public Pages getPages(@Context UriInfo uriInfo,
+                        @PathParam("userId") String userId,
                         @PathParam("wikiType") String wikiType,
                         @PathParam("wikiOwner") String wikiOwner,
                         @QueryParam("start") Integer start,
@@ -474,13 +472,13 @@ public class WikiRestServiceImpl implements ResourceContainer {
       }
       page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, parentId);
       if (isWikiHome) {
-        pages.getPageSummaries().add(createPageSummary(objectFactory, uriInfo.getBaseUri(), page));
+        pages.getPageSummaries().add(createPageSummary(objectFactory, uriInfo.getBaseUri(), page, userId));
       } else {
-        List<org.exoplatform.wiki.mow.api.Page> childrenPages = wikiService.getChildrenPageOf(page);
+        List<org.exoplatform.wiki.mow.api.Page> childrenPages = wikiService.getChildrenPageOf(page, ConversationState.getCurrent().getIdentity().getUserId());
         for (org.exoplatform.wiki.mow.api.Page childPage : childrenPages) {
           pages.getPageSummaries().add(createPageSummary(objectFactory,
                                                        uriInfo.getBaseUri(),
-                                                       childPage));
+                                                       childPage, userId));
         }
       }
     } catch (Exception e) {
@@ -496,21 +494,23 @@ public class WikiRestServiceImpl implements ResourceContainer {
    * @param wikiType It can be a Portal, Group, User type of wiki
    * @param wikiOwner Is the owner of the wiki
    * @param pageId Id of the wiki page
+   * @param userId
    * @return A wiki page
    */
   @GET
-  @Path("/{wikiType}/spaces/{wikiOwner:.+}/pages/{pageId}")
+  @Path("/{userId}/{wikiType}/spaces/{wikiOwner:.+}/pages/{pageId}")
   @Produces("application/xml")
   @RolesAllowed("users")
   public org.exoplatform.wiki.service.rest.model.Page getPage(@Context UriInfo uriInfo,
                                                               @PathParam("wikiType") String wikiType,
                                                               @PathParam("wikiOwner") String wikiOwner,
-                                                              @PathParam("pageId") String pageId) {
+                                                              @PathParam("pageId") String pageId,
+                                                              @PathParam("userId") String userId) {
     org.exoplatform.wiki.mow.api.Page page;
     try {
       page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId);
       if (page != null) {
-        return createPage(objectFactory, uriInfo.getBaseUri(), uriInfo.getAbsolutePath(), page);
+        return createPage(objectFactory, uriInfo.getBaseUri(), uriInfo.getAbsolutePath(), page, userId);
       }
     } catch (Exception e) {
       log.error(e.getMessage(), e);
@@ -728,9 +728,9 @@ public class WikiRestServiceImpl implements ResourceContainer {
   public org.exoplatform.wiki.service.rest.model.Page createPage(ObjectFactory objectFactory,
                                                                  URI baseUri,
                                                                  URI self,
-                                                                 org.exoplatform.wiki.mow.api.Page doc) throws Exception {
+                                                                 Page doc, String userId) throws Exception {
     org.exoplatform.wiki.service.rest.model.Page page = objectFactory.createPage();
-    fillPageSummary(page, objectFactory, baseUri, doc);
+    fillPageSummary(page, objectFactory, baseUri, doc, userId);
 
     page.setVersion("current");
     page.setMajorVersion(1);
@@ -758,10 +758,10 @@ public class WikiRestServiceImpl implements ResourceContainer {
     return page;
   }
 
-  public PageSummary createPageSummary(ObjectFactory objectFactory, URI baseUri, org.exoplatform.wiki.mow.api.Page page) throws IllegalArgumentException, UriBuilderException, Exception {
+  public PageSummary createPageSummary(ObjectFactory objectFactory, URI baseUri, Page page, String userId) throws IllegalArgumentException, UriBuilderException, Exception {
     Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(), page.getWikiOwner());
     PageSummary pageSummary = objectFactory.createPageSummary();
-    fillPageSummary(pageSummary, objectFactory, baseUri, page);
+    fillPageSummary(pageSummary, objectFactory, baseUri, page, userId);
     String wikiName = wiki.getType();
     String spaceName = wiki.getOwner();
     String pageUri = UriBuilder.fromUri(baseUri)
@@ -798,23 +798,23 @@ public class WikiRestServiceImpl implements ResourceContainer {
     return attachment;
   }  
  
-  private List<JsonNodeData> getJsonTree(WikiPageParams params,HashMap<String, Object> context) throws Exception {
+  private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context, String userId) throws Exception {
     Wiki wiki = wikiService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
     WikiTreeNode wikiNode = new WikiTreeNode(wiki);
-    wikiNode.pushDescendants(context);
+    wikiNode.pushDescendants(context, userId);
     return TreeUtils.tranformToJson(wikiNode, context);
   }
 
   private List<JsonNodeData> getJsonDescendants(WikiPageParams params,
-                                                HashMap<String, Object> context) throws Exception {
-    TreeNode treeNode = TreeUtils.getDescendants(params, context);
+                                                HashMap<String, Object> context, String userId) throws Exception {
+    TreeNode treeNode = TreeUtils.getDescendants(params, context, userId);
     return TreeUtils.tranformToJson(treeNode, context);
   }
 
   private void fillPageSummary(PageSummary pageSummary,
-                                      ObjectFactory objectFactory,
-                                      URI baseUri,
-                                      org.exoplatform.wiki.mow.api.Page page) throws IllegalArgumentException, UriBuilderException, Exception {
+                               ObjectFactory objectFactory,
+                               URI baseUri,
+                               Page page, String userId) throws IllegalArgumentException, UriBuilderException, Exception {
     Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(), page.getWikiOwner());
     pageSummary.setWiki(wiki.getType());
     pageSummary.setFullName(page.getTitle());
@@ -857,7 +857,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       pageSummary.getLinks().add(parentLink);
     }
 
-    if (!wikiService.getChildrenPageOf(page).isEmpty()) {
+    if (!wikiService.getChildrenPageOf(page, userId).isEmpty()) {
       String pageChildrenUri = UriBuilder.fromUri(baseUri)
                                          .path("/wiki/{wikiName}/spaces/{spaceName}/pages/{pageName}/children")
                                          .build(wiki.getType(),

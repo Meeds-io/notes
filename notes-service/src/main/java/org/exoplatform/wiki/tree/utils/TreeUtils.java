@@ -72,12 +72,13 @@ public class TreeUtils {
    * 
    * @param params is the wiki page parameters
    * @param context is the page tree context
+   * @param userId
    * @return <code>TreeNode</code>
    * @throws Exception if error occured
    */
-  public static TreeNode getDescendants(WikiPageParams params, HashMap<String, Object> context) throws Exception {
+  public static TreeNode getDescendants(WikiPageParams params, HashMap<String, Object> context, String userId) throws Exception {
     TreeNode treeNode = getTreeNode(params);
-    treeNode.pushDescendants(context);
+    treeNode.pushDescendants(context, userId);
     return treeNode;
   }
   

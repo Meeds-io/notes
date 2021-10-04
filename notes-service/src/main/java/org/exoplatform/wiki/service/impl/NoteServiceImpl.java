@@ -239,7 +239,7 @@ public class NoteServiceImpl implements NoteService {
           throw new IllegalAccessException("User does not have edit permissions on the note.");
         }
 
-        invalidateCachesOfPageTree(note);
+        invalidateCachesOfPageTree(note, userIdentity.getUserId());
         invalidateAttachmentCache(note);
 
         // Store all children to launch post deletion listeners
@@ -249,7 +249,7 @@ public class NoteServiceImpl implements NoteService {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenNoteOf(tempPage);
+          List<Page> childrenPages = getChildrenNoteOf(tempPage, userIdentity.getUserId());
           for (Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -464,8 +464,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public List<Page> getChildrenNoteOf(Page note) throws WikiException {
-    return dataStorage.getChildrenPageOf(note);
+  public List<Page> getChildrenNoteOf(Page note, String userId) throws WikiException {
+    return dataStorage.getChildrenPageOf(note, userId);
   }
 
   @Override
@@ -474,7 +474,7 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList) throws WikiException {
+  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList, String userId) throws WikiException {
     if (resultList == null) {
       resultList = new ArrayList<>();
     }
@@ -490,9 +490,9 @@ public class NoteServiceImpl implements NoteService {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenNotes = getChildrenNoteOf(parentNote);
+    List<Page> childrenNotes = getChildrenNoteOf(parentNote, userId);
     for (Page note : childrenNotes) {
-      getDuplicateNotes(note, targetNoteBook, resultList);
+      getDuplicateNotes(note, targetNoteBook, resultList, userId);
     }
     return resultList;
   }
@@ -704,15 +704,16 @@ public class NoteServiceImpl implements NoteService {
    * Invalidate all caches of a page and all its descendants
    * 
    * @param note root page
+   * @param userId
    * @throws WikiException if an error occured
    */
-  protected void invalidateCachesOfPageTree(Page note) throws WikiException {
+  protected void invalidateCachesOfPageTree(Page note, String userId) throws WikiException {
     Queue<Page> queue = new LinkedList<>();
     queue.add(note);
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenNoteOf(currentPage);
+      List<Page> childrenPages = getChildrenNoteOf(currentPage, userId);
       for (Page child : childrenPages) {
         queue.add(child);
       }

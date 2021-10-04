@@ -18,6 +18,7 @@ package org.exoplatform.wiki.webui;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.webui.util.Util;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.webui.config.annotation.ComponentConfig;
 import org.exoplatform.webui.config.annotation.EventConfig;
@@ -31,11 +32,7 @@ import org.exoplatform.wiki.commons.Utils;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.webui.UIWikiPortlet.PopupLevel;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @ComponentConfig(
   lifecycle = UIFormLifecycle.class,
@@ -108,7 +105,7 @@ public class UIWikiDeletePageConfirm extends UIForm implements UIPopupComponent 
       WikiService wService = (WikiService) PortalContainer.getComponent(WikiService.class);
       WikiPageParams params = Utils.getCurrentWikiPageParams();
       wService.removeDraftOfPage(params);
-      wService.deletePage(params.getType(), params.getOwner(), params.getPageName());
+      wService.deletePage(params.getType(), params.getOwner(), params.getPageName(), ConversationState.getCurrent().getIdentity().getUserId());
       UIWikiPortlet wikiPortlet = uiWikiDeletePageConfirm.getAncestorOfType(UIWikiPortlet.class);
       wikiPortlet.changeMode(WikiMode.VIEW);
       UIWikiBreadCrumb breadcumb = wikiPortlet.findFirstComponentOfType(UIWikiBreadCrumb.class);

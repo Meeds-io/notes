@@ -22,7 +22,6 @@ import org.exoplatform.wiki.mow.api.WikiType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
-import org.exoplatform.wiki.utils.Utils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,7 +47,7 @@ public class SpaceTreeNode extends TreeNode {
   }  
   
   @Override
-  protected void addChildren(HashMap<String, Object> context) throws Exception {
+  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
     try {
       WikiType wikiType = WikiType.valueOf(name.toUpperCase());
       Collection<Wiki> wikis = wikiService.getWikisByType(wikiType.toString());
@@ -60,7 +59,7 @@ public class SpaceTreeNode extends TreeNode {
         this.children.add(child);
         count++;
       }
-      super.addChildren(context);
+      super.addChildren(context, userId);
     } catch (IllegalArgumentException ex) {
       this.hasChild = false;
     }

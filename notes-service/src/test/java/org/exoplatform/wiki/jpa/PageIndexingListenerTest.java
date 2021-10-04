@@ -71,6 +71,6 @@ public class PageIndexingListenerTest extends BaseTest {
     assertEquals(1, indexingService.getCount("reindex"));
 
     wikiService.removeDraft(draft.getName());
-    wikiService.deletePage(PortalConfig.USER_TYPE, "root", page.getName());
+    wikiService.deletePage(PortalConfig.USER_TYPE, "root", page.getName(), "root");
   }
 }

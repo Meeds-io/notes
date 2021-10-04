@@ -48,7 +48,7 @@ public interface DataStorage {
 
   public Page getParentPageOf(Page page) throws WikiException;
 
-  public List<Page> getChildrenPageOf(Page page) throws WikiException;
+  public List<Page> getChildrenPageOf(Page page, String userId) throws WikiException;
 
   public void createTemplatePage(Wiki wiki, Template template) throws WikiException;
 

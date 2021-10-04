@@ -163,10 +163,11 @@ public interface NoteService {
    * Get all the children notes of a note
    * 
    * @param note note.
+   * @param userId
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
-  public List<Page> getChildrenNoteOf(Page note) throws WikiException;
+  public List<Page> getChildrenNoteOf(Page note, String userId) throws WikiException;
 
   /**
    * Gets a list of data which is used for composing the breadcrumb.
@@ -186,10 +187,11 @@ public interface NoteService {
    * @param parentNote The note to check.
    * @param targetNoteBook The target NoteBook to check.
    * @param resultList The list of duplicated notes.
+   * @param userId
    * @return The list of duplicated notes.
    * @throws WikiException if an error occured
    */
-  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList) throws WikiException;
+  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList, String userId) throws WikiException;
 
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;

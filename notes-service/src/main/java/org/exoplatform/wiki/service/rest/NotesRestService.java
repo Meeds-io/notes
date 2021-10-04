@@ -661,12 +661,12 @@ public class NotesRestService implements ResourceContainer {
   private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
     WikiTreeNode noteBookNode = new WikiTreeNode(noteBook);
-    noteBookNode.pushDescendants(context);
+    noteBookNode.pushDescendants(context, ConversationState.getCurrent().getIdentity().getUserId());
     return TreeUtils.tranformToJson(noteBookNode, context);
   }
 
   private List<JsonNodeData> getJsonDescendants(WikiPageParams params, HashMap<String, Object> context) throws Exception {
-    TreeNode treeNode = TreeUtils.getDescendants(params, context);
+    TreeNode treeNode = TreeUtils.getDescendants(params, context, ConversationState.getCurrent().getIdentity().getUserId());
     return TreeUtils.tranformToJson(treeNode, context);
   }
 

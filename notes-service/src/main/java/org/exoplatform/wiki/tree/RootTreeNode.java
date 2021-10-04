@@ -25,7 +25,7 @@ public class RootTreeNode extends TreeNode {
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context) throws Exception {
+  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
 
     SpaceTreeNode portalNode = new SpaceTreeNode("portal");
     SpaceTreeNode groupNode = new SpaceTreeNode("group");
@@ -33,7 +33,7 @@ public class RootTreeNode extends TreeNode {
     this.children.add(portalNode);
     this.children.add(groupNode);
     this.children.add(userNode);
-    super.addChildren(context);
+    super.addChildren(context, userId);
   }
 
 }

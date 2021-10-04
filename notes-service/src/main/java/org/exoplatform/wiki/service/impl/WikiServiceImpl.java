@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -525,12 +524,12 @@ public class WikiServiceImpl implements WikiService, Startable {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page) throws WikiException {
-    return dataStorage.getChildrenPageOf(page);
+  public List<Page> getChildrenPageOf(Page page, String userId) throws WikiException {
+    return dataStorage.getChildrenPageOf(page, userId);
   }
 
   @Override
-  public boolean deletePage(String wikiType, String wikiOwner, String pageName) throws WikiException {
+  public boolean deletePage(String wikiType, String wikiOwner, String pageName, String userId) throws WikiException {
     if (WikiConstants.WIKI_HOME_NAME.equals(pageName) || pageName == null) {
       return false;
     }
@@ -539,7 +538,7 @@ public class WikiServiceImpl implements WikiService, Startable {
       Page page = getPageOfWikiByName(wikiType, wikiOwner, pageName);
 
       if(page != null) {
-        invalidateCachesOfPageTree(page);
+        invalidateCachesOfPageTree(page, userId);
         invalidateAttachmentCache(page);
 
         // Store all children to launch post deletion listeners
@@ -549,7 +548,7 @@ public class WikiServiceImpl implements WikiService, Startable {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenPageOf(tempPage);
+          List<Page> childrenPages = getChildrenPageOf(tempPage, userId);
           for(Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -724,15 +723,16 @@ public class WikiServiceImpl implements WikiService, Startable {
   /**
    * Invalidate all caches of a page and all its descendants
    * @param page root page
+   * @param userId
    * @throws WikiException if an error occured
    */
-  protected void invalidateCachesOfPageTree(Page page) throws WikiException {
+  protected void invalidateCachesOfPageTree(Page page, String userId) throws WikiException {
     Queue<Page> queue = new LinkedList<>();
     queue.add(page);
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenPageOf(currentPage);
+      List<Page> childrenPages = getChildrenPageOf(currentPage, userId);
       for (Page child : childrenPages) {
         queue.add(child);
       }
@@ -793,7 +793,7 @@ public class WikiServiceImpl implements WikiService, Startable {
   }
 
   @Override
-  public List<Page> getDuplicatePages(Page parentPage, Wiki targetWiki, List<Page> resultList) throws WikiException {
+  public List<Page> getDuplicatePages(Page parentPage, Wiki targetWiki, List<Page> resultList, String userId) throws WikiException {
     if (resultList == null) {
       resultList = new ArrayList<>();
     }
@@ -809,9 +809,9 @@ public class WikiServiceImpl implements WikiService, Startable {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenPages = getChildrenPageOf(parentPage);
+    List<Page> childrenPages = getChildrenPageOf(parentPage, userId);
     for (Page page : childrenPages) {
-      getDuplicatePages(page, targetWiki, resultList);
+      getDuplicatePages(page, targetWiki, resultList, userId);
     }
     return resultList;
   }
@@ -824,7 +824,7 @@ public class WikiServiceImpl implements WikiService, Startable {
   @Override
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
     if (page.isDraftPage()) {
-      return page.getAuthor().equals(ConversationState.getCurrent().getIdentity().getUserId());
+      return page.getAuthor().equals(user.getUserId());
     }
     return dataStorage.hasPermissionOnPage(page, permissionType, user);
   }

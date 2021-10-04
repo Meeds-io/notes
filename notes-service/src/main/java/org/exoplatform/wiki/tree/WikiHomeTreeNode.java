@@ -48,12 +48,12 @@ public class WikiHomeTreeNode extends TreeNode {
 
     this.wikiHome = wikiHome;
     this.path = this.buildPath();
-    this.hasChild = !wikiService.getChildrenPageOf(wikiHome).isEmpty();
+    this.hasChild = !wikiService.getChildrenPageOf(wikiHome, ConversationState.getCurrent().getIdentity().getUserId()).isEmpty();
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context) throws Exception {
-    Collection<Page> pages = wikiService.getChildrenPageOf(wikiHome);
+  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+    Collection<Page> pages = wikiService.getChildrenPageOf(wikiHome, userId);
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());
@@ -67,7 +67,7 @@ public class WikiHomeTreeNode extends TreeNode {
       }
       count++;
     }
-    super.addChildren(context);
+    super.addChildren(context, userId);
   }
 
   public Page getWikiHome() {

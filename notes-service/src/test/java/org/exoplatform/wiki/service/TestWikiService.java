@@ -302,12 +302,12 @@ public class TestWikiService extends BaseTest {
   public void testDeletePage() throws WikiException {
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
     wService.createPage(portalWiki, "Home", new Page("deletePage", "deletePage")) ;
-    assertTrue(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "deletePage")) ;
+    assertTrue(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "deletePage", "root")) ;
     //wait(10) ;
     wService.createPage(portalWiki, "Home", new Page("deletePage", "deletePage")) ;
-    assertTrue(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "deletePage")) ;
+    assertTrue(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "deletePage", "root")) ;
     assertNull(wService.getPageOfWikiByName(PortalConfig.PORTAL_TYPE, "classic", "deletePage")) ;
-    assertFalse(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "Home")) ;
+    assertFalse(wService.deletePage(PortalConfig.PORTAL_TYPE, "classic", "Home", "root")) ;
   }
 
 

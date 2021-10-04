@@ -37,10 +37,10 @@ public class WikiTreeNode extends TreeNode {
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context) throws Exception {
+  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
 
     this.children.add(new WikiHomeTreeNode(wiki.getWikiHome()));
-    super.addChildren(context);
+    super.addChildren(context, userId);
   }
 
   public Wiki getWiki() {

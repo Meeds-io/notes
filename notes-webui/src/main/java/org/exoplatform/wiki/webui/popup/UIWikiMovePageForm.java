@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 
 import org.exoplatform.commons.utils.StringCommonUtils;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.web.application.ApplicationMessage;
 import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.web.application.RequireJS;
@@ -247,7 +248,7 @@ public class UIWikiMovePageForm extends UIForm implements UIPopupComponent {
           !currentLocationParams.getOwner().equals(newLocationParams.getOwner())) {
         
         // Get the list of dupplicated page
-        List<Page> duplicatedPageList = wservice.getDuplicatePages(movepage, wservice.getWikiByTypeAndOwner(newLocationParams.getType(), newLocationParams.getOwner()), null);
+        List<Page> duplicatedPageList = wservice.getDuplicatePages(movepage, wservice.getWikiByTypeAndOwner(newLocationParams.getType(), newLocationParams.getOwner()), null, ConversationState.getCurrent().getIdentity().getUserId());
         movePageForm.duplicatedPages = new ArrayList<>();
         for (Page page : duplicatedPageList) {
           movePageForm.duplicatedPages.add(movePageForm.new PageInfo(page));

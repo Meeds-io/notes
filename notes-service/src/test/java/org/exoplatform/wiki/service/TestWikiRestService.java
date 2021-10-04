@@ -236,7 +236,7 @@ public class TestWikiRestService {
     when(uriInfo.getBaseUri()).thenReturn(new URI("/"));
 
     // When
-    org.exoplatform.wiki.service.rest.model.Page page = wikiRestService.getPage(uriInfo, wikiType, wikiOwner, pageId);
+    org.exoplatform.wiki.service.rest.model.Page page = wikiRestService.getPage(uriInfo, wikiType, wikiOwner, pageId, "root");
     // Then
     verify(wikiService, times(1)).getPageOfWikiByName(wikiType, wikiOwner, pageId);
     assertEquals("wikiHomePage", page.getTitle());
