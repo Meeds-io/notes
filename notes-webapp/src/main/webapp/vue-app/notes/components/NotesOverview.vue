@@ -173,7 +173,7 @@ export default {
     note() {
       this.getNoteVersionByNoteId(this.note.id);
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
-        this.note.breadcrumb[0].title = this.$t('note.label.noteHome');
+        this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
       this.noteContent = this.note.content;

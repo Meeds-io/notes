@@ -123,7 +123,10 @@ public class NoteServiceImpl implements NoteService {
       } catch (Exception e) {
        log.warn("can't process note's images");
       }
+      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
+      createdPage.setCanManage(canManageNotes( userIdentity.getUserId(), space, note));
+      createdPage.setCanView(canViewNotes( userIdentity.getUserId(), space, note));
       createdPage.setToBePublished(note.isToBePublished());
       createdPage.setAppName(note.getAppName());
       createdPage.setUrl(Utils.getPageUrl(createdPage));
@@ -195,6 +198,8 @@ public class NoteServiceImpl implements NoteService {
     Page updatedPage = getNoteById(note.getId());
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setCanManage(note.isCanManage());
+    updatedPage.setCanView(note.isCanView());
     updatedPage.setAppName(note.getAppName());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 

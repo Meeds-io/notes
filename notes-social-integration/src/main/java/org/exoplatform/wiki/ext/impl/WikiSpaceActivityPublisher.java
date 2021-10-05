@@ -265,7 +265,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       try {
         space = spaceService.getSpaceByGroupId(wikiOwner);
         if (space != null) {
-          if (!isPublicInSpace(page, space))
+          if (!page.isCanView())
             return;
           ownerStream = identityManager.getOrCreateSpaceIdentity(space.getPrettyName());
           spaceUrl = space.getUrl();

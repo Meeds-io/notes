@@ -14,7 +14,7 @@
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
-              <span class="notesFormTitle ps-2">{{ notesFormTitle }}</span>
+              <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
