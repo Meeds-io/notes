@@ -25,6 +25,17 @@
         {{ $t('notes.label.breadcrumbTitle') }}
       </template>
       <template slot="content">
+        <v-toolbar flat color="white">
+          <v-row>
+            <v-col cols="6" class="my-auto">
+              <v-text-field
+                v-model="keyword"
+                :placeholder=" $t('notes.label.filter') "
+                clearable
+                prepend-inner-icon="fa-filter" />
+            </v-col>
+          </v-row>
+        </v-toolbar>
         <v-layout v-if="movePage" column>
           <v-list-item>
             <v-list-item-content>
@@ -78,6 +89,8 @@
               :items="items[0].children"
               :open="openedItems"
               :active="active"
+              :search="keyword"
+              :filter="filter"
               :load-children="fetchNoteChildren"
               class="treeview-item"
               item-key="id"
@@ -131,8 +144,12 @@ export default {
     render: true,
     closeAll: true,
     drawer: false,
+    keyword: null,
   }),
   computed: {
+    filter () {
+      return (item, search, textKey) => item[textKey].indexOf(search) > -1;
+    },
     items() {
       return this.breadcrumbItems;
     },
