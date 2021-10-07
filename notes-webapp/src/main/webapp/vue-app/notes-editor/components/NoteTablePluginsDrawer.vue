@@ -303,6 +303,7 @@ export default {
         table.setAttribute('cellSpacing', this.spacing);
         table.setAttribute('align', this.alignmentSelected);
         table.setAttribute('tHead', this.headerSelected);
+        table.setAttribute('role', 'presentation');
 
         const tableBody = document.createElement('TBODY');
         table.appendChild(tableBody);
@@ -327,6 +328,7 @@ export default {
         this.instance.elementPath().contains('table', 1).setAttribute('cellSpacing', this.spacing);
         this.instance.elementPath().contains('table', 1).setAttribute('align', this.alignmentSelected);
         this.instance.elementPath().contains('table', 1).setAttribute('tHead', this.headerSelected);
+        this.instance.elementPath().contains('table', 1).setAttribute('role', 'presentation');
         this.$root.$emit('updateData', this.instance.getData());
       }
     },
