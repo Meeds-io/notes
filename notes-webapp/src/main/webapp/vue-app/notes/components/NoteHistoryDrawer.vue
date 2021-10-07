@@ -34,12 +34,19 @@
                 <div class="description-restore-wrapper d-flex justify-space-between pt-2">
                   <div class="note-version-description"></div>
                   <div v-if="index > 0 && canManage" class="note-version-restore">
-                    <v-icon
-                      size="22"
-                      class="primary--text clickable pa-0"
-                      @click="$emit('restore-version', version)">
-                      mdi-restart
-                    </v-icon>
+                    <v-tooltip bottom>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-icon
+                          v-bind="attrs"
+                          v-on="on"
+                          size="22"
+                          class="primary--text clickable pa-0"
+                          @click="$emit('restore-version', version)">
+                          mdi-restart
+                        </v-icon>
+                      </template>
+                      <span class="caption">{{ $t('notes.label.restoreVersions') }}</span>
+                    </v-tooltip>
                   </div>
                 </div>
               </v-list-item>
@@ -72,7 +79,7 @@ export default {
       minute: '2-digit'
     },
     model: 0,
-    pageSize: Math.round((window.innerHeight-79)/80),
+    pageSize: 0,
     canManage: false
   }),
   computed: {
@@ -93,8 +100,13 @@ export default {
   },
   methods: {
     open(noteVersions,canManage) {
-      this.noteVersions = noteVersions;
       this.canManage = canManage;
+      if ( canManage ) {
+        this.pageSize = Math.round((window.innerHeight-79)/80);
+      } else {
+        this.pageSize = Math.round((window.innerHeight-79)/60);
+      }
+      this.noteVersions = noteVersions;
       this.$refs.noteVersionsDrawer.open();
     },
     loadMore(){
