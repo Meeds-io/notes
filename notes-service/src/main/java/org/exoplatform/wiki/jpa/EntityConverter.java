@@ -353,6 +353,7 @@ public class EntityConverter {
       draftPage.setTitle(title != null ? title : "");
 
       draftPage.setAuthor(draftPageEntity.getAuthor());
+      draftPage.setOwner(draftPageEntity.getAuthor());
       draftPage.setContent(draftPageEntity.getContent());
       draftPage.setSyntax(draftPageEntity.getSyntax());
       draftPage.setCreatedDate(draftPageEntity.getCreatedDate());
@@ -375,8 +376,9 @@ public class EntityConverter {
         draftPage.setParentPageName(parentPage.getName());
         if (StringUtils.isEmpty(draftPage.getWikiType()) || StringUtils.isEmpty(draftPage.getWikiOwner())) {
           WikiEntity wiki = parentPage.getWiki();
+          draftPage.setWikiId(String.valueOf(wiki.getId()));
+          draftPage.setWikiOwner(parentPage.getWiki().getOwner());
           draftPage.setWikiType(wiki.getType());
-          draftPage.setOwner(wiki.getOwner());
         }
       }
     }

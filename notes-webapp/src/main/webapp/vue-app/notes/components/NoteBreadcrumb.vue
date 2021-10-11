@@ -4,7 +4,7 @@
       <div
         v-for="(note, index) in noteBreadcrumb"
         :key="index"
-        :class="noteBreadcrumb.length === 1 && 'single-path-element' || ''"
+        :class="noteBreadcrumb && noteBreadcrumb.length === 1 && 'single-path-element' || ''"
         class="notes-tree-item d-flex text-truncate"
         :style="`max-width: ${100 / (noteBreadcrumb.length)}%`">
         <v-tooltip max-width="300" bottom>
@@ -29,9 +29,9 @@
               class="caption text-color text-truncate path-clickable breadCrumb-link"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[0].id)">{{ noteBreadcrumb[0].title }}</a>
+              @click="$emit('open-note',noteBreadcrumb[0].id)">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</a>
           </template>
-          <span class="caption">{{ noteBreadcrumb[0].title }}</span>
+          <span class="caption">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</span>
         </v-tooltip>
         <v-icon size="18">mdi-chevron-right</v-icon>
       </div>

@@ -410,7 +410,7 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   public void deleteDraftOfPage(Page page, String username) throws WikiException {
-    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.valueOf(page.getId()));
+    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.parseLong(page.getId()));
     for (DraftPageEntity draftPage: draftPages) {
       if(draftPage != null){
         deleteAttachmentsOfDraftPage(draftPage);
@@ -710,6 +710,12 @@ public class JPADataStorage implements DataStorage {
   @Override
   public DraftPage getLastestDraft(String username) throws WikiException {
     DraftPageEntity draftPagEntity = draftPageDAO.findLatestDraftPageByUser(username);
+    return convertDraftPageEntityToDraftPage(draftPagEntity);
+  }
+
+  @Override
+  public DraftPage getLatestDraftOfPage(Page targetPage, String username) {
+    DraftPageEntity draftPagEntity = draftPageDAO.findLatestDraftPageByUserAndTargetPage(Long.parseLong(targetPage.getId()), username);
     return convertDraftPageEntityToDraftPage(draftPagEntity);
   }
 

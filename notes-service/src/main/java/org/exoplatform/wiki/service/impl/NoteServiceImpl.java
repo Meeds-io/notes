@@ -401,8 +401,8 @@ public class NoteServiceImpl implements NoteService {
       if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
+      page.setCanView(true);
       page.setCanManage(canManageNotes( userIdentity.getUserId(), space, page));
-      page.setCanView(canViewNotes( userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -417,12 +417,32 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public DraftPage getDraftNoteById(String id) throws WikiException {
+  public DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException {
     if (id == null) {
       return null;
     }
+    DraftPage draftPage = dataStorage.getDraftPageById(id);
 
-    return dataStorage.getDraftPageById(id);
+    if (draftPage != null) {
+      Space space = spaceService.getSpaceByGroupId(draftPage.getWikiOwner());
+      if (!canViewNotes(userId, space, draftPage)) {
+        throw new IllegalAccessException("User does not have the right view the note.");
+      }
+      draftPage.setCanView(true);
+      draftPage.setCanManage(canManageNotes(userId, space, draftPage));
+      String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor()).getProfile().getFullName();
+      draftPage.setAuthorFullName(authorFullName);
+    }
+    return draftPage;
+  }
+
+  @Override
+  public DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException {
+    if (targetPage == null || StringUtils.isEmpty(username)) {
+      return null;
+    }
+
+    return dataStorage.getLatestDraftOfPage(targetPage, username);
   }
 
   @Override
@@ -437,8 +457,8 @@ public class NoteServiceImpl implements NoteService {
       if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
+      page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanView(canViewNotes(userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -455,8 +475,8 @@ public class NoteServiceImpl implements NoteService {
       if (!canViewNotes(userIdentity.getUserId(), space, page)) {
         throw new IllegalAccessException("User does not have view the note.");
       }
+      page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanView(canViewNotes(userIdentity.getUserId(), space, page));
       if (StringUtils.isNotEmpty(source)) {
         if (source.equals("tree")) {
           postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
@@ -519,8 +539,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public List<BreadcrumbData> getBreadcumb(String noteType, String noteOwner, String noteName) throws WikiException {
-    return getBreadcumb(null, noteType, noteOwner, noteName);
+  public List<BreadcrumbData> getBreadCrumb(String noteType, String noteOwner, String noteName, boolean isDraftNote) throws WikiException {
+    return getBreadCrumb(null, noteType, noteOwner, noteName, isDraftNote);
   }
 
   @Override
@@ -555,8 +575,10 @@ public class NoteServiceImpl implements NoteService {
     dataStorage.deleteDraftOfPage(page, Utils.getCurrentUser());
   }
 
-
-
+  @Override
+  public void removeDraft(String draftName) throws WikiException {
+    dataStorage.deleteDraftByName(draftName, Utils.getCurrentUser());
+  }
 
 
   @Override
@@ -912,27 +934,29 @@ public class NoteServiceImpl implements NoteService {
    * @param noteType
    * @param noteOwner
    * @param noteName
+   * @param isDraftNote
    * @return
    * @throws WikiException
    */
-  private List<BreadcrumbData> getBreadcumb(List<BreadcrumbData> list,
-                                            String noteType,
-                                            String noteOwner,
-                                            String noteName) throws WikiException {
+  private List<BreadcrumbData> getBreadCrumb(List<BreadcrumbData> list,
+                                             String noteType,
+                                             String noteOwner,
+                                             String noteName,
+                                             boolean isDraftNote) throws WikiException {
     if (list == null) {
       list = new ArrayList<>(5);
     }
     if (noteName == null) {
       return list;
     }
-    Page note = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
+    Page note = isDraftNote ? dataStorage.getDraftPageById(noteName) : getNoteOfNoteBookByName(noteType, noteOwner, noteName);
     if (note == null) {
       return list;
     }
     list.add(0, new BreadcrumbData(note.getName(),note.getId(), note.getTitle(), noteType, noteOwner));
-    Page parentNote = getParentNoteOf(note);
+    Page parentNote = isDraftNote ? getNoteById(note.getParentPageId()) : getParentNoteOf(note);
     if (parentNote != null) {
-      getBreadcumb(list, noteType, noteOwner, parentNote.getName());
+      getBreadCrumb(list, noteType, noteOwner, parentNote.getName(), false);
     }
 
     return list;

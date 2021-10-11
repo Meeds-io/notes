@@ -96,6 +96,16 @@ public interface DataStorage {
 
   public DraftPage getLastestDraft(String username) throws WikiException;
 
+  /**
+   * Returns latest draft of given page.
+   * 
+   * @param targetPage
+   * @param username
+   * @return
+   * @throws WikiException
+   */
+  DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException;
+
   public DraftPage getDraft(String draftName, String username) throws WikiException;
 
   public List<DraftPage> getDraftPagesOfUser(String username) throws WikiException;

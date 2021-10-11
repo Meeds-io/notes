@@ -142,10 +142,21 @@ public interface NoteService {
    * Gets a draft note based on its unique id.
    *
    * @param id Unique id of the draft note.
+   * @param userId
    * @return The note.
    * @throws WikiException if an error occured
    */
-  DraftPage getDraftNoteById(String id) throws WikiException;
+  DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException;
+
+  /**
+   * Returns latest draft of given page.
+   *
+   * @param targetPage
+   * @param username
+   * @return
+   * @throws WikiException
+   */
+  DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException;
 
   Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException;
 
@@ -176,10 +187,11 @@ public interface NoteService {
    * @param noteType It can be Portal, Group, or User.
    * @param noteOwner The owner.
    * @param noteId Id of the note to which the breadcrumb points.
+   * @param isDraftNote
    * @return The list of data.
    * @throws WikiException if an error occured
    */
-  List<BreadcrumbData> getBreadcumb(String noteType, String noteOwner, String noteId) throws WikiException;
+  List<BreadcrumbData> getBreadCrumb(String noteType, String noteOwner, String noteId, boolean isDraftNote) throws WikiException;
 
   /**
    * Checks if a note and its children are duplicated with ones in the target
@@ -194,6 +206,15 @@ public interface NoteService {
   List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList) throws WikiException;
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
+
+  /**
+   * Removes a draft page by its name.
+   *
+   * @param draftName Name of the draft page.
+   * @throws WikiException if an error occured
+   */
+  void removeDraft(String draftName) throws WikiException;
+
 
   /**
    * Gets all the Histories of the given note

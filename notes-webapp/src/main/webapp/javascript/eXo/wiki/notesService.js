@@ -17,6 +17,32 @@ export function getNotes(noteBookType, noteBookOwner, noteId,source) {
   });
 } 
 
+export function getDraftNoteById(noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/draftNote/${noteId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
+
+export function getLatestDraftOfPage(noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/latestDraftNote/${noteId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
+
 export function getNoteById(noteId,source,type, owner) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
@@ -177,11 +203,11 @@ export function restoreNoteVersion(note,version) {
   });
 }
 
-export function getPathByNoteOwner(note,noteAppName) {
-  if (!noteAppName){
+export function getPathByNoteOwner(note, noteAppName) {
+  if (!noteAppName) {
     noteAppName = 'notes';
   }
-  if (note.wikiType==='group'){
+  if (note.wikiType === 'group') {
     const spaceName = note.wikiOwner.split('/spaces/')[1];
     return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/${noteAppName}/${note.id}`;
   } else {
