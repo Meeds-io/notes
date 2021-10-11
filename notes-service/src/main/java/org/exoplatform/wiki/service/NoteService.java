@@ -16,19 +16,17 @@
  */
 package org.exoplatform.wiki.service;
 
-import org.exoplatform.services.security.Identity;
-import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.PageHistory;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.gatein.api.EntityNotFoundException;
-
 import java.util.List;
 
+import org.gatein.api.EntityNotFoundException;
+
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.mow.api.*;
+
 /**
- * Provides functions for processing database with notes, including:
- * adding, editing, removing and searching for data.
+ * Provides functions for processing database with notes, including: adding,
+ * editing, removing and searching for data.
  */
 public interface NoteService {
 
@@ -36,25 +34,27 @@ public interface NoteService {
    * Create a new note in the given notebook, under the given parent note.
    *
    * @param noteBook Notebook object.
-   * @param parentNote  parent note.
-   * @param note  the note to create.
+   * @param parentNote parent note.
+   * @param note the note to create.
    * @return The new note.
    * @throws WikiException if an error occured
    */
-  public Page createNote(Wiki noteBook, Page parentNote, Page note) throws WikiException;
+  Page createNote(Wiki noteBook, Page parentNote, Page note) throws WikiException;
 
   /**
    * Create a new note in the given notebook, under the given parent note.
    *
    * @param noteBook Notebook object.
-   * @param parentNoteName  parent note name.
-   * @param note  the note object to create.
-   * @param userIdentity  user Identity.
+   * @param parentNoteName parent note name.
+   * @param note the note object to create.
+   * @param userIdentity user Identity.
    * @return The new note.
    * @throws WikiException if an error occured
-   * @throws IllegalAccessException if the user don't have edit rights to the parent note
+   * @throws IllegalAccessException if the user don't have edit rights to the
+   *           parent note
    */
-  Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException, IllegalAccessException;
+  Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
+                                                                                          IllegalAccessException;
 
   /**
    * Deletes a note.
@@ -65,11 +65,11 @@ public interface NoteService {
    * @return "True" if deleting the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    */
-  public boolean deleteNote(String noteType, String noteOwner, String noteId) throws WikiException;
+  boolean deleteNote(String noteType, String noteOwner, String noteId) throws WikiException;
 
   boolean deleteNote(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
-                                                                                                       IllegalAccessException,
-                                                                                                       EntityNotFoundException;
+                                                                                                IllegalAccessException,
+                                                                                                EntityNotFoundException;
 
   /**
    * Renames a note.
@@ -82,11 +82,7 @@ public interface NoteService {
    * @return "True" if renaming the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    */
-  public boolean renameNote(String noteType,
-                            String noteOwner,
-                            String noteName,
-                            String newName,
-                            String newTitle) throws WikiException;
+  boolean renameNote(String noteType, String noteOwner, String noteName, String newName, String newTitle) throws WikiException;
 
   /**
    * Move a note
@@ -95,7 +91,7 @@ public interface NoteService {
    * @param newLocationParams The new location of the note.
    * @throws WikiException if an error occured
    */
-  public void moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams) throws WikiException;
+  void moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams) throws WikiException;
 
   /**
    * Move a note
@@ -108,7 +104,9 @@ public interface NoteService {
    * @throws IllegalAccessException if the user don't have edit rights on the note
    * @throws EntityNotFoundException if the the note to move don't exist
    */
-  boolean moveNote(WikiPageParams currentLocationParams, WikiPageParams newLocationParams, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
+  boolean moveNote(WikiPageParams currentLocationParams,
+                   WikiPageParams newLocationParams,
+                   Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
 
   /**
    * Gets a note by its unique name in the noteBook.
@@ -116,16 +114,20 @@ public interface NoteService {
    * @param noteType It can be Portal, Group, or User.
    * @param noteOwner The NoteBook owner.
    * @param noteName Id of the note.
-   * @return The note if the current user has the read permission. Otherwise,
-   *         it is "null".
+   * @return The note if the current user has the read permission. Otherwise, it
+   *         is "null".
    * @throws WikiException if an error occured
    */
-  public Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName) throws WikiException;
+  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName) throws WikiException;
 
+  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
+                                                                                                          IllegalAccessException;
 
-  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException, IllegalAccessException;
-
-  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity, String source) throws WikiException, IllegalAccessException;
+  Page getNoteOfNoteBookByName(String noteType,
+                               String noteOwner,
+                               String noteName,
+                               Identity userIdentity,
+                               String source) throws WikiException, IllegalAccessException;
 
   /**
    * Gets a note based on its unique id.
@@ -134,7 +136,7 @@ public interface NoteService {
    * @return The note.
    * @throws WikiException if an error occured
    */
-  public Page getNoteById(String id) throws WikiException;
+  Page getNoteById(String id) throws WikiException;
 
   /**
    * Gets a draft note based on its unique id.
@@ -143,8 +145,7 @@ public interface NoteService {
    * @return The note.
    * @throws WikiException if an error occured
    */
-  public DraftPage getDraftNoteById(String id) throws WikiException;
-
+  DraftPage getDraftNoteById(String id) throws WikiException;
 
   Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException;
 
@@ -157,7 +158,7 @@ public interface NoteService {
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
-  public Page getParentNoteOf(Page note) throws WikiException;
+  Page getParentNoteOf(Page note) throws WikiException;
 
   /**
    * Get all the children notes of a note
@@ -179,7 +180,7 @@ public interface NoteService {
    * @return The list of data.
    * @throws WikiException if an error occured
    */
-  public List<BreadcrumbData> getBreadcumb(String noteType, String noteOwner, String noteId) throws WikiException;
+  List<BreadcrumbData> getBreadcumb(String noteType, String noteOwner, String noteId) throws WikiException;
 
   /**
    * Checks if a note and its children are duplicated with ones in the target
@@ -192,11 +193,10 @@ public interface NoteService {
    * @return The list of duplicated notes.
    * @throws WikiException if an error occured
    */
-  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList, String userId) throws WikiException;
 
+  List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList ,String userId) throws WikiException;
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
-
 
   /**
    * Gets all the Histories of the given note
@@ -206,7 +206,7 @@ public interface NoteService {
    * @return All the histories of the note
    * @throws WikiException if an error occured
    */
-  public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException;
+  List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException;
 
   /**
    * Creates a version of a note. This method only tag the current note data as a
@@ -216,7 +216,7 @@ public interface NoteService {
    * @param userName the author name
    * @throws WikiException if an error occured
    */
-  public void createVersionOfNote(Page note, String userName) throws WikiException;
+  void createVersionOfNote(Page note, String userName) throws WikiException;
 
   /**
    * Restores a version of a note
@@ -226,8 +226,7 @@ public interface NoteService {
    * @param userName the other name
    * @throws WikiException if an error occured
    */
-  public void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException;
-
+  void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException;
 
   /**
    * Update the given note.
@@ -235,7 +234,7 @@ public interface NoteService {
    * @param note Updated note
    * @throws WikiException if an error occured
    */
-  public void updateNote(Page note) throws WikiException;
+  void updateNote(Page note) throws WikiException;
 
   /**
    * Update the given note. This does not automatically create a new version. If a
@@ -247,11 +246,13 @@ public interface NoteService {
    * @param type Type of update
    * @param userIdentity user Identity
    * @return The updated note
-   * @throws  WikiException if an error occure
+   * @throws WikiException if an error occure
    * @throws IllegalAccessException if the user don't have edit rights on the note
    * @throws EntityNotFoundException if the the note to update don't exist
    */
-  Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException, IllegalAccessException, EntityNotFoundException;
+  Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
+                                                                         IllegalAccessException,
+                                                                         EntityNotFoundException;
 
   /**
    * Get previous names of a note
@@ -260,7 +261,7 @@ public interface NoteService {
    * @return List of all the previous names of the note
    * @throws WikiException if an error occured
    */
-  public List<String> getPreviousNamesOfNote(Page note) throws WikiException;
+  List<String> getPreviousNamesOfNote(Page note) throws WikiException;
 
   /**
    * Retrieve the all notes contained in noteBook
@@ -269,7 +270,7 @@ public interface NoteService {
    * @param noteOwner the notebook owner
    * @return List of pages
    */
-  public List<Page> getNotesOfWiki(String noteType, String noteOwner);
+  List<Page> getNotesOfWiki(String noteType, String noteOwner);
 
   boolean isExisting(String noteBookType, String noteBookOwner, String noteId) throws WikiException;
 
@@ -277,20 +278,25 @@ public interface NoteService {
 
   /**
    * Update draft note for an existing page
-   * 
+   *
    * @param draftNoteToUpdate The draft note to be updated
-   * @param targetNote The target note of the draft 
-   * @param revision The revision which is used for creating the draft page. If "null", this will be the last revision.
-   * @param currentTimeMillis 
+   * @param targetNote The target note of the draft
+   * @param revision The revision which is used for creating the draft page. If
+   *          "null", this will be the last revision.
+   * @param currentTimeMillis
    * @param userName The author name
-   * @return Updated draft 
+   * @return Updated draft
    * @throws WikiException
    */
-  DraftPage updateDraftForExistPage(DraftPage draftNoteToUpdate, Page targetNote, String revision, long currentTimeMillis, String userName) throws WikiException;
+  DraftPage updateDraftForExistPage(DraftPage draftNoteToUpdate,
+                                    Page targetNote,
+                                    String revision,
+                                    long currentTimeMillis,
+                                    String userName) throws WikiException;
 
   /**
    * Update draft note for a new page
-   * 
+   *
    * @param draftNoteToUpdate the draft note to be updated
    * @param currentTimeMillis
    * @return Updated draft
@@ -300,24 +306,38 @@ public interface NoteService {
 
   /**
    * Creates a draft for an existing page
-   * 
+   *
    * @param draftNoteToSave The draft note to be created
    * @param targetNote The target note of the draft
-   * @param revision The revision which is used for creating the draft page. If "null", this will be the last revision.
+   * @param revision The revision which is used for creating the draft page. If
+   *          "null", this will be the last revision.
    * @param currentTimeMillis
    * @param username The author name
    * @return Created draft
    * @throws WikiException
    */
-  DraftPage createDraftForExistPage(DraftPage draftNoteToSave, Page targetNote, String revision, long currentTimeMillis, String username) throws WikiException;
+  DraftPage createDraftForExistPage(DraftPage draftNoteToSave,
+                                    Page targetNote,
+                                    String revision,
+                                    long currentTimeMillis,
+                                    String username) throws WikiException;
 
   /**
    * Creates a draft for a new page
-   * 
+   *
    * @param draftNoteToSave The draft note to be created
    * @param currentTimeMillis
    * @return Created draft
    * @throws WikiException
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
+
+  List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity);
+
+  void importNotes(List<Page> notes, Page parent, Wiki wiki, String conflict) throws WikiException;
+
+  List<NoteToExport> getChildrenNoteOf(NoteToExport note) throws WikiException;
+
+  NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
+
 }

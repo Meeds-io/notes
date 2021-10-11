@@ -105,7 +105,8 @@
       :default-path="defaultPath" 
       @open-treeview="$refs.notesBreadcrumb.open(note.id, 'movePage')"
       @export-pdf="createPDF(note)"
-      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions)" />
+      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions)"
+      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <note-history-drawer
@@ -269,6 +270,9 @@ export default {
     this.$root.$on('move-page', (note, newParentNote) => {
       this.moveNotes(note, newParentNote);
     });
+    this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId,spaceDisplayName) => {
+      this.exportNotes(notesSelected,importAll,homeNoteId,spaceDisplayName);
+    });
     
   },
   mounted() {
@@ -306,6 +310,29 @@ export default {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
+      });
+    },
+    exportNotes(notesSelected,importAll,homeNoteId){
+      let exportChildren =false;
+      if (importAll === true) {
+        exportChildren = true;
+        notesSelected = homeNoteId;
+      }
+      this.$notesService.exportNotes(notesSelected,exportChildren).then((transfer) => {
+        return transfer.blob();                 
+      }).then((bytes) => {
+        const elm = document.createElement('a');  
+        elm.href = URL.createObjectURL(bytes);  
+        elm.setAttribute('download', `NotesExport_${Date.now()}`); 
+        elm.click();                             
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.exported')});
+      }).catch(e=> {
+        console.error('Error when export note page', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });          
       });
     },
     getNoteById(noteId,source) {

@@ -26,10 +26,7 @@ import org.exoplatform.wiki.mow.api.*;
 import org.junit.Assert;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -279,6 +276,128 @@ public class TestNoteService extends BaseTest {
 
   private String getDraftNameSuffix(long clientTime) {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
+  }
+
+  public void testGEtNoteById() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("exported1", "exported1"),root) ;
+
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "exported1")) ;
+
+    Page note = noteService.getNoteById(note1.getId(),root,"");
+
+    assertNotNull(note);
+    assertEquals(note.getName(),note1.getName());
+  }
+
+  public void testGetNoteOfNoteBookByName() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("test1", "test1"),root) ;
+
+    assertNotNull(note1) ;
+  }
+
+  public void testExportNotes() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "exportPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("exported1", "exported1"),root) ;
+    Page note2 = noteService.createNote(portalWiki, "Home", new Page("exported2", "exported2"),root) ;
+    Page note3 = noteService.createNote(portalWiki, "Home", new Page("exported3", "exported3"),root) ;
+
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported1")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported2")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported3")) ;
+
+    String[] notes = new String[3];
+    notes[0] = note1.getId();
+    notes[1] = note2.getId();
+    notes[2] = note3.getId();
+
+    List<NoteToExport> exportedNotes = noteService.getNotesToExport(notes,false,root);
+
+    assertNotNull(exportedNotes);
+    assertEquals(exportedNotes.size(),3);
+  }
+  public void testImportNotes() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
+    Page note2 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
+    Page note3 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
+
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported1")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported2")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported3")) ;
+
+    String[] notes = new String[3];
+    notes[0] = note1.getId();
+    notes[1] = note2.getId();
+    notes[2] = note3.getId();
+
+    List<NoteToExport> exportedNotes = noteService.getNotesToExport(notes,false,user);
+
+    assertNotNull(exportedNotes);
+    assertEquals(exportedNotes.size(),3);
+    List<Page> pages = new ArrayList<>();
+    for(NoteToExport exportNote : exportedNotes){
+      Page page = new Page(exportNote.getName(),exportNote.getTitle());
+      page.setId(exportNote.getId());
+      pages.add(page);
+    }
+
+    Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
+
+    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false).size();
+
+    noteService.importNotes(pages, userWiki.getWikiHome(), userWiki, "update");
+
+    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false).size(),childern+3);
+  }
+
+  public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal1");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
+    Page note2 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
+    Page note3 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
+
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported1")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported2")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported3")) ;
+
+    List<Page> pages = noteService.getNotesOfWiki(portalWiki.getType(),portalWiki.getOwner());
+
+    assertEquals(pages.size(),4);
+  }
+
+  public void testDeleteNote1() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal2");
+    noteService.createNote(portalWiki, "Home", new Page("note1", "note1"),user) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", "note1")) ;
+    noteService.deleteNote(PortalConfig.PORTAL_TYPE, "testPortal2", "note1",user);
+
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", "note1")) ;
+  }
+
+  public void testGetChildrenNoteOf() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
+    noteService.createNote(portalWiki, "Home", new Page("imported1", "imported1"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("imported2", "imported2"),user) ;
+    Page home = portalWiki.getWikiHome();
+    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false).size();
+     NoteToExport note = new NoteToExport();
+     note.setId(home.getId());
+     note.setName(home.getName());
+     note.setTitle(home.getTitle());
+     note.setWikiId(home.getWikiId());
+     note.setWikiOwner(home.getWikiOwner());
+     note.setWikiType(home.getWikiType());
+    int eXportCildren= noteService.getChildrenNoteOf(note).size();
+    assertEquals(eXportCildren,childern);
   }
 
 }

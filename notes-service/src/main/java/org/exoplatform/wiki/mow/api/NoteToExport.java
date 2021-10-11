@@ -16,16 +16,15 @@
  */
 package org.exoplatform.wiki.mow.api;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.exoplatform.wiki.service.BreadcrumbData;
-
 import java.util.Date;
 import java.util.List;
 
+import org.exoplatform.wiki.service.BreadcrumbData;
+
+import lombok.Data;
+
 @Data
-@NoArgsConstructor
-public class Page {
+public class NoteToExport {
 
   private String id;
 
@@ -35,10 +34,6 @@ public class Page {
 
   private String author;
 
-  private Date createdDate;
-
-  private Date updatedDate;
-
   private String content;
 
   private String syntax;
@@ -47,52 +42,36 @@ public class Page {
 
   private String comment;
 
-  private List<PermissionEntry> permissions;
-
-  private String url;
-
-  private String activityId;
-
   private String wikiId;
 
   private String wikiType;
 
   private String wikiOwner;
 
-  private String parentPageName;
+  private List<NoteToExport> children;
 
-  private String parentPageId;
+  private NoteToExport parent;
 
-  private String appName;
-
-  private boolean isMinorEdit;
-
-  private boolean isDraftPage = isDraftPage();
-
-  private boolean toBePublished;
-
-  private List<BreadcrumbData> breadcrumb;
-
-  private boolean canManage;
-
-  private boolean canView;
-
-  private List<Page> children;
-
-  private Page parent;
-
-  public boolean isDraftPage() {
-    return false;
+  public NoteToExport() {
   }
 
-  public Page(String name) {
+  public NoteToExport(String name) {
     this.name = name;
   }
 
-  public Page(String name, String title) {
+  public NoteToExport(String id,String name, String owner, String author, String content, String syntax, String title, String comment, String wikiId, String wikiType, String wikiOwner) {
     this();
+    this.id = id;
     this.name = name;
+    this.owner = owner;
+    this.author = author;
+    this.content = content;
+    this.syntax = syntax;
     this.title = title;
+    this.comment = comment;
+    this.wikiId = wikiId;
+    this.wikiType = wikiType;
+    this.wikiOwner = wikiOwner;
   }
 
 

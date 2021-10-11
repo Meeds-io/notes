@@ -21,6 +21,9 @@
       <template v-else-if="movePage" slot="title">
         {{ $t('notes.label.movePageTitle') }}
       </template>
+      <template v-else-if="exportNotes" slot="title">
+        {{ $t('notes.label.exportNotesTitle') }}
+      </template>
       <template v-else slot="title">
         {{ $t('notes.label.breadcrumbTitle') }}
       </template>
@@ -63,7 +66,7 @@
           </v-list-item>
         </v-layout>
         <v-col column>
-          <v-row>
+          <v-row v-if="!exportNotes">
             <v-col class="my-auto">
               <v-text-field
                 v-model="keyword"
@@ -85,7 +88,7 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
+          <template v-if="home && !exportNotes && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
@@ -94,7 +97,27 @@
               </v-list-item-content>
             </v-list-item>
           </template>
-          <template v-if="items && items.length">
+          <template v-if="items && items.length && exportNotes">
+            <v-container fluid font-size="25">
+              <v-checkbox
+                v-model="checkbox"
+                :label="selectExportLabel"
+                class="checkbox" />
+            </v-container>
+            <v-treeview
+              v-if="reload"
+              v-model="selectionNotes"
+              :items="allItemsHome"
+              :active="active"
+              class="treeview-item"
+              item-key="noteId"
+              hoverable
+              selectable
+              open-all
+              :selection-type="selectionType"
+              transition />
+          </template>
+          <template v-if="items && items.length && !exportNotes">
             <v-treeview
               v-if="reload"
               :items="items"
@@ -142,6 +165,21 @@
           </v-btn>
         </div>
       </template>
+      <template v-if="exportNotes" slot="footer">
+        <div class="d-flex">
+          <v-spacer />
+          <v-btn
+            @click="close"
+            class="btn ml-2">
+            {{ $t('notes.button.cancel') }}
+          </v-btn>
+          <v-btn
+            @click="exportNotesToZip()"
+            class="btn btn-primary ml-2">
+            {{ $t('notes.button.export') }}
+          </v-btn>
+        </div>
+      </template>
     </exo-drawer>
   </div>
 </template>
@@ -152,6 +190,7 @@ export default {
     note: {},
     items: [],
     allItems: [],
+    allItemsHome: [],
     home: {},
     noteBookType: '',
     noteBookOwnerTree: '',
@@ -159,9 +198,12 @@ export default {
     activeItem: [],
     isIncludePage: false,
     movePage: false,
+    exportNotes: false,
+    selectionNotes: [],
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
+    selectionType: 'independent',
     displayArrow: true,
     render: true,
     closeAll: true,
@@ -169,8 +211,12 @@ export default {
     filter: '',
     filterOptions: [],
     keyword: '',
+    checkbox: false,
   }),
   computed: {
+    home() {
+      return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
+    },
     openedItems() {
       return this.openNotes;
     },
@@ -189,13 +235,31 @@ export default {
     filterNotes() {
       return (item, search, textKey) => item[textKey].toLowerCase().match(search.toLowerCase());
     },
+
+    selectExportLabel() {
+      if ( this.checkbox === true) {
+        return this.$t('notes.label.export.deselectAll');
+      } else {
+        return this.$t('notes.label.export.selectAll');
+      }
+    },
   },
   watch: {
+    checkbox() {
+      if (this.checkbox){
+        this.selectionNotes=[this.home.noteId];
+        this.selectionType='leaf';
+      } else {
+        this.selectionNotes= [];
+        this.selectionType='independent';
+        this.open(this.home.noteId,'exportNotes');
+      }
+    },
     filter() {
       if (this.note && this.note.id) {
         this.getNoteById(this.note.id);
       }
-    }
+    },
   },
   created() {
     this.$root.$on('refresh-treeview-items', (noteId)=> {
@@ -232,8 +296,14 @@ export default {
       }
       if (source === 'movePage') {
         this.movePage = true;
+        this.exportNotes = false;
+      }
+      else if (source === 'exportNotes') {
+        this.exportNotes = true;
+        this.movePage = false;
       } else {
         this.movePage = false;
+        this.exportNotes = false;
       }
       this.$nextTick().then(() => {
         this.$forceUpdate();
@@ -291,9 +361,11 @@ export default {
           this.home = [];
           this.items = [];
           this.allItems = [];
+          this.allItemsHome = [];
           this.home = data.treeNodeData[0];
           this.items = data.treeNodeData[0].children;
           this.allItems = data.jsonList;
+          this.allItemsHome = data.treeNodeData;
         }
         const openedTreeViewItems = this.getOpenedTreeViewItems(this.note.breadcrumb);
         this.openNotes = [];
@@ -320,6 +392,16 @@ export default {
     },
     moveNote() {
       this.$root.$emit('move-page', this.note, this.destinationNote);
+    },
+    exportNotesToZip(){
+      this.$root.$emit('export-notes',this.selectionNotes,this.checkbox,this.home.noteId);
+      this.resetImport();
+      this.close();
+    },
+    resetImport(){
+      this.checkbox = false;
+      this.selectionNotes = [];
+      this.selectionType='independent';
     },
     close() {
       this.render = false;

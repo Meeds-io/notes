@@ -59,6 +59,16 @@
           class="primary--text clickable pr-2">
           mdi-file-pdf-box
         </v-icon>
+        <span>{{ $t('notes.menu.label.exportPdf') }}</span>
+      </v-list-item>
+      <v-list-item
+        class="px-2 text-left action-menu-item draftButton"
+        @click="$emit('open-treeview-export')">
+        <v-icon
+          size="18"
+          class="primary--text clickable pr-2">
+          mdi-export
+        </v-icon>
         <span>{{ $t('notes.menu.label.export') }}</span>
       </v-list-item>
     </v-list>

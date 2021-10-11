@@ -16,6 +16,7 @@ import org.exoplatform.wiki.service.IDType;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to convert JPA entity objects
