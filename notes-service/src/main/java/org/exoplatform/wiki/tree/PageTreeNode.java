@@ -46,7 +46,7 @@ public class PageTreeNode extends TreeNode {
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
-    this.hasChild = page.isDraftPage() ? false : !wikiService.getChildrenPageOf(page, ConversationState.getCurrent().getIdentity().getUserId()).isEmpty();
+    this.hasChild = !page.isDraftPage() && !wikiService.getChildrenPageOf(page, ConversationState.getCurrent().getIdentity().getUserId(), true).isEmpty();
   }
 
   public Page getPage() {
@@ -59,7 +59,8 @@ public class PageTreeNode extends TreeNode {
 
   @Override
   protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
-    Collection<Page> pages = wikiService.getChildrenPageOf(page, userId);
+    boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
+    Collection<Page> pages = wikiService.getChildrenPageOf(page, userId, withDrafts);
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());

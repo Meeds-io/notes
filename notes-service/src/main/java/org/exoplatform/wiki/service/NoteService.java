@@ -161,13 +161,14 @@ public interface NoteService {
 
   /**
    * Get all the children notes of a note
-   * 
+   *
    * @param note note.
    * @param userId
+   * @param withDrafts if set to true returns the children notes and draft notes
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
-  public List<Page> getChildrenNoteOf(Page note, String userId) throws WikiException;
+  List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts) throws WikiException;
 
   /**
    * Gets a list of data which is used for composing the breadcrumb.

@@ -21,16 +21,31 @@ import java.util.List;
 public class BeanToJsons<T> {
   private List<T> jsonList;
   
+  private List<T> treeNodeData;
+  
   public BeanToJsons(List<T> list) {
     this.jsonList = list;
   }
-  
+
+  public BeanToJsons(List<T> jsonList, List<T> treeNodeData) {
+    this.jsonList = jsonList;
+    this.treeNodeData = treeNodeData;
+  }
+
   public List<T> getJsonList() {
     return jsonList;
   }
   
   public void setJsonList(List<T> objectList) {
     this.jsonList = objectList;
+  }
+
+  public List<T> getTreeNodeData() {
+    return treeNodeData;
+  }
+
+  public void setTreeNodeData(List<T> treeNodeData) {
+    this.treeNodeData = treeNodeData;
   }
 }
 

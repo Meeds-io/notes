@@ -16,46 +16,12 @@
  */
 package org.exoplatform.wiki.service.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Stack;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
-import javax.ws.rs.core.UriInfo;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.fileupload.DiskFileUpload;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadBase;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.social.rest.entity.IdentityEntity;
-
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.commons.utils.MimeTypeResolver;
@@ -67,7 +33,11 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.Relations;
 import org.exoplatform.wiki.service.WikiPageParams;
@@ -76,13 +46,7 @@ import org.exoplatform.wiki.service.image.ResizeImageService;
 import org.exoplatform.wiki.service.related.JsonRelatedData;
 import org.exoplatform.wiki.service.related.RelatedUtil;
 import org.exoplatform.wiki.service.rest.model.Attachment;
-import org.exoplatform.wiki.service.rest.model.Attachments;
-import org.exoplatform.wiki.service.rest.model.Link;
-import org.exoplatform.wiki.service.rest.model.ObjectFactory;
-import org.exoplatform.wiki.service.rest.model.PageSummary;
-import org.exoplatform.wiki.service.rest.model.Pages;
-import org.exoplatform.wiki.service.rest.model.Space;
-import org.exoplatform.wiki.service.rest.model.Spaces;
+import org.exoplatform.wiki.service.rest.model.*;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.TitleSearchResult;
@@ -94,6 +58,20 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
+
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response.Status;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.Class;
+import java.lang.Object;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.util.*;
 
 /**
  * Wiki REST service
@@ -283,7 +261,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       
       context.put(TreeNode.SHOW_EXCERPT, showExcerpt);
       if (type.equalsIgnoreCase(TREETYPE.ALL.toString())) {
-        Stack<WikiPageParams> stk = Utils.getStackParams(page);
+        Deque<WikiPageParams> stk = Utils.getStackParams(page);
         context.put(TreeNode.STACK_PARAMS, stk);
         responseData = getJsonTree(pageParam, context, ConversationState.getCurrent().getIdentity().getUserId());
       } else if (type.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
@@ -474,7 +452,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       if (isWikiHome) {
         pages.getPageSummaries().add(createPageSummary(objectFactory, uriInfo.getBaseUri(), page, userId));
       } else {
-        List<org.exoplatform.wiki.mow.api.Page> childrenPages = wikiService.getChildrenPageOf(page, ConversationState.getCurrent().getIdentity().getUserId());
+        List<org.exoplatform.wiki.mow.api.Page> childrenPages = wikiService.getChildrenPageOf(page, ConversationState.getCurrent().getIdentity().getUserId(), false);
         for (org.exoplatform.wiki.mow.api.Page childPage : childrenPages) {
           pages.getPageSummaries().add(createPageSummary(objectFactory,
                                                        uriInfo.getBaseUri(),
@@ -857,7 +835,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
       pageSummary.getLinks().add(parentLink);
     }
 
-    if (!wikiService.getChildrenPageOf(page, userId).isEmpty()) {
+    if (!wikiService.getChildrenPageOf(page, userId, false).isEmpty()) {
       String pageChildrenUri = UriBuilder.fromUri(baseUri)
                                          .path("/wiki/{wikiName}/spaces/{spaceName}/pages/{pageName}/children")
                                          .build(wiki.getType(),
@@ -1092,8 +1070,8 @@ public class WikiRestServiceImpl implements ResourceContainer {
       if (StringUtils.isBlank(data.getName())) {
         data.setName(untitledLabel);
       }
-      if (CollectionUtils.isNotEmpty(data.children)) {
-        encodeWikiTree(data.children, locale);
+      if (CollectionUtils.isNotEmpty(data.getChildren())) {
+        encodeWikiTree(data.getChildren(), locale);
       }
     }
   }

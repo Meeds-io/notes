@@ -47,7 +47,7 @@
           <v-list-item>
             <div class="py-2 width-full">
               <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
-              <note-breadcrumb :note-breadcrumb="note.breadcrumb" />
+              <note-breadcrumb :note-breadcrumb="note ? note.breadcrumb : []" />
             </div>
           </v-list-item>
           <v-list-item>
@@ -62,8 +62,30 @@
             </div>
           </v-list-item>
         </v-layout>
-        <v-layout column>
-          <template v-if="home" class="ma-0 border-box-sizing">
+        <v-col column>
+          <v-row>
+            <v-col class="my-auto">
+              <v-text-field
+                v-model="keyword"
+                class="search"
+                :placeholder=" $t('notes.label.filter') "
+                clearable
+                prepend-inner-icon="fa-filter" />
+            </v-col>
+            <v-col class="filter" cols="4">
+              <div class="btn-group">
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                  {{ filter }}
+                  <i class="uiIconMiniArrowDown uiIconLightGray"></i><span></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a href="#" @click="filter = filterOptions[0]"> {{ filterOptions[0] }} </a></li>
+                  <li><a href="#" @click="filter = filterOptions[1]"> {{ filterOptions[1] }} </a></li>
+                </ul>
+              </div>
+            </v-col>
+          </v-row>
+          <template v-if="home && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
@@ -75,23 +97,35 @@
           <template v-if="items && items.length">
             <v-treeview
               v-if="reload"
-              :items="items[0].children"
+              :items="items"
               :open="openedItems"
               :active="active"
-              :load-children="fetchNoteChildren"
+              :search="keyword"
+              :filter="filterNotes"
               class="treeview-item"
-              item-key="id"
+              item-key="noteId"
               hoverable
               open-on-click
               transition>
               <template v-slot:label="{ item }">
-                <v-list-item-title @click="openNote(event,item)" class="body-2">
-                  <a :href="item.noteId">{{ item.name }}</a>
+                <v-list-item-title class="body-2">
+                  <div 
+                    v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage"
+                    :style="{cursor: 'default'}">
+                    {{ item.name }}
+                  </div>
+                  <a 
+                    v-else 
+                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId" 
+                    :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage || !item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}"
+                    @click="openNote(event,item)">
+                    {{ item.name }}
+                  </a>
                 </v-list-item-title>
               </template>
             </v-treeview>
           </template>
-        </v-layout>
+        </v-col>
       </template>
       <template v-if="movePage" slot="footer">
         <div class="d-flex">
@@ -116,8 +150,9 @@
 export default {
   data: () => ({
     note: {},
-    breadcrumbItems: [],
-    breadcrumbItemChild: [],
+    items: [],
+    allItems: [],
+    home: {},
     noteBookType: '',
     noteBookOwnerTree: '',
     openNotes: [],
@@ -131,14 +166,11 @@ export default {
     render: true,
     closeAll: true,
     drawer: false,
+    filter: '',
+    filterOptions: [],
+    keyword: '',
   }),
   computed: {
-    items() {
-      return this.breadcrumbItems;
-    },
-    home() {
-      return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
-    },
     openedItems() {
       return this.openNotes;
     },
@@ -153,6 +185,16 @@ export default {
     },
     reload () {
       return this.render;
+    },
+    filterNotes() {
+      return (item, search, textKey) => item[textKey].toLowerCase().match(search.toLowerCase());
+    },
+  },
+  watch: {
+    filter() {
+      if (this.note && this.note.id) {
+        this.getNoteById(this.note.id);
+      }
     }
   },
   created() {
@@ -165,6 +207,13 @@ export default {
     this.$root.$on('display-treeview-items', () => {
       this.closeAll = true;
     });
+  },
+  mounted() {
+    this.filter = this.$t('notes.filter.label.all.notes');
+    this.filterOptions = [
+      this.$t('notes.filter.label.all.notes'),
+      this.$t('notes.filter.label.drafts'),
+    ];
   },
   methods: {
     open(noteId, source, includeDisplay) {
@@ -195,60 +244,30 @@ export default {
     backToPlugins() {
       this.closeAll = false;
     },
-    fetchNoteChildren(childItem) {
-      if ( !childItem.hasChild )
-      {return;}
-      return this.$notesService.getNoteTree(this.noteBookType,this.noteBookOwnerTree , childItem.id,'CHILDREN').then(data => {
-        if (data && data.jsonList) {
-          const noteChildTree = data.jsonList;
-          const temporaryNoteChildren = [];
-          noteChildTree.forEach(noteChildren => {
-            this.makeChildren(noteChildren,temporaryNoteChildren);
-          });
-          childItem.children.push(...temporaryNoteChildren);
-        }
-      });
-    },
     openNote(event, note) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
-      this.activeItem = [note.id];
-      if ( !this.includePage && !this.movePage ) {
-        this.$root.$emit('open-note-by-id',note.id);
-        this.$refs.breadcrumbDrawer.close();
-      }
-      if (this.includePage) {
-        this.$root.$emit('include-page',note);
-        this.$refs.breadcrumbDrawer.close();
-      }
-      if (this.movePage) {
-        this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
-          this.breadcrumb = data && data.breadcrumb || [];
-          this.breadcrumb[0].name = this.$t('notes.label.noteHome');
-          this.destinationNote = data;
-        });
-      }
-    },
-    makeChildren(noteChildren, childrenArray) {
-      if ( noteChildren.hasChild ) {
-        childrenArray.push ({
-          id: noteChildren.path.split('%2F').pop(),
-          hasChild: noteChildren.hasChild,
-          name: noteChildren.name,
-          noteId: noteChildren.noteId,
-          draftNote: noteChildren.draftNote,
-          children: []
-        });
-      } else {
-        childrenArray.push({
-          id: noteChildren.path.split('%2F').pop(),
-          hasChild: noteChildren.hasChild,
-          name: noteChildren.name,
-          noteId: noteChildren.noteId,
-          draftNote: noteChildren.draftNote,
-        });
+      const canOpenNote = this.filter === this.$t('notes.filter.label.drafts') && note.draftPage || this.filter !== this.$t('notes.filter.label.drafts');
+      if (canOpenNote) {
+        this.activeItem = [note.id];
+        if ( !this.includePage && !this.movePage ) {
+          const noteName = note.path.split('%2F').pop();
+          this.$root.$emit('open-note-by-name', noteName);
+          this.$refs.breadcrumbDrawer.close();
+        }
+        if (this.includePage) {
+          this.$root.$emit('include-page',note);
+          this.$refs.breadcrumbDrawer.close();
+        }
+        if (this.movePage) {
+          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
+            this.breadcrumb = data && data.breadcrumb || [];
+            this.breadcrumb[0].name = this.$t('notes.label.noteHome');
+            this.destinationNote = data;
+          });
+        }
       }
     },
     getNoteById(id) {
@@ -266,53 +285,43 @@ export default {
       }
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
-      this.$notesService.getNoteTree(noteType, noteOwner , noteName,'ALL').then(data => {
-        this.noteTree = data && data.jsonList || [];
-        const noteChildren = this.makeNoteChildren(this.noteTree);
-        const openedTreeviewItem = this.getOpenedTreeviewItems(this.note.breadcrumb);
-        this.openNotes = openedTreeviewItem;
-        this.activeItem = [openedTreeviewItem[openedTreeviewItem.length-1]];
-        this.breadcrumbItems = noteChildren;
-        this.breadcrumbItems[0].name = this.$t('notes.label.noteHome');
+      const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
+      this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts).then(data => {
+        if (data && data.jsonList.length) {
+          this.home = [];
+          this.items = [];
+          this.allItems = [];
+          this.home = data.treeNodeData[0];
+          this.items = data.treeNodeData[0].children;
+          this.allItems = data.jsonList;
+        }
+        const openedTreeViewItems = this.getOpenedTreeViewItems(this.note.breadcrumb);
+        this.openNotes = [];
+        this.openNotes = openedTreeViewItems;
+        this.activeItem = [];
+        this.activeItem = [openedTreeViewItems[openedTreeViewItems.length-1]];
         this.noteBookType = noteType;
         this.noteBookOwnerTree = noteOwner;
       });
     },
-    getOpenedTreeviewItems(breadcrumArray) {
+    getOpenedTreeViewItems(breadCrumbArray) {
       const activatedNotes = [];
-      for (let index = 1; index < breadcrumArray.length; index++) {
-        activatedNotes.push(breadcrumArray[index].id);
+      if (this.filter === this.$t('notes.filter.label.drafts')) {
+        const nodesToOpen = this.allItems.filter(item => !item.draftPage);
+        const nodesToOpenIds = nodesToOpen.map(node => node.noteId);
+        
+        activatedNotes.push(...nodesToOpenIds);
+      } else {
+        for (let index = 1; index < breadCrumbArray.length; index++) {
+          activatedNotes.push(breadCrumbArray[index].noteId);
+        }
       }
       return activatedNotes;
     },
-    makeNoteChildren(childrenArray) {
-      const treeviewArray = [];
-      childrenArray.forEach(child => {
-        if ( child.hasChild ) {
-          treeviewArray.push ({
-            id: child.path.split('%2F').pop(),
-            hasChild: child.hasChild,
-            name: child.name,
-            noteId: child.noteId,
-            draftNote: child.draftNote,
-            children: this.makeNoteChildren(child.children)
-          });
-        } else {
-          treeviewArray.push({
-            id: child.path.split('%2F').pop(),
-            hasChild: child.hasChild,
-            name: child.name,
-            noteId: child.noteId,
-            draftNote: child.draftNote,
-          });
-        }
-      });
-      return treeviewArray;
+    moveNote() {
+      this.$root.$emit('move-page', this.note, this.destinationNote);
     },
-    moveNote(){
-      this.$root.$emit('move-page',this.note,this.destinationNote);
-    },
-    close(){
+    close() {
       this.render = false;
       this.$refs.breadcrumbDrawer.close();
     },

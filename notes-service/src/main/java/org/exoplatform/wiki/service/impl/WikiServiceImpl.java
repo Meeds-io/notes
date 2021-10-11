@@ -524,8 +524,8 @@ public class WikiServiceImpl implements WikiService, Startable {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page, String userId) throws WikiException {
-    return dataStorage.getChildrenPageOf(page, userId);
+  public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts) throws WikiException {
+    return dataStorage.getChildrenPageOf(page, userId, withDrafts);
   }
 
   @Override
@@ -548,7 +548,7 @@ public class WikiServiceImpl implements WikiService, Startable {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenPageOf(tempPage, userId);
+          List<Page> childrenPages = getChildrenPageOf(tempPage, userId, false);
           for(Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -732,7 +732,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenPageOf(currentPage, userId);
+      List<Page> childrenPages = getChildrenPageOf(currentPage, userId, false);
       for (Page child : childrenPages) {
         queue.add(child);
       }
@@ -809,7 +809,7 @@ public class WikiServiceImpl implements WikiService, Startable {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenPages = getChildrenPageOf(parentPage, userId);
+    List<Page> childrenPages = getChildrenPageOf(parentPage, userId, false);
     for (Page page : childrenPages) {
       getDuplicatePages(page, targetWiki, resultList, userId);
     }

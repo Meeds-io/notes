@@ -38,13 +38,15 @@ public class JsonNodeData {
 
   protected TreeNodeType     nodeType;
 
-  protected boolean          isDraftNote = false;
+  protected boolean          isDraftPage = false;
+
+  protected boolean          disabled = false;
 
   protected boolean          isLastNode;
 
   protected boolean          isSelectable;
   
-  protected boolean          isRetricted     = false;
+  protected boolean          isRestricted = false;
 
   protected boolean          isExpanded   = false;
 
@@ -54,7 +56,11 @@ public class JsonNodeData {
 
   public static final String CURRENT_PATH = "currentPath";
 
-  public List<JsonNodeData>  children;
+  private List<JsonNodeData>  children;
+  
+  private String parentPageId;
+  
+  private Boolean hasDraftDescendant;
     
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
@@ -79,13 +85,18 @@ public class JsonNodeData {
     this.excerpt = excerpt;
     this.children = TreeUtils.tranformToJson(treeNode, context);
     this.isSelected = treeNode.isSelected();
-    this.isRetricted = treeNode.isRetricted;
+    this.isRestricted = treeNode.isRetricted;
     if (this.children.size() > 0) {
       this.isExpanded = true;
     }
     if (treeNode.getNodeType().equals(TreeNodeType.PAGE)) {
       Page page = ((PageTreeNode) treeNode).getPage();
-      this.isDraftNote = page.isDraftPage();
+      this.isDraftPage = page.isDraftPage();
+      this.parentPageId = page.getParentPageId();
+      boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
+      if (withDrafts) {
+        this.disabled = !this.isDraftPage;
+      }
     }
   }
 
@@ -137,12 +148,12 @@ public class JsonNodeData {
     this.isSelectable = isSelectable;
   }
   
-  public boolean isRetricted() {
-    return isRetricted;
+  public boolean isRestricted() {
+    return isRestricted;
   }
   
-  public void setRetricted(boolean isRetricted) {
-    this.isRetricted = isRetricted;
+  public void setRestricted(boolean isRetricted) {
+    this.isRestricted = isRetricted;
   }
 
   public String getCurrentPath() {
@@ -185,6 +196,14 @@ public class JsonNodeData {
     this.children = children;
   }
 
+  public String getParentPageId() {
+    return parentPageId;
+  }
+
+  public void setParentPageId(String parentPageId) {
+    this.parentPageId = parentPageId;
+  }
+
   public String getNoteId() {
     return noteId;
   }
@@ -193,11 +212,27 @@ public class JsonNodeData {
     this.noteId = noteId;
   }
 
-  public boolean isDraftNote() {
-    return isDraftNote;
+  public boolean isDraftPage() {
+    return isDraftPage;
   }
 
-  public void setDraftNote(boolean draftNote) {
-    isDraftNote = draftNote;
+  public void setDraftPage(boolean draftPage) {
+    isDraftPage = draftPage;
+  }
+
+  public boolean isDisabled() {
+    return disabled;
+  }
+
+  public void setDisabled(boolean disabled) {
+    this.disabled = disabled;
+  }
+
+  public Boolean isHasDraftDescendant() {
+    return hasDraftDescendant;
+  }
+
+  public void setHasDraftDescendant(Boolean hasDraftDescendant) {
+    this.hasDraftDescendant = hasDraftDescendant;
   }
 }

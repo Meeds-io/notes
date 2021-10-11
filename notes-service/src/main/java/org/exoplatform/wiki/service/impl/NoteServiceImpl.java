@@ -254,7 +254,7 @@ public class NoteServiceImpl implements NoteService {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenNoteOf(tempPage, userIdentity.getUserId());
+          List<Page> childrenPages = getChildrenNoteOf(tempPage, userIdentity.getUserId(), false);
           for (Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -469,8 +469,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public List<Page> getChildrenNoteOf(Page note, String userId) throws WikiException {
-    return dataStorage.getChildrenPageOf(note, userId);
+  public List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts) throws WikiException {
+    return dataStorage.getChildrenPageOf(note, userId, withDrafts);
   }
 
   @Override
@@ -495,7 +495,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenNotes = getChildrenNoteOf(parentNote, userId);
+    List<Page> childrenNotes = getChildrenNoteOf(parentNote, userId, false);
     for (Page note : childrenNotes) {
       getDuplicateNotes(note, targetNoteBook, resultList, userId);
     }
@@ -718,7 +718,7 @@ public class NoteServiceImpl implements NoteService {
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenNoteOf(currentPage, userId);
+      List<Page> childrenPages = getChildrenNoteOf(currentPage, userId, false);
       for (Page child : childrenPages) {
         queue.add(child);
       }

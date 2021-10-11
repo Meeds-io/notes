@@ -371,6 +371,7 @@ public class EntityConverter {
       PageEntity parentPage = draftPageEntity.getParentPage();
       if (parentPage != null) {
         draftPage.setParentPageId(String.valueOf(parentPage.getId()));
+        draftPage.setParentPageName(parentPage.getName());
         if (StringUtils.isEmpty(draftPage.getWikiType()) || StringUtils.isEmpty(draftPage.getWikiOwner())) {
           WikiEntity wiki = parentPage.getWiki();
           draftPage.setWikiType(wiki.getType());
