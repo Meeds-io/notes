@@ -84,11 +84,11 @@
             open-all
             dense
             :items="noteChildren[0].children">
-              <template v-slot:label="{ item }">
-                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
-                  <span>{{ item.name }}</span>
-                </v-list-item-title>
-              </template>
+            <template v-slot:label="{ item }">
+              <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
+                <span>{{ item.name }}</span>
+              </v-list-item-title>
+            </template>
           </v-treeview>
         </div>
       </div>

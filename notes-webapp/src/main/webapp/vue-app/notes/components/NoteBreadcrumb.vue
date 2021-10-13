@@ -22,7 +22,7 @@
       </div>
     </div>
     <div v-else class="notes-tree-items notes-long-path d-flex align-center">
-      <div v-if="noteBreadcrumb && noteBreadcrumb[0]" class="notes-tree-item long-path-first-item d-flex text-truncate">
+      <div v-if="noteBreadcrumb && noteBreadcrumb.length" class="notes-tree-item long-path-first-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
           <template v-slot:activator="{ on, attrs }">
             <a
@@ -54,7 +54,7 @@
         </v-tooltip>
         <v-icon class="clickable" size="18">mdi-chevron-right</v-icon>
       </div>
-      <div v-if="noteBreadcrumb" class="notes-tree-item long-path-third-item d-flex text-truncate">
+      <div v-if="noteBreadcrumb && noteBreadcrumb.length" class="notes-tree-item long-path-third-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
           <template v-slot:activator="{ on, attrs }">
             <a
@@ -67,7 +67,7 @@
         </v-tooltip>
         <v-icon size="18">mdi-chevron-right</v-icon>
       </div>
-      <div v-if="noteBreadcrumb" class="notes-tree-item d-flex text-truncate">
+      <div v-if="noteBreadcrumb && noteBreadcrumb.length" class="notes-tree-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
           <template v-slot:activator="{ on, attrs }">
             <a
@@ -87,7 +87,7 @@ export default {
   props: {
     noteBreadcrumb: {
       type: Array,
-      default: () => null
+      default: () => []
     }
   },
 };
