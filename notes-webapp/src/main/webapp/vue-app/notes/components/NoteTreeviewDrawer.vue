@@ -69,10 +69,11 @@
           <v-row v-if="!exportNotes">
             <v-col class="my-auto">
               <v-text-field
-                v-model="keyword"
+                v-model="search"
                 class="search"
                 :placeholder=" $t('notes.label.filter') "
                 clearable
+                font-size="18"
                 prepend-inner-icon="fa-filter" />
             </v-col>
             <v-col class="filter" cols="4">
@@ -88,7 +89,7 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && !exportNotes && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
+          <template v-if="home && !exportNotes && resultSearch && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
@@ -123,8 +124,7 @@
               :items="items"
               :open="openedItems"
               :active="active"
-              :search="keyword"
-              :filter="filterNotes"
+              :search="search"
               class="treeview-item"
               item-key="noteId"
               hoverable
@@ -147,6 +147,18 @@
                 </v-list-item-title>
               </template>
             </v-treeview>
+          </template>
+          <template v-if="!resultSearch">
+            <div class="note-not-found-wrapper text-center mt-6">
+              <v-img
+                :src="noteNotFountImage"
+                class="mx-auto"
+                max-height="85"
+                max-width="90"
+                contain
+                eager />
+              <p class="title mt-3 text-light-color">{{ $t('notes.label.noteSearchNotFound') + search }}</p>
+            </div>
           </template>
         </v-col>
       </template>
@@ -210,13 +222,13 @@ export default {
     drawer: false,
     filter: '',
     filterOptions: [],
-    keyword: '',
+    active: [],
     checkbox: false,
+    showTree: true,
+    search: '',
+    noteNotFountImage: '/notes/skin/images/notes_not_found.png',
   }),
   computed: {
-    home() {
-      return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
-    },
     openedItems() {
       return this.openNotes;
     },
@@ -232,10 +244,9 @@ export default {
     reload () {
       return this.render;
     },
-    filterNotes() {
-      return (item, search, textKey) => item[textKey].toLowerCase().match(search.toLowerCase());
+    resultSearch() {
+      return this.showTree;
     },
-
     selectExportLabel() {
       if ( this.checkbox === true) {
         return this.$t('notes.label.export.deselectAll');
@@ -245,6 +256,13 @@ export default {
     },
   },
   watch: {
+    search() {
+      this.showTree = true;
+      if (this.search) {
+        this.active = this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()));
+        this.showTree = this.active.length ? true :false;
+      }
+    },
     checkbox() {
       if (this.checkbox){
         this.selectionNotes=[this.home.noteId];
@@ -409,6 +427,7 @@ export default {
     },
     closeAllDrawer() {
       $('.spaceButtomNavigation').removeClass('hidden');
+      this.search = '';
       if (this.closeAll) {
         this.$emit('closed');
       }
