@@ -74,14 +74,22 @@
         </div>
         <v-divider class="my-4" />
         <div
-          v-if="note.content"
+          v-if=" note.content || (noteChildren && noteChildren[0] && !noteChildren[0].hasChild)"
           class="notes-application-content text-color"
           v-html="noteVersionContent">
         </div>
         <div v-else class="notes-application-content">
-          <p class="body-2 font-italic">
-            {{ $t('notes.label.no-content') }}
-          </p>
+          <v-treeview
+            v-if="noteChildren && noteChildren[0]"
+            open-all
+            dense
+            :items="noteChildren[0].children">
+              <template v-slot:label="{ item }">
+                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
+                  <span>{{ item.name }}</span>
+                </v-list-item-title>
+              </template>
+          </v-treeview>
         </div>
       </div>
       <div v-else class="note-not-found-wrapper text-center mt-6">
@@ -167,7 +175,8 @@ export default {
       noteVersions: [],
       actualVersion: {},
       noteContent: '',
-      displayLastVersion: true
+      displayLastVersion: true,
+      noteChildren: []
     };
   },
   watch: {
@@ -178,6 +187,7 @@ export default {
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
       this.noteContent = this.note.content;
+      this.retrieveNoteTreeById();
     },
     actualVersion() {
       this.noteContent = this.actualVersion.content;
@@ -186,7 +196,11 @@ export default {
   },
   computed: {
     noteVersionContent() {
-      return this.noteContent && this.targetBlank(this.noteContent);
+      if ( this.note.content ) {
+        return this.noteContent && this.targetBlank(this.noteContent);
+      } else {
+        return this.$t('notes.label.no-content');
+      }
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
@@ -450,6 +464,19 @@ export default {
         .finally(() => {
           this.getNoteVersionByNoteId(this.note.id);
         });
+    },
+    retrieveNoteTreeById() {
+      this.note.wikiOwner = this.note.wikiOwner.substring(1);
+      this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name).then(data => {
+        if (data && data.jsonList.length) {
+          const allnotesTreeview = data.jsonList;
+          this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.name);
+        }
+      });
+    },
+    openNoteChild(item) {
+      const noteName = item.path.split('%2F').pop();
+      this.$root.$emit('open-note-by-name', noteName);
     },
     targetBlank: function (content) {
       const internal = location.host + eXo.env.portal.context;
