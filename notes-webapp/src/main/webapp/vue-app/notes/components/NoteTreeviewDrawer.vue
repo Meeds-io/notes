@@ -89,7 +89,7 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && !exportNotes && showTree && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
+          <template v-if="home && !exportNotes && resultSearch && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
@@ -138,7 +138,7 @@
               </template>
             </v-treeview>
           </template>
-          <template v-if="!showTree">
+          <template v-if="!resultSearch">
             <div class="note-not-found-wrapper text-center mt-6">
               <v-img
                 :src="noteNotFountImage"
@@ -212,11 +212,10 @@ export default {
     drawer: false,
     filter: '',
     filterOptions: [],
-    keyword: '',
     active: [],
     checkbox: false,
     showTree: true,
-    search: null,
+    search: '',
     noteNotFountImage: '/notes/skin/images/notes_not_found.png',
   }),
   computed: {
@@ -234,6 +233,9 @@ export default {
     },
     reload () {
       return this.render;
+    },
+    resultSearch() {
+      return this.showTree;
     },
     selectExportLabel() {
       if ( this.checkbox === true) {
@@ -441,7 +443,7 @@ export default {
       this.$refs.breadcrumbDrawer.close();
     },
     closeAllDrawer() {
-      this.search = null;
+      this.search = '';
       if (this.closeAll) {
         this.$emit('closed');
       }
