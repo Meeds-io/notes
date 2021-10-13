@@ -381,6 +381,9 @@
       }
     }
     .filter {
+      .btn-group, .btn.dropdown-toggle {
+        width: inherit;
+      }
       .btn.dropdown-toggle {
         border: 1px solid @greyColorDefault !important;
       }
@@ -431,7 +434,7 @@
           }
 
           .v-list-item__title {
-            span {
+            a {
               font-weight: bold;
               color: @primaryColor!important;
             }

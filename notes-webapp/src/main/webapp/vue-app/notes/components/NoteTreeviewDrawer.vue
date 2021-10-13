@@ -131,9 +131,19 @@
               open-on-click
               transition>
               <template v-slot:label="{ item }">
-                <v-list-item-title @click="openNote(event,item)" class="body-2">
-                  <div v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage">{{ item.name }}</div>
-                  <span v-else :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}">{{ item.name }}</span>
+                <v-list-item-title class="body-2">
+                  <div 
+                    v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage"
+                    :style="{cursor: 'default'}">
+                    {{ item.name }}
+                  </div>
+                  <a 
+                    v-else 
+                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId" 
+                    :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage || !item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}"
+                    @click="openNote(event,item)">
+                    {{ item.name }}
+                  </a>
                 </v-list-item-title>
               </template>
             </v-treeview>

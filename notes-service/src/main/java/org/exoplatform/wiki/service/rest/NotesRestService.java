@@ -16,28 +16,13 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import java.io.*;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.*;
+import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.NumberUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -66,17 +51,20 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 import org.json.JSONObject;
 
-import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.*;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -1026,6 +1014,7 @@ public class NotesRestService implements ResourceContainer {
       List<JsonNodeData> finalTree = new ArrayList<>();
       responseData = getJsonTree(noteParam, context);
       JsonNodeData rootNodeData = responseData.get(0);
+      rootNodeData.setHasDraftDescendant(true);
       finalTree.add(rootNodeData);
       context.put(TreeNode.DEPTH, "1");
 
@@ -1054,34 +1043,64 @@ public class NotesRestService implements ResourceContainer {
 
       } while (!children.isEmpty());
 
-      // from the bottom
-      List<JsonNodeData> bottomChildren = withDrafts ? finalTree.stream().filter(JsonNodeData::isDraftPage).collect(Collectors.toList()) :
+      // from the bottom children nodes
+      List<JsonNodeData> bottomChildren = Boolean.TRUE.equals(withDrafts) ? finalTree.stream().filter(JsonNodeData::isDraftPage).collect(Collectors.toList()) :
               finalTree.stream().filter(jsonNodeData -> !jsonNodeData.isHasChild()).collect(Collectors.toList());
 
+      // prepare draft note nodes tree
+      if (Boolean.TRUE.equals(withDrafts)) {
+        for (JsonNodeData child : bottomChildren) {
+          JsonNodeData parent;
+          do {
+            parent = null;
+            String parentId = child.getParentPageId();
+            Optional<JsonNodeData> parentOptional = finalTree.stream().filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(), parentId)).findFirst();
+            if (parentOptional.isPresent()) {
+              parent = parentOptional.get();
+              parent.setHasDraftDescendant(true);
+              int index = finalTree.indexOf(parent);
+              finalTree.set(index, parent);
+            }
+            child = parent;
+                    
+          } while (parent != null);
+        }
+        finalTree = finalTree.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant())).collect(Collectors.toList());
+      }
       while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
         for (JsonNodeData bottomChild : bottomChildren) {
           String parentPageId = bottomChild.getParentPageId();
           Optional<JsonNodeData> parentOptional = finalTree.stream().filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(), parentPageId)).findFirst();
           if (parentOptional.isPresent()) {
             JsonNodeData parent = parentOptional.get();
-            children = parent.getChildren();
-            children.remove(bottomChild);
-            children.add(bottomChild);
-            if (withDrafts) {
-              children = children.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || !jsonNodeData.getChildren().isEmpty()).collect(Collectors.toList());
-            }
-            parent.setChildren(children);
+            
+            if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
+              children = parent.getChildren();
+              children.remove(bottomChild);
+              
+              if (Boolean.TRUE.equals(withDrafts)) {
+                children = children.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant())).collect(Collectors.toList());
+              }
+              
+            if (!Boolean.TRUE.equals(withDrafts) || bottomChild.isDraftPage() || Boolean.TRUE.equals(bottomChild.isHasDraftDescendant())) {
+                children.add(bottomChild);
+              }
+              parent.setChildren(children);
 
-            // update final tree
-            if (finalTree.contains(parent)) {
-              int index = finalTree.indexOf(parent);
-              finalTree.set(index, parent);
-            }
-            if (parents.contains(parent)) {
-              int index = parents.indexOf(parent);
-              parents.set(index, parent);
-            } else {
-              parents.add(parent);
+              // update final tree
+              if (finalTree.contains(parent)) {
+                int index = finalTree.indexOf(parent);
+                finalTree.set(index, parent);
+              }
+
+              // add node to parents
+              if (parents.contains(parent)) {
+                int index = parents.indexOf(parent);
+                parents.set(index, parent);
+              } else {
+                parents.add(parent);
+              }
+
             }
           }
         }

@@ -59,6 +59,8 @@ public class JsonNodeData {
   private List<JsonNodeData>  children;
   
   private String parentPageId;
+  
+  private Boolean hasDraftDescendant;
     
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
@@ -224,5 +226,13 @@ public class JsonNodeData {
 
   public void setDisabled(boolean disabled) {
     this.disabled = disabled;
+  }
+
+  public Boolean isHasDraftDescendant() {
+    return hasDraftDescendant;
+  }
+
+  public void setHasDraftDescendant(Boolean hasDraftDescendant) {
+    this.hasDraftDescendant = hasDraftDescendant;
   }
 }
