@@ -132,8 +132,16 @@
               transition>
               <template v-slot:label="{ item }">
                 <v-list-item-title @click="openNote(event,item)" class="body-2">
-                  <div v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage">{{ item.name }}</div>
-                  <span v-else :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}">{{ item.name }}</span>
+                  <div v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage">
+                    <a :href="item.noteId" class="text-color">{{ item.name }}</a>
+                  </div>
+                  <a
+                    v-else
+                    class="text-color "
+                    :href="item.noteId"
+                    :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}"> 
+                    {{ item.name }}
+                  </a>
                 </v-list-item-title>
               </template>
             </v-treeview>
