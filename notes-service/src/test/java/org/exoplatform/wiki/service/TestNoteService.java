@@ -81,7 +81,7 @@ public class TestNoteService extends BaseTest {
     noteService.createNote(portalWiki, "Home", new Page("Breadcumb1_", "Breadcumb1_"),root) ;
     noteService.createNote(portalWiki, "Breadcumb1_", new Page("Breadcumb2_", "Breadcumb2_"),root) ;
     noteService.createNote(portalWiki, "Breadcumb2_", new Page("Breadcumb3_", "Breadcumb3_"),root) ;
-    List<BreadcrumbData> breadCumbs = noteService.getBreadcumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_");
+    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
     assertEquals("Breadcumb1_", breadCumbs.get(1).getId());

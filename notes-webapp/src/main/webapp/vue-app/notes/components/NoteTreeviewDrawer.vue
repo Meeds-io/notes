@@ -257,13 +257,21 @@ export default {
     },
     filter() {
       if (this.note && this.note.id) {
-        this.getNoteById(this.note.id);
+        if (this.note.draftPage) {
+          this.getDraftNote(this.note.id);
+        } else {
+          this.getNoteById(this.note.id);
+        }
       }
     },
   },
   created() {
-    this.$root.$on('refresh-treeview-items', (noteId)=> {
-      this.getNoteById(noteId);
+    this.$root.$on('refresh-treeView-items', (note)=> {
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
     });
     this.$root.$on('close-note-tree-drawer', () => {
       this.close();
@@ -280,10 +288,13 @@ export default {
     ];
   },
   methods: {
-    open(noteId, source, includeDisplay) {
-      $('.spaceButtomNavigation').addClass('hidden');
+    open(note, source, includeDisplay) {
       this.render = false;
-      this.getNoteById(noteId);
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
       if (source === 'includePages') {
         this.isIncludePage = true;
       } else {
@@ -321,10 +332,12 @@ export default {
       }
       const canOpenNote = this.filter === this.$t('notes.filter.label.drafts') && note.draftPage || this.filter !== this.$t('notes.filter.label.drafts');
       if (canOpenNote) {
-        this.activeItem = [note.id];
+        //reinitialize filter
+        this.filter = this.filterOptions[0];
+        this.activeItem = [note.noteId];
         if ( !this.includePage && !this.movePage ) {
-          const noteName = note.path.split('%2F').pop();
-          this.$root.$emit('open-note-by-name', noteName);
+          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
+          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
           this.$refs.breadcrumbDrawer.close();
         }
         if (this.includePage) {
@@ -332,7 +345,7 @@ export default {
           this.$refs.breadcrumbDrawer.close();
         }
         if (this.movePage) {
-          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
+          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.noteId).then(data => {
             this.breadcrumb = data && data.breadcrumb || [];
             this.breadcrumb[0].name = this.$t('notes.label.noteHome');
             this.destinationNote = data;
@@ -351,6 +364,20 @@ export default {
             this.note.wikiOwner = this.note.wikiOwner.substring(1);
           }
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
+        });
+      }
+    },
+    getDraftNote(id) {
+      if (id) {
+        return this.$notesService.getDraftNoteById(id).then(data => {
+          this.note = data || [];
+          this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
+          this.breadcrumb = this.note.breadcrumb;
+        }).then(() => {
+          if (this.note.wikiType === 'group') {
+            this.note.wikiOwner = this.note.wikiOwner.substring(1);
+          }
+          this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.parentPageName);
         });
       }
     },

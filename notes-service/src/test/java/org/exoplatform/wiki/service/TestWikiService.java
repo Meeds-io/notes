@@ -212,7 +212,7 @@ public class TestWikiService extends BaseTest {
 //    wService.createPage(groupWiki, "Home", new Page("GroupBreadcumb1", "GroupBreadcumb1")) ;
 //    wService.createPage(groupWiki, "GroupBreadcumb1", new Page("GroupBreadcumb2", "GroupBreadcumb2")) ;
 //    wService.createPage(groupWiki, "GroupBreadcumb2", new Page("GroupBreadcumb3", "GroupBreadcumb3")) ;
-//    breadCumbs = wService.getBreadcumb(PortalConfig.GROUP_TYPE, "platform/users", "GroupBreadcumb3");
+//    breadCumbs = wService.getBreadCrumb(PortalConfig.GROUP_TYPE, "platform/users", "GroupBreadcumb3");
 //    assertEquals(4, breadCumbs.size());
 //    assertEquals("Home", breadCumbs.get(0).getId());
 //    assertEquals("GroupBreadcumb1", breadCumbs.get(1).getId());
@@ -223,7 +223,7 @@ public class TestWikiService extends BaseTest {
 //    wService.createPage(userWiki, "Home", new Page("UserBreadcumb1", "UserBreadcumb1")) ;
 //    wService.createPage(userWiki, "UserBreadcumb1", new Page("UserBreadcumb2", "UserBreadcumb2")) ;
 //    wService.createPage(userWiki, "UserBreadcumb2", new Page("UserBreadcumb3", "UserBreadcumb3")) ;
-//    breadCumbs = wService.getBreadcumb(PortalConfig.USER_TYPE, "john", "UserBreadcumb3");
+//    breadCumbs = wService.getBreadCrumb(PortalConfig.USER_TYPE, "john", "UserBreadcumb3");
 //    assertEquals(4, breadCumbs.size());
 //    assertEquals("Home", breadCumbs.get(0).getId());
 //    assertEquals("UserBreadcumb1", breadCumbs.get(1).getId());

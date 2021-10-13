@@ -35,6 +35,8 @@ public class Page {
 
   private String author;
 
+  private String authorFullName;
+
   private Date createdDate;
 
   private Date updatedDate;
