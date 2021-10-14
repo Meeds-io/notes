@@ -299,11 +299,11 @@ export default {
     });
   },
   mounted() {
-    this.filter = this.$t('notes.filter.label.all.notes');
     this.filterOptions = [
-      this.$t('notes.filter.label.all.notes'),
+      this.$t('notes.filter.label.published.notes'),
       this.$t('notes.filter.label.drafts'),
     ];
+    this.filter = this.filterOptions[0];
   },
   methods: {
     open(note, source, includeDisplay) {
