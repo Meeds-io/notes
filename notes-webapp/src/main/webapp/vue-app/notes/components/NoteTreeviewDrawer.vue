@@ -156,7 +156,7 @@
                 max-width="90"
                 contain
                 eager />
-              <p class="title mt-3 text-light-color">{{ $t('notes.label.noteSearchNotFound') + search }}</p>
+              <p class="mt-3 text-light-color">{{ $t('notes.label.noteSearchNotFound') + search }}</p>
             </div>
           </template>
         </v-col>
