@@ -9,12 +9,18 @@
         :style="`max-width: ${100 / (noteBreadcrumb.length)}%`">
         <v-tooltip max-width="300" bottom>
           <template v-slot:activator="{ on, attrs }">
-            <a 
+            <v-btn
+              height="20px"
+              min-width="45px"
+              class="pa-0"
+              text
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',note.id)"
-              class="caption text-truncate breadCrumb-link"
-              :class="index < noteBreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
+              @click="$emit('open-note',note.id)">
+              <a
+                class="caption text-truncate breadCrumb-link"
+                :class="index < noteBreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
+            </v-btn>
           </template>
           <span class="caption">{{ note.title }}</span>
         </v-tooltip>
