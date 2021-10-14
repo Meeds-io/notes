@@ -99,22 +99,21 @@
             </v-list-item>
           </template>
           <template v-if="items && items.length && exportNotes">
-            <v-container fluid font-size="25">
-              <v-checkbox
-                v-model="checkbox"
-                :label="selectExportLabel"
-                class="checkbox" />
-            </v-container>
+            <v-checkbox
+              v-model="checkbox"
+              :label="selectExportLabel"
+              class="checkbox mt-0 pl-9" />
             <v-treeview
               v-if="reload"
               v-model="selectionNotes"
+              ref="treeSearch"
               :items="allItemsHome"
-              :active="active"
+              :open.sync="openLevel"
               class="treeview-item"
               item-key="noteId"
               hoverable
               selectable
-              open-all
+              open-on-click
               :selection-type="selectionType"
               transition />
           </template>
@@ -254,6 +253,9 @@ export default {
         return this.$t('notes.label.export.selectAll');
       }
     },
+    openLevel(){
+      return [this.home.noteId];
+    }
   },
   watch: {
     search() {
@@ -266,10 +268,12 @@ export default {
     checkbox() {
       if (this.checkbox){
         this.selectionNotes=[this.home.noteId];
+        this.$refs.treeSearch.updateAll(true);
         this.selectionType='leaf';
       } else {
         this.selectionNotes= [];
         this.selectionType='independent';
+        this.$refs.treeSearch.updateAll(false);
         this.open(this.home.noteId,'exportNotes');
       }
     },
