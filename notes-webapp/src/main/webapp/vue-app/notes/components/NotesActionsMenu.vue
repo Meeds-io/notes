@@ -8,7 +8,7 @@
     left>
     <v-list>
       <v-list-item
-        v-if="note.name !== defaultPath && note.canManage"
+        v-if="!homePage && note.canManage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$root.$emit('delete-note')">
         <v-icon
@@ -40,7 +40,7 @@
         <span>{{ $t('notes.menu.label.noteHistory') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note.name !== defaultPath && note.canManage"
+        v-if="!homePage && note.canManage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-treeview')">
         <v-icon
@@ -62,6 +62,7 @@
         <span>{{ $t('notes.menu.label.exportPdf') }}</span>
       </v-list-item>
       <v-list-item
+        v-if="homePage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-treeview-export')">
         <v-icon
@@ -89,6 +90,11 @@ export default {
     defaultPath: {
       type: String,
       default: () => 'WikiHome',
+    }
+  },
+  computed: {
+    homePage(){
+      return !this.note.parentPageId;
     }
   },
   created() {
