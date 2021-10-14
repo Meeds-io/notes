@@ -214,7 +214,7 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
-    selectionType: 'independent',
+    selectionType: 'leaf',
     displayArrow: true,
     render: true,
     closeAll: true,
@@ -269,10 +269,8 @@ export default {
       if (this.checkbox){
         this.selectionNotes=[this.home.noteId];
         this.$refs.treeSearch.updateAll(true);
-        this.selectionType='leaf';
       } else {
         this.selectionNotes= [];
-        this.selectionType='independent';
         this.$refs.treeSearch.updateAll(false);
         this.open(this.home.noteId,'exportNotes');
       }
