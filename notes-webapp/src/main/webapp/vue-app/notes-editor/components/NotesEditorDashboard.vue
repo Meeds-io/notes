@@ -25,7 +25,7 @@
               <button
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
-                @click="postNote(false)">
+                @click.once="postNote(false)">
                 {{ publishButtonText }}
                 <v-icon
                   id="notesPublichAndPost"
