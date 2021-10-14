@@ -193,7 +193,12 @@ export default {
     }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
-      this.getNote(this.noteId);
+      const isDraft = urlParams.has('isDraft') && urlParams.get('isDraft') === 'true';
+      if (isDraft) {
+        this.getDraftNote(this.noteId);
+      } else {
+        this.getNote(this.noteId);
+      }
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -284,11 +289,11 @@ export default {
       }, this.autoSaveDelay);
     },
     getNote(id) {
-      return this.$notesService.getLatestDraftOfPage(id).then(value => {
+      return this.$notesService.getLatestDraftOfPage(id).then(latestDraft => {
         // check if page has a draft
-        value = Object.keys(value).length !== 0 ? value : null;
-        if (value) {
-          this.fillNote(value);
+        latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
+        if (latestDraft) {
+          this.fillNote(latestDraft);
           const messageObject = {
             type: 'warning',
             message: `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`
@@ -298,7 +303,8 @@ export default {
         } else {
           this.$notesService.getNoteById(id).then(data => {
             this.fillNote(data);
-          }).finally(() => this.initActualNoteDone = true);
+            this.initActualNoteDone = true;
+          });
         }
       });
     },
