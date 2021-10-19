@@ -236,6 +236,10 @@ export default {
         });
       }
     });
+    this.$root.$on('display-note-childs', () => {
+      console.warn(this.note);
+    });
+
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
