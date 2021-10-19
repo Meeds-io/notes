@@ -102,7 +102,7 @@
             <v-checkbox
               v-model="checkbox"
               :label="selectExportLabel"
-              class="checkbox mt-0 pl-9" />
+              class="checkbox mt-0 pl-3" />
             <v-treeview
               v-if="reload"
               v-model="selectionNotes"
@@ -448,7 +448,6 @@ export default {
     resetImport(){
       this.checkbox = false;
       this.selectionNotes = [];
-      this.selectionType='independent';
     },
     close() {
       this.render = false;

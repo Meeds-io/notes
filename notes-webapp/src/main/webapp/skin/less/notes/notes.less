@@ -401,9 +401,20 @@
       }
     }
     .checkbox {
+      .v-input--selection-controls__input:hover .v-input--selection-controls__ripple:before {
+        background: white!important;
+      }
+
       i.v-icon  {
-        margin-left: 2px;
-        font-size: 24px !important;
+        font-family: Helvetica, arial, sans-serif;
+        color: @darkGrey;
+        font-size: 19px !important;
+      }
+      label.v-label {
+        font-size: 10.5pt;
+        font-style: italic;
+        color: @primaryColor;
+        margin-left: -5px;
       }
     }
 
@@ -429,6 +440,16 @@
       .v-treeview-node__root {
         min-height: 38px !important;
 
+        .v-treeview-node__checkbox {
+          position: absolute;
+          color: @darkGrey;
+          font-size: 19px !important;
+          margin-left: 3px;
+        }
+        .v-treeview-node__toggle {
+          margin-left: 24px;
+          margin-right: -3px
+        }
         &:hover {
           &::before {
             opacity: 0 !important;
