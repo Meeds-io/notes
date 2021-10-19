@@ -150,7 +150,13 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
+      dateTimeFormatZip: {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      },
       confirmMessage: '',
+      spaceDisplayName: eXo.env.portal.spaceDisplayName,
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
       noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
       noteNotFountImage: '/notes/skin/images/notes_not_found.png',
@@ -285,8 +291,8 @@ export default {
     this.$root.$on('move-page', (note, newParentNote) => {
       this.moveNotes(note, newParentNote);
     });
-    this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId,spaceDisplayName) => {
-      this.exportNotes(notesSelected,importAll,homeNoteId,spaceDisplayName);
+    this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
+      this.exportNotes(notesSelected,importAll,homeNoteId);
     });
     
   },
@@ -338,12 +344,13 @@ export default {
         exportChildren = true;
         notesSelected = homeNoteId;
       }
+      const date=this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
       this.$notesService.exportNotes(notesSelected,exportChildren).then((transfer) => {
         return transfer.blob();                 
       }).then((bytes) => {
         const elm = document.createElement('a');  
-        elm.href = URL.createObjectURL(bytes);  
-        elm.setAttribute('download', `NotesExport_${Date.now()}`); 
+        elm.href = URL.createObjectURL(bytes);
+        elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}`);
         elm.click();                             
         this.$root.$emit('close-note-tree-drawer');
         this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.exported')});
