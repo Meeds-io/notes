@@ -3,6 +3,7 @@
     <v-alert
       v-model="alert"
       :type="alertType"
+      :icon="alertType === 'warning' ? 'mdi-alert-circle' : ''"
       dismissible>
       {{ message }}
       <a 
