@@ -230,7 +230,10 @@ export default {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.note, 'includePages');
       } else if (urlParams.has('parentNoteId')) {
-        this.$refs.noteTreeview.open(this.parentPageId, 'includePages');
+        this.$notesService.getNoteById(this.parentPageId).then(data => {
+          const note = data;
+          this.$refs.noteTreeview.open(note, 'includePages');
+        });
       }
     });
     this.$root.$on('include-page', (note) => {
