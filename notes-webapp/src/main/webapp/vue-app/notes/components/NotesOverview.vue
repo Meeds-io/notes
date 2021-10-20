@@ -260,7 +260,7 @@ export default {
       } else {
         return 0;
       }
-        
+
     },
     appName() {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
