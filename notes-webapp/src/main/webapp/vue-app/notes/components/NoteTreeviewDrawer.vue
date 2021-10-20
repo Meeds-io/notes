@@ -10,7 +10,7 @@
       class="breadcrumbDrawer"
       v-model="drawer"
       show-overlay
-      @closed="closeAllDrawer()"
+      @closed="closeAllDrawer()" 
       right>
       <template v-if="isIncludePage && displayArrow" slot="title">
         <div class="d-flex">
@@ -69,10 +69,11 @@
           <v-row v-if="!exportNotes">
             <v-col class="my-auto">
               <v-text-field
-                v-model="keyword"
+                v-model="search"
                 class="search"
                 :placeholder=" $t('notes.label.filter') "
                 clearable
+                font-size="18"
                 prepend-inner-icon="fa-filter" />
             </v-col>
             <v-col class="filter" cols="4">
@@ -88,7 +89,7 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && !exportNotes && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
+          <template v-if="home && !exportNotes && resultSearch && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
@@ -98,22 +99,22 @@
             </v-list-item>
           </template>
           <template v-if="items && items.length && exportNotes">
-            <v-container fluid font-size="25">
-              <v-checkbox
-                v-model="checkbox"
-                :label="selectExportLabel"
-                class="checkbox" />
-            </v-container>
+            <v-checkbox
+              v-model="checkbox"
+              :label="selectExportLabel"
+              class="checkbox mt-0 pl-3" />
             <v-treeview
               v-if="reload"
               v-model="selectionNotes"
+              ref="treeSearch"
               :items="allItemsHome"
-              :active="active"
+              :open.sync="openLevel"
               class="treeview-item"
               item-key="noteId"
               hoverable
               selectable
-              open-all
+              activatable
+              open-on-click
               :selection-type="selectionType"
               transition />
           </template>
@@ -123,11 +124,11 @@
               :items="items"
               :open="openedItems"
               :active="active"
-              :search="keyword"
-              :filter="filterNotes"
+              :search="search"
               class="treeview-item"
               item-key="noteId"
               hoverable
+              activatable
               open-on-click
               transition>
               <template v-slot:label="{ item }">
@@ -147,6 +148,18 @@
                 </v-list-item-title>
               </template>
             </v-treeview>
+          </template>
+          <template v-if="!resultSearch">
+            <div class="note-not-found-wrapper text-center mt-6">
+              <v-img
+                :src="noteNotFountImage"
+                class="mx-auto"
+                max-height="85"
+                max-width="90"
+                contain
+                eager />
+              <p class="mt-3 text-light-color">{{ $t('notes.label.noteSearchNotFound') + search }}</p>
+            </div>
           </template>
         </v-col>
       </template>
@@ -203,20 +216,20 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
-    selectionType: 'independent',
+    selectionType: 'leaf',
     displayArrow: true,
     render: true,
     closeAll: true,
     drawer: false,
     filter: '',
     filterOptions: [],
-    keyword: '',
+    active: [],
     checkbox: false,
+    showTree: true,
+    search: '',
+    noteNotFountImage: '/notes/skin/images/notes_not_found.png',
   }),
   computed: {
-    home() {
-      return this.breadcrumbItems && this.breadcrumbItems.length && this.breadcrumbItems[0];
-    },
     openedItems() {
       return this.openNotes;
     },
@@ -232,10 +245,9 @@ export default {
     reload () {
       return this.render;
     },
-    filterNotes() {
-      return (item, search, textKey) => item[textKey].toLowerCase().match(search.toLowerCase());
+    resultSearch() {
+      return this.showTree;
     },
-
     selectExportLabel() {
       if ( this.checkbox === true) {
         return this.$t('notes.label.export.deselectAll');
@@ -243,27 +255,45 @@ export default {
         return this.$t('notes.label.export.selectAll');
       }
     },
+    openLevel(){
+      return [this.home.noteId];
+    }
   },
   watch: {
+    search() {
+      this.showTree = true;
+      if (this.search) {
+        this.active = this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()));
+        this.showTree = this.active.length ? true :false;
+      }
+    },
     checkbox() {
       if (this.checkbox){
         this.selectionNotes=[this.home.noteId];
-        this.selectionType='leaf';
+        this.$refs.treeSearch.updateAll(true);
       } else {
         this.selectionNotes= [];
-        this.selectionType='independent';
+        this.$refs.treeSearch.updateAll(false);
         this.open(this.home.noteId,'exportNotes');
       }
     },
     filter() {
       if (this.note && this.note.id) {
-        this.getNoteById(this.note.id);
+        if (this.note.draftPage) {
+          this.getDraftNote(this.note.id);
+        } else {
+          this.getNoteById(this.note.id);
+        }
       }
     },
   },
   created() {
-    this.$root.$on('refresh-treeview-items', (noteId)=> {
-      this.getNoteById(noteId);
+    this.$root.$on('refresh-treeView-items', (note)=> {
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
     });
     this.$root.$on('close-note-tree-drawer', () => {
       this.close();
@@ -273,17 +303,20 @@ export default {
     });
   },
   mounted() {
-    this.filter = this.$t('notes.filter.label.all.notes');
     this.filterOptions = [
-      this.$t('notes.filter.label.all.notes'),
+      this.$t('notes.filter.label.published.notes'),
       this.$t('notes.filter.label.drafts'),
     ];
+    this.filter = this.filterOptions[0];
   },
   methods: {
-    open(noteId, source, includeDisplay) {
-      $('.spaceButtomNavigation').addClass('hidden');
+    open(note, source, includeDisplay) {
       this.render = false;
-      this.getNoteById(noteId);
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
       if (source === 'includePages') {
         this.isIncludePage = true;
       } else {
@@ -321,10 +354,12 @@ export default {
       }
       const canOpenNote = this.filter === this.$t('notes.filter.label.drafts') && note.draftPage || this.filter !== this.$t('notes.filter.label.drafts');
       if (canOpenNote) {
-        this.activeItem = [note.id];
+        //reinitialize filter
+        this.filter = this.filterOptions[0];
+        this.activeItem = [note.noteId];
         if ( !this.includePage && !this.movePage ) {
-          const noteName = note.path.split('%2F').pop();
-          this.$root.$emit('open-note-by-name', noteName);
+          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
+          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
           this.$refs.breadcrumbDrawer.close();
         }
         if (this.includePage) {
@@ -332,7 +367,7 @@ export default {
           this.$refs.breadcrumbDrawer.close();
         }
         if (this.movePage) {
-          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.id).then(data => {
+          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.noteId).then(data => {
             this.breadcrumb = data && data.breadcrumb || [];
             this.breadcrumb[0].name = this.$t('notes.label.noteHome');
             this.destinationNote = data;
@@ -351,6 +386,20 @@ export default {
             this.note.wikiOwner = this.note.wikiOwner.substring(1);
           }
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
+        });
+      }
+    },
+    getDraftNote(id) {
+      if (id) {
+        return this.$notesService.getDraftNoteById(id).then(data => {
+          this.note = data || [];
+          this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
+          this.breadcrumb = this.note.breadcrumb;
+        }).then(() => {
+          if (this.note.wikiType === 'group') {
+            this.note.wikiOwner = this.note.wikiOwner.substring(1);
+          }
+          this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.parentPageName);
         });
       }
     },
@@ -401,14 +450,13 @@ export default {
     resetImport(){
       this.checkbox = false;
       this.selectionNotes = [];
-      this.selectionType='independent';
     },
     close() {
       this.render = false;
       this.$refs.breadcrumbDrawer.close();
     },
     closeAllDrawer() {
-      $('.spaceButtomNavigation').removeClass('hidden');
+      this.search = '';
       if (this.closeAll) {
         this.$emit('closed');
       }
