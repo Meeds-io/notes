@@ -90,4 +90,17 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
       delete(draftPage);
     }
   }
+
+  public DraftPageEntity findLatestDraftPageByUserAndTargetPage(Long targetPageId, String username) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByUserAndTargetPage", DraftPageEntity.class)
+            .setParameter("username", username)
+            .setParameter("targetPageId", targetPageId);
+
+    try {
+      query.setMaxResults(1);
+      return query.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
 }
