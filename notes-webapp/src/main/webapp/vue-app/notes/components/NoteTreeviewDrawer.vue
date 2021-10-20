@@ -113,7 +113,6 @@
               item-key="noteId"
               hoverable
               selectable
-              activatable
               open-on-click
               :selection-type="selectionType"
               transition />
@@ -128,7 +127,6 @@
               class="treeview-item"
               item-key="noteId"
               hoverable
-              activatable
               open-on-click
               transition>
               <template v-slot:label="{ item }">
