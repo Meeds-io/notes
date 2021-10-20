@@ -566,7 +566,10 @@ export default {
             const element = evt.data.element;
             if ( element && element.is('a')) {
               const noteId = element.getAttribute( 'href' );
-              self.$refs.noteTreeview.open(noteId, 'includePages', 'no-arrow');
+              self.$notesService.getNoteById(noteId).then(data => {
+                const note = data;
+                self.$refs.noteTreeview.open(note, 'includePages', 'no-arrow');
+              });
             }
           }
         }
