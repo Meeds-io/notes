@@ -224,6 +224,31 @@ public class NotesRestService implements ResourceContainer {
   }
 
   @GET
+  @Path("/childrens/{noteId}")
+  @Produces({"application/json"})
+  @RolesAllowed({"users"})
+  @ApiOperation( value = "Get note children by note id params", httpMethod = "GET", response = Response.class, notes = "This get the note children if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiResponses({@ApiResponse(code = 200, message = "Request fulfilled"), @ApiResponse( code = 400, message = "Invalid query input"), @ApiResponse( code = 403, message = "Unauthorized operation"), @ApiResponse( code = 404, message = "Resource not found")})
+  public Response getNoteChildrenByNoteId(@ApiParam(value = "Note id",required = true) @PathParam("noteId") String noteId, @ApiParam(value = "withDraft",required = true) @QueryParam("withDraft") String source) {
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note = noteService.getNoteById(noteId, identity, source);
+      if (note == null) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      } else {
+        List<Page> noteChildren = noteService.getChildrenNoteOf(note, false);
+        return Response.ok(noteChildren).build();
+      }
+    } catch (IllegalAccessException e) {
+      log.error("User does not have view permissions on the note {}", noteId, e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Can't get note {} children", noteId, e);
+      return Response.serverError().entity(e.getMessage()).build();
+    }
+  }
+
+  @GET
   @Path("/draftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
