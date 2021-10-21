@@ -4,66 +4,85 @@
       <div v-if="isAvailableNote" class="notes-application white border-radius pa-6">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
-            <span class="title text-color mt-n1">{{ noteTitle }}</span>
+            <span class="title text-color mt-1">{{ note.title }}</span>
             <div
               id="note-actions-menu"
               v-if="loadData"
               class="notes-header-icons text-right">
               <v-tooltip bottom v-if="!isMobile">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                    size="22"
-                    class="clickable add-note-click"
-                    @click="addNotes"
+                  <v-btn
+                    class="pa-0"
+                    v-on="on"
                     v-bind="attrs"
-                    v-on="on">
-                    mdi-plus
-                  </v-icon>
+                    @click="addNote"
+                    icon>
+                    <v-icon
+                      size="22"
+                      class="clickable add-note-click">
+                      mdi-plus
+                    </v-icon>
+                  </v-btn>
                 </template>
                 <span class="caption">{{ $t('notes.label.addPage') }}</span>
               </v-tooltip>
 
               <v-tooltip bottom v-if="notes.canEdit && !isMobile">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                    size="19"
-                    class="clickable edit-note-click"
-                    @click="editNotes"
+                  <v-btn
+                    class="pa-0"
+                    icon
                     v-bind="attrs"
-                    v-on="on">
-                    mdi-square-edit-outline
-                  </v-icon>
+                    @click="editNote">
+                    <v-icon
+                      size="19"
+                      class="clickable edit-note-click">
+                      mdi-square-edit-outline
+                    </v-icon>
+                  </v-btn>
                 </template>
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
 
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                    size="19"
-                    class="clickable"
-                    v-bind="attrs"
+                  <v-btn
+                    class="pa-0"
                     v-on="on"
-                    @click="$root.$emit('display-action-menu')">
-                    mdi-dots-vertical
-                  </v-icon>
+                    @click="$root.$emit('display-action-menu')"
+                    v-bind="attrs"
+                    icon>
+                    <v-icon
+                      size="19"
+                      class="clickable">
+                      mdi-dots-vertical
+                    </v-icon>
+                  </v-btn>
                 </template>
                 <span class="caption">{{ $t('notes.label.openMenu') }}</span>
               </v-tooltip>
             </div>
           </div>
-          <div class="notes-treeview d-flex flex-wrap pb-2">
+          <div class="notes-treeview d-flex flex-inline">
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
-                <i 
-                  class="uiIcon uiTreeviewIcon primary--text me-3"
+                <v-btn
+                  @click="$refs.notesBreadcrumb.open(note, 'displayNote')"
+                  v-on="on"
+                  class="pa-0"
+                  min-width="24"
                   v-bind="attrs"
-                  v-on="on" 
-                  @click="$refs.notesBreadcrumb.open(notes.id, 'displayNote')"></i>
+                  text>
+                  <i
+                    class="uiIcon uiTreeviewIcon primary--text"></i>
+                </v-btn>
               </template>
               <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
             </v-tooltip>
-            <note-breadcrumb :note-breadcrumb="notebreadcrumb" @open-note="getNoteByName($event, 'breadCrumb')" />
+            <note-breadcrumb
+              class="pt-2 pe-1 pl-1"
+              :note-breadcrumb="notebreadcrumb"
+              @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div class="notes-last-update-info">
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNotesUpdatebBy, 1: displayedDate}) }}</span>
