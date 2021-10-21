@@ -6,8 +6,8 @@
         class="notes-application white border-radius pa-6"
         ref="content">
         <div class="notes-application-header">
-          <div class="notes-title d-flex justify-space-between">
-            <span class="title text-color mt-1">{{ note.title }}</span>
+          <div class="notes-title d-flex justify-space-between pb-4">
+            <span class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideActions"
