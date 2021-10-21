@@ -237,7 +237,26 @@ export default {
       }
     });
     this.$root.$on('display-note-childs', () => {
-      console.warn(this.note);
+      this.$notesService.getChildrensByNoteId(this.noteId).then(data => {
+        const noteChildrens = data;
+        const editor = $('textarea#notesContent').ckeditor().editor;
+        if ( noteChildrens && noteChildrens.length > 0 ) {
+          editor.insertHtml('<ul class="note-manual-child">');
+          noteChildrens.forEach (child => {
+            if ( child.hasChildren ) {
+              editor.insertHtml(`<li class='note-child-item has-child'><a href='${child.id}' class='noteLink'>${child.name}</a></li>`);
+            } else {
+              editor.insertHtml(`<li class='note-child-item'><a href='${child.id}' class='noteLink'>${child.name}</a></li>`);
+            }
+          });
+          editor.insertHtml('</ul>');
+        }
+      });
+    });
+
+    document.addEventListener('note-toc-plugin', event=> {
+      const listId = event && event.detail;
+      console.warn('olaaa', listId);
     });
 
     this.$root.$on('include-page', (note) => {
@@ -487,9 +506,10 @@ export default {
       }
       CKEDITOR.plugins.addExternal('video','/notes/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
+      CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -497,6 +517,9 @@ export default {
         extraPlugins = 'simpleLink,selectImage';
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
+      CKEDITOR.addCss('.note-manual-child { padding-inline-start: 16px!important; list-style: none!important;min-height: 30px;}');
+      CKEDITOR.addCss('.note-child-item { list-style: none!important;}');
+      CKEDITOR.addCss('.note-child-item a { text-decoration: none!important;}');
       CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
 
       // this line is mandatory when a custom skin is defined

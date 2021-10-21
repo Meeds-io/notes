@@ -25,28 +25,29 @@
                 <div
                   :id="'pluginItem-' + index"
                   class="pluginItem pa-4">
-                   <v-tooltip>
-                      <template v-slot:activator="{ on, attrs }">
-                        <a v-bind="attrs"
-                          v-on="on"
-                          :id="plugin.id"
-                          :target="plugin.title"
-                          @click="openPlugin(plugin.id)">
-                          <img
-                            v-if="plugin.src && plugin.src.length"
-                            class="pluginImage bloc"
-                            :src="plugin.src">
-                          <img
-                            v-else
-                            class="pluginImage block"
-                            :src="defaultImagePlugin">
-                          <span
-                            class="pluginTitle text-truncate">{{ $t(`notes.label.${plugin.title}`) }}
-                          </span>
-                        </a>
-                      </template>
-                      <span class="caption">{{ plugin.tooltip }}</span>
-                    </v-tooltip>
+                  <v-tooltip>
+                    <template v-slot:activator="{ on, attrs }">
+                      <a
+                        v-bind="attrs"
+                        v-on="on"
+                        :id="plugin.id"
+                        :target="plugin.title"
+                        @click="openPlugin(plugin.id)">
+                        <img
+                          v-if="plugin.src && plugin.src.length"
+                          class="pluginImage bloc"
+                          :src="plugin.src">
+                        <img
+                          v-else
+                          class="pluginImage block"
+                          :src="defaultImagePlugin">
+                        <span
+                          class="pluginTitle text-truncate">{{ $t(`notes.label.${plugin.title}`) }}
+                        </span>
+                      </a>
+                    </template>
+                    <span class="caption">{{ plugin.tooltip }}</span>
+                  </v-tooltip>
                 </div>
               </div>
             </v-col>
@@ -62,6 +63,9 @@ export default {
   data: () => ({
     defaultImagePlugin: '/notes/images/defaultPlugin.png',
     drawer: false,
+    hideTOC: true,
+    noteId: '',
+    noteChildren: []
   }),
   computed: {
     plugins() {
@@ -77,14 +81,26 @@ export default {
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
       }
-      return pluginsList;
+      if (this.hideTOC ) {
+        return pluginsList.filter( plugin => plugin.id !== 'ToC' );
+      } else {
+        return pluginsList;
+      }
     },
   },
   props: {
     instance: {
       type: Object,
       default: () => null,
-    },
+    }
+  },
+  created() {
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('noteId')) {
+      this.noteId = urlParams.get('noteId');
+      this.retrieveNoteChildren(this.noteId);
+    }
   },
   methods: {
     open() {
@@ -93,14 +109,23 @@ export default {
     close() {
       this.$refs.customPluginsDrawer.close();
     },
+    retrieveNoteChildren(noteId) {
+      this.$notesService.getChildrensByNoteId(noteId).then(data => {
+        this.noteChildren = data || [];
+        if (this.noteChildren.length) {
+          this.hideTOC = false;
+        }
+      });
+    },
     openPlugin(id){
       if (id==='table'){
         this.$root.$emit('note-table-plugins');
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
       } else if ( id === 'ToC') {
-        this.$root.$emit('display-note-childs');
-      }else {
+        this.instance.execCommand(id, this.noteChildren);
+      }
+      else {
         this.instance.execCommand(id);
       }
     }
