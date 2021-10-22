@@ -7,10 +7,10 @@
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
-            <span class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
+            <span ref="noteTitle" class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
             <div
               id="note-actions-menu"
-              v-show="loadData && !hideActions"
+              v-show="loadData && !hideElementsForSavingPDF"
               class="notes-header-icons text-right">
               <v-tooltip bottom v-if="!isMobile && !note.draftPage && note.canManage">
                 <template v-slot:activator="{ on, attrs }">
@@ -66,7 +66,7 @@
               </v-tooltip>
             </div>
           </div>
-          <div class="notes-treeview d-flex flex-inline">
+          <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-inline">
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
                 <v-btn
@@ -87,7 +87,7 @@
               :note-breadcrumb="notebreadcrumb"
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
-          <div class="notes-last-update-info">
+          <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, note.canManage)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
@@ -189,7 +189,7 @@ export default {
       message: '',
       loadData: false,
       openTreeView: false,
-      hideActions: false,
+      hideElementsForSavingPDF: false,
       noteVersions: [],
       actualVersion: {},
       noteContent: '',
@@ -450,12 +450,16 @@ export default {
       this.$refs.DeleteNoteDialog.open();
     },
     createPDF(note) {
-      this.hideActions = true;
-      setTimeout(() => {
+      this.hideElementsForSavingPDF = true;
+      this.$refs.noteTitle.innerHTML = note.title;
+      const self = this;
+      this.$nextTick(() => {
         const element = this.$refs.content;
+        this.hideElementsForSavingPDF = false;
         html2canvas(element, {
           useCORS: true
         }).then(function (canvas) {
+          self.$refs.noteTitle.innerHTML = `${self.$t('note.label.home')} ${self.spaceDisplayName}`;
           const pdf = new JSPDF('p', 'mm', 'a4');
           const ctx = canvas.getContext('2d');
           const a4w = 170;
@@ -485,8 +489,7 @@ export default {
           this.displayMessage(messageObject);
           console.error('Error when exporting note: ', e);
         });
-        this.hideActions = false;
-      }, 100);
+      });
     },
     displayMessage(message) {
       this.message=message.message;
