@@ -1,6 +1,7 @@
 CKEDITOR.plugins.add( 'toc', {
 
-  // The plugin initialization logic goes inside this method.
+  icons: 'toc',
+
   init: function( editor ) {
 
     var pluginDirectory = this.path;
@@ -8,13 +9,23 @@ CKEDITOR.plugins.add( 'toc', {
 
     editor.addCommand( 'ToC', {
 
-      // Define the function that will be fired when the command is executed.
-      exec: function( editor ) {
-        var listId = 'toc-' + Math.floor(Math.random() * 100);
-        editor.insertHtml('<ul class="note-manual-child" id='+listId+'></ul>');
-        document.dispatchEvent(new CustomEvent('note-toc-plugin',{detail: listId}));
+      exec: function( editor , childrenList) {
+        if ( childrenList.length ) {
+          var div = editor.document.createElement('div');
+          var listChildItems = '<ul class="note-manual-child">';
+          for (var j = 0; j < childrenList.length; j++){
+            console.warn(childrenList[j].name);
+            if (childrenList[j].hasChildren) {
+              listChildItems += '<li class="note-child-item has-child"><a href="'+childrenList[j].id+'" class="noteLink">'+childrenList[j].name+'<a></li>';
+            } else {
+              listChildItems += '<li class="note-child-item"><a href="'+childrenList[j].id+'" class="noteLink">'+childrenList[j].name+'<a></li>';
+            }
+          }
+          listChildItems += '</ul>';
+          div.setHtml(listChildItems);
+          editor.insertElement( div );
+        }
       }
     });
   }
 });
-

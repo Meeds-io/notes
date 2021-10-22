@@ -99,6 +99,7 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
+      this.hideTOC = false;
       this.retrieveNoteChildren(this.noteId);
     }
   },
@@ -112,9 +113,6 @@ export default {
     retrieveNoteChildren(noteId) {
       this.$notesService.getChildrensByNoteId(noteId).then(data => {
         this.noteChildren = data || [];
-        if (this.noteChildren.length) {
-          this.hideTOC = false;
-        }
       });
     },
     openPlugin(id){
