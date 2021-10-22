@@ -125,7 +125,7 @@
       :default-path="defaultPath" 
       @open-treeview="$refs.notesBreadcrumb.open(note.id, 'movePage')"
       @export-pdf="createPDF(note)"
-      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions)"
+      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,note.canManage)"
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
