@@ -7,14 +7,7 @@
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
-            <span
-              v-if="homePage"
-              ref="noteTitle"
-              class="title text-color mt-n1">{{ `${$t('note.label.home')} ${spaceDisplayName}` }}</span>
-            <span
-              v-else
-              ref="noteTitle"
-              class="title text-color mt-n1">{{ note.title }}</span>
+            <span class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
@@ -130,19 +123,16 @@
     <notes-actions-menu
       :note="note"
       :default-path="defaultPath" 
-      @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
+      @open-treeview="$refs.notesBreadcrumb.open(note.id, 'movePage')"
       @export-pdf="createPDF(note)"
-      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,note.canManage)"
-      @open-treeview-export="$refs.notesBreadcrumb.open(note, 'exportNotes')"
-      @open-import-drawer="$refs.noteImportDrawer.open()" />
+      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions)"
+      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <note-history-drawer
       ref="noteVersionsHistoryDrawer"
       @open-version="displayVersion($event)"
       @restore-version="restoreVersion($event)" />
-    <note-import-drawer
-      ref="noteImportDrawer" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -295,9 +285,6 @@ export default {
     appName() {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
-    },
-    homePage(){
-      return !this.note.parentPageId;
     }
   },
   created() {
@@ -327,10 +314,6 @@ export default {
     this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
       this.exportNotes(notesSelected,importAll,homeNoteId);
     });
-    this.$root.$on('import-notes', (uploadId,overrideMode) => {
-      this.importNotes(uploadId,overrideMode);
-    });
-
     
   },
   mounted() {
@@ -383,7 +366,7 @@ export default {
       }
       const date=this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
       this.$notesService.exportNotes(notesSelected,exportChildren).then((transfer) => {
-        return transfer.blob();
+        return transfer.blob();                 
       }).then((bytes) => {
         const elm = document.createElement('a');  
         elm.href = URL.createObjectURL(bytes);
@@ -413,18 +396,6 @@ export default {
       }).finally(() => {
         this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeView-items', this.note);
-      });
-    },
-    importNotes(uploadId,overrideMode){
-      this.$notesService.importZipNotes(this.note.id,uploadId,overrideMode).then(() => {
-        this.$root.$emit('close-note-tree-drawer');
-        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.notes.imported')});
-      }).catch(e => {
-        console.error('Error when import notese', e);
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t(`notes.message.${e.message}`)
-        });
       });
     },
     getNoteByName(noteName, source) {
@@ -480,15 +451,12 @@ export default {
     },
     createPDF(note) {
       this.hideElementsForSavingPDF = true;
-      this.$refs.noteTitle.innerHTML = note.title;
-      const self = this;
       this.$nextTick(() => {
         const element = this.$refs.content;
         this.hideElementsForSavingPDF = false;
         html2canvas(element, {
           useCORS: true
         }).then(function (canvas) {
-          self.$refs.noteTitle.innerHTML = `${self.$t('note.label.home')} ${self.spaceDisplayName}`;
           const pdf = new JSPDF('p', 'mm', 'a4');
           const ctx = canvas.getContext('2d');
           const a4w = 170;
