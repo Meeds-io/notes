@@ -64,6 +64,7 @@
           <div class="formInputGroup notesTitle mx-3">
             <input
               id="notesTitle"
+              ref="noteTitle"
               v-model="note.title"
               :placeholder="notesTitlePlaceholder"
               type="text"
@@ -602,11 +603,16 @@ export default {
       });
     },
     setFocus() {
-      if (CKEDITOR.instances['notesContent']) {
-        CKEDITOR.instances['notesContent'].status = 'ready';
-        window.setTimeout(() => {
-          this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
-        }, 200);
+      if (!this.noteId) {
+        this.$refs.noteTitle.focus();
+      } else {
+        if (CKEDITOR.instances['notesContent']) {
+          CKEDITOR.instances['notesContent'].status = 'ready';
+          window.setTimeout(() => {
+            console.log('Test: ', CKEDITOR.instances['notesContent']);
+            this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
+          }, 200);
+        }        
       }
     },
     validateForm() {
