@@ -7,7 +7,7 @@
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
-            <span class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
+            <span ref="noteTitle" class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
@@ -451,12 +451,15 @@ export default {
     },
     createPDF(note) {
       this.hideElementsForSavingPDF = true;
+      this.$refs.noteTitle.innerHTML = note.title;
+      const self = this;
       this.$nextTick(() => {
         const element = this.$refs.content;
         this.hideElementsForSavingPDF = false;
         html2canvas(element, {
           useCORS: true
         }).then(function (canvas) {
+          self.$refs.noteTitle.innerHTML = `${self.$t('note.label.home')} ${self.spaceDisplayName}`;
           const pdf = new JSPDF('p', 'mm', 'a4');
           const ctx = canvas.getContext('2d');
           const a4w = 170;
