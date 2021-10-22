@@ -7,7 +7,7 @@
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
-            <span class="title text-color mt-n1">{{ $t('note.label.home') }}  {{ spaceDisplayName }}</span>
+            <span class="title text-color mt-n1">{{ `${$t('note.label.home')} ${spaceDisplayName}` }}</span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
