@@ -100,7 +100,7 @@ export default {
     },
     defaultPath: {
       type: String,
-      default: () => 'WikiHome',
+      default: () => 'Home',
     }
   },
   computed: {
