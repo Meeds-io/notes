@@ -18,10 +18,7 @@ package org.exoplatform.wiki.service;
 
 import java.io.IOException;
 import java.util.List;
-
-import org.exoplatform.upload.UploadResource;
 import org.gatein.api.EntityNotFoundException;
-
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
