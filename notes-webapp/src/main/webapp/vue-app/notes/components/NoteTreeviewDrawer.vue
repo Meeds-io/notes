@@ -319,8 +319,10 @@ export default {
     open(note, source, includeDisplay) {
       this.render = false;
       if (note.draftPage) {
+        this.filter = this.filterOptions[1];
         this.getDraftNote(note.id);
       } else {
+        this.filter = this.filterOptions[0];
         this.getNoteById(note.id);
       }
       if (source === 'includePages') {
