@@ -89,7 +89,7 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && !exportNotes && resultSearch && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
+          <template v-if="home && !exportNotes && resultSearch && !search && filter !== $t('notes.filter.label.drafts')" class="ma-0 border-box-sizing">
             <v-list-item @click="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
