@@ -7,7 +7,14 @@
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
-            <span ref="noteTitle" class="title text-color mt-n1">{{ `${$t('note.label.home')} ${spaceDisplayName}` }}</span>
+            <span
+              v-if="homePage"
+              ref="noteTitle"
+              class="title text-color mt-n1">{{ `${$t('note.label.home')} ${spaceDisplayName}` }}</span>
+            <span
+              v-else
+              ref="noteTitle"
+              class="title text-color mt-n1">{{ note.title }}</span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
@@ -285,6 +292,9 @@ export default {
     appName() {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
+    },
+    homePage(){
+      return !this.note.parentPageId;
     }
   },
   created() {
