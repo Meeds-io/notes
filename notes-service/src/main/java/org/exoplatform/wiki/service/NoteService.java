@@ -16,8 +16,10 @@
  */
 package org.exoplatform.wiki.service;
 
+import java.io.IOException;
 import java.util.List;
 
+import org.exoplatform.upload.UploadResource;
 import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.services.security.Identity;
@@ -353,12 +355,13 @@ public interface NoteService {
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
 
-  List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity);
+  byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException;
 
-  void importNotes(List<Page> notes, Page parent, Wiki wiki, String conflict) throws WikiException;
+  List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity);
 
   List<NoteToExport> getChildrenNoteOf(NoteToExport note) throws WikiException;
 
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 
+  void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
 }
