@@ -59,20 +59,16 @@
                   <v-container class="mt-n5">
                     <v-radio-group
                       v-model="selected"
-                      column
-                      >
+                      column>
                       <v-radio
                         :label="$t('notes.label.importRules1')"
-                        value="overwrite"
-                      ></v-radio>
+                        value="overwrite" />
                       <v-radio
                         :label="$t('notes.label.importRules2')"
-                        value="update"
-                      ></v-radio>
+                        value="update" />
                       <v-radio
                         :label="$t('notes.label.importRules3')"
-                        value="duplicate"
-                      ></v-radio>
+                        value="duplicate" />
                     </v-radio-group>
                   </v-container>
                 </template>
