@@ -149,7 +149,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
       log.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
@@ -185,7 +185,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
       log.error("Can't get note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
@@ -323,7 +323,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", note.getName(), e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.warn("Failed to perform save noteBook note {}:{}:{}", noteBookType, noteBookOwner, note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -472,7 +472,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -550,7 +550,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have edit permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -588,7 +588,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have permissions to restore the note {} version", note.getId(), e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.error("Failed to perform restore note version {}", noteVersion, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -616,7 +616,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok().build();
     } catch (IllegalAccessException e) {
       log.error("User does not have delete permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}:{}:{}", noteBookType, noteBookOwner, noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -648,7 +648,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok().build();
     } catch (IllegalAccessException e) {
       log.error("User does not have delete permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -709,7 +709,7 @@ public class NotesRestService implements ResourceContainer {
       }
     } catch (IllegalAccessException e) {
       log.error("User does not have move permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -770,7 +770,7 @@ public class NotesRestService implements ResourceContainer {
       }
     } catch (IllegalAccessException e) {
       log.error("User does not have move permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
       log.warn("Failed to export note {} ", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -851,7 +851,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
       log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
@@ -1006,7 +1006,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(new BeanToJsons(finalTree, bottomChildren), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
       log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();

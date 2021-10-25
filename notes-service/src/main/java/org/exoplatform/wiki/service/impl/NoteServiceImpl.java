@@ -1,11 +1,24 @@
 package org.exoplatform.wiki.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.gatein.api.EntityNotFoundException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
@@ -22,7 +35,6 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.upload.UploadResource;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
@@ -33,34 +45,22 @@ import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
-import org.gatein.api.EntityNotFoundException;
-
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 public class NoteServiceImpl implements NoteService {
 
+  public static final String                              CACHE_NAME                   = "wiki.PageRenderingCache";
 
-  public static final String                              CACHE_NAME                       = "wiki.PageRenderingCache";
+  public static final String                              ATT_CACHE_NAME               = "wiki.PageAttachmentCache";
 
-  public static final String                              ATT_CACHE_NAME                   = "wiki.PageAttachmentCache";
-
-  private static final String                             UNTITLED_PREFIX                  = "Untitled_";
+  private static final String                             UNTITLED_PREFIX              = "Untitled_";
 
   private static final String                             IMAGE_URL_REPLACEMENT_PREFIX = "//-";
 
-  private static final String                            IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
+  private static final String                             IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
 
-  private static final String                            EXPORT_ZIP_NAME              = "ziped.zip";
+  private static final String                             EXPORT_ZIP_NAME              = "ziped.zip";
 
-  private static final Log                                log                              =
+  private static final Log                                log                          =
                                                               ExoLogger.getLogger(NoteServiceImpl.class);
 
   private final ConfigurationManager                      configManager;
@@ -79,12 +79,11 @@ public class NoteServiceImpl implements NoteService {
 
   private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
 
-  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                     = new ConcurrentHashMap<>();
+  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                 = new ConcurrentHashMap<>();
 
-  private IdentityManager identityManager;
+  private final IdentityManager                           identityManager;
 
-  private SpaceService spaceService;
-
+  private final SpaceService                              spaceService;
 
   public NoteServiceImpl(ConfigurationManager configManager,
                          UserACL userACL,
@@ -107,6 +106,35 @@ public class NoteServiceImpl implements NoteService {
     this.spaceService = spaceService;
   }
 
+  public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
+
+    String zipPath = System.getProperty("java.io.tmpdir") + File.separator + zipFileName;
+    new File(zipPath).delete();
+
+    try (FileOutputStream fos = new FileOutputStream(zipPath);
+        ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(fos))) {
+      zos.setLevel(9);
+
+      for (File file : addToZip) {
+        if (file.exists()) {
+          try (FileInputStream fis = new FileInputStream(file)) {
+            ZipEntry entry = new ZipEntry(file.getName());
+            zos.putNextEntry(entry);
+            for (int c = fis.read(); c != -1; c = fis.read()) {
+              zos.write(c);
+            }
+            zos.flush();
+          }
+        }
+      }
+    }
+    File zip = new File(zipPath);
+    if (!zip.exists()) {
+      throw new FileNotFoundException("The created zip file could not be found");
+    }
+    return zip;
+  }
+
   public ExoCache<Integer, MarkupData> getRenderingCache() {
     return renderingCache;
   }
@@ -116,7 +144,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException, IllegalAccessException {
+  public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
+                                                                                                 IllegalAccessException {
 
     String pageName = TitleResolver.getId(note.getTitle(), false);
     note.setName(pageName);
@@ -130,19 +159,19 @@ public class NoteServiceImpl implements NoteService {
     if (parentPage != null) {
       note.setOwner(userIdentity.getUserId());
       try {
-        if (StringUtils.equalsIgnoreCase(noteBook.getType(),WikiType.GROUP.name())) {
+        if (StringUtils.equalsIgnoreCase(noteBook.getType(), WikiType.GROUP.name())) {
           note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
         }
-        if (StringUtils.equalsIgnoreCase(noteBook.getType(),WikiType.USER.name())) {
+        if (StringUtils.equalsIgnoreCase(noteBook.getType(), WikiType.USER.name())) {
           note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), noteBook.getOwner(), "Notes"));
         }
       } catch (Exception e) {
-       log.warn("can't process note's images");
+        log.warn("can't process note's images");
       }
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
-      createdPage.setCanManage(canManageNotes( userIdentity.getUserId(), space, note));
-      createdPage.setCanView(canViewNotes( userIdentity.getUserId(), space, note));
+      createdPage.setCanManage(canManageNotes(userIdentity.getUserId(), space, note));
+      createdPage.setCanView(canViewNotes(userIdentity.getUserId(), space, note));
       createdPage.setToBePublished(note.isToBePublished());
       createdPage.setAppName(note.getAppName());
       createdPage.setUrl(Utils.getPageUrl(createdPage));
@@ -153,7 +182,7 @@ public class NoteServiceImpl implements NoteService {
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
 
       return createdPage;
-    }else{
+    } else {
       throw new EntityNotFoundException("Parent note not foond");
     }
   }
@@ -164,7 +193,6 @@ public class NoteServiceImpl implements NoteService {
     return dataStorage.createPage(noteBook, parentPage, note);
   }
 
-
   @Override
   public void updateNote(Page note) throws WikiException {
     dataStorage.updatePage(note);
@@ -172,8 +200,8 @@ public class NoteServiceImpl implements NoteService {
 
   @Override
   public Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
-          IllegalAccessException,
-          EntityNotFoundException {
+                                                                                IllegalAccessException,
+                                                                                EntityNotFoundException {
     Page note_ = getNoteById(note.getId());
     if (note_ == null) {
       throw new EntityNotFoundException("Note to update not found");
@@ -221,7 +249,6 @@ public class NoteServiceImpl implements NoteService {
 
     return updatedPage;
   }
-
 
   @Override
   public boolean deleteNote(String noteType, String noteOwner, String noteName) throws WikiException {
@@ -341,7 +368,7 @@ public class NoteServiceImpl implements NoteService {
       }
       if (moveNote != null) {
         Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
-        if (!canManageNotes( userIdentity.getUserId(), space, moveNote)) {
+        if (!canManageNotes(userIdentity.getUserId(), space, moveNote)) {
           throw new IllegalAccessException("User does not have edit the note.");
         }
       }
@@ -384,8 +411,8 @@ public class NoteServiceImpl implements NoteService {
                                       String noteName,
                                       Identity userIdentity,
                                       String source) throws IllegalAccessException, WikiException {
-    Page page = getNoteOfNoteBookByName(noteType,noteOwner,noteName,userIdentity);
-    if(StringUtils.isNotEmpty(source)) {
+    Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName, userIdentity);
+    if (StringUtils.isNotEmpty(source)) {
       if (source.equals("tree")) {
         postOpenByTree(noteType, noteOwner, noteName, page);
       }
@@ -412,7 +439,7 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have view the note.");
       }
       page.setCanView(true);
-      page.setCanManage(canManageNotes( userIdentity.getUserId(), space, page));
+      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -440,7 +467,9 @@ public class NoteServiceImpl implements NoteService {
       }
       draftPage.setCanView(true);
       draftPage.setCanManage(canManageNotes(userId, space, draftPage));
-      String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor()).getProfile().getFullName();
+      String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
+                                             .getProfile()
+                                             .getFullName();
       draftPage.setAuthorFullName(authorFullName);
     }
     return draftPage;
@@ -514,10 +543,20 @@ public class NoteServiceImpl implements NoteService {
     page.setWikiType(note.getWikiType());
 
     Page parent = getParentNoteOf(page);
-    if(parent==null){
+    if (parent == null) {
       return null;
     }
-    return new NoteToExport(parent.getId() ,parent.getName(), parent.getOwner(), parent.getAuthor(), parent.getContent(), parent.getSyntax(), parent.getTitle(), parent.getComment(), parent.getWikiId(), parent.getWikiType(), parent.getWikiOwner());
+    return new NoteToExport(parent.getId(),
+                            parent.getName(),
+                            parent.getOwner(),
+                            parent.getAuthor(),
+                            parent.getContent(),
+                            parent.getSyntax(),
+                            parent.getTitle(),
+                            parent.getComment(),
+                            parent.getWikiId(),
+                            parent.getWikiType(),
+                            parent.getWikiOwner());
   }
 
   @Override
@@ -535,26 +574,42 @@ public class NoteServiceImpl implements NoteService {
     page.setWikiOwner(note.getWikiOwner());
     page.setWikiType(note.getWikiType());
 
-    List<Page> pages = getChildrenNoteOf(page, ConversationState.getCurrent().getIdentity().getUserId(),false);
+    List<Page> pages = getChildrenNoteOf(page, ConversationState.getCurrent().getIdentity().getUserId(), false);
 
     List<NoteToExport> children = new ArrayList<>();
 
-    for(Page child : pages){
-      if(child==null){
+    for (Page child : pages) {
+      if (child == null) {
         continue;
       }
-      children.add(new NoteToExport(child.getId() ,child.getName(), child.getOwner(), child.getAuthor(), child.getContent(), child.getSyntax(), child.getTitle(), child.getComment(), child.getWikiId(), child.getWikiType(), child.getWikiOwner()));
+      children.add(new NoteToExport(child.getId(),
+                                    child.getName(),
+                                    child.getOwner(),
+                                    child.getAuthor(),
+                                    child.getContent(),
+                                    child.getSyntax(),
+                                    child.getTitle(),
+                                    child.getComment(),
+                                    child.getWikiId(),
+                                    child.getWikiType(),
+                                    child.getWikiOwner()));
     }
     return children;
   }
 
   @Override
-  public List<BreadcrumbData> getBreadCrumb(String noteType, String noteOwner, String noteName, boolean isDraftNote) throws WikiException {
+  public List<BreadcrumbData> getBreadCrumb(String noteType,
+                                            String noteOwner,
+                                            String noteName,
+                                            boolean isDraftNote) throws WikiException {
     return getBreadCrumb(null, noteType, noteOwner, noteName, isDraftNote);
   }
 
   @Override
-  public List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList, String userId) throws WikiException {
+  public List<Page> getDuplicateNotes(Page parentNote,
+                                      Wiki targetNoteBook,
+                                      List<Page> resultList,
+                                      String userId) throws WikiException {
     if (resultList == null) {
       resultList = new ArrayList<>();
     }
@@ -577,8 +632,6 @@ public class NoteServiceImpl implements NoteService {
     return resultList;
   }
 
-
-
   @Override
   public void removeDraftOfNote(WikiPageParams param) throws WikiException {
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
@@ -590,7 +643,6 @@ public class NoteServiceImpl implements NoteService {
     dataStorage.deleteDraftByName(draftName, Utils.getCurrentUser());
   }
 
-
   @Override
   public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
     List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
@@ -598,9 +650,11 @@ public class NoteServiceImpl implements NoteService {
       dataStorage.addPageVersion(note, userName);
       versionsHistory = dataStorage.getHistoryOfPage(note);
     }
-    for( PageHistory version: versionsHistory ) {
+    for (PageHistory version : versionsHistory) {
       if (version.getAuthor() != null) {
-        org.exoplatform.social.core.identity.model.Identity authorIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, version.getAuthor());
+        org.exoplatform.social.core.identity.model.Identity authorIdentity =
+                                                                           identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+                                                                                                               version.getAuthor());
         version.setAuthorFullName(authorIdentity.getProfile().getFullName());
       }
     }
@@ -640,7 +694,11 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public DraftPage updateDraftForExistPage(DraftPage draftNoteToUpdate, Page targetPage, String revision, long clientTime, String username) throws WikiException {
+  public DraftPage updateDraftForExistPage(DraftPage draftNoteToUpdate,
+                                           Page targetPage,
+                                           String revision,
+                                           long clientTime,
+                                           String username) throws WikiException {
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
 
@@ -695,7 +753,11 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public DraftPage createDraftForExistPage(DraftPage draftPage, Page targetPage, String revision, long clientTime, String username) throws WikiException {
+  public DraftPage createDraftForExistPage(DraftPage draftPage,
+                                           Page targetPage,
+                                           String revision,
+                                           long clientTime,
+                                           String username) throws WikiException {
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
 
@@ -784,7 +846,7 @@ public class NoteServiceImpl implements NoteService {
 
   /**
    * Invalidate all caches of a page and all its descendants
-   * 
+   *
    * @param note root page
    * @param userId
    * @throws WikiException if an error occured
@@ -801,6 +863,8 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
+
+  // ******* Listeners *******/
 
   protected void invalidateAttachmentCache(Page note) {
     WikiPageParams wikiPageParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
@@ -832,8 +896,6 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
-
-  //******* Listeners *******/
 
   public void postUpdatePage(final String wikiType,
                              final String wikiOwner,
@@ -925,22 +987,25 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null){
-      return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser) || spaceService.isRedactor(space, authenticatedUser) ||
-              spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
-    } else return page.getOwner().equals(authenticatedUser);
+    if (space != null) {
+      return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
+          || spaceService.isRedactor(space, authenticatedUser)
+          || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+    } else
+      return page.getOwner().equals(authenticatedUser);
 
   }
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null){
+    if (space != null) {
       return space != null && spaceService.isMember(space, authenticatedUser);
-    } else return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
+    } else
+      return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
   }
 
   /**
    * Recursive method to build the breadcump of a note
-   * 
+   *
    * @param list
    * @param noteType
    * @param noteOwner
@@ -964,7 +1029,7 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       return list;
     }
-    list.add(0, new BreadcrumbData(note.getName(),note.getId(), note.getTitle(), noteType, noteOwner));
+    list.add(0, new BreadcrumbData(note.getName(), note.getId(), note.getTitle(), noteType, noteOwner));
     Page parentNote = isDraftNote ? getNoteById(note.getParentPageId()) : getParentNoteOf(note);
     if (parentNote != null) {
       getBreadCrumb(list, noteType, noteOwner, parentNote.getName(), false);
@@ -977,6 +1042,16 @@ public class NoteServiceImpl implements NoteService {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
   }
 
+  /**
+   * Export a list of notes and provide a bytearray
+   *
+   * @param notes List of notes to export
+   * @param exportChildren boolean set to true if the export should add all childs
+   *          of notes
+   * @param identity of the current usezr
+   * @return
+   * @throws WikiException, IOException
+   */
 
   @Override
   public byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException {
@@ -1005,7 +1080,7 @@ public class NoteServiceImpl implements NoteService {
       bw.close();
     files.add(temp);
     zipped = zipFiles(EXPORT_ZIP_NAME, files);
-    for(File file:files){
+    for (File file : files) {
       file.delete();
     }
     byte[] filesBytes = FileUtils.readFileToByteArray(zipped);
@@ -1016,17 +1091,19 @@ public class NoteServiceImpl implements NoteService {
   /**
    * Recursive method to build the children and parent of a note
    *
-   * @param notes
-
+   * @param notes List of notes to export
+   * @param exportChildren boolean set to true if the export should add all childs
+   *          of notes
+   * @param identity of the current usezr
    * @return
    * @throws WikiException
    */
   @Override
-  public List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity){
+  public List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity) {
     List<NoteToExport> notes_ = new ArrayList();
     for (String noteId : notes) {
       try {
-        Page note = getNoteById(noteId,identity);
+        Page note = getNoteById(noteId, identity);
         if (note == null) {
           log.warn("Failed to export note {}: note not find ", noteId);
           continue;
@@ -1034,28 +1111,28 @@ public class NoteServiceImpl implements NoteService {
         NoteToExport note_ = null;
         if (BooleanUtils.isTrue(exportChildren)) {
           note_ = getNoteToExport(new NoteToExport(note.getId(),
-                  note.getName(),
-                  note.getOwner(),
-                  note.getAuthor(),
-                  note.getContent(),
-                  note.getSyntax(),
-                  note.getTitle(),
-                  note.getComment(),
-                  note.getWikiId(),
-                  note.getWikiType(),
-                  note.getWikiOwner()));
+                                                   note.getName(),
+                                                   note.getOwner(),
+                                                   note.getAuthor(),
+                                                   note.getContent(),
+                                                   note.getSyntax(),
+                                                   note.getTitle(),
+                                                   note.getComment(),
+                                                   note.getWikiId(),
+                                                   note.getWikiType(),
+                                                   note.getWikiOwner()));
         } else {
           note_ = new NoteToExport(note.getId(),
-                  note.getName(),
-                  note.getOwner(),
-                  note.getAuthor(),
-                  note.getContent(),
-                  note.getSyntax(),
-                  note.getTitle(),
-                  note.getComment(),
-                  note.getWikiId(),
-                  note.getWikiType(),
-                  note.getWikiOwner());
+                                   note.getName(),
+                                   note.getOwner(),
+                                   note.getAuthor(),
+                                   note.getContent(),
+                                   note.getSyntax(),
+                                   note.getTitle(),
+                                   note.getComment(),
+                                   note.getWikiId(),
+                                   note.getWikiType(),
+                                   note.getWikiOwner());
           note_.setParent(getParentNoteOf(note_));
           note_.setContent(processImagesForExport(note.getContent()));
           note_.setContent(processNotesLinkForExport(note.getContent()));
@@ -1074,8 +1151,7 @@ public class NoteServiceImpl implements NoteService {
   /**
    * Recursive method to build the children and parent of a note
    *
-   * @param note
-
+   * @param note get the note details to be exported
    * @return
    * @throws WikiException
    */
@@ -1083,13 +1159,13 @@ public class NoteServiceImpl implements NoteService {
     note.setContent(processImagesForExport(note.getContent()));
     note.setContent(processNotesLinkForExport(note.getContent()));
     List<NoteToExport> children = getChildrenNoteOf(note);
-    for (NoteToExport child: children){
+    for (NoteToExport child : children) {
       child.setParent(note);
     }
     note.setChildren(children);
     note.setParent(getParentNoteOf(note));
-    for (NoteToExport child: children){
-      getNoteToExport( child);
+    for (NoteToExport child : children) {
+      getNoteToExport(child);
     }
     return note;
   }
@@ -1097,32 +1173,34 @@ public class NoteServiceImpl implements NoteService {
   public String processNotesLinkForExport(String content) throws WikiException {
     String contentUpdated = content;
     Map<String, String> urlToReplaces = new HashMap<>();
-    while(contentUpdated.contains("noteLink")){
-      Page linkedNote =  getNoteById(contentUpdated.split("class=\"noteLink\" href=\"")[1].split("\"")[0]);
-      String noteParams = IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiType()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiOwner()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getName()+IMAGE_URL_REPLACEMENT_SUFFIX;
-      urlToReplaces.put("class=\"noteLink\" href=\""+linkedNote.getId()+"\"", "class=\"noteLink\" href=\""+noteParams+"\"");
-      contentUpdated=contentUpdated.replace("class=\"noteLink\" href=\""+linkedNote.getId()+"\"","");
+    while (contentUpdated.contains("noteLink")) {
+      Page linkedNote = getNoteById(contentUpdated.split("class=\"noteLink\" href=\"")[1].split("\"")[0]);
+      String noteParams = IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiType() + IMAGE_URL_REPLACEMENT_SUFFIX
+          + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiOwner() + IMAGE_URL_REPLACEMENT_SUFFIX + IMAGE_URL_REPLACEMENT_PREFIX
+          + linkedNote.getName() + IMAGE_URL_REPLACEMENT_SUFFIX;
+      urlToReplaces.put("class=\"noteLink\" href=\"" + linkedNote.getId() + "\"",
+                        "class=\"noteLink\" href=\"" + noteParams + "\"");
+      contentUpdated = contentUpdated.replace("class=\"noteLink\" href=\"" + linkedNote.getId() + "\"", "");
     }
-    if(!urlToReplaces.isEmpty()) {
+    if (!urlToReplaces.isEmpty()) {
       content = replaceUrl(content, urlToReplaces);
     }
     return content;
   }
 
-
-  public List<File>  getFilesfromContent(NoteToExport note, List<File> files) throws WikiException {
+  public List<File> getFilesfromContent(NoteToExport note, List<File> files) throws WikiException {
     String contentUpdated = note.getContent();
     String fileName = "";
     String filePath = "";
-    while (contentUpdated.contains("//-")){
-       fileName = contentUpdated.split("//-")[1].split("-//")[0];
-       filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
+    while (contentUpdated.contains("//-")) {
+      fileName = contentUpdated.split("//-")[1].split("-//")[0];
+      filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
       files.add(new File(filePath));
-      contentUpdated =  contentUpdated.replace("//-"+fileName+"-//","");
+      contentUpdated = contentUpdated.replace("//-" + fileName + "-//", "");
     }
     List<NoteToExport> children = getChildrenNoteOf(note);
-    for (NoteToExport child: children){
-      getFilesfromContent(child,files);
+    for (NoteToExport child : children) {
+      getFilesfromContent(child, files);
     }
     return files;
   }
@@ -1131,27 +1209,28 @@ public class NoteServiceImpl implements NoteService {
    * Process images by creting images found in the content
    *
    * @param content
-
    * @return
    * @throws WikiException
    */
   public String processImagesForExport(String content) throws WikiException {
-   return htmlUploadImageProcessor.processImagesForExport(content);
+    return htmlUploadImageProcessor.processImagesForExport(content);
   }
 
   /**
-   *  importe a list of notes
+   * importe a list of notes from zip
    *
-   * @param zipLocation
-   * @param parent
-   * @param conflict
-   * @param userIdentity
-
+   * @param zipLocation the path to the zip file
+   * @param parent parent note where note will be imported
+   * @param conflict import mode if there in conflicts it can be : overwrite,
+   *          duplicate, update or nothing
+   * @param userIdentity Identity of the user that execute the import
    * @return
    * @throws WikiException
    */
   @Override
-  public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException {
+  public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
+                                                                                                   IllegalAccessException,
+                                                                                                   IOException {
 
     List<String> files = unzip(zipLocation);
     String notesFilePath = "";
@@ -1171,38 +1250,43 @@ public class NoteServiceImpl implements NoteService {
       Wiki wiki = wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner());
       for (Page note : notes) {
         importNote(note,
-                parent,
-                wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
-                conflict, userIdentity);
+                   parent,
+                   wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
+                   conflict,
+                   userIdentity);
       }
-      for(Page note : notes){
+      for (Page note : notes) {
         replaceIncludedPages(note, wiki);
       }
       notesFile.delete();
     }
-
 
   }
 
   /**
    * Recursive method to importe a note
    *
-   * @param note
-
+   * @param note note to import
+   * @param parent parent note where note will be imported
+   * @param wiki the Notebook where note will be imported
+   * @param conflict import mode if there in conflicts it can be : overwrite,
+   *          duplicate, update or nothing
+   * @param userIdentity Identity of the user that execute the import
    * @return
    * @throws WikiException
    */
-  public void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException {
+  public void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException,
+                                                                                                    IllegalAccessException {
 
-    Page  parent_ = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),parent.getName());
-    if(parent_ == null){
+    Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
+    if (parent_ == null) {
       parent_ = wiki.getWikiHome();
     }
     Page note_ = note;
-    if(!note.getName().equals("Home")){
+    if (!note.getName().equals("Home")) {
       note.setId(null);
-      Page note_2 = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),note.getName());
-      if(note_2==null){
+      Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+      if (note_2 == null) {
         if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
           note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
         }
@@ -1210,8 +1294,8 @@ public class NoteServiceImpl implements NoteService {
           note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
         }
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
-      }else{
-        if(StringUtils.isNotEmpty(conflict)) {
+      } else {
+        if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
             if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
@@ -1256,10 +1340,10 @@ public class NoteServiceImpl implements NoteService {
           }
         }
       }
-    }else{
-      if(StringUtils.isNotEmpty(conflict) && (conflict.equals("update")||conflict.equals("overwrite"))){
-        Page note_1 = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),note.getName());
-        if(!note.getContent().equals(note_1.getContent())) {
+    } else {
+      if (StringUtils.isNotEmpty(conflict) && (conflict.equals("update") || conflict.equals("overwrite"))) {
+        Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+        if (!note.getContent().equals(note_1.getContent())) {
           if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
             note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
           }
@@ -1279,9 +1363,9 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  private void replaceIncludedPages(Page note, Wiki wiki) throws WikiException{
-    Page note_ = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),note.getName());
-    if(note_!=null) {
+  private void replaceIncludedPages(Page note, Wiki wiki) throws WikiException {
+    Page note_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+    if (note_ != null) {
       String content = note_.getContent();
       if (content.contains("class=\"noteLink\" href=\"//-")) {
         while (content.contains("class=\"noteLink\" href=\"//-")) {
@@ -1293,15 +1377,14 @@ public class NoteServiceImpl implements NoteService {
           linkedNote = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), NoteName);
           if (linkedNote != null) {
             content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//",
-                                         "\"noteLink\" href=\"" + linkedNote.getId());
-            if(content.equals(note_.getContent())) break;
-          }else{
-
-            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//",
-                    "\"noteLink\" href=\"" + NoteName);
+                                      "\"noteLink\" href=\"" + linkedNote.getId());
+            if (content.equals(note_.getContent()))
+              break;
+          } else {
+            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//", "\"noteLink\" href=\"" + NoteName);
           }
         }
-        if(!content.equals(note_.getContent())){
+        if (!content.equals(note_.getContent())) {
           note_.setContent(content);
           updateNote(note_);
         }
@@ -1323,37 +1406,6 @@ public class NoteServiceImpl implements NoteService {
     return body;
   }
 
-
-  public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
-
-    String zipPath = System.getProperty("java.io.tmpdir") + File.separator + zipFileName;
-    new File(zipPath).delete();
-
-    try (FileOutputStream fos = new FileOutputStream(zipPath);
-         ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(fos))) {
-      zos.setLevel(9);
-
-      for (File file : addToZip) {
-        if (file.exists()) {
-          try (FileInputStream fis = new FileInputStream(file)) {
-            ZipEntry entry = new ZipEntry(file.getName());
-            zos.putNextEntry(entry);
-            for (int c = fis.read(); c != -1; c = fis.read()) {
-              zos.write(c);
-            }
-            zos.flush();
-          }
-        }
-      }
-    }
-    File zip = new File(zipPath);
-    if (!zip.exists()) {
-      throw new FileNotFoundException("The created zip file could not be found");
-    }
-    return zip;
-  }
-
-
   private List<String> unzip(String zipFilePath) throws IOException {
     List<String> files = new ArrayList<>();
     String folderPath = System.getProperty("java.io.tmpdir");
@@ -1361,30 +1413,39 @@ public class NoteServiceImpl implements NoteService {
     if (!destDir.exists()) {
       destDir.mkdir();
     }
-    ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
-    ZipEntry entry = zipIn.getNextEntry();
-    while (entry != null) {
-      String filePath = folderPath + File.separator + entry.getName();
-      if (!entry.isDirectory()) {
-        extractFile(zipIn, filePath);
-        files.add(filePath);
-      } else {
-        File dir = new File(filePath);
-        dir.mkdirs();
+    ZipInputStream zipIn = null;
+    try {
+      zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
+      ZipEntry entry = zipIn.getNextEntry();
+      while (entry != null) {
+        String filePath = folderPath + File.separator + entry.getName();
+        if (!entry.isDirectory()) {
+          extractFile(zipIn, filePath);
+          files.add(filePath);
+        } else {
+          File dir = new File(filePath);
+          dir.mkdirs();
+        }
+        zipIn.closeEntry();
+        entry = zipIn.getNextEntry();
       }
-      zipIn.closeEntry();
-      entry = zipIn.getNextEntry();
+    } finally {
+      zipIn.close();
     }
-    zipIn.close();
     return files;
   }
 
   private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-    byte[] bytesIn = new byte[4096];
-    int read = 0;
-    while ((read = zipIn.read(bytesIn)) != -1) {
-      bos.write(bytesIn, 0, read);
+    BufferedOutputStream bos = null;
+    try {
+      bos = new BufferedOutputStream(new FileOutputStream(filePath));
+      byte[] bytesIn = new byte[4096];
+      int read = 0;
+      while ((read = zipIn.read(bytesIn)) != -1) {
+        bos.write(bytesIn, 0, read);
+      }
+    } finally {
+      bos.close();
     }
     bos.close();
   }
