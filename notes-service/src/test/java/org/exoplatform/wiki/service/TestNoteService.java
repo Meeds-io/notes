@@ -17,6 +17,7 @@
 package org.exoplatform.wiki.service;
 
 
+import org.apache.commons.io.FileUtils;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -25,6 +26,8 @@ import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.mow.api.*;
 import org.junit.Assert;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -320,7 +323,7 @@ public class TestNoteService extends BaseTest {
     assertNotNull(exportedNotes);
     assertEquals(exportedNotes.size(),3);
   }
-  public void testImportNotes() throws WikiException, IllegalAccessException {
+  public void testImportNotes() throws WikiException, IllegalAccessException, IOException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
     Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
@@ -336,23 +339,19 @@ public class TestNoteService extends BaseTest {
     notes[1] = note2.getId();
     notes[2] = note3.getId();
 
-    List<NoteToExport> exportedNotes = noteService.getNotesToExport(notes,false,user);
+    byte[] exportedNotes = noteService.exportNotes(notes,false,user);
 
     assertNotNull(exportedNotes);
-    assertEquals(exportedNotes.size(),3);
-    List<Page> pages = new ArrayList<>();
-    for(NoteToExport exportNote : exportedNotes){
-      Page page = new Page(exportNote.getName(),exportNote.getTitle());
-      page.setId(exportNote.getId());
-      pages.add(page);
-    }
+    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
+    File ZipFile = new File(filePath);
+
+    FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
     int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false).size();
-
-    noteService.importNotes(pages, userWiki.getWikiHome(), userWiki, "update");
-
+    noteService.importNotes(filePath, userWiki.getWikiHome(), "update", user);
+    ZipFile.delete();
     assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false).size(),childern+3);
   }
 
@@ -399,5 +398,18 @@ public class TestNoteService extends BaseTest {
     int eXportCildren= noteService.getChildrenNoteOf(note).size();
     assertEquals(eXportCildren,childern);
   }
+
+/*
+  public void testProcessNotesLinkForExport() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("note1", "note1"),user) ;
+    Page linkedNote = noteService.createNote(portalWiki, "Home", new Page("linkedNote", "linkedNote"),user) ;
+    String content = "";
+    String newContent = noteService.processNotesLinkForExport(String content)
+    assertEquals(eXportCildren,childern);
+  }*/
+
+
 
 }

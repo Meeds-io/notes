@@ -33,6 +33,8 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.NoteToExport;
 import org.exoplatform.wiki.mow.api.Page;
@@ -76,58 +78,25 @@ public class NotesRestService implements ResourceContainer {
 
   private static final Log            log                          = ExoLogger.getLogger(NotesRestService.class);
 
-  private static final String         IMAGE_URL_REPLACEMENT_PREFIX = "//-";
-
-  private static final String         IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
-
-  private static final String         EXPORT_ZIP_NAME              = "ziped.zip";
-
   private final NoteService           noteService;
 
   private final WikiService           noteBookService;
+  
+  private final UploadService uploadService;
 
   private final ResourceBundleService resourceBundleService;
 
   private final CacheControl          cc;
 
-  public NotesRestService(NoteService noteService, WikiService noteBookService, ResourceBundleService resourceBundleService) {
+  public NotesRestService(NoteService noteService, WikiService noteBookService, UploadService uploadService, ResourceBundleService resourceBundleService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
+    this.uploadService = uploadService;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
     cc.setNoCache(true);
     cc.setNoStore(true);
   }
-
-  public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
-
-    String zipPath = System.getProperty("java.io.tmpdir") + File.separator + zipFileName;
-    new File(zipPath).delete();
-
-    try (FileOutputStream fos = new FileOutputStream(zipPath);
-        ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(fos))) {
-      zos.setLevel(9);
-
-      for (File file : addToZip) {
-        if (file.exists()) {
-          try (FileInputStream fis = new FileInputStream(file)) {
-            ZipEntry entry = new ZipEntry(file.getName());
-            zos.putNextEntry(entry);
-            for (int c = fis.read(); c != -1; c = fis.read()) {
-              zos.write(c);
-            }
-            zos.flush();
-          }
-        }
-      }
-    }
-    File zip = new File(zipPath);
-    if (!zip.exists()) {
-      throw new FileNotFoundException("The created zip file could not be found");
-    }
-    return zip;
-  }
-
   @GET
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -759,36 +728,9 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      File zipped = null;
-
       String[] notes = notesList.split(",");
-      List<NoteToExport> notes_ = noteService.getNotesToExport(notes, exportChildren, identity);
-      List<File> files = new ArrayList<>();
-      File temp;
-
-      temp = File.createTempFile("notesExport_" + new Date().getTime(), ".txt");
-      ObjectMapper mapper = new ObjectMapper();
-      String json = mapper.writeValueAsString(notes_);
-      String contentUpdated = json;
-      String fileName = "";
-      String filePath = "";
-      while (contentUpdated.contains(IMAGE_URL_REPLACEMENT_PREFIX)) {
-        fileName = contentUpdated.split(IMAGE_URL_REPLACEMENT_PREFIX)[1].split(IMAGE_URL_REPLACEMENT_SUFFIX)[0];
-        filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
-        files.add(new File(filePath));
-        contentUpdated = contentUpdated.replace(IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX, "");
-      }
-      BufferedWriter bw = null;
-      bw = new BufferedWriter(new FileWriter(temp));
-      bw.write(json);
-      if (bw != null)
-        bw.close();
-      files.add(temp);
-      zipped = zipFiles(EXPORT_ZIP_NAME, files);
-      for(File file:files){
-        file.delete();
-      }
-      return Response.ok(FileUtils.readFileToByteArray(zipped))
+      byte[] filesBytes = noteService.exportNotes(notes, exportChildren,identity);
+      return Response.ok(filesBytes)
                      .type("application/zip")
                      .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
                      .build();
@@ -800,40 +742,32 @@ public class NotesRestService implements ResourceContainer {
   }
 
   @POST
-  @Path("/note/import/{noteId}")
+  @Path("/note/import/{noteId}/{uploadId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Import notes from a zip file", httpMethod = "POST", response = Response.class, notes = "This import notes from defined zip file under given note.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
   public Response importNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
+                             @ApiParam(value = "Upload id", required = true) @PathParam("uploadId") String uploadId,
                              @ApiParam(value = "Conflict", required = true) @QueryParam("conflict") String conflict) {
 
     try {
 
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note_ = noteService.getNoteById(noteId, identity);
-      if (note_ == null) {
+      Page parent = noteService.getNoteById(noteId, identity);
+      if (parent == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      String zipPath = System.getProperty("java.io.tmpdir") + File.separator + EXPORT_ZIP_NAME;
-      List<String> files = unzip(zipPath);
-      String notesFilePath = "";
-      for (String file :files){
-        if(file.contains("notesExport_")){{
-          notesFilePath = file;
-          break;
-        }}
-      }
-      if(!notesFilePath.equals("")) {
-        ObjectMapper mapper = new ObjectMapper();
-        List<Page> notes = mapper.readValue(new File(notesFilePath), new TypeReference<List<Page>>() {
-        });
-        Wiki wiki = noteBookService.getWikiByTypeAndOwner(note_.getWikiType(), note_.getWikiOwner());
-        noteService.importNotes(notes, note_, wiki, conflict);
-      }
-      return Response.ok().build();
 
+      UploadResource uploadResource = uploadService.getUploadResource(uploadId);
+
+      if (uploadResource != null) {
+        noteService.importNotes(uploadResource.getStoreLocation(), parent, conflict, identity);
+        return Response.ok().build();
+      } else {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
     } catch (IllegalAccessException e) {
       log.error("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -841,47 +775,6 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Failed to export note {} ", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
-  }
-
-  private List<String> unzip(String zipFilePath) throws IOException {
-/*    String fileName = "zip";
-    List<String> files = new ArrayList<>();
-    int index = EXPORT_ZIP_NAME.lastIndexOf('.');
-    if(index > 0) {
-      fileName = EXPORT_ZIP_NAME.substring(0,index);
-    }*/
-    List<String> files = new ArrayList<>();
-    String folderPath = System.getProperty("java.io.tmpdir");//+ File.separator + fileName;
-    File destDir = new File(folderPath);
-    if (!destDir.exists()) {
-      destDir.mkdir();
-    }
-    ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
-    ZipEntry entry = zipIn.getNextEntry();
-    while (entry != null) {
-      String filePath = folderPath + File.separator + entry.getName();
-      if (!entry.isDirectory()) {
-        extractFile(zipIn, filePath);
-        files.add(filePath);
-      } else {
-        File dir = new File(filePath);
-        dir.mkdirs();
-      }
-      zipIn.closeEntry();
-      entry = zipIn.getNextEntry();
-    }
-    zipIn.close();
-    return files;
-  }
-
-  private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-    byte[] bytesIn = new byte[4096];
-    int read = 0;
-    while ((read = zipIn.read(bytesIn)) != -1) {
-      bos.write(bytesIn, 0, read);
-    }
-    bos.close();
   }
 
   @GET

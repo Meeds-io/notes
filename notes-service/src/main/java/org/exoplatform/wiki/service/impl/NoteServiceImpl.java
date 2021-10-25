@@ -1,5 +1,8 @@
 package org.exoplatform.wiki.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -19,6 +22,7 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.upload.UploadResource;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
@@ -31,12 +35,15 @@ import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.WikiConstants;
 import org.gatein.api.EntityNotFoundException;
 
-import java.io.File;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class NoteServiceImpl implements NoteService {
 
@@ -50,6 +57,8 @@ public class NoteServiceImpl implements NoteService {
   private static final String                             IMAGE_URL_REPLACEMENT_PREFIX = "//-";
 
   private static final String                            IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
+
+  private static final String                            EXPORT_ZIP_NAME              = "ziped.zip";
 
   private static final Log                                log                              =
                                                               ExoLogger.getLogger(NoteServiceImpl.class);
@@ -968,6 +977,42 @@ public class NoteServiceImpl implements NoteService {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
   }
 
+
+  @Override
+  public byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException {
+    File zipped = null;
+
+    List<NoteToExport> notes_ = getNotesToExport(notes, exportChildren, identity);
+    List<File> files = new ArrayList<>();
+    File temp;
+
+    temp = File.createTempFile("notesExport_" + new Date().getTime(), ".txt");
+    ObjectMapper mapper = new ObjectMapper();
+    String json = mapper.writeValueAsString(notes_);
+    String contentUpdated = json;
+    String fileName = "";
+    String filePath = "";
+    while (contentUpdated.contains(IMAGE_URL_REPLACEMENT_PREFIX)) {
+      fileName = contentUpdated.split(IMAGE_URL_REPLACEMENT_PREFIX)[1].split(IMAGE_URL_REPLACEMENT_SUFFIX)[0];
+      filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
+      files.add(new File(filePath));
+      contentUpdated = contentUpdated.replace(IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX, "");
+    }
+    BufferedWriter bw = null;
+    bw = new BufferedWriter(new FileWriter(temp));
+    bw.write(json);
+    if (bw != null)
+      bw.close();
+    files.add(temp);
+    zipped = zipFiles(EXPORT_ZIP_NAME, files);
+    for(File file:files){
+      file.delete();
+    }
+    byte[] filesBytes = FileUtils.readFileToByteArray(zipped);
+    zipped.delete();
+    return filesBytes;
+  }
+
   /**
    * Recursive method to build the children and parent of a note
    *
@@ -1013,18 +1058,9 @@ public class NoteServiceImpl implements NoteService {
                   note.getWikiOwner());
           note_.setParent(getParentNoteOf(note_));
           note_.setContent(processImagesForExport(note.getContent()));
+          note_.setContent(processNotesLinkForExport(note.getContent()));
         }
-        String content = note_.getContent();
-        Map<String, String> urlToReplaces = new HashMap<>();
-        while(content.contains("noteLink")){
-          Page linkedNote =  getNoteById(content.split("class=\"noteLink\" href=\"")[1].split("\"")[0]);
-          String noteParams = IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiType()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiOwner()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getName()+IMAGE_URL_REPLACEMENT_SUFFIX;
-          urlToReplaces.put("class=\"noteLink\" href=\""+linkedNote.getId()+"\"", "class=\"noteLink\" href=\""+noteParams+"\"");
-          content=content.replaceAll("class=\"noteLink\" href=\""+linkedNote.getId()+"\"","");
-        }
-        if(!urlToReplaces.isEmpty()) {
-          note_.setContent(replaceUrl(note_.getContent(), urlToReplaces));
-        }
+
         notes_.add(note_);
       } catch (IllegalAccessException e) {
         log.error("User does not have  permissions on the note {}", noteId, e);
@@ -1045,6 +1081,7 @@ public class NoteServiceImpl implements NoteService {
    */
   public NoteToExport getNoteToExport(NoteToExport note) throws WikiException {
     note.setContent(processImagesForExport(note.getContent()));
+    note.setContent(processNotesLinkForExport(note.getContent()));
     List<NoteToExport> children = getChildrenNoteOf(note);
     for (NoteToExport child: children){
       child.setParent(note);
@@ -1055,6 +1092,21 @@ public class NoteServiceImpl implements NoteService {
       getNoteToExport( child);
     }
     return note;
+  }
+
+  public String processNotesLinkForExport(String content) throws WikiException {
+    String contentUpdated = content;
+    Map<String, String> urlToReplaces = new HashMap<>();
+    while(contentUpdated.contains("noteLink")){
+      Page linkedNote =  getNoteById(contentUpdated.split("class=\"noteLink\" href=\"")[1].split("\"")[0]);
+      String noteParams = IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiType()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getWikiOwner()+IMAGE_URL_REPLACEMENT_SUFFIX+IMAGE_URL_REPLACEMENT_PREFIX+linkedNote.getName()+IMAGE_URL_REPLACEMENT_SUFFIX;
+      urlToReplaces.put("class=\"noteLink\" href=\""+linkedNote.getId()+"\"", "class=\"noteLink\" href=\""+noteParams+"\"");
+      contentUpdated=contentUpdated.replace("class=\"noteLink\" href=\""+linkedNote.getId()+"\"","");
+    }
+    if(!urlToReplaces.isEmpty()) {
+      content = replaceUrl(content, urlToReplaces);
+    }
+    return content;
   }
 
 
@@ -1090,22 +1142,46 @@ public class NoteServiceImpl implements NoteService {
   /**
    *  importe a list of notes
    *
-   * @param notes
+   * @param zipLocation
+   * @param parent
+   * @param conflict
+   * @param userIdentity
 
    * @return
    * @throws WikiException
    */
   @Override
-  public void importNotes(List<Page> notes, Page parent, Wiki wiki, String conflict) throws WikiException {
-    for (Page note : notes) {
-      importNote(note,
-              parent,
-              wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
-              conflict);
+  public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException {
+
+    List<String> files = unzip(zipLocation);
+    String notesFilePath = "";
+    for (String file : files) {
+      if (file.contains("notesExport_")) {
+        {
+          notesFilePath = file;
+          break;
+        }
+      }
     }
-    for(Page note : notes){
-      replaceIncludedPages(note, wiki);
+    if (!notesFilePath.equals("")) {
+      ObjectMapper mapper = new ObjectMapper();
+      File notesFile = new File(notesFilePath);
+      List<Page> notes = mapper.readValue(notesFile, new TypeReference<List<Page>>() {
+      });
+      Wiki wiki = wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner());
+      for (Page note : notes) {
+        importNote(note,
+                parent,
+                wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
+                conflict, userIdentity);
+      }
+      for(Page note : notes){
+        replaceIncludedPages(note, wiki);
+      }
+      notesFile.delete();
     }
+
+
   }
 
   /**
@@ -1116,7 +1192,7 @@ public class NoteServiceImpl implements NoteService {
    * @return
    * @throws WikiException
    */
-  public void importNote(Page note, Page parent, Wiki wiki, String conflict) throws WikiException {
+  public void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException {
 
     Page  parent_ = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),parent.getName());
     if(parent_ == null){
@@ -1133,7 +1209,7 @@ public class NoteServiceImpl implements NoteService {
         if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
           note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
         }
-        note_ = createNote(wiki,parent_,note);
+        note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       }else{
         if(StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite")) {
@@ -1144,7 +1220,8 @@ public class NoteServiceImpl implements NoteService {
             if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
               note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
             }
-            note_ = createNote(wiki, parent_, note);
+            note_ = createNote(wiki, parent_.getName(), note, userIdentity);
+
           }
           if (conflict.equals("duplicate")) {
             int i = 1;
@@ -1161,19 +1238,20 @@ public class NoteServiceImpl implements NoteService {
             if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
               note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
             }
-            note_ = createNote(wiki, parent_, note);
+            note_ = createNote(wiki, parent_.getName(), note, userIdentity);
           }
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
               note_2.setContent(note.getContent());
               note_2.setTitle(note.getTitle());
               if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-                note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
+                note_2.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
               }
               if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-                note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
+                note_2.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
               }
-              updateNote(note);
+              note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
+              createVersionOfNote(note_2, userIdentity.getUserId());
             }
           }
         }
@@ -1181,19 +1259,22 @@ public class NoteServiceImpl implements NoteService {
     }else{
       if(StringUtils.isNotEmpty(conflict) && (conflict.equals("update")||conflict.equals("overwrite"))){
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(),wiki.getOwner(),note.getName());
-        if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-          note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
+        if(!note.getContent().equals(note_1.getContent())) {
+          if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
+            note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
+          }
+          if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
+            note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
+          }
+          note_1.setContent(note.getContent());
+          note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
+          createVersionOfNote(note_1, userIdentity.getUserId());
         }
-        if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-          note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-        }
-        note_1.setContent(note.getContent());
-        updateNote(note);
       }
     }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        importNote(child, note_, wiki, conflict);
+        importNote(child, note_, wiki, conflict, userIdentity);
       }
     }
   }
@@ -1211,9 +1292,13 @@ public class NoteServiceImpl implements NoteService {
           Page linkedNote = null;
           linkedNote = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), NoteName);
           if (linkedNote != null) {
-            content = content.replaceAll("\"noteLink\" href=\"//-" + linkedParams + "-//",
+            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//",
                                          "\"noteLink\" href=\"" + linkedNote.getId());
             if(content.equals(note_.getContent())) break;
+          }else{
+
+            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//",
+                    "\"noteLink\" href=\"" + NoteName);
           }
         }
         if(!content.equals(note_.getContent())){
@@ -1237,4 +1322,71 @@ public class NoteServiceImpl implements NoteService {
     }
     return body;
   }
+
+
+  public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
+
+    String zipPath = System.getProperty("java.io.tmpdir") + File.separator + zipFileName;
+    new File(zipPath).delete();
+
+    try (FileOutputStream fos = new FileOutputStream(zipPath);
+         ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(fos))) {
+      zos.setLevel(9);
+
+      for (File file : addToZip) {
+        if (file.exists()) {
+          try (FileInputStream fis = new FileInputStream(file)) {
+            ZipEntry entry = new ZipEntry(file.getName());
+            zos.putNextEntry(entry);
+            for (int c = fis.read(); c != -1; c = fis.read()) {
+              zos.write(c);
+            }
+            zos.flush();
+          }
+        }
+      }
+    }
+    File zip = new File(zipPath);
+    if (!zip.exists()) {
+      throw new FileNotFoundException("The created zip file could not be found");
+    }
+    return zip;
+  }
+
+
+  private List<String> unzip(String zipFilePath) throws IOException {
+    List<String> files = new ArrayList<>();
+    String folderPath = System.getProperty("java.io.tmpdir");
+    File destDir = new File(folderPath);
+    if (!destDir.exists()) {
+      destDir.mkdir();
+    }
+    ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
+    ZipEntry entry = zipIn.getNextEntry();
+    while (entry != null) {
+      String filePath = folderPath + File.separator + entry.getName();
+      if (!entry.isDirectory()) {
+        extractFile(zipIn, filePath);
+        files.add(filePath);
+      } else {
+        File dir = new File(filePath);
+        dir.mkdirs();
+      }
+      zipIn.closeEntry();
+      entry = zipIn.getNextEntry();
+    }
+    zipIn.close();
+    return files;
+  }
+
+  private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
+    byte[] bytesIn = new byte[4096];
+    int read = 0;
+    while ((read = zipIn.read(bytesIn)) != -1) {
+      bos.write(bytesIn, 0, read);
+    }
+    bos.close();
+  }
+
 }
