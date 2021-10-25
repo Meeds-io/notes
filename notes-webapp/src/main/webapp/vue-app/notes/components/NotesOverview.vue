@@ -136,8 +136,8 @@
       @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
       @export-pdf="createPDF(note)"
       @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,note.canManage)"
-      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')" />
-    @open-import-drawer="$refs.noteImportDrawer.open()" />
+      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
+      @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <note-history-drawer
