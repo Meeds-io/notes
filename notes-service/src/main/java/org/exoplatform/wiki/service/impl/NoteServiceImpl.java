@@ -1444,7 +1444,9 @@ public class NoteServiceImpl implements NoteService {
   }
 
   public static void cleanUp(File file) throws IOException {
-    Files.delete(file.toPath());
+    if(Files.exists(file.toPath())){
+      Files.delete(file.toPath());
+    }
   }
 
 }

@@ -73,7 +73,7 @@
         <span>{{ $t('notes.menu.label.export') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note.name == defaultPath"
+        v-if="homePage"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-import-drawer')">
         <v-icon
@@ -100,7 +100,7 @@ export default {
     },
     defaultPath: {
       type: String,
-      default: () => 'WikiHome',
+      default: () => 'Home',
     }
   },
   computed: {
