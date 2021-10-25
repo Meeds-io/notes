@@ -83,6 +83,7 @@ public class Page {
 
   private Page parent;
 
+
   public boolean isDraftPage() {
     return false;
   }

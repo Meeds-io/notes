@@ -296,3 +296,16 @@ export function getNoteVersionsByNoteId(noteId) {
     }
   });
 }
+
+export function getChildrensByNoteId(noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/childrens/${noteId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
