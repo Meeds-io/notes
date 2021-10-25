@@ -133,13 +133,16 @@
       @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
       @export-pdf="createPDF(note)"
       @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,note.canManage)"
-      @open-treeview-export="$refs.notesBreadcrumb.open(note, 'exportNotes')" />
+      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')" />
+    @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <note-history-drawer
       ref="noteVersionsHistoryDrawer"
       @open-version="displayVersion($event)"
       @restore-version="restoreVersion($event)" />
+    <note-import-drawer
+      ref="noteImportDrawer" />
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
@@ -323,6 +326,10 @@ export default {
     this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
       this.exportNotes(notesSelected,importAll,homeNoteId);
     });
+    this.$root.$on('import-notes', (uploadId,overrideMode) => {
+      this.importNotes(uploadId,overrideMode);
+    });
+
     
   },
   mounted() {
@@ -374,7 +381,7 @@ export default {
       }
       const date=this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
       this.$notesService.exportNotes(notesSelected,exportChildren).then((transfer) => {
-        return transfer.blob();                 
+        return transfer.blob();
       }).then((bytes) => {
         const elm = document.createElement('a');  
         elm.href = URL.createObjectURL(bytes);
@@ -405,6 +412,18 @@ export default {
       }).finally(() => {
         this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeView-items', this.note);
+      });
+    },
+    importNotes(uploadId,overrideMode){
+      this.$notesService.importZipNotes(this.note.id,uploadId,overrideMode).then(() => {
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.notes.imported')});
+      }).catch(e => {
+        console.error('Error when import notese', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
       });
     },
     getNoteByName(noteName, source) {
