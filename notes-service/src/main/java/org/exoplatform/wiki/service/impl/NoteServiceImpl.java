@@ -3,6 +3,10 @@ package org.exoplatform.wiki.service.impl;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +64,8 @@ public class NoteServiceImpl implements NoteService {
 
   private static final String                             EXPORT_ZIP_NAME              = "ziped.zip";
 
+  private static final String                             TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+
   private static final Log                                log                          =
                                                               ExoLogger.getLogger(NoteServiceImpl.class);
 
@@ -108,9 +114,8 @@ public class NoteServiceImpl implements NoteService {
 
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
 
-    String zipPath = System.getProperty("java.io.tmpdir") + File.separator + zipFileName;
-    new File(zipPath).delete();
-
+    String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
+    cleanUp(new File(zipPath));
     try (FileOutputStream fos = new FileOutputStream(zipPath);
         ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(fos))) {
       zos.setLevel(9);
@@ -1056,35 +1061,31 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException {
     File zipped = null;
-
-    List<NoteToExport> notes_ = getNotesToExport(notes, exportChildren, identity);
+    List<NoteToExport> notesToExport = getNotesToExport(notes, exportChildren, identity);
     List<File> files = new ArrayList<>();
     File temp;
-
     temp = File.createTempFile("notesExport_" + new Date().getTime(), ".txt");
     ObjectMapper mapper = new ObjectMapper();
-    String json = mapper.writeValueAsString(notes_);
+    String json = mapper.writeValueAsString(notesToExport);
     String contentUpdated = json;
     String fileName = "";
     String filePath = "";
     while (contentUpdated.contains(IMAGE_URL_REPLACEMENT_PREFIX)) {
       fileName = contentUpdated.split(IMAGE_URL_REPLACEMENT_PREFIX)[1].split(IMAGE_URL_REPLACEMENT_SUFFIX)[0];
-      filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
+      filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + fileName;
       files.add(new File(filePath));
       contentUpdated = contentUpdated.replace(IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX, "");
     }
-    BufferedWriter bw = null;
-    bw = new BufferedWriter(new FileWriter(temp));
-    bw.write(json);
-    if (bw != null)
-      bw.close();
+    try(BufferedWriter bw = new BufferedWriter(new FileWriter(temp));) {
+      bw.write(json);
+    }
     files.add(temp);
     zipped = zipFiles(EXPORT_ZIP_NAME, files);
     for (File file : files) {
-      file.delete();
+      cleanUp(file);
     }
     byte[] filesBytes = FileUtils.readFileToByteArray(zipped);
-    zipped.delete();
+    cleanUp(zipped);
     return filesBytes;
   }
 
@@ -1171,16 +1172,17 @@ public class NoteServiceImpl implements NoteService {
   }
 
   public String processNotesLinkForExport(String content) throws WikiException {
+    String noteLinkprefix = "class=\"noteLink\" href=\"";
     String contentUpdated = content;
     Map<String, String> urlToReplaces = new HashMap<>();
     while (contentUpdated.contains("noteLink")) {
-      Page linkedNote = getNoteById(contentUpdated.split("class=\"noteLink\" href=\"")[1].split("\"")[0]);
+      Page linkedNote = getNoteById(contentUpdated.split(noteLinkprefix)[1].split("\"")[0]);
       String noteParams = IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiType() + IMAGE_URL_REPLACEMENT_SUFFIX
           + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiOwner() + IMAGE_URL_REPLACEMENT_SUFFIX + IMAGE_URL_REPLACEMENT_PREFIX
           + linkedNote.getName() + IMAGE_URL_REPLACEMENT_SUFFIX;
-      urlToReplaces.put("class=\"noteLink\" href=\"" + linkedNote.getId() + "\"",
-                        "class=\"noteLink\" href=\"" + noteParams + "\"");
-      contentUpdated = contentUpdated.replace("class=\"noteLink\" href=\"" + linkedNote.getId() + "\"", "");
+      urlToReplaces.put(noteLinkprefix + linkedNote.getId() + "\"",
+              noteLinkprefix + noteParams + "\"");
+      contentUpdated = contentUpdated.replace(noteLinkprefix + linkedNote.getId() + "\"", "");
     }
     if (!urlToReplaces.isEmpty()) {
       content = replaceUrl(content, urlToReplaces);
@@ -1194,7 +1196,7 @@ public class NoteServiceImpl implements NoteService {
     String filePath = "";
     while (contentUpdated.contains("//-")) {
       fileName = contentUpdated.split("//-")[1].split("-//")[0];
-      filePath = System.getProperty("java.io.tmpdir") + File.separator + fileName;
+      filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + fileName;
       files.add(new File(filePath));
       contentUpdated = contentUpdated.replace("//-" + fileName + "-//", "");
     }
@@ -1258,7 +1260,7 @@ public class NoteServiceImpl implements NoteService {
       for (Page note : notes) {
         replaceIncludedPages(note, wiki);
       }
-      notesFile.delete();
+      cleanUp(notesFile);
     }
 
   }
@@ -1408,14 +1410,12 @@ public class NoteServiceImpl implements NoteService {
 
   private List<String> unzip(String zipFilePath) throws IOException {
     List<String> files = new ArrayList<>();
-    String folderPath = System.getProperty("java.io.tmpdir");
+    String folderPath = System.getProperty(TEMP_DIRECTORY_PATH);
     File destDir = new File(folderPath);
     if (!destDir.exists()) {
       destDir.mkdir();
     }
-    ZipInputStream zipIn = null;
-    try {
-      zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
+    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))){
       ZipEntry entry = zipIn.getNextEntry();
       while (entry != null) {
         String filePath = folderPath + File.separator + entry.getName();
@@ -1429,25 +1429,22 @@ public class NoteServiceImpl implements NoteService {
         zipIn.closeEntry();
         entry = zipIn.getNextEntry();
       }
-    } finally {
-      zipIn.close();
     }
     return files;
   }
 
   private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-    BufferedOutputStream bos = null;
-    try {
-      bos = new BufferedOutputStream(new FileOutputStream(filePath));
+    try(BufferedOutputStream bos =  new BufferedOutputStream(new FileOutputStream(filePath));) {
       byte[] bytesIn = new byte[4096];
       int read = 0;
       while ((read = zipIn.read(bytesIn)) != -1) {
         bos.write(bytesIn, 0, read);
       }
-    } finally {
-      bos.close();
     }
-    bos.close();
+  }
+
+  public static void cleanUp(File file) throws IOException {
+    Files.delete(file.toPath());
   }
 
 }

@@ -342,7 +342,7 @@ public class TestNoteService extends BaseTest {
     byte[] exportedNotes = noteService.exportNotes(notes,false,user);
 
     assertNotNull(exportedNotes);
-    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
+    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zipped.zip";
     File ZipFile = new File(filePath);
 
     FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
