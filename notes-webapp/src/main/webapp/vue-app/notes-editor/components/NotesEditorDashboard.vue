@@ -609,7 +609,6 @@ export default {
         if (CKEDITOR.instances['notesContent']) {
           CKEDITOR.instances['notesContent'].status = 'ready';
           window.setTimeout(() => {
-            console.log('Test: ', CKEDITOR.instances['notesContent']);
             this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
           }, 200);
         }        
