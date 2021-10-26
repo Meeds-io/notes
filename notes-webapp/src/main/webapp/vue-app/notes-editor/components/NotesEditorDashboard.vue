@@ -383,7 +383,6 @@ export default {
             window.location.href = notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
-            this.postingNote = false;
             this.enableClickOnce();
             this.$root.$emit('show-alert', {
               type: 'error',
@@ -398,7 +397,6 @@ export default {
             this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
-            this.postingNote = false;
             this.enableClickOnce();
             this.$root.$emit('show-alert', {
               type: 'error',
@@ -622,7 +620,6 @@ export default {
     },
     validateForm() {
       if (!this.note.title) {
-        this.postingNote = false;
         this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -631,7 +628,6 @@ export default {
         return false;
       }
       if (!isNaN(this.note.title)) {
-        this.postingNote = false;
         this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -639,7 +635,6 @@ export default {
         });
         return false;
       } else if (this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
-        this.postingNote = false;
         this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -735,6 +730,7 @@ export default {
       }
     },
     enableClickOnce() {
+      this.postingNote = false;
       this.postKey++;
     },
   }
