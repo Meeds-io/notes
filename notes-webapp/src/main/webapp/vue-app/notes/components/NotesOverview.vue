@@ -11,13 +11,10 @@
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4">
             <span
-              v-if="homePage"
               ref="noteTitle"
-              class="title text-color mt-n1">{{ `${$t('note.label.home')} ${spaceDisplayName}` }}</span>
-            <span
-              v-else
-              ref="noteTitle"
-              class="title text-color mt-n1">{{ note.title }}</span>
+              class="title text-color mt-n1">
+              {{ noteTitle }}
+            </span>
             <div
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
@@ -206,6 +203,7 @@ export default {
       displayLastVersion: true,
       noteChildren: [],
       isDraft: false,
+      noteTitle: '',
     };
   },
   watch: {
@@ -217,6 +215,7 @@ export default {
         this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
+      this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
     },
     actualVersion() {
@@ -296,9 +295,6 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
-    homePage(){
-      return !this.note.parentPageId;
-    }
   },
   created() {
     if (this.currentPath.endsWith('draft')) {
@@ -464,7 +460,10 @@ export default {
     },
     createPDF(note) {
       this.hideElementsForSavingPDF = true;
-      this.$refs.noteTitle.innerHTML = note.title;
+      const title = `${this.noteTitle}`;
+      if (note.title !== title) {
+        this.noteTitle = note.title;
+      }
       const self = this;
       this.$nextTick(() => {
         const element = this.$refs.content;
@@ -472,7 +471,9 @@ export default {
         html2canvas(element, {
           useCORS: true
         }).then(function (canvas) {
-          self.$refs.noteTitle.innerHTML = `${self.$t('note.label.home')} ${self.spaceDisplayName}`;
+          if (note.title !== title) {
+            self.noteTitle = title;
+          }
           const pdf = new JSPDF('p', 'mm', 'a4');
           const ctx = canvas.getContext('2d');
           const a4w = 170;
