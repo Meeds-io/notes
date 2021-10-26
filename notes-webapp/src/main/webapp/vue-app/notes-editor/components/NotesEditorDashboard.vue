@@ -239,6 +239,7 @@ export default {
         });
       }
     });
+
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
@@ -488,9 +489,10 @@ export default {
       }
       CKEDITOR.plugins.addExternal('video','/notes/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
+      CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize';
+      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
@@ -553,7 +555,6 @@ export default {
                   const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
                   self.$refs.noteTablePlugins.open(table);
                 }
-
               }
             });
             $(CKEDITOR.instances['notesContent'].document.$)

@@ -229,7 +229,7 @@ public class JPADataStorage implements DataStorage {
       wikiDAO.update(wikiEntity);
     }
 
-    return convertPageEntityToPage(createdPageEntity);
+    return convertPageEntityToPage(createdPageEntity, false);
   }
 
   @Override
@@ -240,13 +240,13 @@ public class JPADataStorage implements DataStorage {
     if(WIKI_TYPE_DRAFT.equals(wikiType)) {
       return convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByUserAndName(wikiOwner, pageName));
     } else {
-      return convertPageEntityToPage(pageDAO.getPageOfWikiByName(wikiType, wikiOwner, pageName));
+      return convertPageEntityToPage(pageDAO.getPageOfWikiByName(wikiType, wikiOwner, pageName),false);
     }
   }
 
   @Override
   public Page getPageById(String id) throws WikiException {
-    return convertPageEntityToPage(pageDAO.find(Long.parseLong(id)));
+    return convertPageEntityToPage(pageDAO.find(Long.parseLong(id)),false);
   }
 
   @Override
@@ -266,7 +266,7 @@ public class JPADataStorage implements DataStorage {
     }
 
     if (childPageEntity != null) {
-      parentPage = convertPageEntityToPage(childPageEntity.getParentPage());
+      parentPage = convertPageEntityToPage(childPageEntity.getParentPage(),false);
     }
 
     return parentPage;
@@ -284,7 +284,8 @@ public class JPADataStorage implements DataStorage {
     List<PageEntity> childrenPagesEntities = pageDAO.getChildrenPages(pageEntity);
     if (childrenPagesEntities != null) {
       for (PageEntity childPageEntity : childrenPagesEntities) {
-        childrenPages.add(convertPageEntityToPage(childPageEntity));
+        long childrenCount = pageDAO.countPageChildrenById(childPageEntity.getId());
+        childrenPages.add(convertPageEntityToPage(childPageEntity,childrenCount > 0));
       }
     }
     
@@ -548,7 +549,7 @@ public class JPADataStorage implements DataStorage {
     List<PageEntity> relatedPagesEntities = pageEntity.getRelatedPages();
     if (relatedPagesEntities != null) {
       for (PageEntity relatedPageEntity : relatedPagesEntities) {
-        relatedPages.add(convertPageEntityToPage(relatedPageEntity));
+        relatedPages.add(convertPageEntityToPage(relatedPageEntity,false));
       }
     }
 
@@ -561,7 +562,7 @@ public class JPADataStorage implements DataStorage {
     List<PageMoveEntity> pageMoveEntities = pageMoveDAO.findInPageMoves(wikiType, wikiOwner, pageName);
     if(pageMoveEntities != null && !pageMoveEntities.isEmpty()) {
       // take first result
-      relatedPage = convertPageEntityToPage(pageMoveEntities.get(0).getPage());
+      relatedPage = convertPageEntityToPage(pageMoveEntities.get(0).getPage(),false);
     }
     return relatedPage;
   }
@@ -606,7 +607,7 @@ public class JPADataStorage implements DataStorage {
     List<PageEntity> pagesOfWiki = pageDAO.getPagesOfWiki(wikiType, wikiOwner, false);
     List<Page> pages = new ArrayList<>();
     for (PageEntity pageEntity : pagesOfWiki) {
-      pages.add(convertPageEntityToPage(pageEntity));
+      pages.add(convertPageEntityToPage(pageEntity,false));
     }
     return pages;
   }

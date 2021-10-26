@@ -34,7 +34,7 @@ public class EntityConverter {
       wiki.setOwner(wikiEntity.getOwner());
       PageEntity wikiHomePageEntity = wikiEntity.getWikiHome();
       if (wikiHomePageEntity != null) {
-        wiki.setWikiHome(convertPageEntityToPage(wikiHomePageEntity));
+        wiki.setWikiHome(convertPageEntityToPage(wikiHomePageEntity,false));
       }
       wiki.setPermissions(convertPermissionEntitiesToPermissionEntries(wikiEntity.getPermissions(),
               Arrays.asList(PermissionType.ADMINPAGE, PermissionType.ADMINSPACE)));
@@ -69,7 +69,7 @@ public class EntityConverter {
     return wikiEntity;
   }
 
-  public static Page convertPageEntityToPage(PageEntity pageEntity) {
+  public static Page convertPageEntityToPage(PageEntity pageEntity, boolean hasChildren) {
     Page page = null;
     if (pageEntity != null) {
       page = new Page();
@@ -84,6 +84,7 @@ public class EntityConverter {
       if (pageEntity.getParentPage() != null) {
         page.setParentPageId(String.valueOf(pageEntity.getParentPage().getId()));
         page.setParentPageName(pageEntity.getParentPage().getName());
+        page.setHasChild(hasChildren);
       }
       page.setTitle(pageEntity.getTitle());
       page.setOwner(pageEntity.getOwner());
