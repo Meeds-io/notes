@@ -16,9 +16,13 @@
  */
 package org.exoplatform.wiki.service.rest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
 import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
@@ -160,6 +164,7 @@ public class NotesRestService implements ResourceContainer {
   public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                               @ApiParam(value = "noteBookType", required = false) @QueryParam("noteBookType") String noteBookType,
                               @ApiParam(value = "noteBookOwner", required = false) @QueryParam("noteBookOwner") String noteBookOwner,
+                              @ApiParam(value = "withChildren", required = false) @QueryParam("withChildren") boolean withChildren,
                               @ApiParam(value = "source", required = false) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -172,6 +177,9 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if(BooleanUtils.isTrue(withChildren)) {
+        note.setChildren(noteService.getChildrenNoteOf(note,identity.getUserId(),false));
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(), note.getWikiOwner(), note.getName(), false));
@@ -978,8 +986,7 @@ public class NotesRestService implements ResourceContainer {
       }
 
       encodeWikiTree(bottomChildren, request.getLocale());
-      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
-      return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      return Response.ok(new BeanToJsons(finalTree, bottomChildren), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
