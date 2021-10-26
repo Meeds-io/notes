@@ -26,6 +26,7 @@
               <button
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
+                :key="postKey"
                 @click.once="postNote(false)">
                 {{ publishButtonText }}
                 <v-icon
@@ -144,6 +145,7 @@ export default {
       draftSavingStatus: '',
       autoSaveDelay: 1000,
       saveDraft: '',
+      postKey: 1
     };
   },
   computed: {
@@ -381,6 +383,8 @@ export default {
             window.location.href = notePath;
           }).catch(e => {
             console.error('Error when update note page', e);
+            this.postingNote = false;
+            this.enableClickOnce();
             this.$root.$emit('show-alert', {
               type: 'error',
               message: this.$t(`notes.message.${e.message}`)
@@ -394,6 +398,8 @@ export default {
             this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
+            this.postingNote = false;
+            this.enableClickOnce();
             this.$root.$emit('show-alert', {
               type: 'error',
               message: this.$t(`notes.message.${e.message}`)
@@ -616,6 +622,8 @@ export default {
     },
     validateForm() {
       if (!this.note.title) {
+        this.postingNote = false;
+        this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.missingTitle')
@@ -623,13 +631,16 @@ export default {
         return false;
       }
       if (!isNaN(this.note.title)) {
+        this.postingNote = false;
+        this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.numericTitle')
         });
         return false;
       } else if (this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
-        this.validateFor=false;
+        this.postingNote = false;
+        this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t('notes.message.missingLengthTitle')
@@ -722,6 +733,9 @@ export default {
       if (currentDraft) {
         localStorage.removeItem(`draftNoteId-${this.note.id}`);
       }
+    },
+    enableClickOnce() {
+      this.postKey++;
     },
   }
 };
