@@ -1,5 +1,8 @@
 <template>
-  <v-app class="transparent" flat role="main">
+  <v-app 
+    class="transparent"
+    role="main"
+    flat>
     <div>
       <div
         v-if="isAvailableNote"
