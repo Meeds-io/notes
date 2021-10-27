@@ -4,7 +4,7 @@
       <div v-if="isAvailableNote" class="notes-application white border-radius pa-6">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between">
-            <span class="title text-color mt-1">{{ note.title }}</span>
+            <span class="title text-color mt-1">{{ noteTitle }}</span>
             <div
               id="note-actions-menu"
               v-if="loadData"
@@ -15,7 +15,7 @@
                     class="pa-0"
                     v-on="on"
                     v-bind="attrs"
-                    @click="addNote"
+                    @click="addNotes"
                     icon>
                     <v-icon
                       size="22"
@@ -33,7 +33,7 @@
                     class="pa-0"
                     icon
                     v-bind="attrs"
-                    @click="editNote">
+                    @click="editNotes">
                     <v-icon
                       size="19"
                       class="clickable edit-note-click">
@@ -67,7 +67,7 @@
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
                 <v-btn
-                  @click="$refs.notesBreadcrumb.open(note, 'displayNote')"
+                  @click="$refs.notesBreadcrumb.open(notes.id, 'displayNote')"
                   v-on="on"
                   class="pa-0"
                   min-width="24"
