@@ -27,7 +27,7 @@ import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -101,7 +101,7 @@ public class WikiHomeTreeNode extends TreeNode {
   public String buildPath() {
     try {
       Wiki wiki = wikiService.getWikiByTypeAndOwner(wikiHome.getWikiType(), wikiHome.getWikiOwner());
-      WikiPageParams params = new WikiPageParams(wiki.getType(), wiki.getOwner(), WikiConstants.WIKI_HOME_NAME);
+      WikiPageParams params = new WikiPageParams(wiki.getType(), wiki.getOwner(), NoteConstants.NOTE_HOME_NAME);
       return TreeUtils.getPathFromPageParams(params);
     } catch (Exception e) {
       log.error("Cannot build path of wiki page " + wikiHome.getWikiType() + ":" + wikiHome.getWikiOwner() + ":"

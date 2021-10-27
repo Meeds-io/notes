@@ -47,7 +47,7 @@ import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.json.JSONObject;
 
 import javax.annotation.security.RolesAllowed;
@@ -110,7 +110,7 @@ public class NotesRestService implements ResourceContainer {
         noteBook = noteBookService.createWiki(noteBookType, noteBookOwner);
       }
       Page note;
-      if (noteId.equals(WikiConstants.WIKI_HOME_OLD_NAME) || noteId.equals(WikiConstants.WIKI_HOME_NAME)) {
+      if (noteId.equals(NoteConstants.NOTE_HOME_OLD_NAME) || noteId.equals(NoteConstants.NOTE_HOME_NAME)) {
         noteId = noteBook.getWikiHome().getId();
         note = noteService.getNoteById(noteId, identity, source);
       } else {
@@ -421,7 +421,7 @@ public class NotesRestService implements ResourceContainer {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -430,7 +430,7 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_, identity.getUserId());
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -488,7 +488,7 @@ public class NotesRestService implements ResourceContainer {
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -500,7 +500,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -794,7 +794,7 @@ public class NotesRestService implements ResourceContainer {
         log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                  ConversationState.getCurrent().getIdentity().getUserId(),
                  path);
-        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), WikiPageParams.WIKI_HOME);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
                                                                                   request.getLocale());
@@ -861,7 +861,7 @@ public class NotesRestService implements ResourceContainer {
         log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                 ConversationState.getCurrent().getIdentity().getUserId(),
                 path);
-        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), WikiPageParams.WIKI_HOME);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
                   request.getLocale());

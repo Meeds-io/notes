@@ -7,29 +7,24 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang.StringUtils;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.*;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.SpaceStorageException;
-import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.ext.impl.WikiUIActivity.CommentType;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 public class WikiSpaceActivityPublisher extends PageWikiListener {
 
@@ -303,7 +298,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
   @Override
   public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(pageId) || !page.getWikiType().toUpperCase().equals(WikiType.GROUP.name())|| !page.isToBePublished()) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(pageId) || !page.getWikiType().toUpperCase().equals(WikiType.GROUP.name())|| !page.isToBePublished()) {
       // catch the case of the Wiki Home added as it's created by the system, not by
       // users.
       return;

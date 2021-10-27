@@ -33,7 +33,6 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfig;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -47,7 +46,7 @@ import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.search.*;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.VersionNameComparatorDesc;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -173,8 +172,8 @@ public class JPADataStorage implements DataStorage {
     Page wikiHomePage = new Page();
     wikiHomePage.setWikiType(wiki.getType());
     wikiHomePage.setWikiOwner(wiki.getOwner());
-    wikiHomePage.setName(WikiConstants.WIKI_HOME_NAME);
-    wikiHomePage.setTitle(WikiConstants.WIKI_HOME_TITLE);
+    wikiHomePage.setName(NoteConstants.NOTE_HOME_NAME);
+    wikiHomePage.setTitle(NoteConstants.NOTE_HOME_TITLE);
     Date now = Calendar.getInstance().getTime();
     wikiHomePage.setCreatedDate(now);
     wikiHomePage.setUpdatedDate(now);

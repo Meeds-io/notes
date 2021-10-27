@@ -24,7 +24,6 @@ import java.util.ResourceBundle;
 import org.apache.commons.lang.StringUtils;
 
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.web.application.ApplicationMessage;
@@ -51,6 +50,7 @@ import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.WikiPageHistory;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.webui.UIWikiPageControlArea;
 import org.exoplatform.wiki.webui.UIWikiPageEditForm;
 import org.exoplatform.wiki.webui.UIWikiPageTitleControlArea;
@@ -141,7 +141,7 @@ public class SavePageActionComponent extends UIComponent {
           htmlContent = htmlContent.trim();
         }
         String newPageName = TitleResolver.getId(title, false);
-        if (org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(page.getName())
+        if (NoteConstants.NOTE_HOME_NAME.equals(page.getName())
             && wikiMode == WikiMode.EDITPAGE) {
           // as wiki home page has fixed name (never edited anymore), every
           // title changing is accepted.
@@ -181,7 +181,7 @@ public class SavePageActionComponent extends UIComponent {
             }
 
             // Rename page if need
-            if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(page.getName())
+            if (!NoteConstants.NOTE_HOME_NAME.equals(page.getName())
                 && !page.getName().equals(newPageName)) {
               wikiService.renamePage(pageParams.getType(), pageParams.getOwner(), page.getName(), newPageName, title);
               page.setName(newPageName);

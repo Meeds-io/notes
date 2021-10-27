@@ -34,7 +34,7 @@ import org.exoplatform.webui.form.UIFormInputInfo;
 import org.exoplatform.wiki.commons.Utils;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.webui.UIWikiBreadCrumb;
 import org.exoplatform.wiki.webui.UIWikiLocationContainer;
 import org.exoplatform.wiki.webui.UIWikiPortlet;
@@ -81,7 +81,7 @@ public class MovePageActionComponent extends AbstractEventActionComponent {
       WikiService wikiService = (WikiService) PortalContainer.getComponent(WikiService.class);
       UIWikiPortlet uiWikiPortlet = event.getSource().getAncestorOfType(UIWikiPortlet.class);
       WikiPageParams params = Utils.getCurrentWikiPageParams();     
-      if (Utils.getCurrentWikiPage().getName().equals(WikiConstants.WIKI_HOME_NAME)) {
+      if (Utils.getCurrentWikiPage().getName().equals(NoteConstants.NOTE_HOME_NAME)) {
         event.getRequestContext()
              .getUIApplication()
              .addMessage(new ApplicationMessage("UIWikiMovePageForm.msg.can-not-move-wikihome", null, ApplicationMessage.WARNING));                

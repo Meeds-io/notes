@@ -3,10 +3,7 @@ package org.exoplatform.wiki.service.impl;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +45,7 @@ import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 public class NoteServiceImpl implements NoteService {
 
@@ -257,7 +254,7 @@ public class NoteServiceImpl implements NoteService {
 
   @Override
   public boolean deleteNote(String noteType, String noteOwner, String noteName) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(noteName) || noteName == null) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
@@ -275,7 +272,7 @@ public class NoteServiceImpl implements NoteService {
   public boolean deleteNote(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
                                                                                                        IllegalAccessException,
                                                                                                        EntityNotFoundException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(noteName) || noteName == null) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
@@ -335,7 +332,7 @@ public class NoteServiceImpl implements NoteService {
                             String noteName,
                             String newName,
                             String newTitle) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(noteName) || noteName == null) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 

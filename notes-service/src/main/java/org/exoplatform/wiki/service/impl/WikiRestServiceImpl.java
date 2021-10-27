@@ -57,7 +57,7 @@ import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
@@ -332,7 +332,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
         spaceNames.add(wiki.getOwner());
       }
       for (String spaceName : spaceNames) {
-        org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(wikiType, spaceName, WikiConstants.WIKI_HOME_NAME);
+        org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(wikiType, spaceName, NoteConstants.NOTE_HOME_NAME);
         spaces.getSpaces().add(createSpace(objectFactory, uriInfo.getBaseUri(), wikiType, spaceName, page));
       }
     } catch(WikiException e) {
@@ -381,7 +381,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
         String groupId = getValueFromSpace(space, "getGroupId", String.class);
         String displayName = getValueFromSpace(space, "getDisplayName", String.class);
         Wiki wiki = wikiService.getWikiByTypeAndOwner(WikiType.GROUP.toString(), groupId);
-        org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), WikiConstants.WIKI_HOME_NAME);
+        org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), NoteConstants.NOTE_HOME_NAME);
         spaces.getSpaces().add(createSpace(objectFactory, uriInfo.getBaseUri(), wiki.getType(), displayName, page));
       }
     } catch (Exception e) {
@@ -406,7 +406,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
                         @PathParam("wikiOwner") String wikiOwner) {
     org.exoplatform.wiki.mow.api.Page page;
     try {
-      page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, WikiConstants.WIKI_HOME_NAME);
+      page = wikiService.getPageOfWikiByName(wikiType, wikiOwner, NoteConstants.NOTE_HOME_NAME);
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       return objectFactory.createSpace();
@@ -439,7 +439,7 @@ public class WikiRestServiceImpl implements ResourceContainer {
     org.exoplatform.wiki.mow.api.Page page;
     boolean isWikiHome = true;
     try {
-      String parentId = WikiConstants.WIKI_HOME_NAME;
+      String parentId = NoteConstants.NOTE_HOME_NAME;
       if (parentFilterExpression != null && parentFilterExpression.length() > 0
           && !parentFilterExpression.startsWith("^(?!")) {
         parentId = parentFilterExpression;

@@ -16,11 +16,11 @@
  */
 package org.exoplatform.wiki.utils;
 
-public interface WikiConstants {
+public interface NoteConstants {
 
-  String WIKI_HOME_NAME     = "Home";
+  String NOTE_HOME_NAME = "Home";
 
-  String WIKI_HOME_OLD_NAME = "homeNote";
+  String NOTE_HOME_OLD_NAME = "homeNote";
 
-  String WIKI_HOME_TITLE    = "Home";
+  String NOTE_HOME_TITLE = "Home";
 }
