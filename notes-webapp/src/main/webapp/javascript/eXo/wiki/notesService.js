@@ -1,6 +1,6 @@
 import { notesConstants } from './notesConstants.js';
 
-export function getNotes(noteBookType, noteBookOwner, noteId,source) {
+export function getNote(noteBookType, noteBookOwner, noteId,source) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`;
   if (source){
     url=`${url}?source=${source}`;

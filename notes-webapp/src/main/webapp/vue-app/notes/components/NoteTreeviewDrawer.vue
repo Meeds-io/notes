@@ -361,26 +361,24 @@ export default {
         event.preventDefault();
         event.stopPropagation();
       }
-      const canOpenNote = this.filter === this.$t('notes.filter.label.drafts') && note.draftPage || this.filter !== this.$t('notes.filter.label.drafts');
+      const canOpenNote = this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage;
       if (canOpenNote) {
         //reinitialize filter
         this.filter = this.filterOptions[0];
         this.activeItem = [note.noteId];
-        if ( !this.includePage && !this.movePage ) {
-          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
-          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
-          this.$refs.breadcrumbDrawer.close();
-        }
         if (this.includePage) {
           this.$root.$emit('include-page',note);
           this.$refs.breadcrumbDrawer.close();
-        }
-        if (this.movePage) {
-          this.$notesService.getNotes(this.note.wikiType, this.note.wikiOwner , note.noteId).then(data => {
+        } else if (this.movePage) {
+          this.$notesService.getNote(this.note.wikiType, this.note.wikiOwner , note.noteId).then(data => {
             this.breadcrumb = data && data.breadcrumb || [];
             this.breadcrumb[0].name = this.$t('notes.label.noteHome');
             this.destinationNote = data;
           });
+        } else {
+          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
+          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
+          this.$refs.breadcrumbDrawer.close();          
         }
       }
     },

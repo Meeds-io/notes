@@ -62,6 +62,10 @@ public class Utils {
   public static final String  SPACE                       = "space";
 
   public static final String  PAGE                        = "page";
+
+  public static final String NOTE_LINK                    = "class=\"noteLink\" href=\"//-";
+
+  public static final String ANONYM_IDENTITY                    = "__anonim";
   
   private static final Log      log_               = ExoLogger.getLogger(Utils.class);
   
