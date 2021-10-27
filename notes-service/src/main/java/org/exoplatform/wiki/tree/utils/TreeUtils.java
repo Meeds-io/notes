@@ -30,7 +30,7 @@ import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.*;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +49,7 @@ public class TreeUtils {
     Object wikiObject = Utils.getObjectFromParams(params);
     if (wikiObject instanceof Page) {
       Page page = (Page) wikiObject;
-      if(params.getPageName().equals(WikiConstants.WIKI_HOME_NAME)) {
+      if(params.getPageName().equals(NoteConstants.NOTE_HOME_NAME)) {
         WikiHomeTreeNode wikiHomeNode = new WikiHomeTreeNode(page);
         return wikiHomeNode;
       } else {

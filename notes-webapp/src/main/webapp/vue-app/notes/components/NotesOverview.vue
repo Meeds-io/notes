@@ -408,7 +408,7 @@ export default {
       });
     },
     getNoteByName(noteName, source) {
-      return this.$notesService.getNotes(this.noteBookType, this.noteBookOwner, noteName, source).then(data => {
+      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source).then(data => {
         this.note = data || {};
         this.loadData = true;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}`;

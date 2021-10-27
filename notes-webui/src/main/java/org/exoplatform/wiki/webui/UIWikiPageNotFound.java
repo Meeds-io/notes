@@ -27,7 +27,7 @@ import org.exoplatform.wiki.commons.Utils;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.webui.core.UIWikiComponent;
 
 @ComponentConfig(lifecycle = Lifecycle.class, template = "app:/templates/wiki/webui/UIWikiPageNotFound.gtmpl")
@@ -52,7 +52,7 @@ public class UIWikiPageNotFound extends UIWikiComponent {
   }
 
   protected String getHomeURL(WikiPageParams param) throws Exception {
-    param.setPageName(WikiConstants.WIKI_HOME_NAME);
+    param.setPageName(NoteConstants.NOTE_HOME_NAME);
     return Utils.getURLFromParams(param);
   }
 }

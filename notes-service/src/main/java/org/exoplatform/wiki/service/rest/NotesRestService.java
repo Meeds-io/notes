@@ -16,12 +16,9 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
 import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
@@ -34,7 +31,6 @@ import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.NoteToExport;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.resolver.TitleResolver;
@@ -49,6 +45,7 @@ import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.json.JSONObject;
 
 import javax.annotation.security.RolesAllowed;
@@ -57,14 +54,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -147,8 +140,8 @@ public class NotesRestService implements ResourceContainer {
       if (noteBook == null) {
         noteBook = noteBookService.createWiki(noteBookType, noteBookOwner);
       }
-      Page note = null;
-      if (noteId.equals("homeNote")) {
+      Page note;
+      if (noteId.equals(NoteConstants.NOTE_HOME_OLD_NAME) || noteId.equals(NoteConstants.NOTE_HOME_NAME)) {
         noteId = noteBook.getWikiHome().getId();
         note = noteService.getNoteById(noteId, identity, source);
       } else {
@@ -158,9 +151,9 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       String content = note.getContent();
-      if (content.contains("class=\"noteLink\" href=\"//-")) {
-        while (content.contains("class=\"noteLink\" href=\"//-")) {
-          String linkedParams = content.split("class=\"noteLink\" href=\"//-")[1].split("-//\"")[0];
+      if (content.contains(Utils.NOTE_LINK)) {
+        while (content.contains(Utils.NOTE_LINK)) {
+          String linkedParams = content.split(Utils.NOTE_LINK)[1].split("-//\"")[0];
           String NoteName = linkedParams.split("-////-")[2];
           Page linkedNote = null;
           linkedNote = noteService.getNoteOfNoteBookByName(note.getWikiType(), note.getWikiOwner(), NoteName);
@@ -379,19 +372,17 @@ public class NotesRestService implements ResourceContainer {
 
     String noteBookType = draftNoteToSave.getWikiType();
     String noteBookOwner = draftNoteToSave.getWikiOwner();
-    Page parentNote;
+    Page parentNote = null;
     Page targetNote = null;
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNoneEmpty(draftNoteToSave.getParentPageId())) {
         parentNote = noteService.getNoteById(draftNoteToSave.getParentPageId(), identity);
-        if (parentNote != null) {
-          noteBookType = parentNote.getWikiType();
-          noteBookOwner = parentNote.getWikiOwner();
-          draftNoteToSave.setParentPageName(parentNote.getName());
-        } else {
-          return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+      }
+      if (parentNote != null) {
+        noteBookType = parentNote.getWikiType();
+        noteBookOwner = parentNote.getWikiOwner();
+        draftNoteToSave.setParentPageName(parentNote.getName());
       }
       if (StringUtils.isEmpty(noteBookType) || StringUtils.isEmpty(noteBookOwner)) {
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -402,9 +393,6 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNoneEmpty(draftNoteToSave.getTargetPageId())) {
         targetNote = noteService.getNoteById(draftNoteToSave.getTargetPageId());
-        if (targetNote == null) {
-          return Response.status(Response.Status.BAD_REQUEST).build();
-        }
       }
 
       String syntaxId = noteBookService.getDefaultWikiSyntaxId();
@@ -413,17 +401,11 @@ public class NotesRestService implements ResourceContainer {
       draftNoteToSave.setSyntax(syntaxId);
 
       if (StringUtils.isNoneEmpty(draftNoteToSave.getId())) {
-        if (targetNote != null) {
-          draftNoteToSave = noteService.updateDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser);
-        } else {
-          draftNoteToSave = noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
-        }
+        draftNoteToSave = targetNote != null ? noteService.updateDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser) :
+                noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
       } else {
-        if (targetNote != null) {
-          draftNoteToSave = noteService.createDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser);
-        } else {
-          draftNoteToSave = noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
-        }
+        draftNoteToSave = targetNote != null ? noteService.createDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser) :
+                noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
       }
 
       return Response.ok(draftNoteToSave, MediaType.APPLICATION_JSON).cacheControl(cc).build();
@@ -470,20 +452,16 @@ public class NotesRestService implements ResourceContainer {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          // noteService.removeDraftOfNote(noteParams);
-        }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -491,10 +469,6 @@ public class NotesRestService implements ResourceContainer {
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
-          WikiPageParams noteParams = new WikiPageParams(noteBookType, noteBookOwner, newNoteName);
-          // noteService.removeDraftOfPage(noteParams);
-        }
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
@@ -545,19 +519,19 @@ public class NotesRestService implements ResourceContainer {
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        if (!org.exoplatform.wiki.utils.WikiConstants.WIKI_HOME_NAME.equals(note.getName())
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
             && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
@@ -565,7 +539,7 @@ public class NotesRestService implements ResourceContainer {
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
@@ -573,7 +547,7 @@ public class NotesRestService implements ResourceContainer {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
-        if (!"__anonim".equals(identity.getUserId())) {
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
@@ -666,12 +640,12 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
-      String noteName = note.getName();
       if (note == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
+      String noteName = note.getName();
       // remove draft note
-      if (!"__anonim".equals(identity.getUserId())) {
+      if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
         WikiPageParams noteParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), noteName);
         noteService.removeDraftOfNote(noteParams);
       }
@@ -698,10 +672,10 @@ public class NotesRestService implements ResourceContainer {
     try {
       String currentUserId = ConversationState.getCurrent().getIdentity().getUserId();
       DraftPage draftNote = noteService.getDraftNoteById(noteId, currentUserId);
-      String draftNoteName = draftNote.getName();
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
+      String draftNoteName = draftNote.getName();
       noteService.removeDraft(draftNoteName);
       return Response.ok().build();
     } catch (Exception ex) {
@@ -927,7 +901,7 @@ public class NotesRestService implements ResourceContainer {
         log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                  ConversationState.getCurrent().getIdentity().getUserId(),
                  path);
-        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), WikiPageParams.WIKI_HOME);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
                                                                                   request.getLocale());
@@ -955,7 +929,8 @@ public class NotesRestService implements ResourceContainer {
       }
 
       encodeWikiTree(responseData, request.getLocale());
-      return Response.ok(new BeanToJsons(responseData), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData);
+      return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -993,7 +968,7 @@ public class NotesRestService implements ResourceContainer {
         log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                 ConversationState.getCurrent().getIdentity().getUserId(),
                 path);
-        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.WIKI_HOME);
+        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
                   request.getLocale());
@@ -1110,7 +1085,8 @@ public class NotesRestService implements ResourceContainer {
       }
 
       encodeWikiTree(bottomChildren, request.getLocale());
-      return Response.ok(new BeanToJsons(finalTree, bottomChildren), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
+      return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.NOT_FOUND).build();
