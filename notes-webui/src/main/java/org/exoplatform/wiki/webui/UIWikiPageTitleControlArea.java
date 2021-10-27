@@ -34,7 +34,7 @@ import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.webui.control.UIWikiExtensionContainer;
 
 @ComponentConfig(
@@ -115,7 +115,7 @@ public class UIWikiPageTitleControlArea extends UIWikiExtensionContainer {
     WikiPageParams pageParams = Utils.getCurrentWikiPageParams();
     String newName = TitleResolver.getId(newTitle, true);
     Page page = Utils.getCurrentWikiPage();
-    boolean isRenameHome = WikiConstants.WIKI_HOME_NAME.equals(page.getName())
+    boolean isRenameHome = NoteConstants.NOTE_HOME_NAME.equals(page.getName())
         && !newName.equals(pageParams.getPageName());
     page.setMinorEdit(false);
     if (isRenameHome) {

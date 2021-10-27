@@ -62,6 +62,10 @@ public class Utils {
   public static final String  SPACE                       = "space";
 
   public static final String  PAGE                        = "page";
+
+  public static final String NOTE_LINK                    = "class=\"noteLink\" href=\"//-";
+
+  public static final String ANONYM_IDENTITY                    = "__anonim";
   
   private static final Log      log_               = ExoLogger.getLogger(Utils.class);
   
@@ -402,7 +406,7 @@ public class Utils {
     String wikiPageId = param.getPageName();
 
     if (wikiOwner != null && wikiPageId != null) {
-      if (!wikiPageId.equals(WikiConstants.WIKI_HOME_NAME)) {
+      if (!wikiPageId.equals(NoteConstants.NOTE_HOME_NAME)) {
         // Object is a page
         Page expandPage = wikiService.getPageByRootPermission(wikiType, wikiOwner, wikiPageId);
         return expandPage;

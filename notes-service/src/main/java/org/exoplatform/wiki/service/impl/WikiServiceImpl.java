@@ -84,7 +84,7 @@ import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 public class WikiServiceImpl implements WikiService, Startable {
 
@@ -530,7 +530,7 @@ public class WikiServiceImpl implements WikiService, Startable {
 
   @Override
   public boolean deletePage(String wikiType, String wikiOwner, String pageName, String userId) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(pageName) || pageName == null) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(pageName) || pageName == null) {
       return false;
     }
 
@@ -581,7 +581,7 @@ public class WikiServiceImpl implements WikiService, Startable {
                             String pageName,
                             String newName,
                             String newTitle) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(pageName) || pageName == null) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(pageName) || pageName == null) {
       return false;
     }
 

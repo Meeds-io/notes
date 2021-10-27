@@ -36,7 +36,7 @@ import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -71,8 +71,8 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals("portal", createdWiki.getType());
     assertEquals("wiki1", createdWiki.getOwner());
     assertNotNull(wikiHomePage);
-    assertEquals(WikiConstants.WIKI_HOME_NAME, wikiHomePage.getName());
-    assertEquals(WikiConstants.WIKI_HOME_TITLE, wikiHomePage.getTitle());
+    assertEquals(NoteConstants.NOTE_HOME_NAME, wikiHomePage.getName());
+    assertEquals(NoteConstants.NOTE_HOME_TITLE, wikiHomePage.getTitle());
     assertNotNull(wikiHomePage.getCreatedDate());
     assertNotNull(wikiHomePage.getUpdatedDate());
     assertTrue(StringUtils.isNotEmpty(wikiHomePage.getContent()));
@@ -285,7 +285,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
 
     pages = pageDAO.getPagesOfWiki(wiki.getType(), wiki.getOwner(), false);
     assertEquals(1, pages.size());
-    assertEquals(WikiConstants.WIKI_HOME_NAME, pages.get(0).getName());
+    assertEquals(NoteConstants.NOTE_HOME_NAME, pages.get(0).getName());
 
     pages = pageDAO.getPagesOfWiki(wiki.getType(), wiki.getOwner(), true);
     assertEquals(1, pages.size());

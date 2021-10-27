@@ -13,7 +13,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
-import org.exoplatform.wiki.utils.WikiConstants;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 @Asynchronous
 public class GamificationWikiListener extends PageWikiListener {
@@ -41,7 +41,7 @@ public class GamificationWikiListener extends PageWikiListener {
 
   @Override
   public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    if (WikiConstants.WIKI_HOME_NAME.equals(pageId)) {
+    if (NoteConstants.NOTE_HOME_NAME.equals(pageId)) {
       // catch the case of the Wiki Home added as it's created by the system,
       // not by users.
       return;
