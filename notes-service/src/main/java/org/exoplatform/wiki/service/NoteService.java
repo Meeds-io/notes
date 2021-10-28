@@ -177,6 +177,7 @@ public interface NoteService {
    * @param note note.
    * @param userId
    * @param withDrafts if set to true returns the children notes and draft notes
+   * @param withChild if set to true returns if the note has children
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
