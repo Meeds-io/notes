@@ -349,11 +349,11 @@ public class TestNoteService extends BaseTest {
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
-    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false).size();
+    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false,false).size();
 
     noteService.importNotes(pages, userWiki.getWikiHome(), userWiki, "update");
 
-    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false).size(),childern+3);
+    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false,false).size(),childern+3);
   }
 
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
@@ -388,7 +388,7 @@ public class TestNoteService extends BaseTest {
     noteService.createNote(portalWiki, "Home", new Page("imported1", "imported1"),user) ;
     noteService.createNote(portalWiki, "Home", new Page("imported2", "imported2"),user) ;
     Page home = portalWiki.getWikiHome();
-    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false).size();
+    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false, false).size();
      NoteToExport note = new NoteToExport();
      note.setId(home.getId());
      note.setName(home.getName());

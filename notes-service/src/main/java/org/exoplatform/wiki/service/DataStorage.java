@@ -59,6 +59,8 @@ public interface DataStorage {
    */
   public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts) throws WikiException;
 
+  public boolean hasChildren(long noteId) throws WikiException;
+
   public void createTemplatePage(Wiki wiki, Template template) throws WikiException;
 
   public void updateTemplatePage(Template template) throws WikiException;

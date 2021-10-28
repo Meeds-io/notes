@@ -180,7 +180,7 @@ public interface NoteService {
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
-  List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts) throws WikiException;
+  List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts, boolean withChild) throws WikiException;
 
   /**
    * Gets a list of data which is used for composing the breadcrumb.

@@ -23,6 +23,7 @@ import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -199,6 +200,7 @@ public class NotesRestService implements ResourceContainer {
   public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
                               @ApiParam(value = "noteBookType", required = false) @QueryParam("noteBookType") String noteBookType,
                               @ApiParam(value = "noteBookOwner", required = false) @QueryParam("noteBookOwner") String noteBookOwner,
+                              @ApiParam(value = "withChildren", required = false) @QueryParam("withChildren") boolean withChildren,
                               @ApiParam(value = "source", required = false) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -211,6 +213,9 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if(BooleanUtils.isTrue(withChildren)) {
+        note.setChildren(noteService.getChildrenNoteOf(note,identity.getUserId(),false, withChildren));
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(), note.getWikiOwner(), note.getName(), false));
