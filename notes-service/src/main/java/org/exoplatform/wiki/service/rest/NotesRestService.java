@@ -177,7 +177,7 @@ public class NotesRestService implements ResourceContainer {
         }
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType, noteBookOwner, noteId, false));
+      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType, noteBookOwner, note.getName(), false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
