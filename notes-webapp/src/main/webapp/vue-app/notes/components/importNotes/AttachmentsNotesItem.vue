@@ -1,81 +1,68 @@
 <template>
-  <div class="attachment">
-    <div class="fileType">
-      <i :class="getIconClassFromFileMimeType(file.mimetype)"></i>
-    </div>
-    <div class="fileDetails">
-      <div class="fileDetails1">
-        <div
-          v-sanitized-html="file.name"
-          class="fileNameLabel"
-          data-toggle="tooltip"
-          rel="tooltip"
-          data-placement="top"></div>
-        <div class="fileSize">{{ getFormattedFileSize(file.size) }} {{ $t(`attachments.composer.file.size.${measure}`) }}</div>
+  <div class="attachment d-flex clickable">
+    <v-list-item-avatar
+      class="border-radius me-3">
+      <div v-if="attachment.uploadProgress < 100" class="fileProgress">
+        <v-progress-circular
+          :rotate="-90"
+          :size="40"
+          :width="4"
+          :value="attachment.uploadProgress"
+          color="primary">
+          {{ attachment.uploadProgress }}
+        </v-progress-circular>
       </div>
-      <div v-if="file.uploadProgress" class="fileDetails2">
-        <div
-          v-show="!file.id"
-          :class="[file.uploadProgress === 100 ? 'upload-completed': '']"
-          class="progress">
-          <div :style="'width:' + file.uploadProgress + '%'" class="bar"></div>
-        </div>
+      <div
+        v-else
+        class="fileType">
+        <i class="uiIconFileTypeapplicationzip uiIconFileTypeDefault"></i>
       </div>
-    </div>
+    </v-list-item-avatar>
+    <v-list-item-content>
+      <v-list-item-title class="uploadedFileTitle" :title="attachmentTitle">
+        {{ attachmentTitle }}
+      </v-list-item-title>
+    </v-list-item-content>
+    <v-list-item-action class="d-flex flex-row align-center">
+      <div
+        :title="$t('attachment.detach')"
+        class="remove-button">
+        <v-btn
+          class="d-flex"
+          outlined
+          x-small
+          height="24"
+          width="24"
+          @click="removeAttachedFile(attachment)">
+          <v-icon
+            small
+            class="fas fa-trash fa-xs colorIcon error--text" />
+        </v-btn>
+      </div>
+    </v-list-item-action>
   </div>
 </template>
-
 <script>
 export default {
   props: {
-    file: {
+    attachment: {
       type: Object,
-      required: false,
-      default: function () {
-        return new Object();
-      }
-    }
+      default: () => null
+    },
   },
-  data() {
-    return {
-      BYTES_IN_KB: 1024,
-      BYTES_IN_MB: 1048576,
-      BYTES_IN_GB: 1073741824,
-      MB_IN_GB: 10,
-      measure: 'bytes'
-    };
+  computed: {
+    attachmentInProgress() {
+      return this.attachment.uploadProgress < 100;
+    },
+    attachmentTitle() {
+      return this.attachment && this.attachment.name && unescape(this.attachment.name);
+    },
   },
   methods: {
-    getIconClassFromFileMimeType: function(fileMimeType) {
-      if (fileMimeType) {
-        const fileMimeTypeClass = fileMimeType.replace(/\./g, '').replace('/', '').replace('\\', '');
-        return this.file.isCloudFile
-          ? `uiIcon32x32${fileMimeType.replace(/[/.]/g, '')}`
-          : `uiIconFileType${fileMimeTypeClass} uiIconFileTypeDefault`;
-      } else {
-        return '';
-      }
+    removeAttachedFile: function() {
+      this.$root.$emit('delete-uploaded-file', this.attachment);
     },
-    getFormattedFileSize: function(fileSize) {
-      const formattedSizePrecision = 2;
-      const minGb = this.MB_IN_GB * this.BYTES_IN_MB; // equals 0.01 GB
-      const minMb = 10000; // equals 0.01 MB, which is the smallest number with precision `formattedSizePrecision`
-      const minKb = 10; // equals 0.01 KB, which is the smallest number with precision `formattedSizePrecision`
-      let size = fileSize;
-      if (fileSize < minKb) {
-        this.measure = 'bytes';
-      } else if (fileSize < minMb) {
-        size = fileSize / this.BYTES_IN_KB;
-        this.measure = 'kilo';
-      } else if (fileSize < minGb) {
-        size = fileSize / this.BYTES_IN_MB;
-        this.measure = 'mega';
-      } else {
-        size = fileSize / this.BYTES_IN_GB;
-        this.measure = 'giga';
-      }
-      return (+size).toFixed(formattedSizePrecision);
-    },
+
   }
 };
 </script>

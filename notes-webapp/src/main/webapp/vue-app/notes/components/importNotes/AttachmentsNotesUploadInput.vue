@@ -60,7 +60,17 @@ export default {
       fileSizeLimitError: false,
       fileSizeNullError: false,
       sameFileError: false,
+      fileType: 'application/zip',
     };
+  },
+  computed: {
+    maxFileSizeErrorLabel: function () {
+      return this.$t('import.drawer.maxFileSize.error').replace('{0}', `${this.maxFileSize}`);
+    },
+    fileTypeErrorLabel: function () {
+      return this.$t('import.drawer.fileType.error');
+    },
+
   },
   methods: {
     uploadFile: function () {
@@ -103,10 +113,19 @@ export default {
         this.filesCountLimitError = true;
         return;
       }
-
+      if ( file.mimetype !== this.fileType ) {
+        this.$root.$emit('show-alert', {
+          message: this.fileTypeErrorLabel,
+          type: 'error',
+        });
+        return;
+      }
       const fileSizeInMb = file.size / this.BYTES_IN_MB;
       if (fileSizeInMb > this.maxFileSize) {
-        this.fileSizeLimitError = true;
+        this.$root.$emit('show-alert', {
+          message: this.maxFileSizeErrorLabel,
+          type: 'error',
+        });
         return;
       }
 

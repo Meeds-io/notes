@@ -21,28 +21,7 @@
           class="uploadedFilesItem">
           <div class="showDestination">
             <div class="showFile">
-              <attachments-notes-item :file="attachedFile" />
-            </div>
-          </div>
-          <v-spacer />
-          <div class="attachment">
-            <div class="folderLocation">
-              <div>
-                <i
-                  v-if="!attachedFile.uploadId"
-                  :title="$t('attachments.drawer.destination.attachment.access')"
-                  rel="tooltip"
-                  data-placement="top"
-                  class="fas fa-ban fa-xs colorIconStop"></i>
-              </div>
-              <div class="btnTrash">
-                <i
-                  :title="$t('notes.attachments.delete')"
-                  rel="tooltip"
-                  data-placement="top"
-                  class="fas fa-trash fa-xs colorIcon"
-                  @click="removeAttachedFile(attachedFile)"></i>
-              </div>
+              <attachments-notes-item :attachment="attachedFile" />
             </div>
           </div>
         </div>
