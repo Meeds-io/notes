@@ -342,7 +342,6 @@ export default {
     } else {
       this.getNoteByName(this.notesPageName);
     }
-    this.currentNoteBreadcrumb = this.note.breadcrumb;
   },
   methods: {
     addNote() {
@@ -403,6 +402,7 @@ export default {
         this.note = {};
         this.note = data || {};
         this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
@@ -430,6 +430,7 @@ export default {
       return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source).then(data => {
         this.note = data || {};
         this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
@@ -447,6 +448,7 @@ export default {
         this.note = data || {};
         this.isDraft = true;
         this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
         notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}/draft`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
