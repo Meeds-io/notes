@@ -227,7 +227,7 @@ export default {
   },
   computed: {
     noteVersionContent() {
-      return this.noteContent && this.targetBlank(this.noteContent);
+      return this.noteContent && this.formatContent(this.noteContent);
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
@@ -539,11 +539,12 @@ export default {
           this.getNoteVersionByNoteId(this.note.id);
         });
     },
-    targetBlank: function (content) {
+    formatContent: function (content) {
       const internal = location.host + eXo.env.portal.context;
       const domParser = new DOMParser();
       const docElement = domParser.parseFromString(content, 'text/html').documentElement;
       const links = docElement.getElementsByTagName('a');
+      const tables = docElement.getElementsByTagName('table');
       for (const link of links) {
         let href = link.href.replace(/(^\w+:|^)\/\//, '');
         if (href.endsWith('/')) {
@@ -552,6 +553,11 @@ export default {
         if (href !== location.host && !href.startsWith(internal)) {
           link.setAttribute('target', '_blank');
           link.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
+      for (const table of tables) {
+        if (!table.hasAttribute('role')) {
+          table.setAttribute('role', 'presentation');
         }
       }
       return docElement.innerHTML;
