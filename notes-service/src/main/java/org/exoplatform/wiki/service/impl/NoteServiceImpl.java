@@ -587,7 +587,7 @@ public class NoteServiceImpl implements NoteService {
     page.setWikiOwner(note.getWikiOwner());
     page.setWikiType(note.getWikiType());
 
-    List<Page> pages = getChildrenNoteOf(page, ConversationState.getCurrent().getIdentity().getUserId(),false, false);
+    List<Page> pages = getChildrenNoteOf(page, ConversationState.getCurrent().getIdentity().getUserId(), false, false);
 
     List<NoteToExport> children = new ArrayList<>();
 
