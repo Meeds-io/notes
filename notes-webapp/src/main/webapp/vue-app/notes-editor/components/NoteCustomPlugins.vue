@@ -58,29 +58,40 @@ export default {
   data: () => ({
     defaultImagePlugin: '/notes/images/defaultPlugin.png',
     drawer: false,
+    noteChildren: []
   }),
   computed: {
     plugins() {
       const pluginsList = [
-        { id: 'video',title: 'Video', src: '/notes/images/video.png' },
-        { id: 'table',title: 'Table', src: '/notes/images/table.png' },
-        { id: 'note',title: 'Note', src: '/notes/images/notes.png' },
-      /*{ id: 'ToC',title: 'ToC', src: '/notes/images/children.png' },
-      { id: 'index',title: 'Index', src: '/notes/images/index.png' },
-      { id: 'iframe',title: 'IFrame', src: '/notes/images/iframe.png' },
-      { id: 'code',title: 'Code', src: '/notes/images/code.png' },*/
+        { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
+        { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
+        { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
+        { id: 'ToC',title: 'ToC', src: '/notes/images/children.png', tooltip: this.$t('notes.label.itoc')  }
       ];
       if (eXo.ecm){
-        pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png' });
+        pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
       }
-      return pluginsList;
+      if (this.hideTOC || !this.noteChildren.length) {
+        return pluginsList.filter( plugin => plugin.id !== 'ToC' );
+      } else {
+        return pluginsList;
+      }
     },
   },
   props: {
     instance: {
       type: Object,
       default: () => null,
-    },
+    }
+  },
+  created() {
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('noteId')) {
+      this.noteId = urlParams.get('noteId');
+      this.hideTOC = false;
+      this.retrieveNoteChildren(this.noteId);
+    }
   },
   methods: {
     open() {
@@ -89,12 +100,20 @@ export default {
     close() {
       this.$refs.customPluginsDrawer.close();
     },
+    retrieveNoteChildren(noteId) {
+      this.$notesService.getNoteById(noteId, '','','',true).then(data => {
+        this.noteChildren = data && data.children || [];
+      });
+    },
     openPlugin(id){
       if (id==='table'){
         this.$root.$emit('note-table-plugins');
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
-      } else {
+      } else if ( id === 'ToC') {
+        this.instance.execCommand(id, this.noteChildren);
+      }
+      else {
         this.instance.execCommand(id);
         this.close();
       }
