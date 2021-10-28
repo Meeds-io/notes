@@ -112,4 +112,10 @@ public class PageDAO extends WikiBaseDAO<PageEntity, Long> {
             .setParameter("syntax", syntax)
             .getSingleResult();
   }
+  public Long countPageChildrenById(Long pageId) {
+    return (Long) getEntityManager().createNamedQuery("wikiPage.countPageChildrenById")
+            .setParameter("id", pageId)
+            .getSingleResult();
+  }
+
 }

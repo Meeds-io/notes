@@ -43,7 +43,7 @@ export function getLatestDraftOfPage(noteId) {
   });
 }
 
-export function getNoteById(noteId,source,type, owner) {
+export function getNoteById(noteId,source,type,owner,withChildren) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
     url=`${url}${getSeparator(url)}source=${source}`;
@@ -51,6 +51,8 @@ export function getNoteById(noteId,source,type, owner) {
     url=`${url}${getSeparator(url)}noteBookType=${type}`;
   } if (owner){
     url=`${url}${getSeparator(url)}noteBookOwner=${owner}`;
+  } if (withChildren){
+    url=`${url}${getSeparator(url)}withChildren=${withChildren}`;
   }
   return fetch(url, {
     method: 'GET',
