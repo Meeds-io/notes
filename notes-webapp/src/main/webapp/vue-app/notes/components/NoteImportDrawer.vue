@@ -13,14 +13,15 @@
         <div>
           <template>
             <v-stepper
-              v-model="e6"
+              v-model="stepper"
               vertical
               flat
               class="ma-0 py-0 me-4">
               <v-stepper-step
-                :complete="e6 > 1"
+                :complete="stepper > 1"
                 step="1">
                 {{ $t('notes.label.importChoice') }}
+                <span v-if=" stepper!==1 && value " class="text-sub-title theme--light">{{ $t('notes.label.importChoice.sub.title') }}</span>
               </v-stepper-step>
 
               <v-stepper-content step="1">
@@ -39,7 +40,7 @@
                   <v-btn
                     class="btn btn-primary"
                     outlined
-                    @click="e6 = 2">
+                    @click="stepper = 2">
                     {{ $t('notes.label.button.continue') }}
                     <v-icon size="18" class="ms-2">
                       {{ $vuetify.rtl && 'fa-caret-left' || 'fa-caret-right' }}
@@ -49,7 +50,7 @@
               </v-stepper-content>
 
               <v-stepper-step
-                :complete="e6 > 2"
+                :complete="stepper > 2"
                 step="2">
                 {{ $t('notes.label.importRules') }}
               </v-stepper-step>
@@ -75,7 +76,7 @@
                 <v-card-actions class="mt-4 px-0">
                   <v-btn
                     class="btn"
-                    @click="e6 = 1">
+                    @click="stepper = 1">
                     <v-icon size="18" class="me-2">
                       {{ $vuetify.rtl && 'fa-caret-right' || 'fa-caret-left' }}
                     </v-icon>
@@ -112,7 +113,6 @@
 <script>
 export default {
   props: {
-
     maxFileSize: {
       type: Number,
       default: parseInt(`${eXo.env.portal.maxFileSize}`)
@@ -125,7 +125,7 @@ export default {
   },
   data() {
     return {
-      e6: 1,
+      stepper: 1,
       selected: 'nothing',
       value: [],
     };
@@ -144,11 +144,21 @@ export default {
       this.$refs.importNotesDrawer.open();
     },
     cancel() {
+      this.value = [];
+      this.selected = 'nothing';
+      this.stepper = 1;
       this.$refs.importNotesDrawer.close();
     },
     importNotes(){
-      this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
-      this.cancel();
+      if (this.value[0] && this.value[0].uploadId){
+        this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
+        this.cancel();
+      } else {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.missingImportNotes')
+        });
+      }
     },
   }
 };
