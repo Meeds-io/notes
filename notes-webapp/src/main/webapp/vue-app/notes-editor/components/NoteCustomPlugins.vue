@@ -114,7 +114,6 @@ export default {
 
       } else if ( id === 'Navigation') {
         this.instance.execCommand('ToC');
-        console.warn('sent');
         this.treeviewInserted = true;
         this.close();
       }
