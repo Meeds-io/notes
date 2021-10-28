@@ -81,6 +81,8 @@ public class Page {
 
   private List<Page> children;
 
+  private boolean hasChild;
+
   private Page parent;
 
   public boolean isDraftPage() {

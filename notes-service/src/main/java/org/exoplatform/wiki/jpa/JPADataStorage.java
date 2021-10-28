@@ -303,6 +303,11 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
+  public boolean hasChildren(long noteId) throws WikiException {
+    return pageDAO.countPageChildrenById(noteId) > 0;
+  }
+
+  @Override
   @ExoTransactional
   public void deletePage(String wikiType, String wikiOwner, String pageName) throws WikiException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(wikiType, wikiOwner, pageName);
