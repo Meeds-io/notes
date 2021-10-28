@@ -16,13 +16,9 @@
  */
 package org.exoplatform.wiki.service.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
 import io.swagger.jaxrs.PATCH;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.common.http.HTTPStatus;
@@ -986,7 +982,8 @@ public class NotesRestService implements ResourceContainer {
       }
 
       encodeWikiTree(bottomChildren, request.getLocale());
-      return Response.ok(new BeanToJsons(finalTree, bottomChildren), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
+      return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();

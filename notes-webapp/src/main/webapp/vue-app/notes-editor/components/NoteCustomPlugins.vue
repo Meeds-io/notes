@@ -66,10 +66,7 @@ export default {
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
         { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
         { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
-        { id: 'ToC',title: 'ToC', src: '/notes/images/children.png', tooltip: this.$t('notes.label.itoc')  },
-      /*{ id: 'index',title: 'Index', src: '/notes/images/index.png' },
-      { id: 'iframe',title: 'IFrame', src: '/notes/images/iframe.png' },
-      { id: 'code',title: 'Code', src: '/notes/images/code.png' },*/
+        { id: 'ToC',title: 'ToC', src: '/notes/images/children.png', tooltip: this.$t('notes.label.itoc')  }
       ];
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
