@@ -547,7 +547,7 @@ export default {
           this.getNoteVersionByNoteId(this.note.id);
         });
     },
-    formatContent: function (content) {
+    formatContent (content) {
       const internal = location.host + eXo.env.portal.context;
       const domParser = new DOMParser();
       const docElement = domParser.parseFromString(content, 'text/html').documentElement;
@@ -566,6 +566,13 @@ export default {
       for (const table of tables) {
         if (!table.hasAttribute('role')) {
           table.setAttribute('role', 'presentation');
+        }
+        if (!table.hasAttribute('summary')) {
+          const customId = table.parentElement.id.split('-').pop();
+          const tableSummary = document.getElementById(`summary-${customId}`);
+          if ( tableSummary !== null ) {
+            table.setAttribute('summary', tableSummary.innerText);
+          }
         }
       }
       return docElement.innerHTML;

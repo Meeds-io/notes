@@ -512,7 +512,7 @@ export default {
         allowedContent: true,
         spaceURL: self.spaceURL,
         toolbarLocation: 'top',
-        extraAllowedContent: 'img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*]',
+        extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
         toolbar: [
           { name: 'format', items: ['Format'] },
@@ -550,8 +550,9 @@ export default {
             CKEDITOR.instances['notesContent'].addCommand('tableProperties', {
               exec: function() {
                 if (CKEDITOR.instances['notesContent'].elementPath() && CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 )){
+                  const tableSummary = CKEDITOR.instances['notesContent'].elementPath().contains( 'div', 1 ).$.firstChild.innerText;
                   const table=CKEDITOR.instances['notesContent'].elementPath().contains( 'table', 1 ).getAttributes();
-                  self.$refs.noteTablePlugins.open(table);
+                  self.$refs.noteTablePlugins.open(table, tableSummary);
                 }
 
               }
