@@ -357,7 +357,7 @@ export default {
         this.$notesService.deleteDraftNote(this.note).then(() => {
           this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
         }).catch(e => {
-          console.error('Error when deleting note', e);
+          console.error('Error when deleting draft note', e);
         });
       } else {
         this.$notesService.deleteNotes(this.note).then(() => {
