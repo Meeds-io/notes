@@ -200,6 +200,31 @@
             </v-col>
           </v-row>
         </v-container>
+        <v-container fluid>
+          <div class="d-flex">
+            <v-subheader class="px-0">
+              {{ $t('notes.plugin.table.summary') }}
+            </v-subheader>
+            <v-divider class="spacesOverviewHorizontalSeparator mx-2 ma-auto" />
+          </div>
+          <v-row align="center">
+            <v-col>
+              <v-text-field
+                v-model="summary"
+                :placeholder="$t('notes.plugin.table.summaryPlaceholder')"
+                class="pa-0"
+                dense
+                min-height
+                outlined />
+            </v-col>
+          </v-row>
+          <div class="accessibility-text d-flex">
+            <div class="btn-accessibility me-2">
+              <v-icon size="18" class="primary v-btn--round">mdi-human</v-icon>
+            </div>
+            <span class="caption text-light-color font-italic">{{ $t('notes.plugin.table.summaryText') }}</span>
+          </div>
+        </v-container>
       </template>
       <template slot="footer">
         <div class="d-flex">
@@ -239,6 +264,7 @@ export default {
     internal: 0,
     alignmentSelected: '',
     table: '',
+    summary: '',
     alignment: [
       {name: ''},{name: 'left'},{name: 'center'},{name: 'right'}
     ],
@@ -262,7 +288,7 @@ export default {
     });
   },
   methods: {
-    open(table) {
+    open(table, summary) {
       this.table = table;
       if (table) {
         this.width = table.width;
@@ -272,6 +298,9 @@ export default {
         this.spacing = table.cellspacing;
         this.alignmentSelected = table.align;
         this.headerSelected = table.tHead;
+        if (summary) {
+          this.summary = summary;
+        }
       }
       this.$refs.customTableDrawer.open();
     },
@@ -293,9 +322,18 @@ export default {
     addTable() {
       if (!this.table) {
         const div = document.createElement('DIV');
+        const elementContainer = document.createElement('DIV');
+        const tableContainerId = Math.random().toString(16).slice(2);
+        elementContainer.setAttribute('id', `table-${tableContainerId}`);
         const table = document.createElement('TABLE');
+        const contentSummary = document.createElement('p');
+        contentSummary.setAttribute('id', `summary-${tableContainerId}`);
+        contentSummary.appendChild(document.createTextNode(this.summary));
+        contentSummary.style.display = 'none';
         table.setAttribute('id', 'table');
-        div.appendChild(table);
+        elementContainer.appendChild(contentSummary);
+        elementContainer.appendChild(table);
+        div.appendChild(elementContainer);
         table.setAttribute('width', this.width);
         table.setAttribute('border', this.border);
         table.setAttribute('cellPadding', this.internal);
@@ -327,6 +365,9 @@ export default {
         this.instance.elementPath().contains('table', 1).setAttribute('cellSpacing', this.spacing);
         this.instance.elementPath().contains('table', 1).setAttribute('align', this.alignmentSelected);
         this.instance.elementPath().contains('table', 1).setAttribute('tHead', this.headerSelected);
+        this.instance.elementPath().contains('table', 1).setAttribute('summary', this.summary);
+        const tableSummary = this.instance.elementPath().contains( 'div', 1 ).$.firstChild;
+        tableSummary.innerText = this.summary;
         this.$root.$emit('updateData', this.instance.getData());
       }
     },
