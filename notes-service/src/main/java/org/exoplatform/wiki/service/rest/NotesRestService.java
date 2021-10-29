@@ -55,6 +55,7 @@ import org.exoplatform.wiki.utils.Utils;
 
 import io.swagger.annotations.*;
 import io.swagger.jaxrs.PATCH;
+import org.exoplatform.wiki.utils.WikiConstants;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -98,9 +99,10 @@ public class NotesRestService implements ResourceContainer {
         noteBook = noteBookService.createWiki(noteBookType, noteBookOwner);
       }
       Page note = null;
-      if(noteId.equals("homeNote")){
-        note = noteBook.getWikiHome();
-      }else{
+      if (noteId.equals(WikiConstants.WIKI_NEW_HOME_NAME) || noteId.equals(WikiConstants.WIKI_HOME_NAME)) {
+        noteId = noteBook.getWikiHome().getId();
+        note = noteService.getNoteById(noteId, identity, source);
+      } else {
         note = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity, source);
       }
       if (note == null) {
