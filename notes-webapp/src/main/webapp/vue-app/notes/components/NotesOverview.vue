@@ -143,7 +143,7 @@
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
-      :title="$t('popup.confirmation.delete')"
+      :title="note.draftPage ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
       :ok-label="$t('notes.button.ok')"
       :cancel-label="$t('notes.button.cancel')"
       persistent
@@ -345,12 +345,20 @@ export default {
     editNote() {
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&appName=${this.appName}&isDraft=${this.isDraft}`, '_blank');
     },
-    deleteNote(){
-      this.$notesService.deleteNotes(this.note).then(() => {
-        this.getNoteByName(this.notebreadcrumb[ this.notebreadcrumb.length-2].id);
-      }).catch(e => {
-        console.error('Error when deleting note', e);
-      });
+    deleteNote() {
+      if (this.note.draftPage) {
+        this.$notesService.deleteDraftNote(this.note).then(() => {
+          this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
+        }).catch(e => {
+          console.error('Error when deleting draft note', e);
+        });
+      } else {
+        this.$notesService.deleteNotes(this.note).then(() => {
+          this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
+        }).catch(e => {
+          console.error('Error when deleting note', e);
+        });
+      }
     },
     moveNote(note, newParentNote){
       note.parentPageId=newParentNote.id;
@@ -443,21 +451,21 @@ export default {
     },
     confirmDeleteNote: function () {
       let parentsBreadcrumb = '';
-      for (let index = 0; index < this.notebreadcrumb.length-1; index++) {
+      for (let index = 0; index < this.notebreadcrumb.length - 1; index++) {
         parentsBreadcrumb = parentsBreadcrumb.concat(this.notebreadcrumb[index].title);
-        if (index < this.notebreadcrumb.length-2) {
+        if (index < this.notebreadcrumb.length - 2) {
           parentsBreadcrumb = parentsBreadcrumb.concat('>');
         }
       }
-      this.confirmMessage = `${this.$t('popup.msg.confirmation.DeleteInfo1', {
-        0: `<b>${this.note && this.note.title}</b>`,
-      })
-      }`
-          + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
-          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
-          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo5', {
-            1: `<b>${parentsBreadcrumb}</b>`,
-          })}</li>`;
+      this.confirmMessage = `${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo1', { 0: `<b>${this.note && this.note.title}</b>` }) : 
+        this.$t('popup.msg.confirmation.DeleteInfo1', { 0: `<b>${this.note && this.note.title}</b>` })}`
+        + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
+        + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
+        + `<li>${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo5', {
+          0: `<b>${parentsBreadcrumb}</b>`
+        }) : this.$t('popup.msg.confirmation.DeleteInfo5', {
+          0: `<b>${parentsBreadcrumb}</b>`
+        })}</li>`;
       this.$refs.DeleteNoteDialog.open();
     },
     createPDF(note) {
