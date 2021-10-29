@@ -209,7 +209,8 @@ export function getPathByNoteOwner(note, noteAppName) {
   }
   if (note.wikiType === 'group') {
     const spaceName = note.wikiOwner.split('/spaces/')[1];
-    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceName}/${noteAppName}/${note.id}`;
+    const spaceDisplayName = note.url.split(`/portal/g/:spaces:${spaceName}/`)[1].split('/')[0];
+    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceDisplayName}/${noteAppName}/${note.id}`;
   } else {
     return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes/${note.id}`;
   }
