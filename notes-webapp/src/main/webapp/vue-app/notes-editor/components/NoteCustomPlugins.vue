@@ -68,7 +68,6 @@ export default {
         { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
         { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
         { id: 'Navigation',title: 'Navigation', src: '/notes/images/children.png', tooltip: this.$t('notes.label.Navigation') }
-
       ];
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
