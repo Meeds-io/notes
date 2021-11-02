@@ -10,15 +10,6 @@
         {{ $t('notes.label.importNotes') }}
       </template>
       <template slot="content">
-        <!--          <attachments-notes-upload-input
-            :attachments="value"
-            :max-files-count="maxFilesCount"
-            :max-files-size="maxFileSize" />
-
-          <attachments-uploaded-notes
-            :attachments="value"
-            :max-files-count="maxFilesCount"
-            :max-files-size="maxFileSize" />-->
         <div>
           <template>
             <v-stepper
@@ -109,7 +100,7 @@
             </template>
           </v-btn>
           <v-btn
-            :disabled="importButtonDisabled && importButtonDisabled"
+            :disabled="importButtonDisabled"
             class="btn btn-primary"
             @click="importNotes">
             <template>
