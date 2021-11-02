@@ -38,6 +38,7 @@
                 <v-card-actions class="px-0">
                   <v-spacer />
                   <v-btn
+                    :disabled="continueButtonDisabled"
                     class="btn btn-primary"
                     outlined
                     @click="stepper = 2">
@@ -99,6 +100,7 @@
             </template>
           </v-btn>
           <v-btn
+            :disabled="importButtonDisabled"
             class="btn btn-primary"
             @click="importNotes">
             <template>
@@ -130,6 +132,22 @@ export default {
       value: [],
     };
   },
+  computed: {
+    continueButtonDisabled(){
+      if (this.value && this.value[0] && this.value[0].uploadId){
+        return false;
+      } else {
+        return true;
+      }
+    },
+    importButtonDisabled(){
+      if (this.selected && this.selected !== 'nothing' && this.value && this.value[0] && this.value[0].uploadId){
+        return false;
+      } else {
+        return true;
+      }
+    },
+  },
   created() {
     this.$root.$on('add-new-uploaded-file', file => {
       this.value = [];
@@ -150,15 +168,8 @@ export default {
       this.$refs.importNotesDrawer.close();
     },
     importNotes(){
-      if (this.value[0] && this.value[0].uploadId){
-        this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
-        this.cancel();
-      } else {
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingImportNotes')
-        });
-      }
+      this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
+      this.cancel();
     },
   }
 };

@@ -25,7 +25,7 @@
     </v-list-item-content>
     <v-list-item-action class="d-flex flex-row align-center">
       <div
-        :title="$t('attachment.detach')"
+        :title="$t('notes.attachments.delete')"
         class="remove-button">
         <v-btn
           class="d-flex"
