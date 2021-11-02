@@ -3,7 +3,7 @@
     <div class="uploadedFiles ma-2">
       <div class="attachments-list d-flex align-center">
         <v-subheader class="text-sub-title pl-0 d-flex">
-          {{ $t('notes.attachments.title') }} ({{ attachments.length }})
+          {{ $t('notes.attachments.title') }}
         </v-subheader>
         <v-divider />
       </div>
