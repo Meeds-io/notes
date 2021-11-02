@@ -194,15 +194,8 @@ export default {
       this.$refs.importNotesDrawer.close();
     },
     importNotes(){
-      if (this.value[0] && this.value[0].uploadId){
-        this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
-        this.cancel();
-      } else {
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingImportNotes')
-        });
-      }
+      this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
+      this.cancel();
     },
     importModeChanges() {
       if ( this.choice === 'updateNotes' ) {
