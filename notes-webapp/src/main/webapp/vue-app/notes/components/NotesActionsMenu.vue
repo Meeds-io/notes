@@ -73,7 +73,7 @@
         <span>{{ $t('notes.menu.label.export') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="homePage && note.canManage =='true'"
+        v-if="homePage && note.canImport"
         class="px-2 text-left action-menu-item draftButton"
         @click="$emit('open-import-drawer')">
         <v-icon
