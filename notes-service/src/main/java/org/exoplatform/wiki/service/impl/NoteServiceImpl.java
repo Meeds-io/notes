@@ -171,6 +171,7 @@ public class NoteServiceImpl implements NoteService {
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setCanManage(canManageNotes(userIdentity.getUserId(), space, note));
+      createdPage.setCanImport(canImportNotes(userIdentity.getUserId(), space, note));
       createdPage.setCanView(canViewNotes(userIdentity.getUserId(), space, note));
       createdPage.setToBePublished(note.isToBePublished());
       createdPage.setAppName(note.getAppName());
@@ -243,6 +244,7 @@ public class NoteServiceImpl implements NoteService {
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
     updatedPage.setCanManage(note.isCanManage());
+    updatedPage.setCanImport(note.isCanImport());
     updatedPage.setCanView(note.isCanView());
     updatedPage.setAppName(note.getAppName());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
@@ -440,6 +442,7 @@ public class NoteServiceImpl implements NoteService {
       }
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -467,6 +470,7 @@ public class NoteServiceImpl implements NoteService {
       }
       draftPage.setCanView(true);
       draftPage.setCanManage(canManageNotes(userId, space, draftPage));
+      draftPage.setCanImport(canImportNotes(userId, space, draftPage));
       String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
                                              .getProfile()
                                              .getFullName();
@@ -498,6 +502,7 @@ public class NoteServiceImpl implements NoteService {
       }
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
     }
     return page;
   }
@@ -516,6 +521,7 @@ public class NoteServiceImpl implements NoteService {
       }
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
       if (StringUtils.isNotEmpty(source)) {
         if (source.equals("tree")) {
           postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
@@ -998,6 +1004,15 @@ public class NoteServiceImpl implements NoteService {
       return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
           || spaceService.isRedactor(space, authenticatedUser)
           || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+    } else
+      return page.getOwner().equals(authenticatedUser);
+
+  }
+
+  private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+    if (space != null) {
+      return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
+              || spaceService.isRedactor(space, authenticatedUser));
     } else
       return page.getOwner().equals(authenticatedUser);
 
