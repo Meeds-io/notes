@@ -79,6 +79,8 @@ public class Page {
 
   private boolean canView;
 
+  private boolean canImport;
+
   private List<Page> children;
 
   private boolean hasChild;
