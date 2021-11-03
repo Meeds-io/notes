@@ -101,14 +101,24 @@
         </div>
         <v-divider class="my-4" />
         <div
-          v-if="note.content"
+          v-if="note.content || (noteChildren && noteChildren[0] && !noteChildren[0].hasChild)"
           class="notes-application-content text-color"
           v-html="isDraft ? note.content : noteVersionContent">
         </div>
         <div v-else class="notes-application-content">
-          <p class="body-2 font-italic">
-            {{ $t('notes.label.no-content') }}
-          </p>
+          <v-treeview
+            v-if="noteChildren && noteChildren[0]"
+            open-all
+            dense
+            :items="noteAllChildren"
+            :open="openLevel"
+            item-key="noteId">
+            <template v-slot:label="{ item }">
+              <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
+                <span>{{ item.name }}</span>
+              </v-list-item-title>
+            </template>
+          </v-treeview>
         </div>
       </div>
       <div v-else class="note-not-found-wrapper text-center mt-6">
@@ -207,6 +217,7 @@ export default {
       noteChildren: [],
       isDraft: false,
       noteTitle: '',
+      allNote: []
     };
   },
   watch: {
@@ -220,6 +231,8 @@ export default {
       }
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
+      this.retrieveNoteTreeById();
+
     },
     actualVersion() {
       if (!this.isDraft) {
@@ -230,7 +243,11 @@ export default {
   },
   computed: {
     noteVersionContent() {
-      return this.noteContent && this.formatContent(this.noteContent);
+      if ( this.note.content ) {
+        return this.noteContent && this.formatContent(this.noteContent);
+      } else {
+        return this.$t('notes.label.no-content');
+      }
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
@@ -249,6 +266,12 @@ export default {
           return this.actualVersion.authorFullName;
         }
       }
+    },
+    noteAllChildren() {
+      return this.noteChildren && this.noteChildren.length && this.noteChildren[0].children;
+    },
+    openLevel(){
+      return this.allNote;
     },
     displayedDate() {
       if (this.isDraft) {
@@ -601,6 +624,28 @@ export default {
         this.$refs.noteVersionsHistoryDrawer.open(this.noteVersions, this.note.canManage);
       }
     },
+    retrieveNoteTreeById() {
+      this.note.wikiOwner = this.note.wikiOwner.substring(1);
+      this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name).then(data => {
+        if (data && data.jsonList.length) {
+          const allnotesTreeview = data.jsonList;
+          this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
+          this.getAllNoteToDisplay(this.noteChildren[0].children);
+        }
+      });
+    },
+    openNoteChild(item) {
+      const noteName = item.path.split('%2F').pop();
+      this.$root.$emit('open-note-by-name', noteName);
+    },
+    getAllNoteToDisplay(noteArray) {
+      noteArray.forEach(note => {
+        this.allNote.push(note.noteId);
+        if ( note.children ) {
+          this.getAllNoteToDisplay(note.children);
+        }
+      });
+    }
   }
 };
 </script>
