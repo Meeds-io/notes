@@ -101,7 +101,7 @@
         </div>
         <v-divider class="my-4" />
         <div
-          v-if="note.content"
+          v-if="note.content || (noteChildren && noteChildren[0] && !noteChildren[0].hasChild)"
           class="notes-application-content text-color"
           v-html="isDraft ? note.content : noteVersionContent">
         </div>
