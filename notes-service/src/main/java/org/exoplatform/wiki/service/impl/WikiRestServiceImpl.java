@@ -34,6 +34,7 @@ import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.Page;
@@ -545,12 +546,14 @@ public class WikiRestServiceImpl implements ResourceContainer {
   @RolesAllowed("users")
   public Response searchData(@Context UriInfo uriInfo,
                              @QueryParam("keyword") String keyword,
+                             @QueryParam("limit") int limit,
                              @QueryParam("wikiType") String wikiType,
                              @QueryParam("wikiOwner") String wikiOwner) throws Exception {
+    limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
       keyword = keyword.toLowerCase();
       WikiSearchData data = new WikiSearchData(keyword, keyword, wikiType, wikiOwner);
-      data.setLimit(10);
+      data.setLimit(limit);
       List<SearchResult> results = wikiService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
