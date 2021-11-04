@@ -16,12 +16,12 @@
               v-model="stepper"
               vertical
               flat
-              class="ma-0 py-0 me-4">
+              class="ma-0 me-4">
               <v-stepper-step
                 :complete="stepper > 1"
                 step="1">
                 {{ $t('notes.label.importChoice') }}
-                <span v-if=" stepper!==1 && value " class="text-sub-title theme--light">{{ $t('notes.label.importChoice.sub.title') }}</span>
+                <span v-if=" stepper!==1 && value " class="text-light-color caption">{{ $t('notes.label.importChoice.sub.title') }}</span>
               </v-stepper-step>
 
               <v-stepper-content step="1">
@@ -56,12 +56,33 @@
                 {{ $t('notes.label.importRules') }}
               </v-stepper-step>
 
-              <v-stepper-content step="2">
-                <template>
-                  <v-container class="mt-n5">
+              <v-stepper-content step="2" class="py-0 ps-0">
+                <div class="radio-group-container ps-4">
+                  <v-radio-group
+                    v-model="choice"
+                    @change="importModeChanges">
+                    <v-radio
+                      :label="$t('notes.label.importRules1')"
+                      value="ReplaceNotes" />
+                    <v-radio
+                      :label="$t('notes.label.importRules2')"
+                      value="updateNotes" />
+                  </v-radio-group>
+                </div>
+                <template v-if="enableOptionList">
+                  <v-container class="mt-n5 ps-4">
+                    <div class="import-rules-messages ps-2 pt-5">
+                      <h4 class="import-rules-title text-sub-title font-weight-bold body-2"> {{ $t('notes.label.importRulesMessage.title') }}</h4>
+                      <p class="mb-0 text-sub-title text-sub-title body-2">{{ $t('notes.label.importRulesMessage.text') }}</p>
+                    </div>
+                    <div class="import-alert-message pt-4 d-flex">
+                      <v-icon size="30" class="text-sub-title pe-3">mdi-alert-outline</v-icon>
+                      <span class="body-2 text-sub-title">{{ $t('notes.label.importRulesAlert.text') }}</span>
+                    </div>
                     <v-radio-group
                       v-model="selected"
-                      column>
+                      column
+                      class="import-choice-options ms-8">
                       <v-radio
                         :label="$t('notes.label.importRules1')"
                         value="overwrite" />
@@ -129,7 +150,9 @@ export default {
     return {
       stepper: 1,
       selected: 'nothing',
+      choice: 'nothing',
       value: [],
+      showImportOptionsList: false
     };
   },
   computed: {
@@ -147,6 +170,9 @@ export default {
         return true;
       }
     },
+    enableOptionList() {
+      return this.showImportOptionsList;
+    }
   },
   created() {
     this.$root.$on('add-new-uploaded-file', file => {
@@ -171,6 +197,13 @@ export default {
       this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
       this.cancel();
     },
+    importModeChanges() {
+      if ( this.choice === 'updateNotes' ) {
+        this.showImportOptionsList = true;
+      } else {
+        this.showImportOptionsList = false;
+      }
+    }
   }
 };
 </script>
