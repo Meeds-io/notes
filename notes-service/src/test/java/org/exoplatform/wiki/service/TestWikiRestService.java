@@ -32,7 +32,6 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mock.MockResourceBundleService;
 import org.exoplatform.wiki.service.impl.WikiRestServiceImpl;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -130,7 +129,7 @@ public class TestWikiRestService {
     WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
 
     // When
-    Response response = wikiRestService.searchData(uriInfo, "wiki", "page", "alioua");
+    Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua");
 
     // Then
     assertEquals(200, response.getStatus());
