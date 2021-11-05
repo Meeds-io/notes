@@ -60,7 +60,7 @@ export default {
       fileSizeLimitError: false,
       fileSizeNullError: false,
       sameFileError: false,
-      fileType: 'application/zip',
+      fileTypes: ['zip','application/zip','application/x-zip','application/x-zip-compressed'],
     };
   },
   computed: {
@@ -113,7 +113,7 @@ export default {
         this.filesCountLimitError = true;
         return;
       }
-      if ( file.mimetype !== this.fileType ) {
+      if ( !this.fileTypes.includes(file.mimetype) ) {
         this.$root.$emit('show-alert', {
           message: this.fileTypeErrorLabel,
           type: 'error',
