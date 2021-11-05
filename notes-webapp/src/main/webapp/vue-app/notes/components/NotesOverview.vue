@@ -232,7 +232,6 @@ export default {
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
-
     },
     actualVersion() {
       if (!this.isDraft) {
@@ -581,6 +580,7 @@ export default {
         updatedDate: version.updatedDate,
         owner: version.author
       };
+      this.note.content = version.content;
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
