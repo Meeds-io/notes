@@ -393,7 +393,7 @@ export default {
       }).then((bytes) => {
         const elm = document.createElement('a');  
         elm.href = URL.createObjectURL(bytes);
-        elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}`);
+        elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}.zip`);
         elm.click();                             
         this.$root.$emit('close-note-tree-drawer');
         this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.exported')});
