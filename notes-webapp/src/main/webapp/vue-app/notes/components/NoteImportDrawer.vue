@@ -59,11 +59,11 @@
               <v-stepper-content step="2" class="py-0 ps-0">
                 <div class="radio-group-container ps-4">
                   <v-radio-group
-                    v-model="choice"
+                    v-model="selected"
                     @change="importModeChanges">
                     <v-radio
                       :label="$t('notes.label.importRules1')"
-                      value="ReplaceNotes" />
+                      value="replace" />
                     <v-radio
                       :label="$t('notes.label.importRules2')"
                       value="updateNotes" />
@@ -80,7 +80,7 @@
                       <span class="body-2 text-sub-title">{{ $t('notes.label.importRulesAlert.text') }}</span>
                     </div>
                     <v-radio-group
-                      v-model="selected"
+                      v-model="choice"
                       column
                       class="import-choice-options ms-8">
                       <v-radio
@@ -164,7 +164,8 @@ export default {
       }
     },
     importButtonDisabled(){
-      if (this.selected && this.selected !== 'nothing' && this.value && this.value[0] && this.value[0].uploadId){
+      if ((this.selected === 'replace' && this.value && this.value[0] && this.value[0].uploadId)
+      || (this.choice !== 'nothing' && this.value && this.value[0] && this.value[0].uploadId)){
         return false;
       } else {
         return true;
@@ -190,18 +191,23 @@ export default {
     cancel() {
       this.value = [];
       this.selected = 'nothing';
+      this.choice = 'nothing';
       this.stepper = 1;
       this.$refs.importNotesDrawer.close();
     },
     importNotes(){
+      if ( this.choice !== 'nothing' ){
+        this.selected = this.choice;
+      }
       this.$root.$emit('import-notes',this.value[0].uploadId,this.selected);
       this.cancel();
     },
     importModeChanges() {
-      if ( this.choice === 'updateNotes' ) {
+      if ( this.selected === 'updateNotes' ) {
         this.showImportOptionsList = true;
       } else {
         this.showImportOptionsList = false;
+        this.choice = 'nothing';
       }
     }
   }
