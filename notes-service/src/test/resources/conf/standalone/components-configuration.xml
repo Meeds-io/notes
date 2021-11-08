@@ -65,6 +65,8 @@
     <type>org.exoplatform.wiki.service.impl.NoteServiceImpl</type>
   </component>
 
+
+
   <component>
     <type>org.exoplatform.wiki.jpa.search.WikiElasticUnifiedSearchServiceConnector</type>
     <init-params>

@@ -362,4 +362,8 @@ public interface NoteService {
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 
   void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
+
+  void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
+                                                                                                   IllegalAccessException,
+                                                                                                   IOException;
 }

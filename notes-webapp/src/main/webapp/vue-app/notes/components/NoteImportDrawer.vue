@@ -63,7 +63,7 @@
                     @change="importModeChanges">
                     <v-radio
                       :label="$t('notes.label.importRules1')"
-                      value="replace" />
+                      value="replaceAll" />
                     <v-radio
                       :label="$t('notes.label.importRules2')"
                       value="updateNotes" />
@@ -164,7 +164,7 @@ export default {
       }
     },
     importButtonDisabled(){
-      if ((this.selected === 'replace' && this.value && this.value[0] && this.value[0].uploadId)
+      if ((this.selected === 'replaceAll' && this.value && this.value[0] && this.value[0].uploadId)
       || (this.choice !== 'nothing' && this.value && this.value[0] && this.value[0].uploadId)){
         return false;
       } else {

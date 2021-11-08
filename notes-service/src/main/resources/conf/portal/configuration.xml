@@ -67,6 +67,44 @@
   </component>
 
   <component>
+    <type>org.exoplatform.wiki.service.NotesAutoImportService</type>
+    <init-params>
+      <value-param>
+        <name>importConflictMode</name>
+        <value>${exo.notes.knowledge.base.import.conflict.mode:replaceAll}</value>
+      </value-param>
+      <value-param>
+        <name>importEnabled</name>
+        <value>${exo.notes.knowledge.base.import.enabled:true}</value>
+      </value-param>
+      <value-param>
+        <name>enKnowledgeBaseSpaceName</name>
+        <value>${exo.notes.knowledge.base.en.space.name:exo_knowledge_base_en}</value>
+      </value-param>
+      <value-param>
+        <name>frKnowledgeBaseSpaceName</name>
+        <value>${exo.notes.knowledge.base.fr.space.nam:exo_knowledge_base_fr}</value>
+      </value-param>
+      <value-param>
+        <name>enKnowledgeBaseSpaceDispalyName</name>
+        <value>${exo.notes.knowledge.base.en.space.displayName:eXo knowledge base}</value>
+      </value-param>
+      <value-param>
+        <name>frKnowledgeBaseSpaceDispalyName</name>
+        <value>${exo.notes.knowledge.base.fr.space.displayName:Base de connaissance eXo}</value>
+      </value-param>
+      <value-param>
+        <name>enKnowledgeBaseSpaceDescription</name>
+        <value>${exo.notes.knowledge.base.en.space.description:eXo knowledge base space}</value>
+      </value-param>
+      <value-param>
+        <name>frKnowledgeBaseSpaceDescription</name>
+        <value>${exo.notes.knowledge.base.fr.space.description:Espace pour la base de connaissance eXo}</value>
+      </value-param>
+    </init-params>
+  </component>
+
+  <component>
     <key>org.exoplatform.wiki.resolver.PageResolver</key>
     <type>org.exoplatform.wiki.resolver.PageResolver</type>
   </component>

@@ -52,7 +52,10 @@ import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
+import java.io.*;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class Utils {
   public static final String SLASH = "SLASH";
@@ -677,4 +680,41 @@ public class Utils {
     }
     return "notes";
   }
+
+
+  public static List<String> unzip(String zipFilePath, String folderPath) throws IOException {
+    List<String> files = new ArrayList<>();
+    File destDir = new File(folderPath);
+    if (!destDir.exists()) {
+      destDir.mkdir();
+    }
+    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))){
+      ZipEntry entry = zipIn.getNextEntry();
+      while (entry != null) {
+        String filePath = folderPath + File.separator + entry.getName();
+        if (!entry.isDirectory()) {
+          extractFile(zipIn, filePath);
+          files.add(filePath);
+        } else {
+          File dir = new File(filePath);
+          dir.mkdirs();
+        }
+        zipIn.closeEntry();
+        entry = zipIn.getNextEntry();
+      }
+    }
+    return files;
+  }
+
+
+  public static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+    try(BufferedOutputStream bos =  new BufferedOutputStream(new FileOutputStream(filePath));) {
+      byte[] bytesIn = new byte[4096];
+      int read = 0;
+      while ((read = zipIn.read(bytesIn)) != -1) {
+        bos.write(bytesIn, 0, read);
+      }
+    }
+  }
+
 }
