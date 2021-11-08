@@ -67,6 +67,8 @@ public class NotesAutoImportService implements Startable {
 
   private static final String  SPACE_TEMPLATE                             = "community";
 
+  private static final String  TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+
   private final InitParams     initParams;
 
   private final NoteService    noteService;
@@ -96,6 +98,8 @@ public class NotesAutoImportService implements Startable {
   private String               importConflictMode                         = "replaceAll";
 
   private Identity             superUserIdentity                          = null;
+
+
 
   public NotesAutoImportService(InitParams initParams,
                                 SettingService settingService,
@@ -177,7 +181,7 @@ public class NotesAutoImportService implements Startable {
     }
 
     try {
-      String folderPath = System.getProperty("java.io.tmpdir");
+      String folderPath = System.getProperty(TEMP_DIRECTORY_PATH);
       List<String> files = new ArrayList<>();
       File destDir = new File(folderPath);
       if (!destDir.exists()) {
@@ -240,7 +244,7 @@ public class NotesAutoImportService implements Startable {
         log.info("No notes to import for space {}", spaceName);
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      log.info(" Error when trying to import notes for space {}", spaceName, e);
     }
 
   }
