@@ -305,9 +305,18 @@ public class TestNoteService extends BaseTest {
   public void testExportNotes() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "exportPortal");
-    Page note1 = noteService.createNote(portalWiki, "Home", new Page("exported1", "exported1"),root) ;
-    Page note2 = noteService.createNote(portalWiki, "Home", new Page("exported2", "exported2"),root) ;
-    Page note3 = noteService.createNote(portalWiki, "Home", new Page("exported3", "exported3"),root) ;
+    Page page1 = new Page("exported1", "exported1");
+    page1.setContent("<figure class=\"image\"><img src=\"/portal/rest/wiki/attachments/group/space//spaces/base_de_connaissances/page/4.01-_Profil_et_paramètres/Navigation paramètres.png\"></figure>");
+    Page note1 = noteService.createNote(portalWiki, "Home",page1,root) ;
+
+    Page page2 = new Page("exported2", "exported2");
+    page2.setContent("<a class=\"noteLink\" href=\"exported1\" target=\"_blank\">Règles de rédaction des tutoriels </a>");
+    Page note2 = noteService.createNote(portalWiki, "Home",page2,root) ;
+
+
+    Page page3 = new Page("exported3", "exported3");
+    page3.setContent("<a class=\"noteLink\" href=\""+note2.getId()+"\">Home</a>");
+    Page note3 = noteService.createNote(portalWiki, "Home",page3,root) ;
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported1")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported2")) ;
