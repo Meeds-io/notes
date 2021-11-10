@@ -282,7 +282,7 @@ public class NoteServiceImpl implements NoteService {
       Page note = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
       if (note == null) {
         log.error("Can't delete note '" + noteName + "'. This note does not exist.");
-        throw new EntityNotFoundException("Note to update not found");
+        throw new EntityNotFoundException("Note to delete not found");
       }
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       if (note != null) {
@@ -368,7 +368,7 @@ public class NoteServiceImpl implements NoteService {
                                               currentLocationParams.getPageName());
 
       if (moveNote == null) {
-        throw new EntityNotFoundException("Note to update not found");
+        throw new EntityNotFoundException("Note to move not found");
       }
       if (moveNote != null) {
         Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
@@ -1335,15 +1335,19 @@ public class NoteServiceImpl implements NoteService {
       ImportList notes = mapper.readValue(notesFile, new TypeReference<ImportList>() {
       });
       Wiki wiki = wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner());
-      for (Page note : notes.getNotes()) {
-        if(note.getName().equals("Home") && StringUtils.isNotEmpty(conflict) && (conflict.equals("replaceAll"))){
-          List<Page> notesTodelete = getAllNotes(note);
-          for (Page noteTodelete : notesTodelete){
-            if(noteTodelete.getName().equals("Home")){
+      if(StringUtils.isNotEmpty(conflict) && (conflict.equals("replaceAll"))){
+        List<Page> notesTodelete = getAllNotes(parent,userIdentity.getUserId());
+        for (Page noteTodelete : notesTodelete){
+          if(!NoteConstants.NOTE_HOME_NAME.equals(noteTodelete.getName())&&!noteTodelete.getId().equals(parent.getId())){
+            try {
               deleteNote( wiki.getType(), wiki.getOwner(), noteTodelete.getName(), userIdentity);
+            }catch (Exception e){
+              log.warn("Note {} connot be deleted for import",noteTodelete.getName(), e);
             }
           }
         }
+      }
+      for (Page note : notes.getNotes()) {
         importNote(note,
                    parent,
                    wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
@@ -1378,7 +1382,7 @@ public class NoteServiceImpl implements NoteService {
       parent_ = wiki.getWikiHome();
     }
     Page note_ = note;
-    if (!note.getName().equals("Home")) {
+    if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) ){
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
@@ -1391,7 +1395,7 @@ public class NoteServiceImpl implements NoteService {
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
-          if (conflict.equals("overwrite")) {
+          if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
             if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
               note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
@@ -1508,19 +1512,19 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  public static List<Page> getAllNotes(Page note){
+  public List<Page> getAllNotes(Page note, String userName) throws WikiException {
     List<Page> listOfNotes = new ArrayList<Page>();
-    addAllNodes(note, listOfNotes);
+    addAllNodes(note, listOfNotes, userName);
     return listOfNotes;
   }
 
-  private static void addAllNodes(Page note, List<Page> listOfNotes) {
+  private void addAllNodes(Page note, List<Page> listOfNotes, String userName) throws WikiException {
     if (note != null) {
       listOfNotes.add(note);
-      List<Page> children = note.getChildren();
+      List<Page> children = getChildrenNoteOf(note, userName, true, false);
       if (children != null) {
         for (Page child: children) {
-          addAllNodes(child, listOfNotes);
+          addAllNodes(child, listOfNotes, userName);
         }
       }
     }
