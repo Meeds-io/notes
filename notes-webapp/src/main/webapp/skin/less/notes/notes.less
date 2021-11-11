@@ -442,7 +442,11 @@
 
     .treeview-home-link {
       a {
-        color: inherit !important;
+        color: inherit;
+        &:hover, &:active, &:focus {
+          color: @primaryColor!important;
+          font-weight: bold;
+        }
       }
     }
 
@@ -494,6 +498,11 @@
             font-weight: bold;
             color: @primaryColor;
           }
+        }
+      }
+      .v-treeview-node--active {
+        a {
+          color: @primaryColor!important;
         }
       }
     }

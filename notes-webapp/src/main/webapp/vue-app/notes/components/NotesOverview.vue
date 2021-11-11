@@ -343,7 +343,7 @@ export default {
       this.confirmDeleteNote();
     });
     this.$root.$on('move-page', (note, newParentNote) => {
-      this.moveNotes(note, newParentNote);
+      this.moveNote(note, newParentNote);
     });
     this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
       this.exportNotes(notesSelected,importAll,homeNoteId);

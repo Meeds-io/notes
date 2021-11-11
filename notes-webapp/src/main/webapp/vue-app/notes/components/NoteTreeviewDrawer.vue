@@ -66,7 +66,7 @@
           </v-list-item>
         </v-layout>
         <v-col column>
-          <v-row v-if="!exportNotes">
+          <v-row v-if="!exportNotes && !movePage">
             <v-col class="my-auto">
               <v-text-field
                 v-model="search"
@@ -90,7 +90,7 @@
             </v-col>
           </v-row>
           <template v-if="home && !exportNotes && resultSearch && !search" class="ma-0 border-box-sizing">
-            <v-list-item @click="openNote(event,home)">
+            <v-list-item @click.prevent="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
                   <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name }}</span>
@@ -143,7 +143,7 @@
                     v-else 
                     :href="item.draftPage ? `${item.noteId}/draft` : item.noteId" 
                     :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage || !item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}"
-                    @click="openNote(event,item)">
+                    @click.prevent="openNote(event,item)">
                     {{ item.name }}
                   </a>
                 </v-list-item-title>
@@ -357,28 +357,28 @@ export default {
       this.closeAll = false;
     },
     openNote(event, note) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
       const canOpenNote = this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage;
       if (canOpenNote) {
         //reinitialize filter
         this.filter = this.filterOptions[0];
         this.activeItem = [note.noteId];
         if (this.includePage) {
-          this.$root.$emit('include-page',note);
+          this.$root.$emit('include-page', note);
           this.$refs.breadcrumbDrawer.close();
         } else if (this.movePage) {
-          this.$notesService.getNote(this.note.wikiType, this.note.wikiOwner , note.noteId).then(data => {
-            this.breadcrumb = data && data.breadcrumb || [];
-            this.breadcrumb[0].name = this.$t('notes.label.noteHome');
-            this.destinationNote = data;
-          });
+          if (note.noteId !== this.note.id) {
+            this.$notesService.getNoteById(note.noteId, '', '', '', true).then(data => {
+              this.breadcrumb = data && data.breadcrumb || [];
+              this.breadcrumb[0].name = this.$t('notes.label.noteHome');
+              this.destinationNote = data;
+            });
+          } else {
+            Object.assign(this.destinationNote, this.note);
+          }
         } else {
           const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
           this.$root.$emit('open-note-by-name', noteName, note.draftPage);
-          this.$refs.breadcrumbDrawer.close();          
+          this.$refs.breadcrumbDrawer.close();
         }
       }
     },
@@ -447,7 +447,9 @@ export default {
       return activatedNotes;
     },
     moveNote() {
-      this.$root.$emit('move-page', this.note, this.destinationNote);
+      if (this.note.id !== this.destinationNote.id && this.note.parentPageId !== this.destinationNote.id) {
+        this.$root.$emit('move-page', this.note, this.destinationNote);
+      }
     },
     exportNotesToZip(){
       this.$root.$emit('export-notes',this.selectionNotes,this.checkbox,this.home.noteId);
