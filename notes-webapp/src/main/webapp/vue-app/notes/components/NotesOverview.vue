@@ -571,6 +571,7 @@ export default {
     },
     displayVersion(version) {
       this.actualVersion = version;
+      this.note.content = version.content;
     },
     restoreVersion(version) {
       const note = {
