@@ -440,6 +440,9 @@ export default {
         console.error('Error when getting note', e);
         this.existingNote = false;
       }).finally(() => {
+        if (!this.note.canManage){
+          this.$root.$emit('show-alert', {type: 'warning',message: this.$t('notes.alert.warning.label.notification')});
+        }
         this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeView-items', this.note);
       });
