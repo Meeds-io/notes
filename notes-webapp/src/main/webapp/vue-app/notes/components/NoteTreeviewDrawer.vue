@@ -90,7 +90,7 @@
             </v-col>
           </v-row>
           <template v-if="home && !exportNotes && resultSearch && !search" class="ma-0 border-box-sizing">
-            <v-list-item @click="openNote(event,home)">
+            <v-list-item @click.prevent="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
                   <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name }}</span>

@@ -442,7 +442,11 @@
 
     .treeview-home-link {
       a {
-        color: inherit !important;
+        color: inherit;
+        &:hover, &:active, &:focus {
+          color: @primaryColor!important;
+          font-weight: bold;
+        }
       }
     }
 
