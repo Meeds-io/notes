@@ -199,6 +199,7 @@ export default {
       },
       confirmMessage: '',
       spaceDisplayName: eXo.env.portal.spaceDisplayName,
+      spaceId: eXo.env.portal.spaceId,
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
       noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
       noteNotFountImage: '/notes/skin/images/notes_not_found.png',
@@ -323,7 +324,7 @@ export default {
       return uris[uris.length - 1];
     },
     alertWarningDisplayed(){
-      return (localStorage.getItem(`displayAlert-${this.spaceDisplayName}`) === 'already_display');
+      return (localStorage.getItem(`displayAlertSpaceId-${this.spaceId}`) === 'already_display');
     },
   },
   created() {
@@ -584,7 +585,7 @@ export default {
       }
     },
     onclose() {
-      localStorage.setItem(`displayAlert-${this.spaceDisplayName}`, 'already_display');
+      localStorage.setItem(`displayAlertSpaceId-${this.spaceId}`, 'already_display');
     },
     getNoteVersionByNoteId(noteId) {
       return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
