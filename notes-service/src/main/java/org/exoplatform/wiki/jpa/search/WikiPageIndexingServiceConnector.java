@@ -142,6 +142,7 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
     Set<String> permissions = new HashSet<>();
     // Add the owner
     permissions.add(page.getOwner());
+    permissions.add(page.getWiki().getOwner());
     // Add permissions
     if (page.getPermissions() != null) {
       for (PermissionEntity permission : page.getPermissions()) {
