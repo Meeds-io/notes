@@ -28,6 +28,7 @@
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
                 :key="postKey"
+                :aria-label="publishButtonText"
                 @click.once="postNote(false)">
                 {{ publishButtonText }}
                 <v-icon
