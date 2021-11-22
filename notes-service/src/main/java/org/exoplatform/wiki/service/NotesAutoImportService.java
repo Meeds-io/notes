@@ -257,7 +257,7 @@ public class NotesAutoImportService implements Startable {
     space.setPrettyName(prettyName);
     space.setTemplate(template);
     space.setVisibility(Space.HIDDEN);
-    space.setRegistration(Space.CLOSE);
+    space.setRegistration(Space.CLOSED);
     try {
       return spaceService.createSpace(space, superUserIdentity.getUserId());
     } catch (Exception e) {
