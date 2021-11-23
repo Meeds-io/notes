@@ -165,7 +165,7 @@
               eager />
             <div>
               <h4 class="notes-welcome-title font-weight-bold text-color">
-                ({{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }})
+                {{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }}
               </h4>
               <p class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content.redactor.content.first') }}</span>
