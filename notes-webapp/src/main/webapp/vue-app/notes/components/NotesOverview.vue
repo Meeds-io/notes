@@ -108,27 +108,6 @@
         <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].hasChild">
           <div v-if="note.canManage" class="notes-application-content d-flex flex-column justify-center text-center">
             <v-img
-              :src="emptyNoteWithManager"
-              class="mx-auto mb-4"
-              max-height="150"
-              max-width="250"
-              contain
-              eager />
-            <div>
-              <h4 class="notes-welcome-title font-weight-bold text-color">
-                {{ $t('notes.label.no-content-redactor-title') }}
-              </h4>
-              <p class="notes-welcome-patragraph">
-                <span>{{ $t('notes.label.no-content.redactor.content.first') }}</span>
-                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-manager') }}</a>
-                <span>{{ $t('notes.label.or') }}</span>
-                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-redactor') }}</a>
-                <span>{{ $t('notes.label.no-content.redactor.content.last') }}</span>
-              </p>
-            </div>
-          </div>
-          <div v-else class="notes-application-content d-flex flex-column justify-center text-center text-color">
-            <v-img
               :src="emptyNoteNoManager"
               class="mx-auto mb-4"
               max-height="150"
@@ -173,6 +152,27 @@
                   </template>
                   <span class="caption">{{ $t('notes.label.addPage') }}</span>
                 </v-tooltip>
+              </p>
+            </div>
+          </div>
+          <div v-else class="notes-application-content d-flex flex-column justify-center text-center text-color">
+            <v-img
+              :src="emptyNoteWithManager"
+              class="mx-auto mb-4"
+              max-height="150"
+              max-width="250"
+              contain
+              eager />
+            <div>
+              <h4 class="notes-welcome-title font-weight-bold text-color">
+                ({{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }})
+              </h4>
+              <p class="notes-welcome-patragraph">
+                <span>{{ $t('notes.label.no-content.redactor.content.first') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-manager') }}</a>
+                <span>{{ $t('notes.label.or') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-redactor') }}</a>
+                <span>{{ $t('notes.label.no-content.redactor.content.last') }}</span>
               </p>
             </div>
           </div>
