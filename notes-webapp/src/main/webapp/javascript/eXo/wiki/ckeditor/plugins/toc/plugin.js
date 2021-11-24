@@ -1,3 +1,10 @@
+'use strict';
+( function() {
+
+var childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
+  +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
+  +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
+
 CKEDITOR.plugins.add( 'toc', {
 
   icons: 'toc',
@@ -9,22 +16,17 @@ CKEDITOR.plugins.add( 'toc', {
 
     editor.addCommand( 'ToC', {
 
-      exec: function( editor , childrenList) {
-        if ( childrenList.length ) {
-          var div = editor.document.createElement('div');
-          var listChildItems = '<ul class="note-manual-child">';
-          for (var j = 0; j < childrenList.length; j++){
-            if (childrenList[j].hasChild) {
-              listChildItems += '<li class="note-child-item has-child"><a href="'+childrenList[j].id+'" class="noteLink">'+childrenList[j].name+'<a></li>';
-            } else {
-              listChildItems += '<li class="note-child-item"><a href="'+childrenList[j].id+'" class="noteLink">'+childrenList[j].name+'<a></li>';
-            }
+      exec: function( editor) {
+         const childrenWrapper = editor.document.getById( 'note-children-container' );
+          if (childrenWrapper) {
+            document.dispatchEvent(new CustomEvent('note-navigation-plugin'));
+          } else {
+            editor.insertHtml( childContainer );
           }
-          listChildItems += '</ul>';
-          div.setHtml(listChildItems);
-          editor.insertElement( div );
-        }
       }
     });
   }
 });
+
+} )();
+

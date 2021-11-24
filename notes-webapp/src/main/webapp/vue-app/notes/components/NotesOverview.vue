@@ -92,6 +92,7 @@
             <note-breadcrumb
               class="pt-2 pe-1 pl-1"
               :note-breadcrumb="notebreadcrumb"
+              :actual-note-id="note.id"
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
@@ -100,10 +101,23 @@
           </div>
         </div>
         <v-divider class="my-4" />
-        <div
-          v-if="note.content"
-          class="notes-application-content text-color"
-          v-html="isDraft ? note.content : noteVersionContent">
+        <div class="note-content" v-if="note.content && !isHomeNoteDefaultContent">
+          <div v-if="showManualChild" id="showManualChild"> 
+            <v-treeview
+              dense
+              :items="noteAllChildren"
+              item-key="noteId">
+              <template v-slot:label="{ item }">
+                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
+                  <span>{{ item.name }}</span>
+                </v-list-item-title>
+              </template>
+            </v-treeview>
+          </div>
+          <div
+            class="notes-application-content text-color"
+            v-html="noteVersionContent">
+          </div>
         </div>
         <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].hasChild">
           <div v-if="note.canManage" class="notes-application-content d-flex flex-column justify-center text-center">
@@ -181,10 +195,8 @@
         <div v-else class="notes-application-content">
           <v-treeview
             v-if="noteChildren && noteChildren[0]"
-            open-all
             dense
             :items="noteAllChildren"
-            :open="openLevel"
             item-key="noteId">
             <template v-slot:label="{ item }">
               <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
@@ -296,8 +308,9 @@ export default {
       noteChildren: [],
       isDraft: false,
       noteTitle: '',
-      allNote: [],
-      spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`
+      spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
+      hasManualChildren: false,
+      childNodes: []
     };
   },
   watch: {
@@ -305,6 +318,7 @@ export default {
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
       }
+      setTimeout(() => this.hasManualChildren = false, 100);
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
         this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
         this.currentNoteBreadcrumb = this.note.breadcrumb;
@@ -312,17 +326,37 @@ export default {
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
+      if (!this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)) {
+        this.updateNote(this.note);
+      }
+    },
+    hasManualChildren () {
+      if (this.hasManualChildren) {
+        window.setTimeout(() => {
+          const oldContainer = document.getElementById('showManualChild');
+          const newContainers = document.getElementById('note-children-container');
+          if (oldContainer && !newContainers.childNodes.length) {
+            newContainers.append(...oldContainer.childNodes);
+          }
+        }, 100);
+      }
     },
     actualVersion() {
       if (!this.isDraft) {
         this.noteContent = this.actualVersion.content;
         this.displayLastVersion = false;
       }
-    }
+    },
   },
   computed: {
+    showManualChild() {
+      return this.hasManualChildren;
+    },
     noteVersionContent() {
       return this.note.content && this.noteContent && this.formatContent(this.noteContent);
+    },
+    isHomeNoteDefaultContent() {
+      return !this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`);
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
@@ -345,11 +379,8 @@ export default {
     noteAllChildren() {
       return this.noteChildren && this.noteChildren.length && this.noteChildren[0].children;
     },
-    openLevel(){
-      return this.allNote;
-    },
     displayedDate() {
-      if (this.isDraft) {
+      if (this.isDraft && this.note && this.note.updatedDate && this.note.updatedDate.time) {
         return this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang) || '';
       } else {
         if (this.displayLastVersion) {
@@ -433,8 +464,6 @@ export default {
     this.$root.$on('import-notes', (uploadId,overrideMode) => {
       this.importNotes(uploadId,overrideMode);
     });
-
-    
   },
   mounted() {
     if (this.noteId) {
@@ -695,6 +724,7 @@ export default {
       const internal = location.host + eXo.env.portal.context;
       const domParser = new DOMParser();
       const docElement = domParser.parseFromString(content, 'text/html').documentElement;
+      const contentChildren = docElement.getElementsByTagName('body')[0].children;
       const links = docElement.getElementsByTagName('a');
       const tables = docElement.getElementsByTagName('table');
       for (const link of links) {
@@ -719,6 +749,12 @@ export default {
           }
         }
       }
+      contentChildren.forEach( (child) =>  {
+        if (child.classList.value.includes('navigation-img-wrapper')) {
+          child.innerHTML = '';
+          window.setTimeout(() => {this.hasManualChildren = true;},100);
+        }
+      });
       return docElement.innerHTML;
     },
     openNoteVersionsHistoryDrawer() {
@@ -728,25 +764,34 @@ export default {
     },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
-      this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name).then(data => {
-        if (data && data.jsonList.length) {
-          const allnotesTreeview = data.jsonList;
-          this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
-          this.getAllNoteToDisplay(this.noteChildren[0].children);
-        }
-      });
+      if (!this.note.draftPage) {
+        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
+          if (data && data.jsonList.length) {
+            const allnotesTreeview = data.jsonList;
+            this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
+          }
+        });
+      }
     },
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
       this.$root.$emit('open-note-by-name', noteName);
     },
-    getAllNoteToDisplay(noteArray) {
-      noteArray.forEach(note => {
-        this.allNote.push(note.noteId);
-        if ( note.children ) {
-          this.getAllNoteToDisplay(note.children);
-        }
-      });
+    updateNote(noteParam) {
+      const note = {
+        id: noteParam.id,
+        title: noteParam.title,
+        name: noteParam.name,
+        wikiType: noteParam.wikiType,
+        wikiOwner: noteParam.wikiOwner,
+        content: '',
+        parentPageId: null,
+      };
+      if (note.id) {
+        this.$notesService.updateNoteById(note).catch(e => {
+          console.error('Error when update note page', e);
+        });
+      }
     }
   }
 };

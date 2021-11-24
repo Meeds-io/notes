@@ -58,7 +58,8 @@ export default {
   data: () => ({
     defaultImagePlugin: '/notes/images/defaultPlugin.png',
     drawer: false,
-    noteChildren: []
+    noteChildren: [],
+    treeviewInserted: false
   }),
   computed: {
     plugins() {
@@ -66,13 +67,13 @@ export default {
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
         { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
         { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
-        { id: 'ToC',title: 'ToC', src: '/notes/images/children.png', tooltip: this.$t('notes.label.insertToC')  }
+        { id: 'Navigation',title: 'Navigation', src: '/notes/images/children.png', tooltip: this.$t('notes.label.Navigation') }
       ];
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
       }
-      if (this.hideTOC || !this.noteChildren.length) {
-        return pluginsList.filter( plugin => plugin.id !== 'ToC' );
+      if (this.hideNavigation || !this.noteChildren.length) {
+        return pluginsList.filter( plugin => plugin.id !== 'Navigation' );
       } else {
         return pluginsList;
       }
@@ -89,7 +90,7 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
-      this.hideTOC = false;
+      this.hideNavigation = false;
       this.retrieveNoteChildren(this.noteId);
     }
   },
@@ -110,8 +111,11 @@ export default {
         this.$root.$emit('note-table-plugins');
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
-      } else if ( id === 'ToC') {
-        this.instance.execCommand(id, this.noteChildren);
+
+      } else if ( id === 'Navigation') {
+        this.instance.execCommand('ToC');
+        console.warn('sent');
+        this.treeviewInserted = true;
         this.close();
       }
       else {

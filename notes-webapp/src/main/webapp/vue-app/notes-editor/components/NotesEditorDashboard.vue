@@ -147,7 +147,9 @@ export default {
       draftSavingStatus: '',
       autoSaveDelay: 1000,
       saveDraft: '',
-      postKey: 1
+      postKey: 1,
+      navigationLabel: `${this.$t('notes.label.Navigation')}`,
+      noteNavigationDisplayed: false
     };
   },
   computed: {
@@ -166,15 +168,15 @@ export default {
       }
     },
     initCompleted() {
-      return this.initDone && (this.initActualNoteDone || !this.noteId);
+      return this.initDone && ((this.initActualNoteDone || this.noteId) || (this.initActualNoteDone || !this.noteId)) ;
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
-    }
+    },
   },
   watch: {
     'note.title'() {
-      if (this.note.title !== this.actualNote.title) {
+      if (this.note.title !== this.actualNote.title ) {
         this.autoSave();
       }
     },
@@ -265,6 +267,14 @@ export default {
         editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
       }
     });
+
+    document.addEventListener('note-navigation-plugin', () => {
+      this.$root.$emit('show-alert', {
+        type: 'error',
+        message: this.$t('notes.message.manualChild')
+      });
+    });
+
   },
   mounted() {
     this.init();
@@ -286,6 +296,7 @@ export default {
       if (this.postingNote) {
         return;
       }
+
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -314,7 +325,7 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id).then(data => {
-            this.fillNote(data);
+            this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
         }
@@ -336,7 +347,6 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
-        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -347,6 +357,18 @@ export default {
           breadcrumb: this.note.breadcrumb,
           toBePublished: this.note.toBePublished,
         };
+        const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
+        +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
+        +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
+        CKEDITOR.instances['notesContent'].setData(data.content);
+        if ((this.note.content.trim().length === 0)) {
+          this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
+            if (data && data.children && data.children.length) {
+              CKEDITOR.instances['notesContent'].setData(childContainer);
+              this.setFocus();
+            }
+          });
+        } 
       }
     },
     postNote(toPublish) {
@@ -400,6 +422,7 @@ export default {
             // delete draft note
             const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
             this.deleteDraftNote(draftNote, notePath);
+            window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.enableClickOnce();
@@ -449,7 +472,9 @@ export default {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
           }, this.autoSaveDelay/2);
         } else {
-          this.persistDraftNote(draftNote);
+          if (!this.isDefaultContent(this.note.content)) {
+            this.persistDraftNote(draftNote);
+          }
         }
       } else {
         // delete draft
@@ -540,12 +565,10 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            self.note.content = evt.editor.getData();
+            //self.note.content = evt.editor.getData();
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-
-
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
               if ( element.getAscendant( 'table', true ) ) {
                 return {
@@ -570,12 +593,46 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
+            
+            const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+            if ( treeviewParentWrapper ) {
+              treeviewParentWrapper.contentEditable='false';
+            }
 
-            self.$root.$applicationLoaded();
+            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+            if ( removeTreeviewBtn ) {
+              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+                if ( treeviewParentWrapper) {
+                  const newLine = treeviewParentWrapper.getNext();
+                  treeviewParentWrapper.remove();
+                  if ( newLine.$.innerText.trim().length === 0) {
+                    newLine.remove();
+                  }
+                  self.note.content = evt.editor.getData();
+                }
+                self.setFocus();
+              } );
+            }
             window.setTimeout(() => self.setFocus(), 50);
+            self.$root.$applicationLoaded();
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
+            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+            if ( removeTreeviewBtn ) {
+              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+                if ( treeviewParentWrapper) {
+                  const newLine = treeviewParentWrapper.getNext();
+                  treeviewParentWrapper.remove();
+                  if ( newLine.$.innerText.trim().length === 0) {
+                    newLine.remove();
+                  }
+                  self.note.content = evt.editor.getData();
+                }
+              } );
+            }
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
@@ -740,6 +797,24 @@ export default {
       this.postingNote = false;
       this.postKey++;
     },
+    isDefaultContent(noteContent) {
+      const div = document.createElement('div');
+      div.innerHTML = noteContent;
+      if ( div.childElementCount === 2) {
+        const childrenWrapper = CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+        if ( childrenWrapper ) {
+          if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
   }
 };
 </script>
