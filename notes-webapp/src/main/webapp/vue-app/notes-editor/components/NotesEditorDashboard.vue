@@ -2,6 +2,7 @@
   <v-app class="notesEditor">
     <v-alert
       v-model="alert"
+      :class="alertMessageClass"
       :type="alertType"
       :icon="alertType === 'warning' ? 'mdi-alert-circle' : ''"
       dismissible>
@@ -166,6 +167,9 @@ export default {
     initCompleted() {
       return this.initDone && (this.initActualNoteDone || !this.noteId);
     },
+    alertMessageClass(){
+      return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
+    }
   },
   watch: {
     'note.title'() {

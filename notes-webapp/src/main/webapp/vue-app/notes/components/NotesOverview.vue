@@ -238,6 +238,7 @@
       @dialog-closed="$emit('confirmDialogClosed')" />
     <v-alert
       v-model="alert"
+      :class="alertMessageClass"
       :type="type"
       :icon="type === 'warning' ? 'mdi-alert-circle' : ''"
       @input="onclose"
@@ -398,6 +399,9 @@ export default {
     alertWarningDisplayed(){
       return (localStorage.getItem(`displayAlertSpaceId-${this.spaceId}`) === 'already_display');
     },
+    alertMessageClass(){
+      return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
+    }
   },
   created() {
     if (this.currentPath.endsWith('draft')) {
