@@ -101,10 +101,83 @@
         </div>
         <v-divider class="my-4" />
         <div
-          v-if="note.content || (noteChildren && noteChildren[0] && !noteChildren[0].hasChild)"
+          v-if="note.content"
           class="notes-application-content text-color"
           v-html="isDraft ? note.content : noteVersionContent">
         </div>
+        <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].hasChild">
+          <div v-if="note.canManage" class="notes-application-content d-flex flex-column justify-center text-center">
+            <v-img
+              :src="emptyNoteNoManager"
+              class="mx-auto mb-4"
+              max-height="150"
+              max-width="250"
+              contain
+              eager />
+            <div>
+              <p class="notes-welcome-patragraph">
+                <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      class="pa-0"
+                      icon
+                      v-on="on"
+                      v-bind="attrs"
+                      @click="editNote">
+                      <v-icon
+                        size="19"
+                        class="clickable edit-note-click">
+                        mdi-square-edit-outline
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.editPage') }}</span>
+                </v-tooltip>
+                <span>{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      class="pa-0"
+                      v-on="on"
+                      v-bind="attrs"
+                      @click="addNote"
+                      icon>
+                      <v-icon
+                        size="22"
+                        class="clickable add-note-click">
+                        mdi-plus
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.addPage') }}</span>
+                </v-tooltip>
+              </p>
+            </div>
+          </div>
+          <div v-else class="notes-application-content d-flex flex-column justify-center text-center text-color">
+            <v-img
+              :src="emptyNoteWithManager"
+              class="mx-auto mb-4"
+              max-height="150"
+              max-width="250"
+              contain
+              eager />
+            <div>
+              <h4 class="notes-welcome-title font-weight-bold text-color">
+                {{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }}
+              </h4>
+              <p class="notes-welcome-patragraph">
+                <span>{{ $t('notes.label.no-content.redactor.content.first') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-manager') }}</a>
+                <span>{{ $t('notes.label.or') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-redactor') }}</a>
+                <span>{{ $t('notes.label.no-content.redactor.content.last') }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div v-else class="notes-application-content">
           <v-treeview
             v-if="noteChildren && noteChildren[0]"
@@ -200,6 +273,8 @@ export default {
       noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
       noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
       noteNotFountImage: '/notes/skin/images/notes_not_found.png',
+      emptyNoteWithManager: '/notes/images/no-content-with-manager.png',
+      emptyNoteNoManager: '/notes/images/no-content-no-manager.png',
       defaultPath: 'Home',
       existingNote: true,
       currentPath: window.location.pathname, 
@@ -217,7 +292,8 @@ export default {
       noteChildren: [],
       isDraft: false,
       noteTitle: '',
-      allNote: []
+      allNote: [],
+      spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`
     };
   },
   watch: {
@@ -242,11 +318,7 @@ export default {
   },
   computed: {
     noteVersionContent() {
-      if ( this.note.content ) {
-        return this.noteContent && this.formatContent(this.noteContent);
-      } else {
-        return this.$t('notes.label.no-content');
-      }
+      return this.note.content && this.noteContent && this.formatContent(this.noteContent);
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
