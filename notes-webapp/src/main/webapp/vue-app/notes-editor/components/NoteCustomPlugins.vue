@@ -62,6 +62,9 @@ export default {
     treeviewInserted: false
   }),
   computed: {
+    showTOC() {
+      return this.treeviewInserted;
+    },
     plugins() {
       const pluginsList = [
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
@@ -111,7 +114,6 @@ export default {
         this.$root.$emit('note-table-plugins');
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
-
       } else if ( id === 'Navigation') {
         this.instance.execCommand('ToC');
         this.treeviewInserted = true;

@@ -150,6 +150,7 @@ export default {
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
       noteNavigationDisplayed: false
+
     };
   },
   computed: {
@@ -210,6 +211,7 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
+      this.retrieveNoteChildren(this.noteId);
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -267,7 +269,6 @@ export default {
         editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
       }
     });
-
     document.addEventListener('note-navigation-plugin', () => {
       this.$root.$emit('show-alert', {
         type: 'error',
@@ -286,6 +287,19 @@ export default {
       elementNewTop.classList.add('darkComposerEffect');
       this.setToolBarEffect();
       this.initDone = true;
+    },
+    insertTOC() {
+      const editor = $('textarea#notesContent').ckeditor().editor;
+      const childrenWrapper = editor.document.getById( 'note-children-container' );
+      if (childrenWrapper) {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.manualChild')
+        });
+      } else {
+        editor.insertHtml(`<div id='note-children-container' class='navigation-img-wrapper'>
+        <figure class="image-navigation"><img src='/notes/images/children.png' class='note-navigation-img' /><figcaption class="note-navigation-label">${this.navigationLabel}</figcaption></figure></div><p></p>`);
+      }
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -529,6 +543,10 @@ export default {
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
       CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
+      CKEDITOR.addCss('navigation-img-wrapper figure { color: #578dc9; }');
+      CKEDITOR.addCss('.navigation-img-wrapper figure img { width: 40px!important; margin-top: 10px;}');
+      CKEDITOR.addCss('.navigation-img-wrapper figure { display: inline-flex!important; align-items:center; padding: 12px;color: #578dc9; border: 2px solid #578dc9;border-radius: 2px;background: white;}');
+      CKEDITOR.addCss('.navigation-img-wrapper .cke_widget_selectImage { margin-bottom: 0!important;}');
 
       // this line is mandatory when a custom skin is defined
 
