@@ -58,9 +58,13 @@ export default {
   data: () => ({
     defaultImagePlugin: '/notes/images/defaultPlugin.png',
     drawer: false,
-    noteChildren: []
+    noteChildren: [],
+    treeviewInserted: false
   }),
   computed: {
+    showTOC() {
+      return this.treeviewInserted;
+    },
     plugins() {
       const pluginsList = [
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
@@ -111,7 +115,8 @@ export default {
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
       } else if ( id === 'ToC') {
-        this.instance.execCommand(id, this.noteChildren);
+        this.$root.$emit('display-manual-child');
+        this.treeviewInserted = true;
         this.close();
       }
       else {
