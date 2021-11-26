@@ -13,10 +13,11 @@
               height="20px"
               min-width="45px"
               class="pa-0"
+              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
               text
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',note.id)">
+              @click="openNote(note)">
               <a
                 class="caption text-truncate breadCrumb-link"
                 :class="index < noteBreadcrumb.length-1 && 'path-clickable text-color' || 'text-sub-title not-clickable'">{{ note.title }}</a>
@@ -33,9 +34,10 @@
           <template v-slot:activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate path-clickable breadCrumb-link"
+              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[0].id)">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</a>
+              @click="openNote(noteBreadcrumb[0])">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</span>
         </v-tooltip>
@@ -65,9 +67,10 @@
           <template v-slot:activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate path-clickable breadCrumb-link"
+              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-2].id)">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</a>
+              @click="openNote(noteBreadcrumb[noteBreadcrumb.length-2])">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</span>
         </v-tooltip>
@@ -78,9 +81,10 @@
           <template v-slot:activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate text-sub-title breadCrumb-link"
+              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
               v-bind="attrs"
               v-on="on"
-              @click="$emit('open-note',noteBreadcrumb[noteBreadcrumb.length-1].id)">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</a>
+              @click="openNote(noteBreadcrumb[noteBreadcrumb.length-1])">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</a>
           </template>
           <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</span>
         </v-tooltip>
@@ -94,7 +98,18 @@ export default {
     noteBreadcrumb: {
       type: Array,
       default: () => null
-    }
+    },
+    actualNoteId: {
+      type: String,
+      default: ''
+    },
   },
+  methods: {
+    openNote(note) {
+      if (note.noteId !== this.actualNoteId ) {
+        this.$emit('open-note',note.id);
+      }
+    }
+  }
 };
 </script>
