@@ -72,11 +72,11 @@
     <init-params>
       <properties-param>
         <name>constructor.params</name>
-        <property name="searchType" value="wiki"/>
-        <property name="displayName" value="Wiki"/>
-        <property name="index" value="wiki_alias"/>
-        <property name="type" value="wiki-page,wiki-attachment"/>
-        <property name="enable" value="${exo.unified-search.connector.wiki.enable:true}"/>
+        <property name="searchType" value="note"/>
+        <property name="displayName" value="note"/>
+        <property name="index" value="notes_alias"/>
+        <property name="type" value="note-page,note-attachment"/>
+        <property name="enable" value="${exo.unified-search.connector.notes.enable:true}"/>
         <property name="titleField" value="title"/>
         <property name="updatedDateField" value="updatedDate"/>
         <property name="searchFields" value="name,title,content,comment,attachment.content"/>

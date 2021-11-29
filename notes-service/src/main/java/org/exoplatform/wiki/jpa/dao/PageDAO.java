@@ -96,7 +96,11 @@ public class PageDAO extends WikiBaseDAO<PageEntity, Long> {
 
 
   public List<Long> findAllIds(int offset, int limit) {
-    return getEntityManager().createNamedQuery("wikiPage.getAllIds").setFirstResult(offset).setMaxResults(limit).getResultList();
+    return  getEntityManager().createNamedQuery("wikiPage.getAllIds").setFirstResult(offset).setMaxResults(limit).getResultList();
+  }
+
+  public Long countAllIds() {
+    return (Long) getEntityManager().createNamedQuery("wikiPage.countAllIds").getSingleResult();
   }
 
   public List<PageEntity> findAllBySyntax(String syntax, int offset, int limit) {
