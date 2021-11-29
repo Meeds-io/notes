@@ -93,7 +93,7 @@ public class NotesAutoImportService implements Startable {
 
   private String               frKnowledgeBaseSpaceDescription            = "Espace pour la base de connaissance eXo";
 
-  private boolean              importEnabled                              = true;
+  private boolean              importEnabled                              = false;
 
   private String               importConflictMode                         = "replaceAll";
 

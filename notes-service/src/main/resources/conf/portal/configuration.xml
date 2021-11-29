@@ -75,7 +75,7 @@
       </value-param>
       <value-param>
         <name>importEnabled</name>
-        <value>${exo.notes.knowledge.base.import.enabled:true}</value>
+        <value>${exo.notes.knowledge.base.import.enabled:false}</value>
       </value-param>
       <value-param>
         <name>enKnowledgeBaseSpaceName</name>
