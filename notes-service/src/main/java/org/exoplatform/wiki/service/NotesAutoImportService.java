@@ -114,9 +114,6 @@ public class NotesAutoImportService implements Startable {
 
   private String               importConflictMode                         = "replaceAll";
 
-  private Identity             superUserIdentity                          = null;
-
-
 
   public NotesAutoImportService(InitParams initParams,
                                 SettingService settingService,
@@ -167,16 +164,17 @@ public class NotesAutoImportService implements Startable {
 
         List<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
         membershipEntries.add(new MembershipEntry(userACL.getAdminGroups(), "*"));
-        ConversationState.setCurrent(new ConversationState(new Identity(userACL.getSuperUser(), membershipEntries)));
-        this.superUserIdentity = ConversationState.getCurrent().getIdentity();
+        Identity superUserIdentity = new Identity(userACL.getSuperUser(), membershipEntries);
         importNotes(enKnowledgeBaseSpaceName,
                     enKnowledgeBaseSpaceDispalyName,
                     enKnowledgeBaseSpaceDescription,
-                    EN_EXPORT_ZIP_LOCATION);
+                    EN_EXPORT_ZIP_LOCATION,
+                    superUserIdentity);
         importNotes(frKnowledgeBaseSpaceName,
                     frKnowledgeBaseSpaceDispalyName,
                     frKnowledgeBaseSpaceDescription,
-                    FR_EXPORT_ZIP_LOCATION);
+                    FR_EXPORT_ZIP_LOCATION,
+                    superUserIdentity);
       } catch (Exception e) {
         log.error(" Error occured when trying to import notes for spaces {} and {}", enKnowledgeBaseSpaceName, frKnowledgeBaseSpaceName,e);
       } finally {
@@ -190,11 +188,15 @@ public class NotesAutoImportService implements Startable {
 
   }
 
-  private void importNotes(String spaceName, String spaceDisplayName, String spaceDescription, String zipPath) {
+  private void importNotes(String spaceName,
+                           String spaceDisplayName,
+                           String spaceDescription,
+                           String zipPath,
+                           Identity superUserIdentity) {
 
     Space space = spaceService.getSpaceByPrettyName(spaceName);
     if (space == null) {
-      space = createSpace(spaceName, spaceDisplayName, spaceDescription, SPACE_TEMPLATE);
+      space = createSpace(spaceName, spaceDisplayName, spaceDescription, SPACE_TEMPLATE, superUserIdentity);
     }
 
     try {
@@ -266,7 +268,11 @@ public class NotesAutoImportService implements Startable {
 
   }
 
-  private Space createSpace(String prettyName, String displayName, String description, String template) {
+  private Space createSpace(String prettyName,
+                            String displayName,
+                            String description,
+                            String template,
+                            Identity superUserIdentity) {
     Space space = new Space();
     space.setPriority(Space.INTERMEDIATE_PRIORITY);
     space.setDisplayName(displayName);
