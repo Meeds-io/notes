@@ -47,7 +47,6 @@ public class WikiElasticSearchServiceConnectorTest {
 
   private WikiElasticSearchServiceConnector searchServiceConnector;
 
-  @Mock
   private ElasticSearchingClient elasticSearchingClient;
 
   @Mock
