@@ -52,6 +52,8 @@ import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
+import javax.swing.text.EditorKit;
+import javax.swing.text.html.HTMLEditorKit;
 import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -714,6 +716,20 @@ public class Utils {
       while ((read = zipIn.read(bytesIn)) != -1) {
         bos.write(bytesIn, 0, read);
       }
+    }
+  }
+
+  public static String html2text(String html) {
+    EditorKit kit = new HTMLEditorKit();
+    javax.swing.text.Document doc = kit.createDefaultDocument();
+    doc.putProperty("IgnoreCharsetDirective", Boolean.TRUE);
+    try {
+      Reader reader = new StringReader(html);
+      kit.read(reader, doc, 0);
+      return doc.getText(0, doc.getLength());
+    } catch (Exception e) {
+
+      return "";
     }
   }
 

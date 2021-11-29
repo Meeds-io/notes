@@ -22,15 +22,29 @@ package org.exoplatform.wiki.jpa.search;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.search.domain.Document;
 import org.exoplatform.commons.search.index.impl.ElasticIndexingServiceConnector;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.web.WebAppController;
+import org.exoplatform.web.controller.router.Router;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PermissionEntity;
 import org.exoplatform.wiki.mow.api.WikiType;
+import org.exoplatform.wiki.utils.Utils;
 import org.json.simple.JSONObject;
 
+import javax.swing.text.EditorKit;
+import javax.swing.text.html.HTMLEditorKit;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,6 +93,7 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
                                                .append("      }")
                                                .append("    },\n")
                                                .append("    \"owner\" : {\"type\" : \"keyword\"},\n")
+                                               .append("    \"id\" : {\"type\" : \"long\"},\n")
                                                .append("    \"wikiType\" : {\"type\" : \"keyword\"},\n")
                                                .append("    \"wikiOwner\" : {\"type\" : \"keyword\"},\n")
                                                .append("    \"permissions\" : {\"type\" : \"keyword\"},\n")
@@ -107,26 +122,33 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
       return null;
     }
 
-    Map<String, String> fields = new HashMap<>();
-    fields.put("owner", page.getOwner());
-    fields.put("name", page.getName());
-    // Remove HTML tag when indexing wiki page
-    String content = page.getContent().replaceAll("(?s)<[^>]*>(\\s*<[^>]*>)*", " ");
-    fields.put("content", content);
-    fields.put("title", page.getTitle());
-    fields.put("createdDate", String.valueOf(page.getCreatedDate().getTime()));
-    fields.put("updatedDate", String.valueOf(page.getUpdatedDate().getTime()));
-    fields.put("comment", page.getComment());
-    fields.put("wikiType", page.getWiki().getType());
-    String wikiOwner = page.getWiki().getOwner();
-    // We need to add the first "/" on the wiki owner if it's wiki group
-    if (page.getWiki().getType().toUpperCase().equals(WikiType.GROUP.name())) {
-      wikiOwner = dao.validateGroupWikiOwner(wikiOwner);
-    }
-    fields.put("wikiOwner", wikiOwner);
+    try {
+      Map<String, String> fields = new HashMap<>();
+      fields.put("owner", page.getOwner());
+      fields.put("name", page.getName());
+      fields.put("id", String.valueOf(page.getId()));
+      // Remove HTML tag when indexing wiki page
+      String content = Utils.html2text(page.getContent());
+      fields.put("content", content);
+      fields.put("title", page.getTitle());
+      fields.put("createdDate", String.valueOf(page.getCreatedDate().getTime()));
+      fields.put("updatedDate", String.valueOf(page.getUpdatedDate().getTime()));
+      fields.put("comment", page.getComment());
+      fields.put("wikiType", page.getWiki().getType());
+      String wikiOwner = page.getWiki().getOwner();
+      // We need to add the first "/" on the wiki owner if it's wiki group
+      if (page.getWiki().getType().toUpperCase().equals(WikiType.GROUP.name())) {
+        wikiOwner = dao.validateGroupWikiOwner(wikiOwner);
+      }
+      fields.put("wikiOwner", wikiOwner);
 
-    return new Document(id, page.getUrl(), page.getUpdatedDate(), computePermissions(page), fields);
+      return new Document(id, page.getUrl(), page.getUpdatedDate(), computePermissions(page), fields);
+    } catch (Exception e) {
+      LOGGER.info("Cannot index page with id {} ", id, e);
+      return null;
+    }
   }
+
 
   @Override
   public Document update(String id) {
@@ -139,15 +161,20 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
   }
 
   private Set<String> computePermissions(PageEntity page) {
+    IdentityManager identityManager    = CommonsUtils.getService(IdentityManager.class);
     Set<String> permissions = new HashSet<>();
-    // Add the owner
-    permissions.add(page.getOwner());
-    permissions.add(page.getWiki().getOwner());
-    // Add permissions
-    if (page.getPermissions() != null) {
-      for (PermissionEntity permission : page.getPermissions()) {
-        permissions.add(permission.getIdentity());
+    try {
+      if (page.getWiki().getType().toUpperCase().equals(WikiType.GROUP.name())) {
+        SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+        Space space = spaceService.getSpaceByGroupId(page.getWiki().getOwner());
+        if(space!=null){
+          permissions.add(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName()).getId());
+        }
+      }else if (page.getWiki().getType().toUpperCase().equals(WikiType.USER.name())) {
+          permissions.add(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, page.getWiki().getOwner()).getId());
       }
+    } catch (Exception e) {
+      LOGGER.warn("Cannot get Identity of the wiki Owner", e.getMessage());
     }
     return permissions;
   }
