@@ -154,10 +154,14 @@
   <component>
     <type>org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector</type>
     <init-params>
+      <value-param>
+        <name>query.file.path</name>
+        <value>${exo.notes.es.query.path:jar:/notes-search-query.json}</value>
+      </value-param>
       <properties-param>
         <name>constructor.params</name>
-        <property name="index" value="wiki_alias"/>
-        <property name="type" value="wiki-page,wiki-attachment"/>
+        <property name="index" value="notes_alias"/>
+        <property name="type" value="note-page,note-attachment"/>
         <property name="searchFields" value="name,title,content,comment,attachment.content"/>
       </properties-param>
     </init-params>
@@ -174,11 +178,11 @@
       <init-params>
         <properties-param>
           <name>constructor.params</name>
-          <property name="searchType" value="wiki"/>
-          <property name="displayName" value="Wiki"/>
-          <property name="index" value="wiki_alias"/>
-          <property name="type" value="wiki-page,wiki-attachment"/>
-          <property name="enable" value="${exo.unified-search.connector.wiki.enable:true}"/>
+          <property name="searchType" value="note"/>
+          <property name="displayName" value="note"/>
+          <property name="index" value="notes_alias"/>
+          <property name="type" value="note-page,note-attachment"/>
+          <property name="enable" value="${exo.unified-search.connector.notes.enable:true}"/>
           <property name="titleField" value="title"/>
           <property name="updatedDateField" value="updatedDate"/>
           <property name="searchFields" value="name,title,content,comment,attachment.content"/>
@@ -198,8 +202,8 @@
       <init-params>
         <properties-param>
           <name>constructor.params</name>
-          <property name="index_alias" value="wiki_alias"/>
-          <property name="index_current" value="wiki_v2"/>
+          <property name="index_alias" value="notes_alias"/>
+          <property name="index_current" value="notes_v1"/>
         </properties-param>
       </init-params>
     </component-plugin>

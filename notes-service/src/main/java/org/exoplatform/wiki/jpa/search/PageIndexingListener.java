@@ -14,6 +14,7 @@ public class PageIndexingListener extends PageWikiListener {
 
   private IndexingService indexingService;
 
+
   public PageIndexingListener(IndexingService indexingService) {
     this.indexingService = indexingService;
   }
