@@ -87,17 +87,16 @@ public class GamificationWikiListener extends PageWikiListener {
     if (page != null && wikiUpdateType != null
         && (wikiUpdateType.equals(PageUpdateType.ADD_PAGE)
             || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT)
-            || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE))) {
+            || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE))
+        && ConversationState.getCurrent() != null) {
 
       // Get the space's creator username
-      if (ConversationState.getCurrent() != null) {
-        String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
+      String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
 
-        // Compute user id
-        String actorId = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, actorUsername, false).getId();
+      // Compute user id
+      String actorId = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, actorUsername, false).getId();
 
-        gamificationService.createHistory(GAMIFICATION_WIKI_UPDATE_PAGE, actorId, actorId, page.getUrl());
-      }
+      gamificationService.createHistory(GAMIFICATION_WIKI_UPDATE_PAGE, actorId, actorId, page.getUrl());
     }
   }
 }
