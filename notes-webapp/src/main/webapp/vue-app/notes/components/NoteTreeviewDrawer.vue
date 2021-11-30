@@ -217,6 +217,7 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
+    selectionType: 'leaf',
     displayArrow: true,
     render: true,
     closeAll: true,
@@ -255,12 +256,9 @@ export default {
         return this.$t('notes.label.export.selectAll');
       }
     },
-    openLevel() {
+    openLevel(){
       return [this.home.noteId];
-    },
-    selectionType() {
-      return this.exportNotes ? 'independent' : 'leaf';
-    },
+    }
   },
   watch: {
     search() {
