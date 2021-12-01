@@ -551,8 +551,9 @@ public class WikiRestServiceImpl implements ResourceContainer {
                              @QueryParam("wikiOwner") String wikiOwner) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
+
       keyword = keyword.toLowerCase();
-      WikiSearchData data = new WikiSearchData(keyword, keyword, wikiType, wikiOwner);
+      WikiSearchData data = new WikiSearchData(keyword, ConversationState.getCurrent().getIdentity().getUserId());
       data.setLimit(limit);
       List<SearchResult> results = wikiService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();

@@ -27,6 +27,8 @@ public class SearchData {
 
   public String wikiOwner;
 
+  public String userId;
+
   public String pageId;
   
   private long offset = 0;
@@ -37,12 +39,13 @@ public class SearchData {
   
   public int limit = Integer.MAX_VALUE;
 
-  public SearchData(String title, String content, String wikiType, String wikiOwner, String pageId) {
+  public SearchData(String title, String content, String wikiType, String wikiOwner, String pageId, String userId) {
     this.title = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(title);
     this.content = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(content);
     this.wikiType = wikiType;
     this.wikiOwner = Utils.validateWikiOwner(wikiType, wikiOwner);
     this.pageId = pageId;
+    this.userId = userId;
   }
 
   public String getTitle() {
@@ -116,5 +119,12 @@ public class SearchData {
   public void setOrder(String order) {
     this.order = order;
   }
-  
+
+  public String getUserId() {
+    return userId;
+  }
+
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
 }

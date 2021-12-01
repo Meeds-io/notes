@@ -109,13 +109,13 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, int offset, int limit) {
-    List<SearchResult> searchResults = filteredWikiSearch(searchedText, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, String userId, int offset, int limit) {
+    List<SearchResult> searchResults = filteredWikiSearch(searchedText,userId, offset, limit);
     return searchResults;
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, int offset, int limit) {
-    Set<String> ids = getUserSpaceIds();
+  protected List<SearchResult> filteredWikiSearch(String query, String userId, int offset, int limit) {
+    Set<String> ids = getUserSpaceIds(userId);
     String esQuery = buildQueryStatement(ids, query, offset, limit);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
@@ -249,17 +249,14 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   }
 
-  protected Set<String> getUserSpaceIds() {
-    ConversationState conversationState = ConversationState.getCurrent();
-    if (conversationState == null) {
-      throw new IllegalStateException("No Identity found: ConversationState.getCurrent() is null");
-    } else if (conversationState.getIdentity() == null) {
-      throw new IllegalStateException("No Identity found: ConversationState.getCurrent().getIdentity() is null");
-    } else {
+  protected Set<String> getUserSpaceIds(String userId) {
+    if (StringUtils.isEmpty(userId)) {
+      throw new IllegalStateException("No Identity found: userId is empty");
+    }  else {
       Set<String> permissions = new HashSet<>();
       IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
       SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-      ListAccess<Space> userSpaces = spaceService.getMemberSpaces(conversationState.getIdentity().getUserId());
+      ListAccess<Space> userSpaces = spaceService.getMemberSpaces(userId);
       List<Space> spaceList = new ArrayList<>();
       try {
         spaceList = Arrays.asList(userSpaces.load(0, userSpaces.getSize()));
@@ -271,10 +268,10 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
           permissions.add(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName()).getId());
         }
       }
-      Identity userId = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                            conversationState.getIdentity().getUserId());
+      Identity userIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+              userId);
       if (userId != null) {
-        permissions.add(userId.getId());
+        permissions.add(userIdentity.getId());
       }
       return permissions;
     }
