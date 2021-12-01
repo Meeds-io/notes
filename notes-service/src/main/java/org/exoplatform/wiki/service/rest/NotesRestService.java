@@ -36,6 +36,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.NoteToExport;
 import org.exoplatform.wiki.mow.api.Page;
@@ -53,6 +54,7 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.NoteConstants;
+import org.gatein.api.EntityNotFoundException;
 import org.json.JSONObject;
 
 import javax.annotation.security.RolesAllowed;
@@ -911,8 +913,12 @@ public class NotesRestService implements ResourceContainer {
             path = URLDecoder.decode(parent.getPath(), "utf-8");
             context.put(TreeNode.PATH, path);
             noteParam = TreeUtils.getPageParamsFromPath(path);
-            Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
-            context.put(TreeNode.SELECTED_PAGE, parentNote);
+            try {
+              Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
+              context.put(TreeNode.SELECTED_PAGE, parentNote);
+            } catch (EntityNotFoundException e) {
+              log.warn("Cannot find the note {}", noteParam.getPageName());
+            }
             List<JsonNodeData> childNotes = getJsonDescendants(noteParam, context);
 
             children.addAll(childNotes);
