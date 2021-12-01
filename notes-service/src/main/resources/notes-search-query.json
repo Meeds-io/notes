@@ -8,14 +8,6 @@
           "permissions": [@permissions@]
         }
       },
-      "should": {
-        "match_phrase": {
-          "summary": {
-            "query": "@term@",
-            "boost": 3
-          }
-        }
-      },
       "must":{
         "query_string":{
           "fields": ["name","title^5","content","comment","attachment.content"],
