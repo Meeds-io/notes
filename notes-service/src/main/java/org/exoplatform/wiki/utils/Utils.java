@@ -47,6 +47,9 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.WikiPageHistory;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Whitelist;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
 import javax.mail.internet.AddressException;
@@ -720,17 +723,8 @@ public class Utils {
   }
 
   public static String html2text(String html) {
-    EditorKit kit = new HTMLEditorKit();
-    javax.swing.text.Document doc = kit.createDefaultDocument();
-    doc.putProperty("IgnoreCharsetDirective", Boolean.TRUE);
-    try {
-      Reader reader = new StringReader(html);
-      kit.read(reader, doc, 0);
-      return doc.getText(0, doc.getLength());
-    } catch (Exception e) {
-
-      return "";
-    }
+    Document doc = Jsoup.parse(html);
+    return doc.text();
   }
 
 }

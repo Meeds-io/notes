@@ -9,14 +9,19 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.exoplatform.commons.api.notification.model.PluginKey;
+import org.exoplatform.commons.api.notification.service.storage.NotificationService;
 import org.exoplatform.commons.search.es.ElasticSearchServiceConnector;
+import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.utils.Utils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.InitParams;
@@ -30,41 +35,46 @@ import org.exoplatform.social.core.space.SpaceListAccess;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.wiki.service.search.SearchResult;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  *
  */
+@RunWith(PowerMockRunner.class)
 public class WikiElasticSearchServiceConnectorTest {
 
   private WikiElasticSearchServiceConnector searchServiceConnector;
 
+  @Mock
   private ElasticSearchingClient elasticSearchingClient;
 
+  @Mock
   private IdentityManager                   identityManager;
 
+  @Mock
   private SpaceService                      spaceService;
 
+  @Mock
   private SpaceStorage                      spaceStorage;
 
+  @Mock
   private ConfigurationManager              configurationManager;
 
-  @Before
-  public void setUp() {
-    spaceService = mock(SpaceService.class);
-    identityManager = mock(IdentityManager.class);
-    searchServiceConnector = mock(WikiElasticSearchServiceConnector.class);
-    configurationManager = mock(ConfigurationManager.class);
-    elasticSearchingClient = mock(ElasticSearchingClient.class);
-    spaceStorage = mock(SpaceStorage.class);
-  }
-
+  @PrepareForTest({CommonsUtils.class, Utils.class})
   @Test
   public void shouldReturnResultsWithoutExcerptWhenNoHighlight() {
 
     Identity systemIdentity = new Identity(IdentityConstants.SYSTEM);
     ConversationState.setCurrent(new ConversationState(systemIdentity));
+    PowerMockito.mockStatic(CommonsUtils.class);
+    PowerMockito.mockStatic(Utils.class);
+    when(CommonsUtils.getService(SpaceService.class)).thenReturn(spaceService);
+    when(CommonsUtils.getService(IdentityManager.class)).thenReturn(identityManager);
+    when(Utils.html2text(anyString())).thenReturn("");
     // Given
-    when(elasticSearchingClient.sendRequest(anyString(),anyString()))
+    Mockito.when(elasticSearchingClient.sendRequest(anyString(),anyString()))
            .thenReturn("{\n" + "  \"took\": 939,\n" + "  \"timed_out\": false,\n" + "  \"_shards\": {\n" + "    \"total\": 5,\n"
                + "    \"successful\": 5,\n" + "    \"failed\": 0\n" + "  },\n" + "  \"hits\": {\n" + "    \"total\": 4,\n"
                + "    \"max_score\": 1.0,\n" + "    \"hits\": [{\n" + "      \"_index\": \"wiki\",\n"
@@ -114,15 +124,14 @@ public class WikiElasticSearchServiceConnectorTest {
         + "        \"post_tags\" : [\"</span>\"]\n" + "      },\n" + "      \"location\" : {\n"
         + "        \"pre_tags\" : [\"<span class='searchMatchExcerpt'>\"],\n" + "        \"post_tags\" : [\"</span>\"]\n"
         + "      }\n" + "    }\n" + "  }\n" + "}");
-    when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
+    Mockito.when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
                                                                                   "__system",
                                                                                   SpaceListAccess.Type.MEMBER));
-    when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
-    when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                             "__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
+    Mockito.when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
+    Mockito.when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
 
     // when
-    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*", 0, 20);
+    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", 0, 20);
 
     // Then
     assertNotNull(searchResults);

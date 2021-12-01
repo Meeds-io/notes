@@ -18,6 +18,7 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.wiki.mow.api.*;
@@ -86,6 +87,8 @@ public class TestWikiRestService {
   @PrepareForTest({EntityBuilder.class})
   @Test
   public void testSearchData() throws Exception {
+    org.exoplatform.services.security.Identity root = new org.exoplatform.services.security.Identity("root");
+    ConversationState.setCurrent(new ConversationState(root));
     // Given
     WikiService wikiService = mock(WikiService.class);
     EntityBuilder entityBuilder = mock(EntityBuilder.class);
