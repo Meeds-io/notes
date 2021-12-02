@@ -147,7 +147,7 @@ export default {
       autoSaveDelay: 1000,
       saveDraft: '',
       postKey: 1,
-      navigationLabel: `${this.$t('notes.label.navigation')}`,
+      navigationLabel: `${this.$t('notes.label.Navigation')}`,
       noteChildren: []
     };
   },
