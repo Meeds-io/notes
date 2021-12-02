@@ -150,7 +150,6 @@ export default {
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
       noteNavigationDisplayed: false
-
     };
   },
   computed: {
