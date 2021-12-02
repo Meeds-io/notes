@@ -62,18 +62,21 @@ export default {
     treeviewInserted: false
   }),
   computed: {
+    showTOC() {
+      return this.treeviewInserted;
+    },
     plugins() {
       const pluginsList = [
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
         { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
         { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
-        { id: 'Navigation',title: 'Navigation', src: '/notes/images/children.png', tooltip: this.$t('notes.label.Navigation')  }
+        { id: 'Navigation',title: 'Navigation', src: '/notes/images/children.png', tooltip: this.$t('notes.label.insertToC')  }
       ];
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
       }
-      if (this.hideNavigation || !this.noteChildren.length) {
-        return pluginsList.filter( plugin => plugin.id !== 'Navigation' );
+      if (this.hideTOC || !this.noteChildren.length) {
+        return pluginsList.filter( plugin => plugin.id !== 'ToC' );
       } else {
         return pluginsList;
       }
@@ -90,7 +93,7 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
-      this.hideNavigation = false;
+      this.hideTOC = false;
       this.retrieveNoteChildren(this.noteId);
     }
   },
@@ -112,7 +115,8 @@ export default {
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
       } else if ( id === 'Navigation') {
-        this.$root.$emit('display-manual-child');
+        this.instance.execCommand('ToC');
+        console.warn('sent');
         this.treeviewInserted = true;
         this.close();
       }

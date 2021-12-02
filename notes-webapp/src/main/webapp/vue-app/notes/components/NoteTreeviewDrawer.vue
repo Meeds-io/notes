@@ -357,7 +357,7 @@ export default {
       this.closeAll = false;
     },
     openNote(event, note) {
-      const canOpenNote = this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage;
+      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && note.noteId !== this.note.id;
       if (canOpenNote) {
         //reinitialize filter
         this.filter = this.filterOptions[0];
@@ -380,6 +380,8 @@ export default {
           this.$root.$emit('open-note-by-name', noteName, note.draftPage);
           this.$refs.breadcrumbDrawer.close();
         }
+      } else {
+        this.$refs.breadcrumbDrawer.close();
       }
     },
     getNoteById(id) {
