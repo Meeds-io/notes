@@ -78,9 +78,9 @@ public class NotesAutoImportService implements Startable {
 
   private static final String  IMPORT_CONFLICT_MODE_PARAM                 = "importConflictMode";
 
-  private static final String  FR_EXPORT_ZIP_LOCATION                     = "/exports/fr/kb_export_fr.zip";
+  private static final String  FR_EXPORT_ZIP_LOCATION                     = "/notesExports/fr/kb_export_fr.zip";
 
-  private static final String  EN_EXPORT_ZIP_LOCATION                     = "/exports/en/kb_export_en.zip";
+  private static final String  EN_EXPORT_ZIP_LOCATION                     = "/notesExports/en/kb_export_en.zip";
 
   private static final String  SPACE_TEMPLATE                             = "community";
 
