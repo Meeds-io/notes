@@ -181,7 +181,7 @@ export default {
       }
     },
     'note.content'() {
-      if (this.note.content !== this.actualNote.content) {
+      if (this.note.content !== this.actualNote.content && !this.isDefaultContent(this.note.content)) {
         this.autoSave();
       }
     },
@@ -296,6 +296,7 @@ export default {
       if (this.postingNote) {
         return;
       }
+
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -346,6 +347,7 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
+        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -458,7 +460,9 @@ export default {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
           }, this.autoSaveDelay/2);
         } else {
-          this.persistDraftNote(draftNote);
+          if (!this.isDefaultContent(this.note.content)) {
+            this.persistDraftNote(draftNote);
+          }
         }
       } else {
         // delete draft
@@ -577,26 +581,25 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
-
-            self.$root.$applicationLoaded();
-            window.setTimeout(() => self.setFocus(), 50);
-            if ((self.note.content === '') || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
-              self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                this.noteChildren = data && data.children || [];
-                if (data && data.children && data.children.length) {
-                  CKEDITOR.instances['notesContent'].execCommand('ToC');
-                } else {
-                  CKEDITOR.instances['notesContent'].setData('');
-                }
-              });
-            } else {
-              CKEDITOR.instances['notesContent'].setData( self.note.content );
-            }
+            
+            window.setTimeout(() => {
+              if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
+                CKEDITOR.instances['notesContent'].setData('');
+                self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
+                  this.noteChildren = data && data.children || [];
+                  if (data && data.children && data.children.length) {
+                    CKEDITOR.instances['notesContent'].execCommand('ToC');
+                  }
+                });
+              }
+            }, 200);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
+            self.$root.$applicationLoaded();
+            window.setTimeout(() => self.setFocus(), 50);
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
@@ -779,6 +782,24 @@ export default {
       this.postingNote = false;
       this.postKey++;
     },
+    isDefaultContent(noteContent) {
+      const div = document.createElement('div');
+      div.innerHTML = noteContent;
+      if ( div.childElementCount === 2) {
+        const childrenWrapper = CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+        if ( childrenWrapper ) {
+          if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
   }
 };
 </script>
