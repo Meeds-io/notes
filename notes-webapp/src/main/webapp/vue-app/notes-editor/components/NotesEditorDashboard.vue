@@ -181,7 +181,7 @@ export default {
       }
     },
     'note.content'() {
-      if (this.note.content !== this.actualNote.content) {
+      if (this.note.content !== this.actualNote.content && !this.isDefaultContent(this.note.content)) {
         this.autoSave();
       }
     },
@@ -347,6 +347,7 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
+        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
