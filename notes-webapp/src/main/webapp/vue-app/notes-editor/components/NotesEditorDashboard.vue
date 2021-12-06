@@ -181,7 +181,7 @@ export default {
       }
     },
     'note.content'() {
-      if (this.note.content !== this.actualNote.content) {
+      if (this.note.content !== this.actualNote.content && !this.isDefaultContent(this.note.content)) {
         this.autoSave();
       }
     },
@@ -296,6 +296,7 @@ export default {
       if (this.postingNote) {
         return;
       }
+
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -458,7 +459,9 @@ export default {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
           }, this.autoSaveDelay/2);
         } else {
-          this.persistDraftNote(draftNote);
+          if (!this.isDefaultContent(this.note.content)) {
+            this.persistDraftNote(draftNote);
+          }
         }
       } else {
         // delete draft
@@ -779,6 +782,24 @@ export default {
       this.postingNote = false;
       this.postKey++;
     },
+    isDefaultContent(noteContent) {
+      const div = document.createElement('div');
+      div.innerHTML = noteContent;
+      if ( div.childElementCount === 2) {
+        const childrenWrapper = CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+        if ( childrenWrapper ) {
+          if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
   }
 };
 </script>
