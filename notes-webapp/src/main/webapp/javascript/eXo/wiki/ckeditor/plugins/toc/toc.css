@@ -1,27 +1,69 @@
-
-ul.note-manual-child  {
-    padding-inline-start: 12px!important;
-    list-style: none!important;
-}
-li.note-child-item {
-    list-style: none!important;
-    position: relative;
-    padding-left: 24px;
-    min-height: 30px;
+.navigation-img-wrapper figure {
+	color: #578dc9;
 }
 
-li.has-child:before {
-    content: "";
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 5px solid #4f5465;
+.navigation-img-wrapper figure img {
+	width: 40px;
+	margin-top: 10px;
+}
+
+.navigation-img-wrapper figure .cke_widget_wrapper:hover>.cke_widget_element {
+	outline: none!important;
+}
+
+.navigation-img-wrapper figure .cke_widget_wrapper.cke_widget_focused>.cke_widget_element {
+	outline: none!important;
+}
+
+.navigation-img-wrapper figure .cke_widget_wrapper:hover>.cke_widget_drag_handler_container {
+	display: none;
+}
+
+.navigation-img-wrapper figure .cke_widget_wrapper:hover .cke_image_resizer {
+	display: none;
+}
+
+.navigation-img-wrapper figure {
+	display: inline-flex!important;
+	align-items: center;
+	padding: 4px 12px;
+	color: #578dc9;
+	border: 2px solid #578dc9;
+	border-radius: 2px;
+	background: white;
+	position: relative;
+}
+
+.note-navigation-label {
+	cursor: default;
+}
+
+.navigation-img-wrapper .cke_widget_selectImage {
+	margin-bottom: 0!important;
+	margin-right: 4px !important;
+}
+
+#remove-treeview {
     position: absolute;
-    left: 7px;
-    top: 7px;
+	top: -20px;
+    right: -15px;
+    width: 16px!important;
+    max-width: 16px!important;
+    height: auto;
+    background: #ffd4d4;
+    padding: 5px;
+    border-radius: 25px;
+    border: 2px solid white;
+    display: none;
 }
 
-li.note-child-item a {
-    text-decoration: none!important;
+.cke_widget_wrapper.cke_widget_inline.cke_widget_selectImage.cke_image_nocaption #remove-treeview {
+	top: -55px!important;
+    right: -95px!important;
+
+}
+
+.navigation-img-wrapper figure:hover #remove-treeview {
+	display: block;
+	cursor: pointer!important;
 }

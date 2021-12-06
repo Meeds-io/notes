@@ -148,7 +148,8 @@ export default {
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
-      noteChildren: []
+      noteChildren: [],
+      noteNavigationDisplayed: false
     };
   },
   computed: {
@@ -171,7 +172,7 @@ export default {
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
-    }
+    },
   },
   watch: {
     'note.title'() {
@@ -209,7 +210,6 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
-      this.retrieveNoteChildren(this.noteId);
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -268,9 +268,13 @@ export default {
       }
     });
 
-    this.$root.$on('display-manual-child', () => {
-      this.insertTOC();
+    document.addEventListener('note-navigation-plugin', () => {
+      this.$root.$emit('show-alert', {
+        type: 'error',
+        message: this.$t('notes.message.manualChild')
+      });
     });
+
   },
   mounted() {
     this.init();
@@ -282,19 +286,6 @@ export default {
       elementNewTop.classList.add('darkComposerEffect');
       this.setToolBarEffect();
       this.initDone = true;
-    },
-    insertTOC() {
-      const editor = $('textarea#notesContent').ckeditor().editor;
-      const childrenWrapper = editor.document.getById( 'note-children-container' );
-      if (childrenWrapper) {
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.manualChild')
-        });
-      } else {
-        editor.insertHtml(`<div id='note-children-container' class='navigation-img-wrapper'>
-        <figure class="image-navigation"><img src='/notes/images/children.png' class='note-navigation-img' /><figcaption class="note-navigation-label">${this.navigationLabel}</figcaption></figure></div><p></p>`);
-      }
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -355,15 +346,6 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
-        if ((this.note.content === '') || ( this.note.content.includes('Welcome to Space') && this.note.content.includes('Notes Home'))) {
-          if (this.noteChildren.length) {
-            CKEDITOR.instances['notesContent'].setData(`<div id='note-children-container' class='navigation-img-wrapper'><figure class="image-navigation"><img src='/notes/images/children.png' class='note-navigation-img' /><figcaption class="note-navigation-label">${this.navigationLabel}</figcaption></figure></div><p></p>`);
-          } else {
-            CKEDITOR.instances['notesContent'].setData('');
-          }
-        } else {
-          CKEDITOR.instances['notesContent'].setData(data.content);
-        }
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -532,10 +514,6 @@ export default {
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
       CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
-      CKEDITOR.addCss('navigation-img-wrapper figure { color: #578dc9; }');
-      CKEDITOR.addCss('.navigation-img-wrapper figure img { width: 40px!important; margin-top: 10px;}');
-      CKEDITOR.addCss('.navigation-img-wrapper figure { display: inline-flex!important; align-items:center; padding: 12px;color: #578dc9; border: 2px solid #578dc9;border-radius: 2px;background: white;}');
-      CKEDITOR.addCss('.navigation-img-wrapper .cke_widget_selectImage { margin-bottom: 0!important;}');
 
       // this line is mandatory when a custom skin is defined
 
@@ -575,8 +553,6 @@ export default {
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-
-
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
               if ( element.getAscendant( 'table', true ) ) {
                 return {
@@ -604,9 +580,40 @@ export default {
 
             self.$root.$applicationLoaded();
             window.setTimeout(() => self.setFocus(), 50);
+            if ((self.note.content === '') || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
+              self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
+                this.noteChildren = data && data.children || [];
+                if (data && data.children && data.children.length) {
+                  CKEDITOR.instances['notesContent'].execCommand('ToC');
+                } else {
+                  CKEDITOR.instances['notesContent'].setData('');
+                }
+              });
+            } else {
+              CKEDITOR.instances['notesContent'].setData( self.note.content );
+            }
+            const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+            
+            if ( treeviewParentWrapper ) {
+              treeviewParentWrapper.contentEditable='false';
+            }
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
+            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+            if ( removeTreeviewBtn ) {
+              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+                if ( treeviewParentWrapper) {
+                  const newLine = treeviewParentWrapper.getNext();
+                  treeviewParentWrapper.remove();
+                  if ( newLine.$.innerText.trim().length === 0) {
+                    newLine.remove();
+                  }
+                  self.note.content = evt.editor.getData();
+                }
+              } );
+            }
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
@@ -621,6 +628,7 @@ export default {
         }
       });
       this.instance =CKEDITOR.instances['notesContent'];
+
     },
     setToolBarEffect() {
       const element = CKEDITOR.instances['notesContent'] ;
@@ -770,11 +778,6 @@ export default {
     enableClickOnce() {
       this.postingNote = false;
       this.postKey++;
-    },
-    retrieveNoteChildren(noteId) {
-      this.$notesService.getNoteById(noteId, '','','',true).then(data => {
-        this.noteChildren = data && data.children || [];
-      });
     },
   }
 };

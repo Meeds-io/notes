@@ -116,7 +116,7 @@
           </div>
           <div
             class="notes-application-content text-color"
-            v-html="isDraft ? note.content : noteVersionContent">
+            v-html="noteVersionContent">
           </div>
         </div>
         <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].hasChild">
@@ -377,7 +377,7 @@ export default {
       return this.noteChildren && this.noteChildren.length && this.noteChildren[0].children;
     },
     displayedDate() {
-      if (this.isDraft) {
+      if (this.isDraft && this.note && this.note.updatedDate && this.note.updatedDate.time) {
         return this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang) || '';
       } else {
         if (this.displayLastVersion) {
@@ -763,12 +763,14 @@ export default {
     },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
-      this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name).then(data => {
-        if (data && data.jsonList.length) {
-          const allnotesTreeview = data.jsonList;
-          this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
-        }
-      });
+      if (!this.note.draftPage) {
+        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
+          if (data && data.jsonList.length) {
+            const allnotesTreeview = data.jsonList;
+            this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
+          }
+        });
+      }
     },
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
