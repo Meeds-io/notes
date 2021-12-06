@@ -786,7 +786,6 @@ export default {
     },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
-<<<<<<< HEAD
       if (!this.note.draftPage) {
         this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
           if (data && data.jsonList.length) {
@@ -795,20 +794,11 @@ export default {
           }
         });
       }
-=======
-      this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name).then(data => {
-        if (data && data.jsonList.length) {
-          const allnotesTreeview = data.jsonList;
-          this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
-        }
-      });
->>>>>>> a0c7dfec (Task-51225: Add manuel children in manuel children (#388))
     },
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
       this.$root.$emit('open-note-by-name', noteName);
     },
-<<<<<<< HEAD
     updateNote(noteParam) {
       const note = {
         id: noteParam.id,
@@ -825,8 +815,6 @@ export default {
         });
       }
     }
-=======
->>>>>>> a0c7dfec (Task-51225: Add manuel children in manuel children (#388))
   }
 };
 </script>
