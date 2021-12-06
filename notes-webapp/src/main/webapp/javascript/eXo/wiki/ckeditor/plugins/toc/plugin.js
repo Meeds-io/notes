@@ -18,7 +18,6 @@ CKEDITOR.plugins.add( 'toc', {
 
       exec: function( editor) {
          const childrenWrapper = editor.document.getById( 'note-children-container' );
-         console.warn('childrenWrapper', childrenWrapper);
           if (childrenWrapper) {
             document.dispatchEvent(new CustomEvent('note-navigation-plugin'));
           } else {
