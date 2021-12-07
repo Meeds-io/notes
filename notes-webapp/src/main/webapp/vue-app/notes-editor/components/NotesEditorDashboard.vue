@@ -347,6 +347,7 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
+        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -552,17 +553,8 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            console.warn('editor Content 1', evt.editor.getData());
-            console.warn('note Content 1', self.note);
-
-            window.setTimeout(() => {
-              self.note.content = evt.editor.getData();
-              self.actualNote.content = evt.editor.getData();
-              console.warn('editor Content 2', evt.editor.getData());
-              console.warn('note Content 2', self.note);
-            }, 200);
-            console.warn('editor Content 3', evt.editor.getData());
-            console.warn('note Content 3', self.note);
+            self.note.content = evt.editor.getData();
+            self.actualNote.content = evt.editor.getData();
             if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
               CKEDITOR.instances['notesContent'].setData('');
               self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
@@ -573,7 +565,6 @@ export default {
               });
             } else {
               CKEDITOR.instances['notesContent'].setData( self.note.content );
-              console.warn('note Content', self.note);
             }
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
