@@ -354,17 +354,6 @@ export default {
         }, 100);
       }
     },
-    hasManualChildren () {
-      if (this.hasManualChildren) {
-        window.setTimeout(() => {
-          const oldContainer = document.getElementById('showManualChild');
-          const newContainers = document.getElementById('note-children-container');
-          if (oldContainer && !newContainers.childNodes.length) {
-            newContainers.append(...oldContainer.childNodes);
-          }
-        }, 100);
-      }
-    },
     actualVersion() {
       if (!this.isDraft) {
         this.noteContent = this.actualVersion.content;

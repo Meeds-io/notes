@@ -277,7 +277,11 @@ export default {
 
   },
   mounted() {
-    this.init();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (!urlParams.has('noteId')) {
+      this.init();
+    }
   },
   methods: {
     init() {
@@ -347,7 +351,6 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
-        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -647,7 +650,6 @@ export default {
         }
       });
       this.instance =CKEDITOR.instances['notesContent'];
-
     },
     setToolBarEffect() {
       const element = CKEDITOR.instances['notesContent'] ;
