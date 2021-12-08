@@ -148,7 +148,6 @@ export default {
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
-      noteChildren: [],
       noteNavigationDisplayed: false
     };
   },
@@ -277,7 +276,11 @@ export default {
 
   },
   mounted() {
-    this.init();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (!urlParams.has('noteId')) {
+      this.init();
+    }
   },
   methods: {
     init() {
@@ -325,7 +328,8 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id).then(data => {
-            this.fillNote(data);
+            this.init();
+            this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
         }
@@ -347,7 +351,6 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
-        CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -358,6 +361,18 @@ export default {
           breadcrumb: this.note.breadcrumb,
           toBePublished: this.note.toBePublished,
         };
+        const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
+        +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
+        +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
+        CKEDITOR.instances['notesContent'].setData(data.content);
+        if ((this.note.content.trim().length === 0)) {
+          this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
+            if (data && data.children && data.children.length) {
+              CKEDITOR.instances['notesContent'].setData(childContainer);
+              this.setFocus();
+            }
+          });
+        } 
       }
     },
     postNote(toPublish) {
@@ -553,7 +568,7 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            self.note.content = evt.editor.getData();
+            //self.note.content = evt.editor.getData();
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
@@ -582,24 +597,28 @@ export default {
                 });
               });
             
-            window.setTimeout(() => {
-              if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
-                CKEDITOR.instances['notesContent'].setData('');
-                self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                  this.noteChildren = data && data.children || [];
-                  if (data && data.children && data.children.length) {
-                    CKEDITOR.instances['notesContent'].execCommand('ToC');
-                  }
-                });
-              }
-            }, 200);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
-            
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
-            self.$root.$applicationLoaded();
+
+            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+            if ( removeTreeviewBtn ) {
+              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+                if ( treeviewParentWrapper) {
+                  const newLine = treeviewParentWrapper.getNext();
+                  treeviewParentWrapper.remove();
+                  if ( newLine.$.innerText.trim().length === 0) {
+                    newLine.remove();
+                  }
+                  self.note.content = evt.editor.getData();
+                }
+                self.setFocus();
+              } );
+            }
             window.setTimeout(() => self.setFocus(), 50);
+            self.$root.$applicationLoaded();
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
@@ -631,7 +650,6 @@ export default {
         }
       });
       this.instance =CKEDITOR.instances['notesContent'];
-
     },
     setToolBarEffect() {
       const element = CKEDITOR.instances['notesContent'] ;
