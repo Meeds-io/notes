@@ -553,10 +553,8 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            window.setTimeout(() => {
-              self.note.content = evt.editor.getData();
-              self.actualNote.content = evt.editor.getData();
-            }, 200);
+            self.note.content = evt.editor.getData();
+            self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
@@ -583,16 +581,18 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
-
-            if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
-              CKEDITOR.instances['notesContent'].setData('');
-              self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                this.noteChildren = data && data.children || [];
-                if (data && data.children && data.children.length) {
-                  CKEDITOR.instances['notesContent'].execCommand('ToC');
-                }
-              });
-            }
+            
+            window.setTimeout(() => {
+              if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
+                CKEDITOR.instances['notesContent'].setData('');
+                self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
+                  this.noteChildren = data && data.children || [];
+                  if (data && data.children && data.children.length) {
+                    CKEDITOR.instances['notesContent'].execCommand('ToC');
+                  }
+                });
+              }
+            }, 200);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             
             if ( treeviewParentWrapper ) {
