@@ -217,7 +217,6 @@ export default {
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
-    selectionType: 'leaf',
     displayArrow: true,
     render: true,
     closeAll: true,
@@ -237,28 +236,31 @@ export default {
     active() {
       return this.activeItem;
     },
-    includePage () {
+    includePage() {
       return this.isIncludePage;
     },
     currentBreadcrumb() {
       return this.breadcrumb;
     },
-    reload () {
+    reload() {
       return this.render;
     },
     resultSearch() {
       return this.showTree;
     },
     selectExportLabel() {
-      if ( this.checkbox === true) {
+      if (this.checkbox === true) {
         return this.$t('notes.label.export.deselectAll');
       } else {
         return this.$t('notes.label.export.selectAll');
       }
     },
-    openLevel(){
+    openLevel() {
       return [this.home.noteId];
-    }
+    },
+    selectionType() {
+      return this.exportNotes ? 'independent' : 'leaf';
+    },
   },
   watch: {
     search() {
@@ -266,22 +268,23 @@ export default {
       if (this.search) {
         this.active = this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()));
         this.items = this.active;
-        this.items.forEach(item  => {
-          item.children=null;
+        this.items.forEach(item => {
+          item.children = null;
         });
-        this.showTree = this.active.length ? true :false;
+        this.showTree = this.active.length ? true : false;
       } else {
-        this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
+        this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name);
       }
     },
     checkbox() {
-      if (this.checkbox){
-        this.selectionNotes=[this.home.noteId];
+      if (this.checkbox) {
+        const allNotesIds = this.allItems.map(note => note.noteId);
+        this.selectionNotes = allNotesIds;
         this.$refs.treeSearch.updateAll(true);
       } else {
-        this.selectionNotes= [];
+        this.selectionNotes = [];
         this.$refs.treeSearch.updateAll(false);
-        this.open(this.home.noteId,'exportNotes');
+        this.open(this.home.noteId, 'exportNotes');
       }
     },
     filter() {
