@@ -326,6 +326,9 @@ export default {
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
+      if (!this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)) {
+        this.updateNote(this.note);
+      }
     },
     hasManualChildren () {
       if (this.hasManualChildren) {
@@ -461,8 +464,6 @@ export default {
     this.$root.$on('import-notes', (uploadId,overrideMode) => {
       this.importNotes(uploadId,overrideMode);
     });
-
-    
   },
   mounted() {
     if (this.noteId) {
@@ -776,6 +777,22 @@ export default {
       const noteName = item.path.split('%2F').pop();
       this.$root.$emit('open-note-by-name', noteName);
     },
+    updateNote(noteParam) {
+      const note = {
+        id: noteParam.id,
+        title: noteParam.title,
+        name: noteParam.name,
+        wikiType: noteParam.wikiType,
+        wikiOwner: noteParam.wikiOwner,
+        content: '',
+        parentPageId: null,
+      };
+      if (note.id) {
+        this.$notesService.updateNoteById(note).catch(e => {
+          console.error('Error when update note page', e);
+        });
+      }
+    }
   }
 };
 </script>

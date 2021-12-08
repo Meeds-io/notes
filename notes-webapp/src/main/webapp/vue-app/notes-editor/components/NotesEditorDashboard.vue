@@ -347,7 +347,6 @@ export default {
       if (data) {
         this.note = data;
         CKEDITOR.instances['notesContent'].setData(data.content);
-        console.warn('fill', this.note);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -581,11 +580,9 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
-            console.warn('instance ready', self.note);
             window.setTimeout(() => self.setFocus(), 50);
             window.setTimeout(() => {
-              if ((self.note.content === '') || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
-                CKEDITOR.instances['notesContent'].setData('');
+              if ((self.note.content === '')) {
                 self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
                   if (data && data.children && data.children.length) {
                     CKEDITOR.instances['notesContent'].execCommand('ToC');
