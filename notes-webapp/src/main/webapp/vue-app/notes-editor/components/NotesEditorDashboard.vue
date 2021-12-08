@@ -582,6 +582,7 @@ export default {
                 });
               });
             console.warn('instance ready', self.note);
+            window.setTimeout(() => self.setFocus(), 50);
             window.setTimeout(() => {
               if ((self.note.content === '') || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
                 CKEDITOR.instances['notesContent'].setData('');
@@ -591,14 +592,12 @@ export default {
                   }
                 });
               } 
-            }, 500);
+            }, 1000);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
-            
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
             self.$root.$applicationLoaded();
-            window.setTimeout(() => self.setFocus(), 50);
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
