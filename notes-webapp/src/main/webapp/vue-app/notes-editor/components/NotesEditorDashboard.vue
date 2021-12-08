@@ -327,6 +327,18 @@ export default {
           this.$notesService.getNoteById(id).then(data => {
             this.fillNote(data);
             this.initActualNoteDone = true;
+          }).finally(() => {
+            window.setTimeout(() => {
+              if ((this.note.content.trim().length === 0) || ( this.note.content.includes('Welcome to Space') && this.note.content.includes('Notes Home'))) {
+                CKEDITOR.instances['notesContent'].setData('');
+                this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
+                  this.noteChildren = data && data.children || [];
+                  if (data && data.children && data.children.length) {
+                    this.$root.$emit('execToC');
+                  }
+                });
+              }
+            }, 200);
           });
         }
       });
@@ -581,18 +593,11 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
+
+            self.$root.$on('execToC', () => {
+              CKEDITOR.instances['notesContent'].execCommand('ToC');
+            });
             
-            window.setTimeout(() => {
-              if ((self.note.content.trim().length === 0) || ( self.note.content.includes('Welcome to Space') && self.note.content.includes('Notes Home'))) {
-                CKEDITOR.instances['notesContent'].setData('');
-                self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                  this.noteChildren = data && data.children || [];
-                  if (data && data.children && data.children.length) {
-                    CKEDITOR.instances['notesContent'].execCommand('ToC');
-                  }
-                });
-              }
-            }, 200);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             
             if ( treeviewParentWrapper ) {
