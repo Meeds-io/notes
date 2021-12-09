@@ -346,6 +346,7 @@ export default {
       this.initActualNoteDone = false;
       if (data) {
         this.note = data;
+        console.warn('this.note',this.note);
         CKEDITOR.instances['notesContent'].setData(data.content);
         this.actualNote = {
           id: this.note.id,
@@ -580,20 +581,38 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
-            window.setTimeout(() => self.setFocus(), 50);
+            
+            console.warn('self.note',self.note);
             window.setTimeout(() => {
-              if ((self.note.content === '')) {
+              if ((self.note.content === '' && self.note.name )) {
                 self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
                   if (data && data.children && data.children.length) {
                     CKEDITOR.instances['notesContent'].execCommand('ToC');
                   }
                 });
               } 
-            }, 1000);
+            }, 500);
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
+
+            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+            if ( removeTreeviewBtn ) {
+              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+                if ( treeviewParentWrapper) {
+                  const newLine = treeviewParentWrapper.getNext();
+                  treeviewParentWrapper.remove();
+                  if ( newLine.$.innerText.trim().length === 0) {
+                    newLine.remove();
+                  }
+                  self.note.content = evt.editor.getData();
+                }
+                self.setFocus();
+              } );
+            }
+            window.setTimeout(() => self.setFocus(), 50);
             self.$root.$applicationLoaded();
           },
           change: function (evt) {
