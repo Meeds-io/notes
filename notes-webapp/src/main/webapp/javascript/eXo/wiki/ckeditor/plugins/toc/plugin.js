@@ -16,7 +16,8 @@ CKEDITOR.plugins.add( 'toc', {
 
     editor.addCommand( 'ToC', {
 
-      exec: function( editor) {
+      exec: function( editor, text) {
+        console.warn('the text is:',text);
          const childrenWrapper = editor.document.getById( 'note-children-container' );
           if (childrenWrapper) {
             document.dispatchEvent(new CustomEvent('note-navigation-plugin'));

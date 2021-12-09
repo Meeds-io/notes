@@ -115,7 +115,7 @@ export default {
       } else if ( id === 'note') {
         this.$root.$emit('display-treeview-items');
       } else if ( id === 'Navigation') {
-        this.instance.execCommand('ToC');
+        this.instance.execCommand('ToC', {});
         console.warn('sent');
         this.treeviewInserted = true;
         this.close();

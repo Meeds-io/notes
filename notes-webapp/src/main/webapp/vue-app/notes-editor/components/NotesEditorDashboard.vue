@@ -553,7 +553,7 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            self.note.content = evt.editor.getData();
+            //self.note.content = evt.editor.getData();
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
@@ -583,15 +583,16 @@ export default {
               });
             
             console.warn('self.note',self.note);
-            window.setTimeout(() => {
-              if ((self.note.content.trim().length === 0 && self.note.name )) {
-                self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                  if (data && data.children && data.children.length) {
-                    self.$nextTick().then(() => CKEDITOR.instances['notesContent'].execCommand('ToC'));
-                  }
-                });
-              } 
-            }, 500);
+            if ((self.note.content.trim().length === 0 && self.note.name )) {
+              self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
+                if (data && data.children && data.children.length) {
+                  self.$nextTick().then(() => CKEDITOR.instances['notesContent'].execCommand('ToC',self.note));
+                }
+              });
+            } 
+            /*window.setTimeout(() => {
+
+            }, 500);*/
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
