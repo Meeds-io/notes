@@ -584,10 +584,10 @@ export default {
             
             console.warn('self.note',self.note);
             window.setTimeout(() => {
-              if ((self.note.content === '' && self.note.name )) {
+              if ((self.note.content.trim().length === 0 && self.note.name )) {
                 self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
                   if (data && data.children && data.children.length) {
-                    CKEDITOR.instances['notesContent'].execCommand('ToC');
+                    self.$nextTick().then(() => CKEDITOR.instances['notesContent'].execCommand('ToC'));
                   }
                 });
               } 
