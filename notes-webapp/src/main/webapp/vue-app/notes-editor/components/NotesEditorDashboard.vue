@@ -276,7 +276,11 @@ export default {
 
   },
   mounted() {
-    this.init();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (!urlParams.has('noteId')) {
+      this.init();
+    }
   },
   methods: {
     init() {
@@ -324,7 +328,8 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id).then(data => {
-            this.fillNote(data);
+            this.init();
+            this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
         }
@@ -347,7 +352,7 @@ export default {
       if (data) {
         this.note = data;
         console.warn('this.note',this.note);
-        CKEDITOR.instances['notesContent'].setData(data.content);
+        
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -357,7 +362,21 @@ export default {
           owner: this.note.owner,
           breadcrumb: this.note.breadcrumb,
           toBePublished: this.note.toBePublished,
-        };     
+        };
+        const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
+        +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
+        +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
+        CKEDITOR.instances['notesContent'].setData(data.content);
+        console.warn('self.note',this.note);
+        if ((this.note.content.trim().length === 0)) {
+          this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
+            if (data && data.children && data.children.length) {
+              //CKEDITOR.instances['notesContent'].execCommand('ToC',this.note);
+              CKEDITOR.instances['notesContent'].setData(childContainer);
+              this.setFocus();
+            }
+          });
+        } 
       }
     },
     postNote(toPublish) {
@@ -582,17 +601,6 @@ export default {
                 });
               });
             
-            console.warn('self.note',self.note);
-            if ((self.note.content.trim().length === 0 && self.note.name )) {
-              self.$notesService.getNoteById(self.noteId, '','','',true).then(data => {
-                if (data && data.children && data.children.length) {
-                  self.$nextTick().then(() => CKEDITOR.instances['notesContent'].execCommand('ToC',self.note));
-                }
-              });
-            } 
-            /*window.setTimeout(() => {
-
-            }, 500);*/
             const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
