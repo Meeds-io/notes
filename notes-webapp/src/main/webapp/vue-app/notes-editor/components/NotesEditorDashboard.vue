@@ -167,7 +167,7 @@ export default {
       }
     },
     initCompleted() {
-      return this.initDone && (this.initActualNoteDone || !this.noteId);
+      return this.initDone && (this.initActualNoteDone || this.noteId);
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
@@ -276,11 +276,7 @@ export default {
 
   },
   mounted() {
-    const queryPath = window.location.search;
-    const urlParams = new URLSearchParams(queryPath);
-    if (!urlParams.has('noteId')) {
-      this.init();
-    }
+    this.init();
   },
   methods: {
     init() {
@@ -328,7 +324,6 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id).then(data => {
-            this.init();
             this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
