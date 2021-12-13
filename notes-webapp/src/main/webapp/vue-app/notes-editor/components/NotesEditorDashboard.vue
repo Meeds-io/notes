@@ -277,11 +277,7 @@ export default {
 
   },
   mounted() {
-    const queryPath = window.location.search;
-    const urlParams = new URLSearchParams(queryPath);
-    if (!urlParams.has('noteId')) {
-      this.init();
-    }
+    this.init();
   },
   methods: {
     init() {
