@@ -167,7 +167,7 @@ export default {
       }
     },
     initCompleted() {
-      return this.initDone && (this.initActualNoteDone || this.noteId);
+      return this.initDone && ((this.initActualNoteDone || this.noteId) || (this.initActualNoteDone || !this.noteId)) ;
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
@@ -175,12 +175,12 @@ export default {
   },
   watch: {
     'note.title'() {
-      if (this.note.title !== this.actualNote.title) {
+      if (this.note.title !== this.actualNote.title ) {
         this.autoSave();
       }
     },
     'note.content'() {
-      if (this.note.content !== this.actualNote.content && !this.isDefaultContent(this.note.content)) {
+      if (this.note.content !== this.actualNote.content) {
         this.autoSave();
       }
     },
@@ -421,6 +421,7 @@ export default {
             // delete draft note
             const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
             this.deleteDraftNote(draftNote, notePath);
+            window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.enableClickOnce();
