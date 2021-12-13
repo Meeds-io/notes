@@ -62,9 +62,6 @@ export default {
     treeviewInserted: false
   }),
   computed: {
-    showTOC() {
-      return this.treeviewInserted;
-    },
     plugins() {
       const pluginsList = [
         { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
@@ -75,7 +72,7 @@ export default {
       if (eXo.ecm){
         pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
       }
-      if (this.hideTOC || !this.noteChildren.length) {
+      if (this.hideNavigation || !this.noteChildren.length) {
         return pluginsList.filter( plugin => plugin.id !== 'Navigation' );
       } else {
         return pluginsList;
@@ -93,7 +90,7 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
-      this.hideTOC = false;
+      this.hideNavigation = false;
       this.retrieveNoteChildren(this.noteId);
     }
   },

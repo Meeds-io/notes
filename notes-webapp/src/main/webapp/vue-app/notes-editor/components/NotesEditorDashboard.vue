@@ -181,7 +181,7 @@ export default {
       }
     },
     'note.content'() {
-      if (this.note.content !== this.actualNote.content && !this.isDefaultContent(this.note.content)) {
+      if (this.note.content !== this.actualNote.content) {
         this.autoSave();
       }
     },
