@@ -4,6 +4,7 @@
     role="main"
     flat>
     <div>
+      <notes-notification-alert />
       <div
         v-if="isAvailableNote"
         class="notes-application white border-radius pa-6"
@@ -53,7 +54,10 @@
                 </template>
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
-
+              <exo-notes-favorite-action
+                v-if="note.activityId"
+                :note="note"
+                :activity-id="note.activityId" />
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
