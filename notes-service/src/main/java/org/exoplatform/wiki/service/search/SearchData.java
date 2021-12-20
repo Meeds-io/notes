@@ -32,6 +32,8 @@ public class SearchData {
   public String pageId;
   
   private long offset = 0;
+
+  private boolean isFavorites;
   
   protected String sort;
   
@@ -126,5 +128,13 @@ public class SearchData {
 
   public void setUserId(String userId) {
     this.userId = userId;
+  }
+
+  public boolean isFavorites() {
+    return isFavorites;
+  }
+
+  public void setFavorites(boolean favorites) {
+    isFavorites = favorites;
   }
 }

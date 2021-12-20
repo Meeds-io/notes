@@ -110,9 +110,11 @@ public class JPADataStorage implements DataStorage {
     WikiElasticSearchServiceConnector searchService = PortalContainer.getInstance().getComponentInstanceOfType(WikiElasticSearchServiceConnector.class);
 
 
-    List<SearchResult> searchResults = searchService.searchWiki(getSearchedText(wikiSearchData), wikiSearchData.getUserId(),
-        (int) wikiSearchData.getOffset(),
-        wikiSearchData.getLimit());
+    List<SearchResult> searchResults = searchService.searchWiki(getSearchedText(wikiSearchData),
+                                                                wikiSearchData.getUserId(),
+                                                                wikiSearchData.isFavorites(),
+                                                                (int) wikiSearchData.getOffset(),
+                                                                wikiSearchData.getLimit());
 
     return new ObjectPageList<>(searchResults, searchResults.size());
   }

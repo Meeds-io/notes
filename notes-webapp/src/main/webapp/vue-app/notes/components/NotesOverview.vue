@@ -55,7 +55,6 @@
                 <span class="caption">{{ $t('notes.label.editPage') }}</span>
               </v-tooltip>
               <exo-notes-favorite-action
-                v-if="note.activityId"
                 :note="note"
                 :activity-id="note.activityId" />
               <v-tooltip bottom>

@@ -16,11 +16,18 @@
  */
 package org.exoplatform.wiki.service.search;
 
-import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.rest.entity.IdentityEntity;
+
+import java.util.List;
+import java.util.Map;
 
 public class TitleSearchResult {
   private String title;
+
+  private String id;
+
+  private String activityId;
 
   private IdentityEntity poster;
 
@@ -33,22 +40,26 @@ public class TitleSearchResult {
   private SearchResultType type;
 
   private String url;
-  
-  public TitleSearchResult(String title, IdentityEntity poster, IdentityEntity wikiOwner, String excerpt, long createdDate, SearchResultType type, String url) {
-    this.title = title;
-    this.poster = poster;
-    this.wikiOwner = wikiOwner;
-    this.createdDate = createdDate;
-    this.excerpt = excerpt;
-    this.createdDate = createdDate;
-    this.type = type;
-    this.url = url;
+
+  private Map<String, List<MetadataItem>> metadatas;
+
+  public TitleSearchResult() {
   }
 
-  public TitleSearchResult(String title, SearchResultType type, String url) {
-    this.title = title;
-    this.type = type;
-    this.url = url;
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getActivityId() {
+    return activityId;
+  }
+
+  public void setActivityId(String activityId) {
+    this.activityId = activityId;
   }
 
   public SearchResultType getType() {
@@ -105,5 +116,13 @@ public class TitleSearchResult {
 
   public void setCreatedDate(long createdDate) {
     this.createdDate = createdDate;
+  }
+
+  public Map<String, List<MetadataItem>> getMetadatas() {
+    return metadatas;
+  }
+
+  public void setMetadatas(Map<String, List<MetadataItem>> metadatas) {
+    this.metadatas = metadatas;
   }
 }

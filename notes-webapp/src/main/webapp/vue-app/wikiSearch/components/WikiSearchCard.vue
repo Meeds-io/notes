@@ -3,6 +3,12 @@
     class="wikiSearchCard d-flex flex-column border-radius box-shadow"
     flat
     min-height="227">
+    <exo-notes-favorite-action
+      :note="result"
+      absolute
+      top="0"
+      right="0"
+      @removed="$emit('refresh-favorite')" />
     <v-card-text v-if="poster" class="px-2 pt-2 pb-0">
       <exo-user-avatar
         :username="posterUsername"

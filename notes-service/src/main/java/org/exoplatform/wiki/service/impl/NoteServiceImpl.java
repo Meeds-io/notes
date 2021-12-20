@@ -3,10 +3,10 @@ package org.exoplatform.wiki.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
@@ -23,6 +23,9 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
@@ -44,7 +47,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class NoteServiceImpl implements NoteService {
@@ -249,6 +251,8 @@ public class NoteServiceImpl implements NoteService {
     updatedPage.setCanImport(note.isCanImport());
     updatedPage.setCanView(note.isCanView());
     updatedPage.setAppName(note.getAppName());
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId());
+    updatedPage.setMetadatas(metadata);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
     return updatedPage;
@@ -445,6 +449,8 @@ public class NoteServiceImpl implements NoteService {
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId());
+      page.setMetadatas(metadata);
     }
     return page;
   }
@@ -524,6 +530,8 @@ public class NoteServiceImpl implements NoteService {
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id);
+      page.setMetadatas(metadata);
       if (StringUtils.isNotEmpty(source)) {
         if (source.equals("tree")) {
           postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
@@ -1530,4 +1538,16 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
+  private Map<String, List<MetadataItem>> retrieveMetadataItems(String noteId) {
+    MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
+    MetadataObject metadataObject = new MetadataObject(Utils.NOTES_METADATA_OBJECT_TYPE, noteId);
+    List<MetadataItem> metadataItems = metadataService.getMetadataItemsByObject(metadataObject);
+    Map<String, List<MetadataItem>> metadata = new HashMap<>();
+    metadataItems.forEach(metadataItem -> {
+      String type = metadataItem.getMetadata().getType().getName();
+      metadata.computeIfAbsent(type, k -> new ArrayList<>());
+      metadata.get(type).add(metadataItem);
+    });
+    return metadata;
+  }
 }

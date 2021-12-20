@@ -18,10 +18,12 @@ package org.exoplatform.wiki.mow.api;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.wiki.service.BreadcrumbData;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -86,6 +88,8 @@ public class Page {
   private boolean hasChild;
 
   private Page parent;
+
+  private Map<String, List<MetadataItem>> metadatas;
 
   public boolean isDraftPage() {
     return false;

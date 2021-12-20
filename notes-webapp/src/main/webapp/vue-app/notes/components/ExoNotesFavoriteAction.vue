@@ -1,11 +1,12 @@
 <template>
   <favorite-button
-    :id="note.activityId"
+    :id="favoriteId"
     :favorite="isFavorite"
     :absolute="absolute"
     :top="top"
     :right="right"
-    type="activity"
+    :space-id="spaceId"
+    :type="favoriteType"
     @removed="removed"
     @remove-error="removeError"
     @added="added"
@@ -33,20 +34,26 @@ export default {
     },
   },
   data: () => ({
-    isFavorite: false,
+    spaceId: null,
   }),
-  created() {
-    this.$activityService.getActivityById(this.note.activityId)
-      .then(fullActivity => {
-        this.isFavorite = fullActivity && fullActivity.metadatas && fullActivity.metadatas.favorites && fullActivity.metadatas.favorites.length;
-      });
+  computed: {
+    isFavorite() {
+      return this.note.metadatas && this.note.metadatas.favorites && this.note.metadatas.favorites.length;
+    },
+    favoriteType() {
+      return this.note.activityId ? 'activity' : 'notes';
+    },
+    favoriteId() {
+      return this.note.activityId ? this.note.activityId : this.note.id;
+    }
   },
   methods: {
     removed() {
       this.displayAlert(this.$t('Favorite.tooltip.SuccessfullyDeletedFavorite'));
-      this.$favoriteService.removeFavorite('notes', this.note.id)
+      this.$favoriteService.removeFavorite(this.favoriteType, this.favoriteId)
         .then(() => {
           this.isFavorite = false;
+          this.$emit('removed');
         })
         .catch(() => this.$emit('remove-error'));
     },
@@ -55,9 +62,10 @@ export default {
     },
     added() {
       this.displayAlert(this.$t('Favorite.tooltip.SuccessfullyAddedAsFavorite'));
-      this.$favoriteService.addFavorite('notes', this.note.id)
+      this.$favoriteService.addFavorite(this.favoriteType, this.favoriteId)
         .then(() => {
           this.isFavorite = true;
+          this.$emit('added');
         })
         .catch(() => this.$emit('add-error'));
     },

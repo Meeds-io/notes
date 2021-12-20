@@ -7,10 +7,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang.StringUtils;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.*;
+import org.exoplatform.social.common.ObjectAlreadyExistsException;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -19,6 +21,8 @@ import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.SpaceStorageException;
+import org.exoplatform.social.metadata.favorite.FavoriteService;
+import org.exoplatform.social.metadata.favorite.model.Favorite;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.*;
@@ -292,6 +296,16 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       if (!StringUtils.isEmpty(activityId)) {
         page.setActivityId(activityId);
         wikiService.updatePage(page, null);
+      }
+
+      if (!page.getMetadatas().isEmpty()) {
+        FavoriteService favoriteService = CommonsUtils.getService(FavoriteService.class);
+        Favorite favorite = new Favorite("activity", activity.getId(), "", Long.parseLong(userIdentity.getId()));
+        try {
+          favoriteService.createFavorite(favorite);
+        } catch (ObjectAlreadyExistsException e) {
+          LOG.warn("Metadata item already exist for activity with id {}", activity.getId(), e);
+        }
       }
     }
   }
