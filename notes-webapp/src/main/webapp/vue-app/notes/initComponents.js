@@ -7,6 +7,8 @@ import NoteImportDrawer from './components/NoteImportDrawer.vue';
 import AttachmentsNotesUploadInput from './components/importNotes/AttachmentsNotesUploadInput.vue';
 import AttachmentsUploadedNotes from './components/importNotes/AttachmentsNotesUploaded.vue';
 import AttachmentsNotesItem from './components/importNotes/AttachmentsNotesItem.vue';
+import ExoNotesFavoriteAction from './components/ExoNotesFavoriteAction.vue';
+import NotesNotificationAlert from './components/NotesNotificationAlert.vue';
 
 const components = {
   'notes-overview': NotesOverview,
@@ -17,7 +19,9 @@ const components = {
   'note-import-drawer': NoteImportDrawer,
   'attachments-notes-upload-input': AttachmentsNotesUploadInput,
   'attachments-uploaded-notes': AttachmentsUploadedNotes,
-  'attachments-notes-item': AttachmentsNotesItem
+  'attachments-notes-item': AttachmentsNotesItem,
+  'exo-notes-favorite-action': ExoNotesFavoriteAction,
+  'notes-notification-alert': NotesNotificationAlert
 };
 
 for (const key in components) {

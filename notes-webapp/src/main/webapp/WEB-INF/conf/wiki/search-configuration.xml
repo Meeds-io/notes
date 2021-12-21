@@ -45,6 +45,9 @@
             <field name="enabled">
               <boolean>${exo.search.wiki.enabled:true}</boolean>
             </field>
+            <field name="favoritesEnabled">
+              <boolean>true</boolean>
+            </field>
             <field name="jsModule">
               <string>SHARED/wikiSearchCard</string>
             </field>
