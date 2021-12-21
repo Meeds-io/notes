@@ -26,25 +26,20 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.search.DocumentWithMetadata;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.web.WebAppController;
-import org.exoplatform.web.controller.router.Router;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
-import org.exoplatform.wiki.jpa.entity.PermissionEntity;
 import org.exoplatform.wiki.mow.api.WikiType;
 import org.exoplatform.wiki.utils.Utils;
-import org.json.simple.JSONObject;
 
-import javax.swing.text.EditorKit;
-import javax.swing.text.html.HTMLEditorKit;
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,15 +53,18 @@ import java.util.Set;
  */
 public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConnector {
 
-  public static final String TYPE   = "wiki-page";
+  public static final String    TYPE   = "wiki-page";
 
-  private static final Log   LOGGER = ExoLogger.getExoLogger(WikiPageIndexingServiceConnector.class);
+  private static final Log      LOGGER = ExoLogger.getExoLogger(WikiPageIndexingServiceConnector.class);
 
-  private final PageDAO      dao;
+  private final PageDAO         dao;
 
-  public WikiPageIndexingServiceConnector(InitParams initParams, PageDAO dao) {
+  private final MetadataService metadataService;
+
+  public WikiPageIndexingServiceConnector(InitParams initParams, PageDAO dao, MetadataService metadataService) {
     super(initParams);
     this.dao = dao;
+    this.metadataService = metadataService;
   }
 
   @Override
@@ -141,8 +139,15 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
         wikiOwner = dao.validateGroupWikiOwner(wikiOwner);
       }
       fields.put("wikiOwner", wikiOwner);
+      DocumentWithMetadata document = new DocumentWithMetadata();
+      document.setId(id);
+      document.setUrl(page.getUrl());
+      document.setLastUpdatedDate(page.getUpdatedDate());
+      document.setPermissions(computePermissions(page));
+      document.setFields(fields);
+      addDocumentMetadata(document, Long.toString(page.getId()));
 
-      return new Document(id, page.getUrl(), page.getUpdatedDate(), computePermissions(page), fields);
+      return document;
     } catch (Exception e) {
       LOGGER.info("Cannot index page with id {} ", id, e);
       return null;
@@ -193,5 +198,11 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
       }
     }
     return result;
+  }
+
+  private void addDocumentMetadata(DocumentWithMetadata document, String documentId) {
+    MetadataObject metadataObject = new MetadataObject(Utils.NOTES_METADATA_OBJECT_TYPE, documentId);
+    List<MetadataItem> metadataItems = metadataService.getMetadataItemsByObject(metadataObject);
+    document.setMetadataItems(metadataItems);
   }
 }

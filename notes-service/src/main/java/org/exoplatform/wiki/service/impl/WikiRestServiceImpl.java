@@ -33,6 +33,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.social.rest.entity.IdentityEntity;
@@ -40,6 +41,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.Relations;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
@@ -83,6 +85,8 @@ public class WikiRestServiceImpl implements ResourceContainer {
 
   private final WikiService      wikiService;
 
+  private final NoteService noteService;
+
   private final ResourceBundleService resourceBundleService;
 
   private static Log             log = ExoLogger.getLogger("wiki:WikiRestService");
@@ -91,8 +95,9 @@ public class WikiRestServiceImpl implements ResourceContainer {
   
   private ObjectFactory objectFactory = new ObjectFactory();
   
-  public WikiRestServiceImpl(WikiService wikiService, ResourceBundleService resourceBundleService) {
+  public WikiRestServiceImpl(WikiService wikiService, NoteService noteService, ResourceBundleService resourceBundleService) {
     this.wikiService = wikiService;
+    this.noteService = noteService;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
     cc.setNoCache(true);
@@ -548,29 +553,60 @@ public class WikiRestServiceImpl implements ResourceContainer {
                              @QueryParam("keyword") String keyword,
                              @QueryParam("limit") int limit,
                              @QueryParam("wikiType") String wikiType,
-                             @QueryParam("wikiOwner") String wikiOwner) throws Exception {
+                             @QueryParam("wikiOwner") String wikiOwner,
+                             @QueryParam("favorites") boolean favorites) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
 
       keyword = keyword.toLowerCase();
-      WikiSearchData data = new WikiSearchData(keyword, ConversationState.getCurrent().getIdentity().getUserId());
+      Identity currentIdentity = ConversationState.getCurrent().getIdentity();
+      WikiSearchData data = new WikiSearchData(keyword, currentIdentity.getUserId());
       data.setLimit(limit);
+      data.setFavorites(favorites);
       List<SearchResult> results = wikiService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
-        org.exoplatform.wiki.mow.api.Page page = wikiService.getPageOfWikiByName(searchResult.getWikiType(), searchResult.getWikiOwner(), searchResult.getPageName());
-        if(page != null) {
+        org.exoplatform.wiki.mow.api.Page page = noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
+                                                                                     searchResult.getWikiOwner(),
+                                                                                     searchResult.getPageName(),
+                                                                                     currentIdentity);
+        if (page != null) {
           page.setUrl(Utils.getPageUrl(page));
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
-            org.exoplatform.wiki.mow.api.Attachment attachment = wikiService.getAttachmentOfPageByName(searchResult.getAttachmentName(), page);
-            titleSearchResults.add(new TitleSearchResult(attachment.getName(), searchResult.getType(), attachment.getDownloadURL()));
-          } else if (searchResult.getPoster() != null){
+            org.exoplatform.wiki.mow.api.Attachment attachment =
+                                                               wikiService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
+                                                                                                     page);
+            TitleSearchResult titleSearchResult = new TitleSearchResult();
+            titleSearchResult.setTitle(attachment.getName());
+            titleSearchResult.setId(page.getId());
+            titleSearchResult.setActivityId(page.getActivityId());
+            titleSearchResult.setType(searchResult.getType());
+            titleSearchResult.setUrl(attachment.getDownloadURL());
+            titleSearchResult.setMetadatas(page.getMetadatas());
+            titleSearchResults.add(titleSearchResult);
+          } else if (searchResult.getPoster() != null) {
             IdentityEntity posterIdentity = EntityBuilder.buildEntityIdentity(searchResult.getPoster(), uriInfo.getPath(), "all");
-            IdentityEntity wikiOwnerIdentity = searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(), uriInfo.getPath(), "all") : null;
-            titleSearchResults.add(new TitleSearchResult(searchResult.getTitle(), posterIdentity, wikiOwnerIdentity, searchResult.getExcerpt(), searchResult.getCreatedDate().getTimeInMillis(), searchResult.getType(), page.getUrl()));
+            IdentityEntity wikiOwnerIdentity =
+                                             searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
+                                                                                                                             uriInfo.getPath(),
+                                                                                                                             "all")
+                                                                                         : null;
+            TitleSearchResult titleSearchResult = new TitleSearchResult();
+            titleSearchResult.setTitle(searchResult.getTitle());
+            titleSearchResult.setId(page.getId());
+            titleSearchResult.setActivityId(page.getActivityId());
+            titleSearchResult.setPoster(posterIdentity);
+            titleSearchResult.setWikiOwner(wikiOwnerIdentity);
+            titleSearchResult.setExcerpt(searchResult.getExcerpt());
+            titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
+            titleSearchResult.setType(searchResult.getType());
+            titleSearchResult.setUrl(page.getUrl());
+            titleSearchResult.setMetadatas(page.getMetadatas());
+            titleSearchResults.add(titleSearchResult);
           }
         } else {
-          log.warn("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":" + searchResult.getPageName());
+          log.warn("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
+              + searchResult.getPageName());
         }
       }
       return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();

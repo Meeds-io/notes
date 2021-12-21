@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.wiki.utils.Utils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -40,7 +41,6 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -109,20 +109,26 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, int offset, int limit) {
-    List<SearchResult> searchResults = filteredWikiSearch(searchedText,userId, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, String userId, boolean isFavorites, int offset, int limit) {
+    List<SearchResult> searchResults = filteredWikiSearch(searchedText, userId, isFavorites, offset, limit);
     return searchResults;
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, int offset, int limit) {
+  protected List<SearchResult> filteredWikiSearch(String query, String userId, boolean isFavorites, int offset, int limit) {
     Set<String> ids = getUserSpaceIds(userId);
-    String esQuery = buildQueryStatement(ids, query, offset, limit);
+    String esQuery = buildQueryStatement(ids, userId, query, isFavorites, offset, limit);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
 
-  private String buildQueryStatement(Set<String> calendarOwnersOfUser, String term, long offset, long limit) {
+  private String buildQueryStatement(Set<String> calendarOwnersOfUser,
+                                     String userId,
+                                     String term,
+                                     boolean isFavorites,
+                                     long offset,
+                                     long limit) {
     term = removeSpecialCharacters(term);
+    term = StringUtils.isBlank(term) ? "*:*" : term;
     List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
       word = word.trim();
       if (word.length() > 5) {
@@ -130,9 +136,12 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       return word;
     }).collect(Collectors.toList());
+    Map<String, List<String>> metadataFilters = buildMetadataFilter(isFavorites, userId);
+    String metadataQuery = buildMetadataQueryStatement(metadataFilters);
     String termQuery = StringUtils.join(termsQuery, " AND ");
     return retrieveSearchQuery().replace("@term@", term)
                                 .replace("@term_query@", termQuery)
+                                .replace("@metadatas_query@", metadataQuery)
                                 .replace("@permissions@", StringUtils.join(calendarOwnersOfUser, ","))
                                 .replace("@offset@", String.valueOf(offset))
                                 .replace("@limit@", String.valueOf(limit));
@@ -279,6 +288,29 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   }
   public void setSearchQuery(String searchQuery){
     this.searchQuery=searchQuery;
+  }
+
+  private String buildMetadataQueryStatement(Map<String, List<String>> metadataFilters) {
+    StringBuilder metadataQuerySB = new StringBuilder();
+    Set<Map.Entry<String, List<String>>> metadataFilterEntries = metadataFilters.entrySet();
+    for (Map.Entry<String, List<String>> metadataFilterEntry : metadataFilterEntries) {
+      metadataQuerySB.append("{\"terms\":{\"metadatas.")
+                     .append(metadataFilterEntry.getKey())
+                     .append(".metadataName.keyword")
+                     .append("\": [\"")
+                     .append(StringUtils.join(metadataFilterEntry.getValue(), "\",\""))
+                     .append("\"]}},");
+    }
+    return metadataQuerySB.toString();
+  }
+
+  private Map<String, List<String>> buildMetadataFilter(boolean isFavorites, String userId) {
+    Identity viewerIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, userId);
+    Map<String, List<String>> metadataFilters = new HashMap<>();
+    if (isFavorites) {
+      metadataFilters.put(FavoriteService.METADATA_TYPE.getName(), Collections.singletonList(viewerIdentity.getId()));
+    }
+    return metadataFilters;
   }
 
 }

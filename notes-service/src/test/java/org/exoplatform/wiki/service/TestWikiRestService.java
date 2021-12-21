@@ -20,6 +20,7 @@ import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.search.SearchResult;
@@ -49,7 +50,8 @@ public class TestWikiRestService {
   public void shouldGetEmotionIcon() throws WikiException, IOException {
     // Given
     WikiService wikiService = mock(WikiService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
 
     EmotionIcon emotionIcon = new EmotionIcon();
     emotionIcon.setName("test.gif");
@@ -72,7 +74,8 @@ public class TestWikiRestService {
   public void shouldGetNotFoundResponseWhenEmotionIconDoesNotExist() throws WikiException {
     // Given
     WikiService wikiService = mock(WikiService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
 
     when(wikiService.getEmotionIconByName("test.gif")).thenReturn(null);
 
@@ -91,6 +94,7 @@ public class TestWikiRestService {
     ConversationState.setCurrent(new ConversationState(root));
     // Given
     WikiService wikiService = mock(WikiService.class);
+    NoteService noteService = mock(NoteService.class);
     EntityBuilder entityBuilder = mock(EntityBuilder.class);
     java.util.Calendar cDate1 = java.util.Calendar.getInstance();
     UriInfo uriInfo = mock(UriInfo.class);
@@ -121,6 +125,7 @@ public class TestWikiRestService {
     entity.setId("1");
     entity.setDeleted(false);
     when(wikiService.getPageOfWikiByName(any(), any(), any())).thenReturn(page);
+    when(noteService.getNoteOfNoteBookByName(any(), any(), any(), any(org.exoplatform.services.security.Identity.class))).thenReturn(page);
     List<org.exoplatform.wiki.service.search.SearchResult> results = new ArrayList<org.exoplatform.wiki.service.search.SearchResult>();
     results.add(result1);
     results.add(result2);
@@ -129,10 +134,10 @@ public class TestWikiRestService {
     when(wikiService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
     when(uriInfo.getPath()).thenReturn("/wiki/contextsearch");
     when(EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString())).thenReturn(entity);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
 
     // When
-    Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua");
+    Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua", false);
 
     // Then
     assertEquals(200, response.getStatus());
@@ -145,7 +150,8 @@ public class TestWikiRestService {
   public void testGetPageAttachmentResponseHeader() throws WikiException {
     //Given
     WikiService wikiService = mock(WikiService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
     
     Wiki wiki = new Wiki("user", "root");
     when(wikiService.createWiki("portal", "wikiAttachement1")).thenReturn(wiki);
@@ -218,7 +224,8 @@ public class TestWikiRestService {
     //Given
     WikiService wikiService = mock(WikiService.class);
     UriInfo uriInfo = mock(UriInfo.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
     
     Wiki wiki = new Wiki("user", "root");
     when(wikiService.createWiki("portal", "wikiAttachement1")).thenReturn(wiki);
@@ -249,7 +256,8 @@ public class TestWikiRestService {
     //Given
     WikiService wikiService = mock(WikiService.class);
     UriInfo uriInfo = mock(UriInfo.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
     EnvironmentContext.setCurrent(new EnvironmentContext());
     ServletContext servletContext = mock(ServletContext.class);
     when(servletContext.getResourceAsStream(anyString())).thenReturn(new ByteArrayInputStream("<div>$content</div>".getBytes()));
@@ -285,7 +293,8 @@ public class TestWikiRestService {
   public void testSaveDraftName() throws Exception {
     //Given
     WikiService wikiService = mock(WikiService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, new MockResourceBundleService());
+    NoteService noteService = mock(NoteService.class);
+    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
 
     DraftPage newDraftPage = new DraftPage();
     newDraftPage.setTitle("newDraft");

@@ -131,7 +131,7 @@ public class WikiElasticSearchServiceConnectorTest {
     Mockito.when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
 
     // when
-    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", 0, 20);
+    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", false, 0, 20);
 
     // Then
     assertNotNull(searchResults);
