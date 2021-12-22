@@ -20,60 +20,70 @@
               id="note-actions-menu"
               v-show="loadData && !hideElementsForSavingPDF"
               class="notes-header-icons text-right">
-              <v-tooltip bottom v-if="!isMobile && !note.draftPage && note.canManage">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    class="pa-0"
-                    v-on="on"
-                    v-bind="attrs"
-                    @click="addNote"
-                    icon>
-                    <v-icon
-                      size="22"
-                      class="clickable add-note-click">
-                      mdi-plus
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span class="caption">{{ $t('notes.label.addPage') }}</span>
-              </v-tooltip>
-              <v-tooltip bottom v-if="note.canManage && !isMobile">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    class="pa-0"
-                    icon
-                    v-on="on"
-                    v-bind="attrs"
-                    @click="editNote">
-                    <v-icon
-                      size="19"
-                      class="clickable edit-note-click">
-                      mdi-square-edit-outline
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span class="caption">{{ $t('notes.label.editPage') }}</span>
-              </v-tooltip>
+              <div
+                class="d-inline-flex">
+                <v-tooltip bottom v-if="!isMobile && !note.draftPage && note.canManage">
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      v-on="on"
+                      v-bind="attrs"
+                      class="pa-0 mt-0"
+                      @click="addNote"
+                      icon>
+                      <v-icon
+                        size="22"
+                        class="clickable add-note-click">
+                        mdi-plus
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.addPage') }}</span>
+                </v-tooltip>
+              </div>
+              <div
+                class="d-inline-flex">
+                <v-tooltip bottom v-if="note.canManage && !isMobile">
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      icon
+                      v-on="on"
+                      v-bind="attrs"
+                      class="pa-0 mt-0"
+                      @click="editNote">
+                      <v-icon
+                        size="19"
+                        class="clickable edit-note-click">
+                        mdi-square-edit-outline
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.editPage') }}</span>
+                </v-tooltip>
+              </div>
+
               <exo-notes-favorite-action
                 :note="note"
                 :activity-id="note.activityId" />
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    class="pa-0"
-                    v-on="on"
-                    @click="$root.$emit('display-action-menu')"
-                    v-bind="attrs"
-                    icon>
-                    <v-icon
-                      size="19"
-                      class="clickable">
-                      mdi-dots-vertical
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span class="caption">{{ $t('notes.label.openMenu') }}</span>
-              </v-tooltip>
+              <div
+                class="d-inline-flex">
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      v-on="on"
+                      @click="$root.$emit('display-action-menu')"
+                      v-bind="attrs"
+                      class="pa-0 mt-0"
+                      icon>
+                      <v-icon
+                        size="19"
+                        class="clickable">
+                        mdi-dots-vertical
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+                </v-tooltip>
+              </div>
             </div>
           </div>
           <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-inline">

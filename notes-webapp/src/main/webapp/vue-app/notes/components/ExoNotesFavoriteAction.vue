@@ -7,6 +7,7 @@
     :right="right"
     :space-id="spaceId"
     :type="favoriteType"
+    :small="false"
     @removed="removed"
     @remove-error="removeError"
     @added="added"
