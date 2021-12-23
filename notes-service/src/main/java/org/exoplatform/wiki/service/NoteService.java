@@ -16,12 +16,13 @@
  */
 package org.exoplatform.wiki.service;
 
-import java.io.IOException;
-import java.util.List;
-import org.gatein.api.EntityNotFoundException;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
+import org.gatein.api.EntityNotFoundException;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Provides functions for processing database with notes, including: adding,
@@ -345,16 +346,16 @@ public interface NoteService {
   /**
    * Creates a draft for a new page
    *
-   * @param draftNoteToSave The draft note to be created
+   * @param draftNoteToSave   The draft note to be created
    * @param currentTimeMillis
    * @return Created draft
    * @throws WikiException
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
 
-  byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException;
+  byte[] exportNotes(String[] notesToExportIds, boolean exportAll, Identity identity) throws IOException, WikiException;
 
-  List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity);
+  List<NoteToExport> getNotesToExport(String[] notesToExportIds, boolean exportAll, Identity identity);
 
   List<NoteToExport> getChildrenNoteOf(NoteToExport note) throws WikiException;
 
@@ -363,6 +364,6 @@ public interface NoteService {
   void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
 
   void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                   IllegalAccessException,
-                                                                                                   IOException;
+          IllegalAccessException,
+          IOException;
 }

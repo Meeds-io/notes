@@ -527,28 +527,26 @@ export default {
         });
       });
     },
-    exportNotes(notesSelected,importAll,homeNoteId){
-      let exportChildren =false;
-      if (importAll === true) {
-        exportChildren = true;
+    exportNotes(notesSelected, exportAll, homeNoteId) {
+      if (exportAll) {
         notesSelected = homeNoteId;
       }
-      const date=this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
-      this.$notesService.exportNotes(notesSelected,exportChildren).then((transfer) => {
+      const date = this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
+      this.$notesService.exportNotes(notesSelected, exportAll).then((transfer) => {
         return transfer.blob();
       }).then((bytes) => {
-        const elm = document.createElement('a');  
+        const elm = document.createElement('a');
         elm.href = URL.createObjectURL(bytes);
         elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}.zip`);
-        elm.click();                             
+        elm.click();
         this.$root.$emit('close-note-tree-drawer');
-        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.exported')});
-      }).catch(e=> {
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.exported')});
+      }).catch(e => {
         console.error('Error when export note page', e);
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
-        });          
+        });
       });
     },
     getNoteById(noteId, source) {
