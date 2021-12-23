@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
@@ -46,6 +45,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -1070,6 +1070,28 @@ public class NoteServiceImpl implements NoteService {
     return list;
   }
 
+  private LinkedList<String> getNoteAncestorsIds(String noteId) throws WikiException {
+    return getNoteAncestorsIds(null, noteId);
+  }
+
+  private LinkedList<String> getNoteAncestorsIds(LinkedList<String> ancestorsIds, String noteId) throws WikiException {
+    if (ancestorsIds == null) {
+      ancestorsIds = new LinkedList<>();
+    }
+    if (noteId == null) {
+      return ancestorsIds;
+    }
+    Page note = getNoteById(noteId);
+    String parentId = note.getParentPageId();
+    
+    if (parentId != null) {
+      ancestorsIds.push(parentId);
+      getNoteAncestorsIds(ancestorsIds, parentId);
+    }
+    
+    return ancestorsIds;
+  }
+
   private String getDraftNameSuffix(long clientTime) {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
   }
@@ -1077,19 +1099,19 @@ public class NoteServiceImpl implements NoteService {
   /**
    * Export a list of notes and provide a bytearray
    *
-   * @param notes List of notes to export
-   * @param exportChildren boolean set to true if the export should add all childs
-   *          of notes
-   * @param identity of the current usezr
+   * @param notesToExportIds List of notes to export
+   * @param exportAll        boolean set to true if the export should add all childs
+   *                         of notes
+   * @param identity         of the current usezr
    * @return
    * @throws WikiException, IOException
    */
 
   @Override
-  public byte[] exportNotes(String[] notes, boolean exportChildren, Identity identity) throws IOException, WikiException {
+  public byte[] exportNotes(String[] notesToExportIds, boolean exportAll, Identity identity) throws IOException, WikiException {
     File zipped = null;
-    List<NoteToExport> notesToExport = getNotesToExport(notes, exportChildren, identity);
-    ExportList notesExport = new ExportList(new Date().getTime(),notesToExport);
+    List<NoteToExport> notesToExport = getNotesToExport(notesToExportIds, exportAll, identity);
+    ExportList notesExport = new ExportList(new Date().getTime(), notesToExport);
     List<File> files = new ArrayList<>();
     File temp;
     temp = File.createTempFile("notesExport_" + new Date().getTime(), ".json");
@@ -1104,7 +1126,7 @@ public class NoteServiceImpl implements NoteService {
       files.add(new File(filePath));
       contentUpdated = contentUpdated.replace(IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX, "");
     }
-    try(BufferedWriter bw = new BufferedWriter(new FileWriter(temp));) {
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(temp));) {
       bw.write(json);
     }
     files.add(temp);
@@ -1120,61 +1142,134 @@ public class NoteServiceImpl implements NoteService {
   /**
    * Recursive method to build the children and parent of a note
    *
-   * @param notes List of notes to export
-   * @param exportChildren boolean set to true if the export should add all childs
-   *          of notes
-   * @param identity of the current usezr
+   * @param notesToExportIds List of notesToExportIds to export
+   * @param exportAll        boolean set to true if the export should add all childs
+   *                         of notesToExportIds
+   * @param identity         of the current usezr
    * @return
    * @throws WikiException
    */
   @Override
-  public List<NoteToExport> getNotesToExport(String[] notes, boolean exportChildren, Identity identity) {
-      List<NoteToExport> notes_ = new ArrayList();
-    for (String noteId : notes) {
-      try {
-        Page note = getNoteById(noteId, identity);
-        if (note == null) {
-          log.warn("Failed to export note {}: note not find ", noteId);
-          continue;
-        }
-        NoteToExport note_ = null;
-        if (BooleanUtils.isTrue(exportChildren)) {
-          note_ = getNoteToExport(new NoteToExport(note.getId(),
-                                                   note.getName(),
-                                                   note.getOwner(),
-                                                   note.getAuthor(),
-                                                   note.getContent(),
-                                                   note.getSyntax(),
-                                                   note.getTitle(),
-                                                   note.getComment(),
-                                                   note.getWikiId(),
-                                                   note.getWikiType(),
-                                                   note.getWikiOwner()));
-        } else {
-          note_ = new NoteToExport(note.getId(),
-                                   note.getName(),
-                                   note.getOwner(),
-                                   note.getAuthor(),
-                                   note.getContent(),
-                                   note.getSyntax(),
-                                   note.getTitle(),
-                                   note.getComment(),
-                                   note.getWikiId(),
-                                   note.getWikiType(),
-                                   note.getWikiOwner());
-          note_.setParent(getParentNoteOf(note_));
-          note_.setContent(processImagesForExport(note));
-          note_.setContent(processNotesLinkForExport(note_));
-        }
+  public List<NoteToExport> getNotesToExport(String[] notesToExportIds, boolean exportAll, Identity identity) {
+    List<NoteToExport> noteToExportList = new ArrayList();
+    if (exportAll) {
+      for (String noteId : notesToExportIds) {
+        try {
+          Page note = getNoteById(noteId, identity);
+          if (note == null) {
+            log.warn("Failed to export note {}: note not find ", noteId);
+            continue;
+          }
+          NoteToExport noteToExport = getNoteToExport(new NoteToExport(note.getId(),
+                  note.getName(),
+                  note.getOwner(),
+                  note.getAuthor(),
+                  note.getContent(),
+                  note.getSyntax(),
+                  note.getTitle(),
+                  note.getComment(),
+                  note.getWikiId(),
+                  note.getWikiType(),
+                  note.getWikiOwner()));
 
-        notes_.add(note_);
-      } catch (IllegalAccessException e) {
-        log.error("User does not have  permissions on the note {}", noteId, e);
-      } catch (Exception ex) {
-        log.warn("Failed to export note {} ", noteId, ex);
+          noteToExportList.add(noteToExport);
+        } catch (IllegalAccessException e) {
+          log.error("User does not have  permissions on the note {}", noteId, e);
+        } catch (Exception ex) {
+          log.warn("Failed to export note {} ", noteId, ex);
+        }
+      }
+    } else {
+      List<NoteToExport> allNotesToExport = new ArrayList<>();
+      int maxAncestors = 0;
+      for (String noteId : notesToExportIds) {
+        Page note;
+        try {
+          note = getNoteById(noteId, identity);
+          if (note == null) {
+            log.warn("Failed to export note {}: note not find ", noteId);
+            continue;
+          }
+          NoteToExport noteToExport = new NoteToExport(note.getId(),
+                  note.getName(),
+                  note.getOwner(),
+                  note.getAuthor(),
+                  note.getContent(),
+                  note.getSyntax(),
+                  note.getTitle(),
+                  note.getComment(),
+                  note.getWikiId(),
+                  note.getWikiType(),
+                  note.getWikiOwner());
+          noteToExport.setContent(processImagesForExport(note));
+          noteToExport.setContent(processNotesLinkForExport(noteToExport));
+          LinkedList<String> ancestors = getNoteAncestorsIds(noteToExport.getId());
+          noteToExport.setAncestors(ancestors);
+          if (ancestors.size() > maxAncestors) {
+            maxAncestors = ancestors.size();
+          }
+          allNotesToExport.add(noteToExport);
+        } catch (IllegalAccessException e) {
+          log.error("User does not have  permissions on the note {}", noteId, e);
+        } catch (Exception ex) {
+          log.warn("Failed to export note {} ", noteId, ex);
+        }
+      }
+      for (NoteToExport noteToExport : allNotesToExport) {
+        noteToExport.setParent(getParentOfNoteFromExistingNotes(noteToExport.getAncestors(), allNotesToExport, notesToExportIds));
+      }
+      for (int level = maxAncestors; level >= 0; level--) {
+        List<NoteToExport> bottomNotes = getBottomNotesToExport(allNotesToExport, level);
+        for (NoteToExport bottomNote : bottomNotes) {
+          NoteToExport parent = bottomNote.getParent();
+          if (parent != null) {
+            List<NoteToExport> children = parent.getChildren();
+            if (children != null) {
+              children.add(bottomNote);
+            } else {
+              children = new ArrayList<>(Collections.singletonList(bottomNote));
+            }
+            for (NoteToExport child : children) {
+              NoteToExport currentParent = new NoteToExport(parent);
+              currentParent.setChildren(null);
+              currentParent.setParent(null);
+              child.setParent(currentParent);
+            }
+            parent.setChildren(children);
+            allNotesToExport.remove(bottomNote);
+            allNotesToExport.set(allNotesToExport.indexOf(parent), parent);
+          }
+        }
+      }
+      noteToExportList.addAll(allNotesToExport);
+    }
+    return noteToExportList;
+  }
+
+  private List<NoteToExport> getBottomNotesToExport(List<NoteToExport> allNotesToExport, int level) {
+    return allNotesToExport.stream().filter(export -> export.getAncestors().size() == level).collect(Collectors.toList());
+  }
+
+  private NoteToExport getParentOfNoteFromExistingNotes(LinkedList<String> ancestors, List<NoteToExport> exports, String[] noteIds) {
+    NoteToExport parent = null;
+    Iterator<String> descendingIterator = ancestors.descendingIterator();
+    String parentId = null;
+    boolean parentFound = false;
+    while (descendingIterator.hasNext() && !parentFound) {
+      String current = descendingIterator.next();
+      if (Arrays.asList(noteIds).contains(current)) {
+        parentId = current;
+        parentFound = true;
       }
     }
-    return notes_;
+    if (parentId != null) {
+      String finalParentId = parentId;
+      Optional<NoteToExport> parentToExport = exports.stream().filter(export -> export.getId().equals(finalParentId)).findFirst();
+      if (parentToExport.isPresent()) {
+        parent = parentToExport.get();
+      }
+    }
+    return parent;
   }
 
   /**
@@ -1221,9 +1316,9 @@ public class NoteServiceImpl implements NoteService {
         linkedNote = getNoteById(noteId);
       } catch (NumberFormatException e) {
         Page note_ = getNoteById(note.getId());
-        linkedNote = getNoteOfNoteBookByName(note_.getWikiType(),note_.getWikiOwner(),noteId);
+        linkedNote = getNoteOfNoteBookByName(note_.getWikiType(), note_.getWikiOwner(), noteId);
       }
-      if(linkedNote!=null){
+      if (linkedNote != null) {
         String noteParams = IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiType() + IMAGE_URL_REPLACEMENT_SUFFIX
                 + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiOwner() + IMAGE_URL_REPLACEMENT_SUFFIX + IMAGE_URL_REPLACEMENT_PREFIX
                 + linkedNote.getName() + IMAGE_URL_REPLACEMENT_SUFFIX;
@@ -1231,7 +1326,7 @@ public class NoteServiceImpl implements NoteService {
                 noteLinkprefix + noteParams + "\"");
       }
       contentUpdated = contentUpdated.replace(noteLinkprefix + noteId + "\"", "");
-      if(contentUpdated.equals(check_content)){
+      if (contentUpdated.equals(check_content)) {
         break;
       }
     }
@@ -1266,23 +1361,23 @@ public class NoteServiceImpl implements NoteService {
    * @throws WikiException
    */
   public String processImagesForExport(Page note) throws WikiException, IOException {
-    String content =  note.getContent();
-    String restUploadUrl = "/portal/rest/wiki/attachments/" ;
+    String content = note.getContent();
+    String restUploadUrl = "/portal/rest/wiki/attachments/";
     Map<String, String> urlToReplaces = new HashMap<>();
     while (content.contains(restUploadUrl)) {
       String check_content = content;
       String urlToReplace = content.split(restUploadUrl)[1].split("\"")[0];
-      urlToReplace= restUploadUrl+urlToReplace;
+      urlToReplace = restUploadUrl + urlToReplace;
       String attachmentId = StringUtils.substringAfterLast(urlToReplace, "/");
       Attachment attachment = wikiService.getAttachmentOfPageByName(attachmentId, note, true);
       if (attachment != null && attachment.getContent() != null) {
-        InputStream  bis = new ByteArrayInputStream(attachment.getContent());
+        InputStream bis = new ByteArrayInputStream(attachment.getContent());
         File tempFile = new File(System.getProperty("java.io.tmpdir") + File.separator + attachmentId);
         Files.copy(bis, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         urlToReplaces.put(urlToReplace, IMAGE_URL_REPLACEMENT_PREFIX + tempFile.getName() + IMAGE_URL_REPLACEMENT_SUFFIX);
       }
       content = content.replace(urlToReplace, "");
-      if(content.equals(check_content)){
+      if (content.equals(check_content)) {
         break;
       }
     }
@@ -1296,37 +1391,37 @@ public class NoteServiceImpl implements NoteService {
   /**
    * importe a list of notes from zip
    *
-   * @param zipLocation the path to the zip file
-   * @param parent parent note where note will be imported
-   * @param conflict import mode if there in conflicts it can be : overwrite,
-   *          duplicate, update or nothing
+   * @param zipLocation  the path to the zip file
+   * @param parent       parent note where note will be imported
+   * @param conflict     import mode if there in conflicts it can be : overwrite,
+   *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
    * @return
    * @throws WikiException
    */
   @Override
   public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                   IllegalAccessException,
-                                                                                                   IOException {
-    List<String> files = Utils.unzip(zipLocation,System.getProperty(TEMP_DIRECTORY_PATH));
+          IllegalAccessException,
+          IOException {
+    List<String> files = Utils.unzip(zipLocation, System.getProperty(TEMP_DIRECTORY_PATH));
     importNotes(files, parent, conflict, userIdentity);
   }
 
   /**
    * importe a list of notes from zip
    *
-   * @param files List of files
-   * @param parent parent note where note will be imported
-   * @param conflict import mode if there in conflicts it can be : overwrite,
-   *          duplicate, update or nothing
+   * @param files        List of files
+   * @param parent       parent note where note will be imported
+   * @param conflict     import mode if there in conflicts it can be : overwrite,
+   *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
    * @return
    * @throws WikiException
    */
   @Override
   public void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                   IllegalAccessException,
-                                                                                                   IOException {
+          IllegalAccessException,
+          IOException {
 
     String notesFilePath = "";
     for (String file : files) {
@@ -1343,24 +1438,24 @@ public class NoteServiceImpl implements NoteService {
       ImportList notes = mapper.readValue(notesFile, new TypeReference<ImportList>() {
       });
       Wiki wiki = wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner());
-      if(StringUtils.isNotEmpty(conflict) && (conflict.equals("replaceAll"))){
-        List<Page> notesTodelete = getAllNotes(parent,userIdentity.getUserId());
-        for (Page noteTodelete : notesTodelete){
-          if(!NoteConstants.NOTE_HOME_NAME.equals(noteTodelete.getName())&&!noteTodelete.getId().equals(parent.getId())){
+      if (StringUtils.isNotEmpty(conflict) && (conflict.equals("replaceAll"))) {
+        List<Page> notesTodelete = getAllNotes(parent, userIdentity.getUserId());
+        for (Page noteTodelete : notesTodelete) {
+          if (!NoteConstants.NOTE_HOME_NAME.equals(noteTodelete.getName()) && !noteTodelete.getId().equals(parent.getId())) {
             try {
-              deleteNote( wiki.getType(), wiki.getOwner(), noteTodelete.getName(), userIdentity);
-            }catch (Exception e){
-              log.warn("Note {} connot be deleted for import",noteTodelete.getName(), e);
+              deleteNote(wiki.getType(), wiki.getOwner(), noteTodelete.getName(), userIdentity);
+            } catch (Exception e) {
+              log.warn("Note {} connot be deleted for import", noteTodelete.getName(), e);
             }
           }
         }
       }
       for (Page note : notes.getNotes()) {
         importNote(note,
-                   parent,
-                   wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
-                   conflict,
-                   userIdentity);
+                parent,
+                wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
+                conflict,
+                userIdentity);
       }
       for (Page note : notes.getNotes()) {
         replaceIncludedPages(note, wiki);
@@ -1373,24 +1468,24 @@ public class NoteServiceImpl implements NoteService {
   /**
    * Recursive method to importe a note
    *
-   * @param note note to import
-   * @param parent parent note where note will be imported
-   * @param wiki the Notebook where note will be imported
-   * @param conflict import mode if there in conflicts it can be : overwrite,
-   *          duplicate, update or nothing
+   * @param note         note to import
+   * @param parent       parent note where note will be imported
+   * @param wiki         the Notebook where note will be imported
+   * @param conflict     import mode if there in conflicts it can be : overwrite,
+   *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
    * @return
    * @throws WikiException
    */
   public void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                    IllegalAccessException {
+          IllegalAccessException {
 
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
       parent_ = wiki.getWikiHome();
     }
     Page note_ = note;
-    if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) ){
+    if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())) {
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {

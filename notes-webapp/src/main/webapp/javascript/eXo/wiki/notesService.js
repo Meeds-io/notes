@@ -274,8 +274,8 @@ export function importZipNotes(noteId,uploadId,overrideMode) {
 }
 
 
-export function exportNotes(notes,exportChildren) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/${notes}?exportChildren=${exportChildren}`, {
+export function exportNotes(notes,exportAll) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/${notes}?exportAll=${exportAll}`, {
     credentials: 'include',
     method: 'GET',
   }).then((resp) => {

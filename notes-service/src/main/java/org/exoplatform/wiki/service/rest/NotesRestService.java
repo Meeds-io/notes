@@ -713,12 +713,12 @@ public class NotesRestService implements ResourceContainer {
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
   public Response exportNote(@ApiParam(value = "List of notes ids", required = true) @PathParam("notes") String notesList,
-                             @ApiParam(value = "exportChildren") @QueryParam("exportChildren") Boolean exportChildren) {
+                             @ApiParam(value = "exportAll") @QueryParam("exportAll") Boolean exportAll) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String[] notes = notesList.split(",");
-      byte[] filesBytes = noteService.exportNotes(notes, exportChildren,identity);
+      byte[] filesBytes = noteService.exportNotes(notes, exportAll,identity);
       return Response.ok(filesBytes)
                      .type("application/zip")
                      .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")

@@ -16,6 +16,7 @@
  */
 package org.exoplatform.wiki.mow.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.exoplatform.social.metadata.model.MetadataItem;
@@ -27,6 +28,7 @@ import java.util.Map;
 
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Page {
 
   private String id;
