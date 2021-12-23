@@ -16,14 +16,14 @@
  */
 package org.exoplatform.wiki.mow.api;
 
-import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.LinkedList;
 import java.util.List;
 
-import org.exoplatform.wiki.service.BreadcrumbData;
-
-import lombok.Data;
-
-@Data
+@Getter
+@Setter
 public class NoteToExport {
 
   private String id;
@@ -52,6 +52,8 @@ public class NoteToExport {
 
   private NoteToExport parent;
 
+  private LinkedList<String> ancestors;
+
   public NoteToExport() {
   }
 
@@ -59,7 +61,7 @@ public class NoteToExport {
     this.name = name;
   }
 
-  public NoteToExport(String id,String name, String owner, String author, String content, String syntax, String title, String comment, String wikiId, String wikiType, String wikiOwner) {
+  public NoteToExport(String id, String name, String owner, String author, String content, String syntax, String title, String comment, String wikiId, String wikiType, String wikiOwner) {
     this();
     this.id = id;
     this.name = name;
@@ -72,6 +74,23 @@ public class NoteToExport {
     this.wikiId = wikiId;
     this.wikiType = wikiType;
     this.wikiOwner = wikiOwner;
+  }
+
+  public NoteToExport(NoteToExport noteToExport) {
+    this.id = noteToExport.getId();
+    this.name = noteToExport.getName();
+    this.owner = noteToExport.getOwner();
+    this.author = noteToExport.getAuthor();
+    this.content = noteToExport.getContent();
+    this.syntax = noteToExport.getSyntax();
+    this.title = noteToExport.getTitle();
+    this.comment = noteToExport.getComment();
+    this.wikiId = noteToExport.getWikiId();
+    this.wikiType = noteToExport.getWikiType();
+    this.wikiOwner = noteToExport.getWikiOwner();
+    this.children = noteToExport.getChildren();
+    this.parent = noteToExport.getParent();
+    this.ancestors = noteToExport.getAncestors();
   }
 
 
