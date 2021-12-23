@@ -7,6 +7,7 @@
     :right="right"
     :space-id="spaceId"
     :type="favoriteType"
+    :template-params="templateParams"
     :small="false"
     @removed="removed"
     @remove-error="removeError"
@@ -36,6 +37,7 @@ export default {
   },
   data: () => ({
     spaceId: null,
+    templateParams: {},
   }),
   computed: {
     isFavorite() {
@@ -46,6 +48,13 @@ export default {
     },
     favoriteId() {
       return this.note.activityId ? this.note.activityId : this.note.id;
+    }
+  },
+  watch: {
+    note() {
+      if (this.note) {
+        this.templateParams.page_id = this.note.id;
+      }
     }
   },
   methods: {
