@@ -31,9 +31,9 @@
                       @click="addNote"
                       icon>
                       <v-icon
-                        size="22"
+                        size="16"
                         class="clickable add-note-click">
-                        mdi-plus
+                        fas fa-plus
                       </v-icon>
                     </v-btn>
                   </template>
@@ -51,9 +51,9 @@
                       class="pa-0 mt-0"
                       @click="editNote">
                       <v-icon
-                        size="19"
+                        size="16"
                         class="clickable edit-note-click">
-                        mdi-square-edit-outline
+                        fas fa-edit
                       </v-icon>
                     </v-btn>
                   </template>
@@ -75,9 +75,9 @@
                       class="pa-0 mt-0"
                       icon>
                       <v-icon
-                        size="19"
+                        size="16"
                         class="clickable">
-                        mdi-dots-vertical
+                        fas fa-ellipsis-v
                       </v-icon>
                     </v-btn>
                   </template>
@@ -153,7 +153,7 @@
                       v-bind="attrs"
                       @click="editNote">
                       <v-icon
-                        size="19"
+                        size="16"
                         class="clickable edit-note-click">
                         mdi-square-edit-outline
                       </v-icon>
@@ -171,9 +171,9 @@
                       @click="addNote"
                       icon>
                       <v-icon
-                        size="22"
+                        size="16"
                         class="clickable add-note-click">
-                        mdi-plus
+                        fas fa-plus
                       </v-icon>
                     </v-btn>
                   </template>
