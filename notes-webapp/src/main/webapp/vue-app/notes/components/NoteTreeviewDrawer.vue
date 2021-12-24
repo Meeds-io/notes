@@ -423,8 +423,8 @@ export default {
           this.items = [];
           this.allItems = [];
           this.allItemsHome = [];
-          this.home = data.treeNodeData[0];
-          this.items = data.treeNodeData[0].children;
+          this.home = data.treeNodeData.length ? data.treeNodeData[0] : data.jsonList[0];
+          this.items = data.treeNodeData && data.treeNodeData[0] && data.treeNodeData[0] .children || [];
           this.allItems = data.jsonList;
           this.allItemsHome = data.treeNodeData;
         }
