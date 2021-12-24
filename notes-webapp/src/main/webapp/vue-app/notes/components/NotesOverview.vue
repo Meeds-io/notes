@@ -132,7 +132,7 @@
             v-html="noteVersionContent">
           </div>
         </div>
-        <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].hasChild">
+        <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].children.length">
           <div v-if="note.canManage" class="notes-application-content d-flex flex-column justify-center text-center">
             <v-img
               :src="emptyNoteNoManager"
@@ -369,7 +369,7 @@ export default {
       return this.note.content && this.noteContent && this.formatContent(this.noteContent);
     },
     isHomeNoteDefaultContent() {
-      return !this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`);
+      return !this.note.parentPageId && (this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)|| this.noteContent === '');
     },
     lastNoteVersion() {
       if ( this.displayLastVersion ) {
