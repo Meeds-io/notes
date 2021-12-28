@@ -251,7 +251,7 @@ public class NoteServiceImpl implements NoteService {
     updatedPage.setCanImport(note.isCanImport());
     updatedPage.setCanView(note.isCanView());
     updatedPage.setAppName(note.getAppName());
-    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId());
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
     updatedPage.setMetadatas(metadata);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
@@ -449,7 +449,7 @@ public class NoteServiceImpl implements NoteService {
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId());
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
       page.setMetadatas(metadata);
     }
     return page;
@@ -530,7 +530,7 @@ public class NoteServiceImpl implements NoteService {
       page.setCanView(true);
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id);
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
       page.setMetadatas(metadata);
       if (StringUtils.isNotEmpty(source)) {
         if (source.equals("tree")) {
@@ -1633,16 +1633,23 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  private Map<String, List<MetadataItem>> retrieveMetadataItems(String noteId) {
+  private Map<String, List<MetadataItem>> retrieveMetadataItems(String noteId, String username) {
+    org.exoplatform.social.core.identity.model.Identity currentIdentity =
+                                                                        identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+                                                                                                            username);
+    long currentUserId = Long.parseLong(currentIdentity.getId());
     MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
     MetadataObject metadataObject = new MetadataObject(Utils.NOTES_METADATA_OBJECT_TYPE, noteId);
     List<MetadataItem> metadataItems = metadataService.getMetadataItemsByObject(metadataObject);
     Map<String, List<MetadataItem>> metadata = new HashMap<>();
-    metadataItems.forEach(metadataItem -> {
-      String type = metadataItem.getMetadata().getType().getName();
-      metadata.computeIfAbsent(type, k -> new ArrayList<>());
-      metadata.get(type).add(metadataItem);
-    });
+    metadataItems.stream()
+                 .filter(metadataItem -> metadataItem.getMetadata().getAudienceId() == 0
+                     || metadataItem.getMetadata().getAudienceId() == currentUserId)
+                 .forEach(metadataItem -> {
+                   String type = metadataItem.getMetadata().getType().getName();
+                   metadata.computeIfAbsent(type, k -> new ArrayList<>());
+                   metadata.get(type).add(metadataItem);
+                 });
     return metadata;
   }
 }
