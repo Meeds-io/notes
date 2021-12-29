@@ -136,7 +136,7 @@ export default {
       srcImageNote: '/notes/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
-      notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}*`,
+      notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}`,
       publishAndPost: false,
       spaceId: '',
       noteFormTitle: '',
