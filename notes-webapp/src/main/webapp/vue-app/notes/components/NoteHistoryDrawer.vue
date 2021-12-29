@@ -18,10 +18,11 @@
               <v-list-item
                 v-for="(version,index) in noteVersionsArray"
                 :key="index"
-                class="history-line pa-2 mb-2 border-color border-radius d-block">
+                class="history-line pa-2 mb-2 border-color border-radius d-block" 
+                @click="$emit('open-version', version)">
                 <div class="author-date-wrapper d-flex justify-space-between ">
                   <div class="version-author">
-                    <span class="note-version border-radius primary px-2 font-weight-bold me-2 clickable" @click="$emit('open-version', version)">V{{ version.versionNumber }}</span>
+                    <span class="note-version border-radius primary px-2 font-weight-bold me-2 clickable">V{{ version.versionNumber }}</span>
                     <span class="font-weight-bold text-truncate">{{ version.authorFullName }}</span>
                   </div>
                   <div class="version-update-date">
