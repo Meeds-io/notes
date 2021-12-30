@@ -187,7 +187,7 @@ public interface DataStorage {
 
   public void restoreVersionOfPage(String versionName, Page page) throws WikiException;
 
-  public void updatePage(Page page) throws WikiException;
+  public Page updatePage(Page page) throws WikiException;
 
   public List<String> getPreviousNamesOfPage(Page page) throws WikiException;
 
