@@ -188,6 +188,10 @@ public class NotesRestService implements ResourceContainer {
       if(BooleanUtils.isTrue(withChildren)) {
         note.setChildren(noteService.getChildrenNoteOf(note,identity.getUserId(),false, withChildren));
       }
+      // check for old notes children container to update
+      if(note.getContent().contains("wiki-children-pages ck-widget")) {
+        note = updateChildrenContainer(note);
+      }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(), note.getWikiOwner(), note.getName(), false));
       return Response.ok(note).build();
@@ -1038,6 +1042,21 @@ public class NotesRestService implements ResourceContainer {
         encodeWikiTree(data.getChildren(), locale);
       }
     }
+  }
+
+  private Page updateChildrenContainer(Page note) throws WikiException {
+    String content = note.getContent();
+    String oldChildrenContainer = "<div class=\"wiki-children-pages ck-widget\" contenteditable=\"false\"><exo-wiki-children-pages>&nbsp;</exo-wiki-children-pages></div>";
+    String childrenContainer = "<div class=\"navigation-img-wrapper\" contenteditable=\"false\" id=\"note-children-container\">\n" +
+            "<figure class=\"image-navigation\" contenteditable=\"false\"><img alt=\"\" data-plugin-name=\"selectImage\" referrerpolicy=\"no-referrer\" role=\"presentation\" src=\"/notes/images/children.png\" /><img alt=\"remove treeview\" data-plugin-name=\"selectImage\" id=\"remove-treeview\" referrerpolicy=\"no-referrer\" src=\"/notes/images/trash.png\" />\n" +
+            "<figcaption class=\"note-navigation-label\">Navigation</figcaption>\n" +
+            "</figure>\n" +
+            "</div>\n" +
+            "\n" +
+            "<p>&nbsp;</p>\n";
+    content = content.replace(oldChildrenContainer, childrenContainer);
+    note.setContent(content);
+    return noteService.updateNote(note);
   }
 
 }

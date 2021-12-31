@@ -254,8 +254,9 @@ public interface NoteService {
    * 
    * @param note Updated note
    * @throws WikiException if an error occured
+   * @return updated note
    */
-  void updateNote(Page note) throws WikiException;
+  Page updateNote(Page note) throws WikiException;
 
   /**
    * Update the given note. This does not automatically create a new version. If a

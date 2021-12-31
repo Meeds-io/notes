@@ -1280,26 +1280,26 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   @ExoTransactional
-  public void updatePage(Page page) throws WikiException {
-    if(page.isDraftPage()) {
+  public Page updatePage(Page page) throws WikiException {
+    if (page.isDraftPage()) {
       DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(page.getAuthor(), page.getName());
 
       if (draftPageEntity == null) {
         throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-            + page.getName() + " because draft page does not exist.");
+                + page.getName() + " because draft page does not exist.");
       }
 
       draftPageEntity.setTitle(page.getTitle());
       draftPageEntity.setContent(page.getContent());
       draftPageEntity.setUpdatedDate(page.getUpdatedDate());
 
-      draftPageDAO.update(draftPageEntity);
+      return convertDraftPageEntityToDraftPage(draftPageDAO.update(draftPageEntity));
     } else {
       PageEntity pageEntity = fetchPageEntity(page);
 
       if (pageEntity == null) {
         throw new WikiException("Cannot update page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" + page.getName()
-            + " because page does not exist.");
+                + " because page does not exist.");
       }
 
       pageEntity.setName(page.getName());
@@ -1315,7 +1315,7 @@ public class JPADataStorage implements DataStorage {
       pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
 
-      pageDAO.update(pageEntity);
+      return convertPageEntityToPage(pageDAO.update(pageEntity));
     }
   }
 

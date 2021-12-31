@@ -199,8 +199,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public void updateNote(Page note) throws WikiException {
-    dataStorage.updatePage(note);
+  public Page updateNote(Page note) throws WikiException {
+    return dataStorage.updatePage(note);
   }
 
   @Override
