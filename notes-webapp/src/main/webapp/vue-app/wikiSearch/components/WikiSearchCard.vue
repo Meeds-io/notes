@@ -98,7 +98,6 @@ export default {
       return this.poster && this.poster.username;
     },
     wikiOwner() {
-      console.log(this.result);
       return this.result && this.result.wikiOwner && this.result.wikiOwner.space || this.result.wikiOwner && this.result.wikiOwner.profile;
     },
     spaceDisplayName() {
