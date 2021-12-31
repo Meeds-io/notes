@@ -35,7 +35,7 @@
         <v-list-item-content>
           <v-list-item-title :title="wikiTitle">
             <a
-              :title="wikiTitle"
+              :title="wikiTitleText"
               class="wikiTitle px-3 pt-2 pb-1 ps-0 text-start text-truncate"
               v-html="wikiTitle">
             </a>
@@ -85,6 +85,9 @@ export default {
     wikiTitle() {
       return this.result && this.result.title || '';
     },
+    wikiTitleText() {
+      return $('<div />').html(this.wikiTitle).text();
+    },
     poster() {
       return this.result && this.result.poster.profile;
     },
@@ -95,6 +98,7 @@ export default {
       return this.poster && this.poster.username;
     },
     wikiOwner() {
+      console.log(this.result);
       return this.result && this.result.wikiOwner && this.result.wikiOwner.space || this.result.wikiOwner && this.result.wikiOwner.profile;
     },
     spaceDisplayName() {
