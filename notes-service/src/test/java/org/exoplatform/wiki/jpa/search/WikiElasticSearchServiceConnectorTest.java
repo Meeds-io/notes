@@ -36,6 +36,7 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -43,6 +44,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  *
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
 public class WikiElasticSearchServiceConnectorTest {
 
   private WikiElasticSearchServiceConnector searchServiceConnector;

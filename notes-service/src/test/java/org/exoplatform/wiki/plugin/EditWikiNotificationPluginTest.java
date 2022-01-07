@@ -28,7 +28,7 @@ import java.io.Serializable;
 import java.util.*;
 
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
 public class EditWikiNotificationPluginTest {
 
   @Mock

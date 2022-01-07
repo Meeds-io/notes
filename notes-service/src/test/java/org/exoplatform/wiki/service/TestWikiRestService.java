@@ -43,7 +43,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
  *
  */
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({ "javax.management.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xalan.internal.*",
+    "jdk.xml.internal.*", "com.sun.org.apache.xerces.*" })
 public class TestWikiRestService {
 
   @Test

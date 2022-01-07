@@ -33,6 +33,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Utils.class)
+@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
 public class WikiElasticUnifiedSearchServiceConnectorTest {
 
   private WikiElasticUnifiedSearchServiceConnector searchServiceConnector;

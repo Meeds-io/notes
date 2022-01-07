@@ -48,7 +48,7 @@ import java.util.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
 public class TestEditWikiNotificationListener {
 
   @Mock
