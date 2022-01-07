@@ -422,7 +422,6 @@ export default {
             // delete draft note
             const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
             this.deleteDraftNote(draftNote, notePath);
-            window.location.href = notePath;
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.enableClickOnce();
