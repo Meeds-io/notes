@@ -555,9 +555,7 @@ export default {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
-        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+        this.updateURL();
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -591,9 +589,7 @@ export default {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
-        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+        this.updateURL();
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -617,9 +613,7 @@ export default {
         this.isDraft = true;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
-        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+        this.updateURL();
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -806,6 +800,11 @@ export default {
           console.error('Error when update note page', e);
         });
       }
+    },
+    updateURL(){
+      const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
+      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
+      window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
     }
   }
 };
