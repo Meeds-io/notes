@@ -555,7 +555,8 @@ export default {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}`;
+        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
       }).catch(e => {
@@ -590,7 +591,8 @@ export default {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}`;
+        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
       }).catch(e => {
@@ -615,7 +617,8 @@ export default {
         this.isDraft = true;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.split(this.appName)[0]}${this.appName}/${this.note.id}/draft`;
+        const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
+        notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
         return this.$nextTick();
       }).catch(e => {
