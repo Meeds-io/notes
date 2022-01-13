@@ -24,21 +24,21 @@
   <page>
     <name>notes-editor</name>
     <title>Notes Editor</title>
-    <access-permissions>*:/platform/users</access-permissions>
+    <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
     <edit-permission>*:/platform/administrators</edit-permission>
     <container id="top-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
       <name>top-notes-editor-container</name>
-      <access-permissions>*:/platform/users</access-permissions>
+      <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
     <container id="notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
       <name>notes-editor-container</name>
-      <access-permissions>*:/platform/users</access-permissions>
+      <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
     <container id="bottom-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
       <name>bottom-notes-editor-container</name>
-      <access-permissions>*:/platform/users</access-permissions>
+      <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
       <factory-id>addonContainer</factory-id>
     </container>
   </page>
