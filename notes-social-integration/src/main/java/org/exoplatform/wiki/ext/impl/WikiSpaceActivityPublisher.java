@@ -298,7 +298,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
         wikiService.updatePage(page, null);
       }
 
-      if (!page.getMetadatas().isEmpty()) {
+      if (page.getMetadatas()!=null && !page.getMetadatas().isEmpty()) {
         FavoriteService favoriteService = CommonsUtils.getService(FavoriteService.class);
         Favorite favorite = new Favorite("activity", activity.getId(), "", Long.parseLong(userIdentity.getId()));
         try {
