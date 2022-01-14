@@ -691,4 +691,15 @@
     </addColumn>
   </changeSet>
 
+  <changeSet id="1.0.0-59" author="wiki">
+    <createSequence sequenceName="SEQ_WIKI_WIKIS_WIKI_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_PAGES_PAGE_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_PAGE_VERSIONS_VERS_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_PAGE_MOVES_MOVE_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_EMOTION_ICONS_ICON_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_TEMPLATES_TEMPLATE_ID" startValue="1" />
+    <createSequence sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID" startValue="1" />
+  </changeSet>
+
 </databaseChangeLog>

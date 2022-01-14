@@ -40,7 +40,7 @@ import java.util.List;
 public class DraftPageEntity extends BasePageEntity {
 
   @Id
-  @SequenceGenerator(name="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID", sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID")
+  @SequenceGenerator(name="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID", sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID", allocationSize = 1)
   @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID")
   @Column(name = "DRAFT_PAGE_ID")
   private long id;

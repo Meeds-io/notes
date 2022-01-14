@@ -12,7 +12,7 @@ import javax.persistence.*;
 })
 public class EmotionIconEntity {
   @Id
-  @SequenceGenerator(name="SEQ_WIKI_EMOTION_ICONS_ICON_ID", sequenceName="SEQ_WIKI_EMOTION_ICONS_ICON_ID")
+  @SequenceGenerator(name="SEQ_WIKI_EMOTION_ICONS_ICON_ID", sequenceName="SEQ_WIKI_EMOTION_ICONS_ICON_ID", allocationSize = 1)
   @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_EMOTION_ICONS_ICON_ID")
   @Column(name = "EMOTION_ICON_ID")
   private long id;
