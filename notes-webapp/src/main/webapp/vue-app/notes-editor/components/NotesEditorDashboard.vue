@@ -440,7 +440,7 @@ export default {
         event.stopPropagation();
       }
     },
-    saveNoteDraft() {
+    async saveNoteDraft() {
       const draftNote = {
         id: this.note.draftPage ? this.note.id : '',
         title: this.note.title,
@@ -461,15 +461,13 @@ export default {
         // if draft page not created persist it only the first time else update it in browser's localStorage
         if (this.note.draftPage && this.note.id) {
           this.note.parentPageId = this.parentPageId;
-          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
+          await localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
           this.actualNote = {
             name: draftNote.name,
             title: draftNote.title,
             content: draftNote.content,
           };
-          setTimeout(() => {
-            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-          }, this.autoSaveDelay/2);
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
         } else {
           if (!this.isDefaultContent(this.note.content)) {
             this.persistDraftNote(draftNote);
@@ -496,9 +494,7 @@ export default {
           localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
         }).then(() => {
           this.savingDraft = false;
-          setTimeout(() => {
-            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-          }, this.autoSaveDelay/2);
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
         }).catch(e => {
           console.error('Error when creating draft note: ', e);
           this.$root.$emit('show-alert', {
