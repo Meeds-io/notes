@@ -312,6 +312,7 @@ export default {
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
         this.savingDraft = true;
+        this.initMacroChildCompleted = false;
         this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
         this.$nextTick(() => {
           this.saveNoteDraft();
