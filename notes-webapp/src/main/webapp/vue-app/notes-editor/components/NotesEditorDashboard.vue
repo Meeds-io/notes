@@ -149,7 +149,7 @@ export default {
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
-      noteNavigationDisplayed: false
+      initMacroChildCompleted: true
     };
   },
   computed: {
@@ -297,6 +297,10 @@ export default {
         return;
       }
 
+      if (!this.initMacroChildCompleted) {
+        return;
+      }
+
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -364,8 +368,10 @@ export default {
         if ((this.note.content.trim().length === 0)) {
           this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
             if (data && data.children && data.children.length) {
+              this.initMacroChildCompleted = false;
               CKEDITOR.instances['notesContent'].setData(childContainer);
               this.setFocus();
+              this.initMacroChildCompleted = true;
             }
           });
         } 
@@ -440,7 +446,7 @@ export default {
         event.stopPropagation();
       }
     },
-    async saveNoteDraft() {
+    saveNoteDraft() {
       const draftNote = {
         id: this.note.draftPage ? this.note.id : '',
         title: this.note.title,
@@ -461,13 +467,15 @@ export default {
         // if draft page not created persist it only the first time else update it in browser's localStorage
         if (this.note.draftPage && this.note.id) {
           this.note.parentPageId = this.parentPageId;
-          await localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
+          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(this.note));
           this.actualNote = {
             name: draftNote.name,
             title: draftNote.title,
             content: draftNote.content,
           };
-          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          }, this.autoSaveDelay/2);
         } else {
           if (!this.isDefaultContent(this.note.content)) {
             this.persistDraftNote(draftNote);
