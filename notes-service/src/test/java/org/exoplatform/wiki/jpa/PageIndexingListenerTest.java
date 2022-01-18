@@ -43,37 +43,37 @@ public class PageIndexingListenerTest extends BaseTest {
     wikiService.addComponentPlugin(new PageIndexingListener(indexingService));
 
   }
-  //
-  // public void testReindexingDraftPage() throws Exception {
-  // ConversationState state = new ConversationState(new Identity("root"));
-  // ConversationState.setCurrent(state);
-  //
-  // Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
-  // assertNotNull(wiki);
-  // Page page = new Page();
-  // page.setTitle("test wiki page");
-  // wikiService.createPage(wiki, wiki.getWikiHome().getName(), page);
-  //
-  // page = wikiService.getPageOfWikiByName(PortalConfig.USER_TYPE, "root",
-  // page.getName());
-  // page.setContent("Test wiki content");
-  // wikiService.updatePage(page, null);
-  //
-  // assertEquals(1, indexingService.getCount("reindex"));
-  //
-  // DraftPage draft = new DraftPage();
-  // draft.setContent("draft content");
-  // wikiService.createDraftForExistPage(draft, page, "1",
-  // System.currentTimeMillis());
-  //
-  // draft = wikiService.getDraftOfPage(page);
-  // draft.setContent("new draf content");
-  // wikiService.updatePage(draft, null);
-  //
-  // assertEquals(1, indexingService.getCount("reindex"));
-  //
-  // wikiService.removeDraft(draft.getName());
-  // wikiService.deletePage(PortalConfig.USER_TYPE, "root", page.getName(),
-  // "root");
-  // }
+
+  public void testReindexingDraftPage() throws Exception {
+    // ConversationState state = new ConversationState(new Identity("root"));
+    // ConversationState.setCurrent(state);
+    //
+    // Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    // assertNotNull(wiki);
+    // Page page = new Page();
+    // page.setTitle("test wiki page");
+    // wikiService.createPage(wiki, wiki.getWikiHome().getName(), page);
+    //
+    // page = wikiService.getPageOfWikiByName(PortalConfig.USER_TYPE, "root",
+    // page.getName());
+    // page.setContent("Test wiki content");
+    // wikiService.updatePage(page, null);
+    //
+    // assertEquals(1, indexingService.getCount("reindex"));
+    //
+    // DraftPage draft = new DraftPage();
+    // draft.setContent("draft content");
+    // wikiService.createDraftForExistPage(draft, page, "1",
+    // System.currentTimeMillis());
+    //
+    // draft = wikiService.getDraftOfPage(page);
+    // draft.setContent("new draf content");
+    // wikiService.updatePage(draft, null);
+    //
+    // assertEquals(1, indexingService.getCount("reindex"));
+    //
+    // wikiService.removeDraft(draft.getName());
+    // wikiService.deletePage(PortalConfig.USER_TYPE, "root", page.getName(),
+    // "root");
+  }
 }
