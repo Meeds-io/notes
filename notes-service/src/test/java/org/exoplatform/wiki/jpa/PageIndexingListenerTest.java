@@ -27,8 +27,6 @@ import org.exoplatform.wiki.jpa.search.PageIndexingListener;
 import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.impl.WikiServiceImpl;
 
-import static org.apache.sis.util.resources.Vocabulary.Keys.Identity;
-
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
