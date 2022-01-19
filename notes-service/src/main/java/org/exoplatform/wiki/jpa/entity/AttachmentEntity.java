@@ -34,7 +34,7 @@ public class AttachmentEntity {
 
   @Id
   @Column(name = "ATTACHMENT_ID")
-  @SequenceGenerator(name="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID", sequenceName="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID")
+  @SequenceGenerator(name="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID", sequenceName="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID", allocationSize = 1)
   @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID")
   private Long id;
 

@@ -45,7 +45,7 @@ import java.util.Set;
 })
 public class PageVersionEntity extends BasePageEntity {
   @Id
-  @SequenceGenerator(name="SEQ_WIKI_PAGE_VERSIONS_VERS_ID", sequenceName="SEQ_WIKI_PAGE_VERSIONS_VERS_ID")
+  @SequenceGenerator(name="SEQ_WIKI_PAGE_VERSIONS_VERS_ID", sequenceName="SEQ_WIKI_PAGE_VERSIONS_VERS_ID", allocationSize = 1)
   @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_PAGE_VERSIONS_VERS_ID")
   @Column(name = "PAGE_VERSION_ID")
   private long id;

@@ -19,6 +19,7 @@ package org.exoplatform.wiki.jpa.dao;
 import java.util.List;
 
 import javax.persistence.NonUniqueResultException;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import org.exoplatform.wiki.jpa.entity.PageEntity;
@@ -96,7 +97,14 @@ public class PageDAO extends WikiBaseDAO<PageEntity, Long> {
 
 
   public List<Long> findAllIds(int offset, int limit) {
-    return  getEntityManager().createNamedQuery("wikiPage.getAllIds").setFirstResult(offset).setMaxResults(limit).getResultList();
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("wikiPage.getAllIds", Long.class);
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
   }
 
   public Long countAllIds() {
