@@ -174,6 +174,7 @@ export default {
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
     },
     initChildNavigation() {
+      console.warn(this.initMacroChildCompleted);
       return this.initMacroChildCompleted;
     }
   },
@@ -299,6 +300,10 @@ export default {
       }
       // if the Note is being posted, no need to autosave anymore
       if (this.postingNote) {
+        return;
+      }
+
+      if (!this.initMacroChildCompleted) {
         return;
       }
 
