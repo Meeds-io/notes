@@ -83,9 +83,9 @@
                       v-model="choice"
                       column
                       class="import-choice-options ms-8">
-                      <v-radio
+                      <!--                      <v-radio
                         :label="$t('notes.label.importRules4')"
-                        value="overwrite" />
+                        value="overwrite" />-->
                       <v-radio
                         :label="$t('notes.label.importRules2')"
                         value="update" />
