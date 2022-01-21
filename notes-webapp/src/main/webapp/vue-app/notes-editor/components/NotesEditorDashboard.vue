@@ -300,10 +300,6 @@ export default {
         return;
       }
 
-      if (this.initMacroChildCompleted) {
-        return;
-      }
-
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -624,6 +620,7 @@ export default {
             self.$root.$applicationLoaded();
           },
           change: function (evt) {
+            this.initMacroChildCompleted = false;
             self.note.content = evt.editor.getData();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
             if ( removeTreeviewBtn ) {
