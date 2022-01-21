@@ -23,7 +23,7 @@
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
             </div>
             <div class="notesFormRightActions pr-7">
-              <p v-if="!initChildNavigation" class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
+              <p v-if="initChildNavigation" class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
               <button
                 id="notesUpdateAndPost"
                 class="btn btn-primary primary px-2 py-0"
@@ -180,17 +180,13 @@ export default {
   watch: {
     'note.title'() {
       if (this.note.title !== this.actualNote.title ) {
-        if (this.initMacroChildCompleted) {
-          this.initMacroChildCompleted = false;
-        }
+        this.initMacroChildCompleted = true;
         this.autoSave();
       }
     },
     'note.content'() {
       if (this.note.content !== this.actualNote.content) {
-        if (this.initMacroChildCompleted) {
-          this.initMacroChildCompleted = false;
-        }
+        this.initMacroChildCompleted = true;
         this.autoSave();
       }
     }
@@ -306,10 +302,6 @@ export default {
         return;
       }
 
-      if (this.initMacroChildCompleted) {
-        return;
-      }
-
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -377,7 +369,7 @@ export default {
         if ((this.note.content.trim().length === 0)) {
           this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
             if (data && data.children && data.children.length) {
-              this.initMacroChildCompleted = true;
+              this.initMacroChildCompleted = false;
               CKEDITOR.instances['notesContent'].setData(childContainer);
               this.setFocus();
             }
