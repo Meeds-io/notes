@@ -180,11 +180,17 @@ export default {
   watch: {
     'note.title'() {
       if (this.note.title !== this.actualNote.title ) {
+        if (this.initMacroChildCompleted) {
+          this.initMacroChildCompleted = false;
+        }
         this.autoSave();
       }
     },
     'note.content'() {
       if (this.note.content !== this.actualNote.content) {
+        if (this.initMacroChildCompleted) {
+          this.initMacroChildCompleted = false;
+        }
         this.autoSave();
       }
     }
@@ -300,6 +306,10 @@ export default {
         return;
       }
 
+      if (this.initMacroChildCompleted) {
+        return;
+      }
+
       // close draft dropping related alert
       if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
         this.alert = false;
@@ -308,7 +318,6 @@ export default {
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
         this.savingDraft = true;
-        this.initMacroChildCompleted = false;
         this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
         this.$nextTick(() => {
           this.saveNoteDraft();
@@ -620,7 +629,6 @@ export default {
             self.$root.$applicationLoaded();
           },
           change: function (evt) {
-            this.initMacroChildCompleted = false;
             self.note.content = evt.editor.getData();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
             if ( removeTreeviewBtn ) {
