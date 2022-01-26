@@ -871,6 +871,7 @@
   <module>
     <name>jspdf</name>
     <script>
+      <minify>false</minify>
       <path>/javascript/eXo/wiki/jspdf.js</path>
     </script>
    </module>
