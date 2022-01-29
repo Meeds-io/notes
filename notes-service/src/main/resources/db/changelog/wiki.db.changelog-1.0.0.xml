@@ -565,6 +565,7 @@
     <addNotNullConstraint
       tableName="WIKI_PAGE_ATTACHMENTS"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -573,6 +574,7 @@
     <addNotNullConstraint
       tableName="WIKI_DRAFT_ATTACHMENTS"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -581,10 +583,12 @@
     <addNotNullConstraint
       tableName="WIKI_DRAFT_PAGES"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
     <addNotNullConstraint
       tableName="WIKI_DRAFT_PAGES"
       columnName="UPDATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -593,10 +597,12 @@
     <addNotNullConstraint
       tableName="WIKI_PAGES"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
     <addNotNullConstraint
       tableName="WIKI_PAGES"
       columnName="UPDATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -605,6 +611,7 @@
     <addNotNullConstraint
       tableName="WIKI_PAGE_MOVES"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -613,10 +620,12 @@
     <addNotNullConstraint
       tableName="WIKI_PAGE_VERSIONS"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
     <addNotNullConstraint
       tableName="WIKI_PAGE_VERSIONS"
       columnName="UPDATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
@@ -625,10 +634,12 @@
     <addNotNullConstraint
       tableName="WIKI_TEMPLATES"
       columnName="CREATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
     <addNotNullConstraint
       tableName="WIKI_TEMPLATES"
       columnName="UPDATED_DATE"
+      columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
 
