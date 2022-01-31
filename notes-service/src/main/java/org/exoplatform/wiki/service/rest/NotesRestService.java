@@ -967,14 +967,16 @@ public class NotesRestService implements ResourceContainer {
             
             if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
               children = parent.getChildren();
+              int indexChild = children.indexOf(bottomChild);
               children.remove(bottomChild);
               
               if (Boolean.TRUE.equals(withDrafts)) {
                 children = children.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant())).collect(Collectors.toList());
               }
               
-            if (!Boolean.TRUE.equals(withDrafts) || bottomChild.isDraftPage() || Boolean.TRUE.equals(bottomChild.isHasDraftDescendant())) {
-                children.add(bottomChild);
+              if (!Boolean.TRUE.equals(withDrafts) || bottomChild.isDraftPage()
+                  || Boolean.TRUE.equals(bottomChild.isHasDraftDescendant())) {
+                children.add(indexChild, bottomChild);
               }
               parent.setChildren(children);
 
