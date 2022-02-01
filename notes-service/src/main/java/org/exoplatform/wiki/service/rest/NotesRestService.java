@@ -492,6 +492,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteById(noteId, identity);
+      note_.setUrl(note.getUrl());
       if (note_ == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -539,8 +540,6 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
-      } else if (note_.getContent().equals(note.getContent())) {
-          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
