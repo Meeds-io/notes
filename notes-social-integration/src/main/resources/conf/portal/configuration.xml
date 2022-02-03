@@ -229,4 +229,23 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
+
+  <external-component-plugins profiles="analytics">
+    <target-component>org.exoplatform.wiki.service.WikiService</target-component>
+    <component-plugin>
+      <name>NotesPageListener</name>
+      <set-method>addComponentPlugin</set-method>
+      <type>org.exoplatform.notes.listener.analytics.NotesPageListener</type>
+    </component-plugin>
+  </external-component-plugins>
+
+  <external-component-plugins profiles="analytics">
+    <target-component>org.exoplatform.services.listener.ListenerService</target-component>
+    <component-plugin>
+      <name>social.metadataItem.created</name>
+      <set-method>addListener</set-method>
+      <type>org.exoplatform.notes.listener.analytics.NotesMetadataListener</type>
+    </component-plugin>
+  </external-component-plugins>
+
 </configuration>
