@@ -9,6 +9,7 @@
     :type="favoriteType"
     :template-params="templateParams"
     :small="false"
+    type-label="notes"
     @removed="removed"
     @remove-error="removeError"
     @added="added"

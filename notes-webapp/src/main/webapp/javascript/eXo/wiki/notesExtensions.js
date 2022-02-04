@@ -4,6 +4,7 @@
       extensionRegistry.registerExtension('activity', 'type', {
         type: 'ks-wiki:spaces',
         options: {
+          name: 'notes',
           canEdit: () => false,
           supportsThumbnail: true,
           useSameViewForMobile: true,
