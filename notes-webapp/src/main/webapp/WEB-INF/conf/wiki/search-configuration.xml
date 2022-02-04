@@ -37,7 +37,7 @@
           <description>Search connector for wikis</description>
           <object type="org.exoplatform.social.core.search.SearchConnector">
             <field name="name">
-              <string>wiki</string>
+              <string>notes</string>
             </field>
             <field name="uri">
               <string><![CDATA[/portal/rest/wiki/contextsearch?limit={limit}&keyword={keyword}]]></string>
