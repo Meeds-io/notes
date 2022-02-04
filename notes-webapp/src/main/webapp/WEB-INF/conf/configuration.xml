@@ -34,5 +34,6 @@
   <import>war:/conf/wiki/notification-configuration.xml</import>
   <import>war:/conf/wiki/dynamic-container-configuration.xml</import>
   <import>war:/conf/wiki/search-configuration.xml</import>
+  <import profiles="analytics">war:/conf/wiki/analytics-ui-watchers-configuration.xml</import>
 
 </configuration>
