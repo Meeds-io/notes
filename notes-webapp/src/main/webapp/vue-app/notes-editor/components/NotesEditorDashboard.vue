@@ -133,8 +133,6 @@ export default {
       noteId: '',
       parentPageId: '',
       appName: 'notes',
-      spaceName: '',
-      spaceDisplayName: eXo.env.portal.previousURI,
       srcImageNote: '/notes/images/wiki.png',
       titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
@@ -401,13 +399,10 @@ export default {
             parentPageId: this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
-            url: '',
           };
         }
         let notePath = '';
         if (note.id) {
-          this.spaceName= note.wikiOwner.split('/spaces/')[1];
-          note.url =`${eXo.env.portal.context}/g/:spaces:${this.spaceName}/${this.spaceDisplayName}/${this.note.id}`;
           this.$notesService.updateNoteById(note).then(data => {
             this.removeLocalStorageCurrentDraft();
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
