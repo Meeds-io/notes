@@ -34,7 +34,7 @@
     <org.exoplatform.platform-ui.version>6.3.x-maintenance-SNAPSHOT</org.exoplatform.platform-ui.version>
     <addon.exo.gamification.version>2.3.x-maintenance-SNAPSHOT</addon.exo.gamification.version>
     <addon.exo.analytics.version>1.2.x-maintenance-SNAPSHOT</addon.exo.analytics.version>
-
+  
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
   </properties>
