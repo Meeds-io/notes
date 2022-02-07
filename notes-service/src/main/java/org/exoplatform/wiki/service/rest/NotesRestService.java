@@ -540,6 +540,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams);
         }
       } else{
+         //in this case, the note didnt change on title nor content. As we need the page url in front side, we compute it here
          note_.setUrl(Utils.getPageUrl(note));
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
