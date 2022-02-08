@@ -539,6 +539,9 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
+      } else{
+         //in this case, the note didnt change on title nor content. As we need the page url in front side, we compute it here
+         note_.setUrl(Utils.getPageUrl(note));
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
