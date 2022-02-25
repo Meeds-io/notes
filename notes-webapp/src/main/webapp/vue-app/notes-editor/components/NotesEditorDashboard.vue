@@ -383,7 +383,7 @@ export default {
             name: this.note.name,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() ? this.getBody() : this.note.content,
+            content: this.getBody() || this.note.content,
             parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -395,7 +395,7 @@ export default {
             name: this.note.name,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() ? this.getBody() : this.note.content,
+            content: this.getBody() || this.note.content,
             parentPageId: this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -444,7 +444,7 @@ export default {
       const draftNote = {
         id: this.note.draftPage ? this.note.id : '',
         title: this.note.title,
-        content: this.getBody() ? this.getBody() : this.note.content,
+        content: this.getBody() || this.note.content,
         name: this.note.name,
         appName: this.appName,
         wikiType: this.note.wikiType,
@@ -618,6 +618,7 @@ export default {
           },
           change: function (evt) {
             self.note.content = evt.editor.getData();
+            self.autoSave();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
             if ( removeTreeviewBtn ) {
               evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
@@ -818,6 +819,6 @@ export default {
       const newData = CKEDITOR.instances['notesContent'].getData();
       return newData ? newData : null;
     }
-  },
+  }
 };
 </script>
