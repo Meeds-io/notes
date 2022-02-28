@@ -515,7 +515,7 @@ export default {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('video','/notes/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
+      CKEDITOR.plugins.addExternal('video','/social-portlet/js/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
@@ -527,7 +527,7 @@ export default {
         // Disable suggester on smart-phone landscape
         extraPlugins = 'simpleLink,selectImage';
       }
-      CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
+      CKEDITOR.addCss('.cke_editable { font-size: 14px;} .video { width: 900px; height: 506px; margin: 0 auto; }');
       CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
 
       // this line is mandatory when a custom skin is defined
