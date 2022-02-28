@@ -11,10 +11,8 @@
       @removed="$emit('refresh-favorite')" />
     <v-card-text v-if="poster" class="px-2 pt-2 pb-0">
       <exo-user-avatar
-        :username="posterUsername"
-        :fullname="posterFullname"
-        :title="posterFullname"
-        avatar-class="border-color">
+        :profile-id="posterUsername"
+        popover>
         <template slot="subTitle">
           <date-format :value="createdDate" />
         </template>
@@ -90,9 +88,6 @@ export default {
     },
     poster() {
       return this.result && this.result.poster.profile;
-    },
-    posterFullname() {
-      return this.poster && this.poster.fullname;
     },
     posterUsername() {
       return this.poster && this.poster.username;
