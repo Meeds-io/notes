@@ -209,7 +209,7 @@ export default {
           name: this.notes.name,
           wikiType: this.notes.wikiType,
           wikiOwner: this.notes.wikiOwner,
-          content: this.notes.content,
+          content: this.getBody() || this.note.content,
           parentPageId: this.notes.parentPageId,
           toBePublished: toPost,
           appName: this.appName,
@@ -335,7 +335,7 @@ export default {
             self.$root.$applicationLoaded();
           },
           change: function (evt) {
-            self.notes.content = evt.editor.getData();
+            self.note.content = evt.editor.getData();
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
@@ -380,6 +380,10 @@ export default {
       this.alert = true;
       window.setTimeout(() => this.alert = false, 5000);
     },
+    getBody: function() {
+      const newData = CKEDITOR.instances['notesContent'].getData();
+      return newData ? newData : null;
+    }
   }
 };
 </script>
