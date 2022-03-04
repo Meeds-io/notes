@@ -209,7 +209,7 @@ export default {
           name: this.notes.name,
           wikiType: this.notes.wikiType,
           wikiOwner: this.notes.wikiOwner,
-          content: this.getBody() || this.note.content,
+          content: this.getBody() || this.notes.content,
           parentPageId: this.notes.parentPageId,
           toBePublished: toPost,
           appName: this.appName,
@@ -335,7 +335,7 @@ export default {
             self.$root.$applicationLoaded();
           },
           change: function (evt) {
-            self.note.content = evt.editor.getData();
+            self.notes.content = evt.editor.getData();
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
