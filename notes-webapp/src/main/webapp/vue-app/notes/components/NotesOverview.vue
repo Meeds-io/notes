@@ -142,7 +142,7 @@
               contain
               eager />
             <div>
-              <p class="notes-welcome-patragraph">
+              <p v-if="!isMobile" class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
