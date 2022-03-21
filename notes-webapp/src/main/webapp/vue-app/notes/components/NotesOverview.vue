@@ -757,12 +757,15 @@ export default {
           }
         }
       }
-      contentChildren.forEach( (child) =>  {
-        if (child.classList.value.includes('navigation-img-wrapper')) {
-          child.innerHTML = '';
-          window.setTimeout(() => {this.hasManualChildren = true;},100);
+      if (contentChildren) {
+        for (let i = 0; i < contentChildren.length; i++) { // NOSONAR not iterable
+          const child = contentChildren[i];
+          if (child.classList.value.includes('navigation-img-wrapper')) {
+            child.innerHTML = '';
+            window.setTimeout(() => {this.hasManualChildren = true;},100);
+          }
         }
-      });
+      }
       return docElement.innerHTML;
     },
     openNoteVersionsHistoryDrawer() {
