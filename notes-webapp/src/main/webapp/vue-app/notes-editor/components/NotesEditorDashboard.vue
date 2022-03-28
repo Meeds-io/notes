@@ -528,7 +528,7 @@ export default {
         extraPlugins = 'simpleLink,selectImage';
       }
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
-      CKEDITOR.addCss('.placeholder { color: #a8b3c5!important;}');
+      CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
 
       // this line is mandatory when a custom skin is defined
 
