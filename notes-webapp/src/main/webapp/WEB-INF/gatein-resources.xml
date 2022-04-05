@@ -130,7 +130,7 @@
     <name>NotesExtensions</name>
     <module>
       <script>
-        <path>/javascript/eXo/wiki/notesExtensions.js</path>
+        <path>/javascript/notesExtension.bundle.js</path>
       </script>
       <depends>
         <module>extensionRegistry</module>
