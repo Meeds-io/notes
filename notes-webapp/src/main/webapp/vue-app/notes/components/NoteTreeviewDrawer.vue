@@ -89,8 +89,8 @@
               </div>
             </v-col>
           </v-row>
-          <template v-if="home && !exportNotes && resultSearch && !search" class="ma-0 border-box-sizing">
-            <v-list-item @click.prevent="openNote(event,home)">
+          <template v-if="home && !exportNotes && resultSearch && !search">
+            <v-list-item @click.prevent="openNote(event,home)" class="ma-0 border-box-sizing">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
                   <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name }}</span>
@@ -132,7 +132,7 @@
               activatable
               open-on-click
               transition>
-              <template v-slot:label="{ item }">
+              <template #label="{ item }">
                 <v-list-item-title class="body-2">
                   <div 
                     v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage"
@@ -223,7 +223,6 @@ export default {
     drawer: false,
     filter: '',
     filterOptions: [],
-    active: [],
     checkbox: false,
     showTree: true,
     search: '',
@@ -234,7 +233,10 @@ export default {
       return this.openNotes;
     },
     active() {
-      return this.activeItem;
+      return this.search
+        && this.allItems
+        && this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()))
+        || this.activeItem;
     },
     includePage() {
       return this.isIncludePage;
@@ -266,7 +268,6 @@ export default {
     search() {
       this.showTree = true;
       if (this.search) {
-        this.active = this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()));
         this.items = this.active;
         this.items.forEach(item => {
           item.children = null;

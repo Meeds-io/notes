@@ -1,8 +1,36 @@
 const path = require('path');
 const { styles } = require( '@ckeditor/ckeditor5-dev-utils' );
 const TerserPlugin = require('terser-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
+const { VueLoaderPlugin } = require('vue-loader')
+
 const config = {
+  mode: 'production',
   context: path.resolve(__dirname, '.'),
+  entry: {
+    wikiCkeditor: './src/main/webapp/javascript/eXo/wiki/ckeditor/wikiCkeditor.js',
+    pageContent: './src/main/webapp/javascript/eXo/wiki/pageContent.js',
+    wikiSearchCard: './src/main/webapp/vue-app/wikiSearch/main.js',
+    notes: './src/main/webapp/vue-app/notes/main.js',
+    notesEditor: './src/main/webapp/vue-app/notes-editor/main.js',
+    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js'
+  },
+  output: {
+    path: path.join(__dirname, 'target/notes/'),
+    filename: 'javascript/[name].bundle.js',
+    libraryTarget: 'amd'
+  },
+  plugins: [
+    new ESLintPlugin({
+      files: [
+        './src/main/webapp/vue-app/*.js',
+        './src/main/webapp/vue-app/*.vue',
+        './src/main/webapp/vue-app/**/*.js',
+        './src/main/webapp/vue-app/**/*.vue',
+      ],
+    }),
+    new VueLoaderPlugin()
+  ],
   module: {
     rules: [
      {
@@ -38,30 +66,15 @@ const config = {
         exclude: /node_modules/,
         use: [
           'babel-loader',
-          'eslint-loader',
         ]
       },
       {
         test: /\.vue$/,
         use: [
           'vue-loader',
-          'eslint-loader',
         ]
       }
     ]
-  },
-  entry: {
-    wikiCkeditor: './src/main/webapp/javascript/eXo/wiki/ckeditor/wikiCkeditor.js',
-    pageContent: './src/main/webapp/javascript/eXo/wiki/pageContent.js',
-    wikiSearchCard: './src/main/webapp/vue-app/wikiSearch/main.js',
-    notes: './src/main/webapp/vue-app/notes/main.js',
-    notesEditor: './src/main/webapp/vue-app/notes-editor/main.js',
-    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js'
-  },
-  output: {
-    path: path.join(__dirname, 'target/notes/'),
-    filename: 'javascript/[name].bundle.js',
-    libraryTarget: 'amd'
   },
   externals: {
     vue: 'Vue',
@@ -69,14 +82,13 @@ const config = {
     jquery: '$',
   },
   optimization: {
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: { output: { ascii_only: true } }
-        })
-      ],
-    },
-
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: { output: { ascii_only: true } }
+      })
+    ],
+  },
 };
 
 module.exports = config;

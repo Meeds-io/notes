@@ -36,7 +36,7 @@
                   <div class="note-version-description"></div>
                   <div v-if="index > 0 && canManage" class="note-version-restore">
                     <v-tooltip bottom>
-                      <template v-slot:activator="{ on, attrs }">
+                      <template #activator="{ on, attrs }">
                         <v-icon
                           v-bind="attrs"
                           v-on="on"

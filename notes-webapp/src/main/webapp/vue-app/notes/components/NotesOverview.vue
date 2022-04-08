@@ -23,7 +23,7 @@
               <div
                 class="d-inline-flex">
                 <v-tooltip bottom v-if="!isMobile && !note.draftPage && note.canManage">
-                  <template v-slot:activator="{ on, attrs }">
+                  <template #activator="{ on, attrs }">
                     <v-btn
                       v-on="on"
                       v-bind="attrs"
@@ -43,7 +43,7 @@
               <div
                 class="d-inline-flex">
                 <v-tooltip bottom v-if="note.canManage && !isMobile">
-                  <template v-slot:activator="{ on, attrs }">
+                  <template #activator="{ on, attrs }">
                     <v-btn
                       icon
                       v-on="on"
@@ -67,7 +67,7 @@
               <div
                 class="d-inline-flex">
                 <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
+                  <template #activator="{ on, attrs }">
                     <v-btn
                       v-on="on"
                       @click="$root.$emit('display-action-menu')"
@@ -88,7 +88,7 @@
           </div>
           <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-inline">
             <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
+              <template #activator="{ on, attrs }">
                 <v-btn
                   @click="$refs.notesBreadcrumb.open(note, 'displayNote')"
                   v-on="on"
@@ -120,7 +120,7 @@
               dense
               :items="noteAllChildren"
               item-key="noteId">
-              <template v-slot:label="{ item }">
+              <template #label="{ item }">
                 <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
                   <span>{{ item.name }}</span>
                 </v-list-item-title>
@@ -145,7 +145,7 @@
               <p v-if="!isMobile" class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
+                  <template #activator="{ on, attrs }">
                     <v-btn
                       class="pa-0"
                       icon
@@ -163,7 +163,7 @@
                 </v-tooltip>
                 <span>{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
                 <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
+                  <template #activator="{ on, attrs }">
                     <v-btn
                       class="pa-0"
                       v-on="on"
@@ -211,7 +211,7 @@
             dense
             :items="noteAllChildren"
             item-key="noteId">
-            <template v-slot:label="{ item }">
+            <template #label="{ item }">
               <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
                 <span>{{ item.name }}</span>
               </v-list-item-title>

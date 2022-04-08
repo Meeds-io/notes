@@ -8,7 +8,7 @@
         class="notes-tree-item d-flex text-truncate"
         :style="`max-width: ${100 / (noteBreadcrumb.length)}%`">
         <v-tooltip max-width="300" bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <v-btn
               height="20px"
               min-width="45px"
@@ -31,7 +31,7 @@
     <div v-else class="notes-tree-items notes-long-path d-flex align-center">
       <div class="notes-tree-item long-path-first-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate path-clickable breadCrumb-link"
               :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
@@ -45,7 +45,7 @@
       </div>
       <div class="notes-tree-item long-path-second-item d-flex">
         <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <v-icon
               v-bind="attrs"
               v-on="on"
@@ -64,7 +64,7 @@
       </div>
       <div class="notes-tree-item long-path-third-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate path-clickable breadCrumb-link"
               :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
@@ -78,7 +78,7 @@
       </div>
       <div class="notes-tree-item d-flex text-truncate">
         <v-tooltip max-width="300" bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <a
               class="caption text-color text-truncate text-sub-title breadCrumb-link"
               :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"

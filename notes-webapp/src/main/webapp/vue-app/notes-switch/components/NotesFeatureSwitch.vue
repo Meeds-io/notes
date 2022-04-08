@@ -36,7 +36,6 @@ export default {
     useNewApp: true,
     imageLoaded: false,
     notesApplicationClass: 'notesApplication',
-    notesPageName: '',
     noteBookType: eXo.env.portal.spaceName ? 'group' : 'portal',
     noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : `${eXo.env.portal.portalName}`,
     currentPath: window.location.pathname, 
