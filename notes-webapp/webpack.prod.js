@@ -16,6 +16,7 @@ const config = {
     notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js'
   },
   output: {
+    publicPath: '',
     path: path.join(__dirname, 'target/notes/'),
     filename: 'javascript/[name].bundle.js',
     libraryTarget: 'amd'
