@@ -9,9 +9,15 @@
     </v-list-item-content>
 
     <v-list-item-action>
-      <v-btn icon>
-        <v-icon class="yellow--text text--darken-2" size="18">fa-star</v-icon>
-      </v-btn>
+      <favorite-button
+        :id="id"
+        :favorite="isFavorite"
+        :top="top"
+        :right="right"
+        type="notes"
+        type-label="notes"
+        @removed="removed"
+        @remove-error="removeError" />
     </v-list-item-action>
   </v-list-item>
 </template>
@@ -25,7 +31,8 @@ export default {
   },
   data: () => ({
     noteTitle: '',
-    noteUrl: ''
+    noteUrl: '', 
+    isFavorite: true
   }),
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
@@ -33,6 +40,23 @@ export default {
       this.noteTitle = note.title;
       this.noteUrl = `${eXo.env.portal.context}/g/:spaces:${noteSpace}/${noteSpace}/notes/${note.id}`;
     });
+  },
+  methods: {
+    removed() {
+      this.isFavorite = !this.isFavorite;
+      this.displayAlert(this.$t('Favorite.tooltip.SuccessfullyDeletedFavorite'));
+      this.$emit('removed');
+      this.$root.$emit('refresh-favorite-list');
+    },
+    removeError() {
+      this.displayAlert(this.$t('Favorite.tooltip.ErrorDeletingFavorite', 'note'), 'error');
+    },
+    displayAlert(message, type) {
+      this.$root.$emit('notes-notification-alert', {
+        message,
+        type: type || 'success',
+      });
+    },
   },
 };
 </script>
