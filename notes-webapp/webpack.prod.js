@@ -13,7 +13,8 @@ const config = {
     wikiSearchCard: './src/main/webapp/vue-app/wikiSearch/main.js',
     notes: './src/main/webapp/vue-app/notes/main.js',
     notesEditor: './src/main/webapp/vue-app/notes-editor/main.js',
-    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js'
+    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js',
+    notesExtension: './src/main/webapp/vue-app/notes-extensions/main.js'
   },
   output: {
     publicPath: '',

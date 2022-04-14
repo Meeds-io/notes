@@ -22,10 +22,11 @@ const appId = 'NotesApp';
 //should expose the locale ressources as REST API 
 const url = [`${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.wiki.WikiPortlet_${lang}.json`,`${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.notes.notesPortlet-${lang}.json`];
 
-window.Object.defineProperty(Vue.prototype, '$notesService', {
-  value: notesService,
-});
-
+if (!Vue.prototype.$notesService) {
+  window.Object.defineProperty(Vue.prototype, '$notesService', {
+    value: notesService,
+  });
+}
 
 export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
