@@ -19,7 +19,7 @@ export function initNotesExtensions() {
         try {
           const templateParams = activity.templateParams || {};
           if (templateParams.page_type === 'group' && activity.activityStream && activity.activityStream.space) {
-             return `${templateParams.page_url}`;
+            return `${templateParams.page_url}`;
           } else if (templateParams.page_type === 'portal') {
             return `${eXo.env.portal.context}/${templateParams.page_owner}/wiki/${templateParams.page_id}`;
           }
