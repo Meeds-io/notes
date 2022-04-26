@@ -19,12 +19,7 @@ export function initNotesExtensions() {
         try {
           const templateParams = activity.templateParams || {};
           if (templateParams.page_type === 'group' && activity.activityStream && activity.activityStream.space) {
-            const spaceApplications = activity.activityStream.space.dataEntity.applications;
-            const spaceApp = spaceApplications.find(app => app.id === 'WikiPortlet');
-            const spaceAppUri = spaceApp && spaceApp.displayName || 'wiki';
-            const spacePrettyName = activity.activityStream.space.prettyName;
-            const spaceGroupUriPart = templateParams.page_owner.replace(/\//g, ':');
-            return `${eXo.env.portal.context}/g/${spaceGroupUriPart}/${spacePrettyName}/${spaceAppUri}/${templateParams.page_id}`;
+            return `${templateParams.page_url}`;
           } else if (templateParams.page_type === 'portal') {
             return `${eXo.env.portal.context}/${templateParams.page_owner}/wiki/${templateParams.page_id}`;
           }
