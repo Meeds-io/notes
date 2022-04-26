@@ -98,6 +98,7 @@ public class EntityConverter {
       page.setPermissions(convertPermissionEntitiesToPermissionEntries(pageEntity.getPermissions(),
               Arrays.asList(PermissionType.VIEWPAGE, PermissionType.EDITPAGE)));
       page.setActivityId(pageEntity.getActivityId());
+      page.setDeleted(pageEntity.isDeleted());
     }
     return page;
   }
