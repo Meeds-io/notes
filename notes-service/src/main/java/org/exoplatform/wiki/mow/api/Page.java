@@ -89,6 +89,8 @@ public class Page {
 
   private boolean hasChild;
 
+  private boolean isDeleted;
+
   private Page parent;
 
   private Map<String, List<MetadataItem>> metadatas;
