@@ -67,6 +67,10 @@
   </component>
 
   <component>
+    <type>org.exoplatform.wiki.service.NotesExportService</type>
+  </component>
+
+  <component>
     <type>org.exoplatform.wiki.service.NotesAutoImportService</type>
     <init-params>
       <value-param>
@@ -283,7 +287,6 @@
       <type>org.exoplatform.wiki.service.listener.NotesMetadataListener</type>
     </component-plugin>
   </external-component-plugins>
-
 
   <external-component-plugins>
     <target-component>org.exoplatform.wiki.resolver.PageResolver</target-component>

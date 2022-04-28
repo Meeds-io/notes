@@ -38,10 +38,7 @@ import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.service.PageUpdateType;
-import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
@@ -77,6 +74,8 @@ public class NotesRestService implements ResourceContainer {
   private final NoteService           noteService;
 
   private final WikiService           noteBookService;
+
+  private final NotesExportService notesExportService;
   
   private final UploadService uploadService;
 
@@ -84,9 +83,10 @@ public class NotesRestService implements ResourceContainer {
 
   private final CacheControl          cc;
 
-  public NotesRestService(NoteService noteService, WikiService noteBookService, UploadService uploadService, ResourceBundleService resourceBundleService) {
+  public NotesRestService(NoteService noteService, WikiService noteBookService, UploadService uploadService, ResourceBundleService resourceBundleService, NotesExportService notesExportService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
+    this.notesExportService = notesExportService;
     this.uploadService = uploadService;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
@@ -704,24 +704,22 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  @GET
-  @Path("/note/export/{notes}")
+  @POST
+  @Path("/note/export/{exportId}/{notes}")
   @RolesAllowed("users")
   @ApiOperation(value = "Export notes", httpMethod = "PUT", response = Response.class, notes = "This export selected notes and provide a zip file.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
   public Response exportNote(@ApiParam(value = "List of notes ids", required = true) @PathParam("notes") String notesList,
+                             @ApiParam(value = "export ID", required = true) @PathParam("exportId") int exportId,
                              @ApiParam(value = "exportAll") @QueryParam("exportAll") Boolean exportAll) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String[] notes = notesList.split(",");
-      byte[] filesBytes = noteService.exportNotes(notes, exportAll,identity);
-      return Response.ok(filesBytes)
-                     .type("application/zip")
-                     .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
-                     .build();
+      notesExportService.startExportNotes(exportId,notes, exportAll,identity);
+      return Response.ok().build();
 
     } catch (Exception ex) {
       log.warn("Failed to export notes ", ex);
@@ -729,6 +727,62 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  @GET
+  @Path("/note/export/zip/{exportId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+                @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getExportedZip(@ApiParam(value = "List of notes ids", required = true) @PathParam("exportId") int exportId) {
+
+    try {
+        byte[] filesBytes = notesExportService.getExportedNotes(exportId);
+        return Response.ok(filesBytes)
+                .type("application/zip")
+                .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
+                .build();
+    } catch (Exception ex) {
+      log.warn("Failed to export notes ", ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+  @GET
+  @Path("/note/export/status/{exportId}")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+                @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getExportNoteStatus(@ApiParam(value = "export id", required = true) @PathParam("exportId") int exportId) {
+
+    try {
+        return Response.ok(notesExportService.getStatus(exportId)).build();
+    } catch (Exception ex) {
+      log.warn("Failed to export notes ", ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
+  @PUT
+  @Path("/note/export/cancel/{exportId}")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This cancel export.")
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+                @ApiResponse(code = 404, message = "Resource not found") })
+  public Response cancelExportNote(@ApiParam(value = "export id", required = true) @PathParam("exportId") int exportId) {
+
+    try {
+        notesExportService.cancelExportNotes(exportId);
+        return Response.ok().build();
+    } catch (Exception ex) {
+      log.warn("Failed to export notes ", ex);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
   @POST
   @Path("/note/import/{noteId}/{uploadId}")
   @RolesAllowed("users")

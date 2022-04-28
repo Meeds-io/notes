@@ -355,11 +355,7 @@ public interface NoteService {
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
 
-  byte[] exportNotes(String[] notesToExportIds, boolean exportAll, Identity identity) throws IOException, WikiException;
-
-  List<NoteToExport> getNotesToExport(String[] notesToExportIds, boolean exportAll, Identity identity);
-
-  List<NoteToExport> getChildrenNoteOf(NoteToExport note) throws WikiException;
+  List<NoteToExport> getChildrenNoteOf(NoteToExport note, String userId) throws WikiException;
 
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 

@@ -27,7 +27,176 @@
       <template v-else slot="title">
         {{ $t('notes.label.breadcrumbTitle') }}
       </template>
-      <template slot="content">
+      <template v-if="exporting" slot="content">
+        <v-card flat class="pa-2 mt-10">            
+          <v-list>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.started">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.started"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.started') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.notesGetted">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.notesGetted"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title v-if="exportStatus.exportedNotesCount>0"> {{ $t('notes.export.status.label.preparingNotes') }} ({{ exportStatus.exportedNotesCount }} notes)</v-list-item-title>
+                  <v-list-item-title v-else> {{ $t('notes.export.status.label.preparingNotes') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.notesPrepared">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.notesPrepared"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.updatingNoteParents') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.jsonCreated">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.jsonCreated"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.creatingJson') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.imageUrlsUpdated">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.imageUrlsUpdated"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.updatingImages') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.zipCreated">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.zipCreated"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.creatingZip') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.tempCleaned">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.tempCleaned"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.cleaningTemps') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template>
+                <v-list-item-action class="mr-3">
+                  <v-icon
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.dataCreated">
+                    fa-check
+                  </v-icon>
+                  <v-progress-circular
+                    v-if="!exportStatus.action.dataCreated"
+                    color="primary"
+                    indeterminate
+                    size="18" />
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>{{ $t('notes.export.status.label.done') }}</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </template>
+      <template slot="content" v-if="!exporting">
         <v-layout v-if="movePage" column>
           <v-list-item>
             <v-list-item-content>
@@ -188,6 +357,7 @@
             {{ $t('notes.button.cancel') }}
           </v-btn>
           <v-btn
+            :disabled="exporting"
             @click="exportNotesToZip()"
             class="btn btn-primary ml-2">
             {{ $t('notes.button.export') }}
@@ -228,6 +398,16 @@ export default {
     showTree: true,
     search: '',
     noteNotFountImage: '/notes/skin/images/notes_not_found.png',
+    exportStatus: {status: '', action: {}}, 
+    exporting: false, 
+    started: false,
+    notesGetted: false,
+    parentUpdated: false,
+    jsonCreated: false,
+    imageUrlsUpdated: false,
+    zipCreated: false,
+    tempCleaned: false,
+    dataCreated: false,
   }),
   computed: {
     openedItems() {
@@ -310,6 +490,16 @@ export default {
     });
     this.$root.$on('display-treeview-items', () => {
       this.closeAll = true;
+    });
+    this.$root.$on('set-exporting', (exporting) => {
+      this.exporting = exporting;
+    });
+    this.$root.$on('set-export-status', (exportStatus) => {
+      this.exportStatus = exportStatus;
+      if (this.exportStatus.status==='ZIP_CREATED'){
+        this.exporting=false;
+        this.close();
+      }
     });
   },
   mounted() {
@@ -458,14 +648,20 @@ export default {
     },
     exportNotesToZip(){
       this.$root.$emit('export-notes',this.selectionNotes,this.checkbox,this.home.noteId);
+      this.exporting=true;
       this.resetImport();
-      this.close();
+      //this.close();
     },
     resetImport(){
       this.checkbox = false;
       this.selectionNotes = [];
     },
     close() {
+      if (this.exporting){
+        this.$root.$emit('cancel-export-notes');
+        this.exportStatus = {};
+        this.exporting = false; 
+      }
       this.render = false;
       this.$refs.breadcrumbDrawer.close();
     },
