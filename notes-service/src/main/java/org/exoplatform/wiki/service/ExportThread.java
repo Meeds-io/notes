@@ -3,6 +3,7 @@ package org.exoplatform.wiki.service;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -304,12 +305,12 @@ public class ExportThread implements Runnable {
         notesExportService.removeExportResource(exportId);
         return;
       }
-
+      String date = new SimpleDateFormat("dd_MM_yyyy").format(new Date());
       if (note_.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
-        htmlUploadImageProcessor.uploadSpaceFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + new Date().getTime() + ".zip", "Documents/Notes/exports");
+        htmlUploadImageProcessor.uploadSpaceFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + date + ".zip", "Documents/Notes/exports");
       }
       if (note_.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
-        htmlUploadImageProcessor.uploadUserFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + new Date().getTime() + ".zip", "Documents/Notes/exports");
+        htmlUploadImageProcessor.uploadUserFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + date + ".zip", "Documents/Notes/exports");
       }
       exportResource.setStatus(ExportStatus.ZIP_CREATED.name());
       exportResource.getAction().setZipCreated(true);
