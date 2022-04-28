@@ -323,7 +323,9 @@ export default {
       noteTitle: '',
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
       hasManualChildren: false,
-      childNodes: []
+      childNodes: [],
+      exportStatus: '', 
+      exportId: 0,
     };
   },
   watch: {
@@ -360,6 +362,13 @@ export default {
         this.displayLastVersion = false;
       }
     },
+    exportStatus(){
+      if (this.exportStatus.status==='ZIP_CREATED'){
+        this.stopGetSatus();
+        this.getExportedZip();
+        this.exportStatus={};  
+      }
+    }
   },
   computed: {
     showManualChild() {
@@ -474,6 +483,9 @@ export default {
     this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
       this.exportNotes(notesSelected,importAll,homeNoteId);
     });
+    this.$root.$on('cancel-export-notes', () => {
+      this.cancelExportNotes();
+    });
     this.$root.$on('import-notes', (uploadId,overrideMode) => {
       this.importNotes(uploadId,overrideMode);
     });
@@ -528,18 +540,35 @@ export default {
       });
     },
     exportNotes(notesSelected, exportAll, homeNoteId) {
+      const maxExportId = 10000;
+      this.exportId = Math.floor(Math.random() * maxExportId);
       if (exportAll) {
         notesSelected = homeNoteId;
       }
+      this.$notesService.exportNotes(notesSelected, exportAll,this.exportId);
+      this.getExportStatus();
+    },
+    cancelExportNotes() {
+      this.stopGetSatus();
+      this.$notesService.cancelExportNotes(this.exportId).then(() => {
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.export.canceled')});
+      }).catch(e => {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    getExportedZip() {
       const date = this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
-      this.$notesService.exportNotes(notesSelected, exportAll).then((transfer) => {
+      this.$notesService.getExportedZip(this.exportId).then((transfer) => {
         return transfer.blob();
       }).then((bytes) => {
         const elm = document.createElement('a');
         elm.href = URL.createObjectURL(bytes);
         elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}.zip`);
         elm.click();
-        this.$root.$emit('close-note-tree-drawer');
+        this.exportId=0;  
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.exported')});
       }).catch(e => {
         console.error('Error when export note page', e);
@@ -548,6 +577,19 @@ export default {
           message: this.$t(`notes.message.${e.message}`)
         });
       });
+    },
+    getExportStatus() {
+      this.intervalId = window.setInterval(() =>{
+        return this.$notesService.getExportStatus(this.exportId).then(data => {
+          this.exportStatus = data; 
+          this.$root.$emit('set-export-status',this.exportStatus);
+        }).catch(() => {
+          this.stopGetSatus();
+        });
+      }, 500);    
+    },
+    stopGetSatus(){
+      clearInterval(this.intervalId);
     },
     getNoteById(noteId, source) {
       return this.$notesService.getNoteById(noteId, source, this.noteBookType, this.noteBookOwner).then(data => {
