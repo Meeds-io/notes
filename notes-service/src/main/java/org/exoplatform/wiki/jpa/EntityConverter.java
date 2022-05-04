@@ -99,6 +99,7 @@ public class EntityConverter {
               Arrays.asList(PermissionType.VIEWPAGE, PermissionType.EDITPAGE)));
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
+      page.setToBePublished(pageEntity.isToBePublished());
     }
     return page;
   }
@@ -176,6 +177,7 @@ public class EntityConverter {
       pageEntity.setUrl(page.getUrl());
       pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
+      pageEntity.setToBePublished(page.isToBePublished());
     }
     return pageEntity;
   }

@@ -111,6 +111,9 @@ public class PageEntity extends BasePageEntity {
   @Column(name = "DELETED")
   private boolean deleted;
 
+  @Column(name = "TOBEPUBLISHED")
+  private boolean toBePublished;
+
   public long getId() {
     return id;
   }
@@ -225,5 +228,13 @@ public class PageEntity extends BasePageEntity {
 
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
+  }
+
+  public boolean isToBePublished() {
+    return toBePublished;
+  }
+
+  public void setToBePublished(boolean toBePublished) {
+    this.toBePublished = toBePublished;
   }
 }

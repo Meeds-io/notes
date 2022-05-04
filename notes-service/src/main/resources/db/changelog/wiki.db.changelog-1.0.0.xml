@@ -74,7 +74,6 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
-
   <changeSet author="wiki" id="1.0.0-3">
     <validCheckSum>7:246c5b19f40881febd2095d6d0bd9a02</validCheckSum>
     <validCheckSum>7:c14eb683d9733450288a15b119123083</validCheckSum>
@@ -718,6 +717,11 @@
     <createSequence sequenceName="SEQ_WIKI_EMOTION_ICONS_ICON_ID" startValue="1" />
     <createSequence sequenceName="SEQ_WIKI_TEMPLATES_TEMPLATE_ID" startValue="1" />
     <createSequence sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID" startValue="1" />
+  </changeSet>
+  <changeSet author="wiki" id="1.0.0-60">
+    <addColumn tableName="WIKI_PAGES">
+      <column name="TOBEPUBLISHED" type="BOOLEAN"/>
+    </addColumn>
   </changeSet>
 
 </databaseChangeLog>

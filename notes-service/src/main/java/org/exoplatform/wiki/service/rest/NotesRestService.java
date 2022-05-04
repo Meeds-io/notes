@@ -431,7 +431,6 @@ public class NotesRestService implements ResourceContainer {
       if (!note_.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-      note_.setToBePublished(note.isToBePublished());
       if ((!note_.getTitle().equals(note.getTitle()))
           && (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
@@ -502,7 +501,6 @@ public class NotesRestService implements ResourceContainer {
           && (noteBookService.isExisting(note.getWikiType(), note.getWikiOwner(), TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
-      note_.setToBePublished(note.isToBePublished());
       String newNoteName = TitleResolver.getId(note.getTitle(), false);
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         note_.setTitle(note.getTitle());
