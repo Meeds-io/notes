@@ -80,7 +80,7 @@
               :placeholder="notesBodyPlaceholder"
               class="notesFormInput"
               name="notesContent">
-                     </textarea>
+            </textarea>
           </div>
         </div>
       </form>
@@ -603,11 +603,7 @@ export default {
               evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
                 const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
                 if ( treeviewParentWrapper) {
-                  const newLine = treeviewParentWrapper.getNext();
                   treeviewParentWrapper.remove();
-                  if ( newLine.$.innerText.trim().length === 0) {
-                    newLine.remove();
-                  }
                   self.note.content = evt.editor.getData();
                 }
                 self.setFocus();
