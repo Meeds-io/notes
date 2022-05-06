@@ -292,6 +292,14 @@ public class TestNoteService extends BaseTest {
 
     assertNotNull(note);
     assertEquals(note.getName(),note1.getName());
+
+    assertFalse(note.isDeleted());
+
+    noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), note.getName());
+    Page deletedNote = noteService.getNoteById(note1.getId(),root,"");
+
+    assertNotNull(deletedNote);
+    assertTrue(deletedNote.isDeleted());
   }
 
   public void testGetNoteOfNoteBookByName() throws WikiException, IllegalAccessException {

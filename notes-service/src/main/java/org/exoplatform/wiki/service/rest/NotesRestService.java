@@ -176,7 +176,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity, source);
-      if (note == null) {
+      if (note == null || note.isDeleted()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       if (StringUtils.isNotEmpty(noteBookType) && !note.getWikiType().equals(noteBookType)) {
