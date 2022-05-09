@@ -61,7 +61,7 @@ public class WikiSpaceActivityPublisherTest {
   }
 
   @Test
-  public void shouldNotCreateActivityWhenPageIsnull() throws Exception {
+  public void shouldNotCreateActivityWhenPageIsNull() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
          wikiService,
