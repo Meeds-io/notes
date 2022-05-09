@@ -45,10 +45,11 @@ public class WikiSpaceActivityPublisherTest {
   @Test
   public void shouldNotCreateActivityWhenUpdateTypeIsNull() throws Exception {
     // Given
-    WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(wikiService,
-                                                                                           identityManager,
-                                                                                           activityManager,
-                                                                                           spaceService);
+    WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
+        wikiService,
+        identityManager,
+        activityManager,
+        spaceService);
     WikiSpaceActivityPublisher wikiSpaceActivityPublisherSpy = spy(wikiSpaceActivityPublisher);
     Page page = new Page();
 
@@ -62,19 +63,16 @@ public class WikiSpaceActivityPublisherTest {
   @Test
   public void shouldNotCreateActivityWhenPageIsnull() throws Exception {
     // Given
-    WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(wikiService,
-                                                                                           identityManager,
-                                                                                           activityManager,
-                                                                                           spaceService);
+    WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
+         wikiService,
+         identityManager,
+         activityManager,
+         spaceService);
     WikiSpaceActivityPublisher wikiSpaceActivityPublisherSpy = spy(wikiSpaceActivityPublisher);
     // When
     wikiSpaceActivityPublisher.postUpdatePage("portal", "portal1", "page1", null, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     // Then
-    verify(wikiSpaceActivityPublisherSpy, never()).saveActivity("portal",
-                                                                "portal1",
-                                                                "page1",
-                                                                null,
-                                                                PageUpdateType.EDIT_PAGE_PERMISSIONS);
+    verify(wikiSpaceActivityPublisherSpy, never()).saveActivity("portal", "portal1", "page1", null, PageUpdateType.EDIT_PAGE_PERMISSIONS);
   }
 
   @Test
@@ -135,7 +133,6 @@ public class WikiSpaceActivityPublisherTest {
   }
 
   @Test
-  //update activity when Is not new activity and not to be published
   public void shouldUpdateActivityWhenIsNotNewAndNotToBePublished() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
@@ -168,6 +165,7 @@ public class WikiSpaceActivityPublisherTest {
     //verify call method saveActivity
     verify(wikiSpaceActivityPublisherSpy, times(1)).saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     //verify update activity
+    verify(activityManager, times(1)).updateActivity(activity, page.isToBePublished());
   }
 
 }
