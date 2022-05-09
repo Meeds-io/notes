@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class WikiSpaceActivityPublisherTest {
 
   @Mock
-  private WikiService wikiService;
+  private WikiService     wikiService;
 
   @Mock
   private IdentityManager identityManager;
@@ -40,10 +40,7 @@ public class WikiSpaceActivityPublisherTest {
   private ActivityManager activityManager;
 
   @Mock
-  private SpaceService spaceService;
-
-  @Mock
-  private ConversationState conversationState;
+  private SpaceService    spaceService;
 
   @Test
   public void shouldNotCreateActivityWhenUpdateTypeIsNull() throws Exception {
@@ -81,8 +78,7 @@ public class WikiSpaceActivityPublisherTest {
   }
 
   @Test
-  //fail to generate new activity when is not to be published
-  public void sholNotgenerateActivityWhenIsNotToBpublished() throws Exception {
+  public void shouldNotGenerateActivityWhenIsNotToBePublished() throws Exception {
 
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
         wikiService,
@@ -98,27 +94,20 @@ public class WikiSpaceActivityPublisherTest {
     ConversationState.setCurrent(conversationState);
     Space space = new Space();
     space.setPrettyName("user");
-    org.exoplatform.social.core.identity.model.Identity
-        identity1 =
-        new org.exoplatform.social.core.identity.model.Identity("user");
+    org.exoplatform.social.core.identity.model.Identity identity1 = new org.exoplatform.social.core.identity.model.Identity("user");
     when(spaceService.getSpaceByGroupId("portal1")).thenReturn(space);
     when(identityManager.getOrCreateUserIdentity("user")).thenReturn(identity1);
     when(identityManager.getOrCreateSpaceIdentity(space.getPrettyName())).thenReturn(identity1);
     // When
-    wikiSpaceActivityPublisherSpy.saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
+    wikiSpaceActivityPublisherSpy.postUpdatePage("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     // Then
     //verify not  saveActivity
+    verify(wikiSpaceActivityPublisherSpy, times(1)).saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     verify(activityManager, never()).saveActivityNoReturn(identity1, new ExoSocialActivityImpl());
-    identity = null;
-    identity1 = null;
-    page = null;
-    space = null;
-    conversationState = null;
   }
 
   @Test
-  //Generate new activity when is to be published
-  public void sholdGenerateNewActivityWhenIsToBublished() throws Exception {
+  public void shouldGenerateNewActivityWhenIsToBePublished() throws Exception {
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
         wikiService,
         identityManager,
@@ -133,27 +122,21 @@ public class WikiSpaceActivityPublisherTest {
     ConversationState.setCurrent(conversationState);
     Space space = new Space();
     space.setPrettyName("user");
-    org.exoplatform.social.core.identity.model.Identity
-        identity1 =
-        new org.exoplatform.social.core.identity.model.Identity("user");
+    org.exoplatform.social.core.identity.model.Identity identity1 = new org.exoplatform.social.core.identity.model.Identity("user");
     when(spaceService.getSpaceByGroupId("portal1")).thenReturn(space);
     when(identityManager.getOrCreateUserIdentity("user")).thenReturn(identity1);
     when(identityManager.getOrCreateSpaceIdentity(space.getPrettyName())).thenReturn(identity1);
     // When
-    wikiSpaceActivityPublisherSpy.saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
+    wikiSpaceActivityPublisherSpy.postUpdatePage("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     //then
     //verify save new Activity
+    verify(wikiSpaceActivityPublisherSpy, times(1)).saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     verify(activityManager, times(1)).saveActivityNoReturn(identity1, new ExoSocialActivityImpl());
-    identity = null;
-    identity1 = null;
-    page = null;
-    space = null;
-    conversationState = null;
   }
 
   @Test
   //update activity when Is not new activity and not to be published
-  public void sholdupdateActivityWhenIsNotNewAndNotToBublished() throws Exception {
+  public void shouldUpdateActivityWhenIsNotNewAndNotToBePublished() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
         wikiService,
@@ -182,20 +165,9 @@ public class WikiSpaceActivityPublisherTest {
     // When
     wikiSpaceActivityPublisherSpy.postUpdatePage("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     // Then
-    //verify call methode saveActivity
-    verify(wikiSpaceActivityPublisherSpy, times(1)).saveActivity("group",
-                                                                 "portal1",
-                                                                 "page1",
-                                                                 page,
-                                                                 PageUpdateType.EDIT_PAGE_PERMISSIONS);
+    //verify call method saveActivity
+    verify(wikiSpaceActivityPublisherSpy, times(1)).saveActivity("group", "portal1", "page1", page, PageUpdateType.EDIT_PAGE_PERMISSIONS);
     //verify update activity
-    verify(activityManager, times(1)).updateActivity(activity, page.isToBePublished());
-    identity = null;
-    identity1 = null;
-    page = null;
-    activity = null;
-    space = null;
-    conversationState = null;
   }
 
 }
