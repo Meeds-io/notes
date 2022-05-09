@@ -8,7 +8,7 @@
     <exo-drawer
       ref="breadcrumbDrawer"
       class="breadcrumbDrawer"
-      :confirm-close="this.exporting"
+      :confirm-close="exporting"
       :confirm-close-labels="confirmCloseLabels"
       v-model="drawer"
       show-overlay
@@ -502,16 +502,6 @@ export default {
     this.$root.$on('display-treeview-items', () => {
       this.closeAll = true;
     });
-    this.$root.$on('set-exporting', (exporting) => {
-      this.exporting = exporting;
-    });
-    this.$root.$on('set-export-status', (exportStatus) => {
-      this.exportStatus = exportStatus;
-      if (this.exportStatus.status==='ZIP_CREATED'){
-        this.exporting=false;
-        this.close();
-      }
-    });
   },
   mounted() {
     this.filterOptions = [
@@ -660,21 +650,20 @@ export default {
     exportNotesToZip(){
       this.$root.$emit('export-notes',this.selectionNotes,this.checkbox,this.home.noteId);
       this.exporting=true;
-      this.resetImport();
-      //this.close();
     },
     resetImport(){
       this.checkbox = false;
       this.selectionNotes = [];
     },
     close() {
+      this.render = false;
+      this.$refs.breadcrumbDrawer.close();
       if (this.exporting){
         this.$root.$emit('cancel-export-notes');
         this.exportStatus = {};
         this.exporting = false; 
+        this.resetImport();
       }
-      this.render = false;
-      this.$refs.breadcrumbDrawer.close();
     },
     closeAllDrawer() {
       $('.spaceButtomNavigation').removeClass('hidden');
@@ -682,12 +671,20 @@ export default {
       if (this.exporting){
         this.$root.$emit('cancel-export-notes');
         this.exportStatus = {};
-        this.exporting = false; 
+        this.exporting = false;
+        this.resetImport();
       }
       if (this.closeAll) {
         this.$emit('closed');
       }
     },
+    setExportStaus(exportStatus) {
+      this.exportStatus = exportStatus;
+      if (!this.exportStatus.status || this.exportStatus.status==='ZIP_CREATED'){
+        this.exporting = false;
+        this.$nextTick().then(() => this.close());
+      }
+    }
   }
 };
 </script>

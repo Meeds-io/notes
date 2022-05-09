@@ -244,7 +244,7 @@
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
-      ref="notesBreadcrumb" />
+      ref="notesBreadcrumb"/>
     <note-history-drawer
       ref="noteVersionsHistoryDrawer"
       @open-version="displayVersion($event)"
@@ -366,6 +366,10 @@ export default {
       if (this.exportStatus.status==='ZIP_CREATED'){
         this.stopGetSatus();
         this.getExportedZip();
+        this.exportStatus={};  
+      }
+      if (this.exportStatus.status===null){
+        this.stopGetSatus();
         this.exportStatus={};  
       }
     }
@@ -582,7 +586,8 @@ export default {
       this.intervalId = window.setInterval(() =>{
         return this.$notesService.getExportStatus(this.exportId).then(data => {
           this.exportStatus = data; 
-          this.$root.$emit('set-export-status',this.exportStatus);
+          //this.$root.$emit('set-export-status',this.exportStatus);
+          this.$refs.notesBreadcrumb.setExportStaus(this.exportStatus);
         }).catch(() => {
           this.stopGetSatus();
         });

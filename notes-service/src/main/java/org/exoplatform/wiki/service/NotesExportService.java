@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 eXo Platform SAS
+ * Copyright (C) 2022 eXo Platform SAS
  *
  *  This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,8 +22,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
+import org.picocontainer.Startable;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -31,7 +36,7 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.wiki.WikiException;
 
-public class NotesExportService {
+public class NotesExportService implements Startable {
 
   private static final Log                  log                = ExoLogger.getLogger(NotesExportService.class);
 
@@ -43,10 +48,24 @@ public class NotesExportService {
 
   private final HTMLUploadImageProcessor    htmlUploadImageProcessor;
 
+  private ExecutorService                   exportThreadPool;
+
   public NotesExportService(NoteService noteService, WikiService wikiService, HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.noteService = noteService;
     this.wikiService = wikiService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
+  }
+
+  @Override
+  public void start() {
+    exportThreadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
+  }
+
+  @Override
+  public void stop() {
+    if (exportThreadPool != null) {
+      exportThreadPool.shutdownNow();
+    }
   }
 
   public static void cleanUp(File file) throws IOException {
@@ -61,12 +80,11 @@ public class NotesExportService {
     exportResource.setStatus(ExportStatus.STARTED.name());
     exportResource.setAction(new ExportAction());
     exportResourceList.add(exportResource);
-    Thread exportThread = new Thread(new ExportThread(noteService,
-                                                      wikiService,
-                                                      this,
-                                                      htmlUploadImageProcessor,
-                                                      new ExportData(exportId, notesToExportIds, exportAll, identity)));
-    exportThread.start();
+    exportThreadPool.execute(new ExportThread(noteService,
+                                              wikiService,
+                                              this,
+                                              htmlUploadImageProcessor,
+                                              new ExportData(exportId, notesToExportIds, exportAll, identity)));
   }
 
   public void cancelExportNotes(int exportId) throws Exception {

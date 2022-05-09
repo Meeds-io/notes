@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2022 eXo Platform SAS
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <gnu.org/licenses>.
+ */
+
+
 package org.exoplatform.wiki.service;
 
 import java.io.*;
@@ -19,24 +37,31 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.space.model.Space;
-import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mow.api.*;
 
 public class ExportThread implements Runnable {
 
   private static final Log               log                          = ExoLogger.getLogger(ExportThread.class);
+
   private static final String            IMAGE_URL_REPLACEMENT_PREFIX = "//-";
+
   private static final String            IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
+
   private static final String            EXPORT_ZIP_EXTENSION         = ".zip";
+
   private static final String            EXPORT_ZIP_PREFIX            = "exportzip";
+
   private static final String            TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+
   private final NoteService              noteService;
+
   private final WikiService              wikiService;
+
   private final NotesExportService       notesExportService;
+
   private final HTMLUploadImageProcessor htmlUploadImageProcessor;
+
   private final ExportData               exportData;
 
   public ExportThread(NoteService noteService,
@@ -128,7 +153,8 @@ public class ExportThread implements Runnable {
               log.warn("Failed to export note {}: note not find ", noteId);
               continue;
             }
-            if(note_ == null) note_ = note;
+            if (note_ == null)
+              note_ = note;
             NoteToExport noteToExport = getNoteToExport(new NoteToExport(note.getId(),
                                                                          note.getName(),
                                                                          note.getOwner(),
@@ -307,10 +333,16 @@ public class ExportThread implements Runnable {
       }
       String date = new SimpleDateFormat("dd_MM_yyyy").format(new Date());
       if (note_.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
-        htmlUploadImageProcessor.uploadSpaceFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + date + ".zip", "Documents/Notes/exports");
+        htmlUploadImageProcessor.uploadSpaceFile(zipFile.getPath(),
+                                                 note_.getWikiOwner(),
+                                                 "notesExport_" + date + ".zip",
+                                                 "Documents/Notes/exports");
       }
       if (note_.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
-        htmlUploadImageProcessor.uploadUserFile(zipFile.getPath(), note_.getWikiOwner(),"notesExport_" + date + ".zip", "Documents/Notes/exports");
+        htmlUploadImageProcessor.uploadUserFile(zipFile.getPath(),
+                                                note_.getWikiOwner(),
+                                                "notesExport_" + date + ".zip",
+                                                "Documents/Notes/exports");
       }
       exportResource.setStatus(ExportStatus.ZIP_CREATED.name());
       exportResource.getAction().setZipCreated(true);
