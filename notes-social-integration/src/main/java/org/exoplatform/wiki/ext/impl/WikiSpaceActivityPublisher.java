@@ -103,6 +103,10 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       isNewActivity = (activity == null);
     }
 
+    if (isNewActivity && !page.isToBePublished()) {
+      return null;
+    }
+
     if (isNewActivity) {
       if (page.isMinorEdit()) {
         return null;
@@ -155,8 +159,10 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       if (PageUpdateType.MOVE_PAGE.equals(activityType)) {
         activity.setStreamOwner(ownerStream.getRemoteId());
       }
-      activity.setUpdated(new Date().getTime());
-      activityManager.updateActivity(activity);
+      if (page.isToBePublished()) {
+        activity.setUpdated(new Date().getTime());
+      }
+      activityManager.updateActivity(activity, page.isToBePublished());
     }
     return activity;
   }
@@ -237,15 +243,6 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
                               String pageId,
                               Page page,
                               PageUpdateType activityType) throws WikiException {
-    try {
-      Class.forName("org.exoplatform.social.core.space.spi.SpaceService");
-    } catch (ClassNotFoundException e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("eXo Social components not found!", e);
-      }
-      return;
-    }
-
     // Not raise the activity in case of user space
     if (PortalConfig.USER_TYPE.equals(wikiType)) {
       return;
@@ -346,7 +343,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
                              Page page,
                              PageUpdateType wikiUpdateType) throws WikiException {
     // Generate an activity only in the following cases
-    if (page != null && wikiUpdateType != null && page.isToBePublished()) {
+    if (page != null && wikiUpdateType != null) {
       saveActivity(wikiType, wikiOwner, pageId, page, wikiUpdateType);
     }
   }
