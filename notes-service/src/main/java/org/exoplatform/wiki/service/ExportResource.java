@@ -20,10 +20,7 @@ package org.exoplatform.wiki.service;
 
 import lombok.Data;
 import org.exoplatform.wiki.mow.api.ExportList;
-import org.exoplatform.wiki.mow.api.NoteToExport;
-
 import java.io.File;
-import java.util.List;
 
 @Data
 public class ExportResource {

@@ -586,7 +586,6 @@ export default {
       this.intervalId = window.setInterval(() =>{
         return this.$notesService.getExportStatus(this.exportId).then(data => {
           this.exportStatus = data; 
-          //this.$root.$emit('set-export-status',this.exportStatus);
           this.$refs.notesBreadcrumb.setExportStaus(this.exportStatus);
         }).catch(() => {
           this.stopGetSatus();

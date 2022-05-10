@@ -345,7 +345,6 @@ public class TestNoteService extends BaseTest {
       notesExportService.startExportNotes(200231, notes, true, root);
       boolean exportDone= false;
       while (!exportDone){
-        Thread.sleep(1000);
         if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
           exportDone = true;
         }
@@ -354,7 +353,7 @@ public class TestNoteService extends BaseTest {
       assertNotNull(exportedNotes);
       FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("cannot Export Notes", e);
     }
   }
 
@@ -379,7 +378,6 @@ public class TestNoteService extends BaseTest {
       notesExportService.startExportNotes(200231, notes, true, user);
       boolean exportDone= false;
       while (!exportDone){
-        Thread.sleep(1000);
         if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
           exportDone = true;
         }
@@ -388,7 +386,7 @@ public class TestNoteService extends BaseTest {
       assertNotNull(exportedNotes);
       FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("cannot Export Notes", e);
     }
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");

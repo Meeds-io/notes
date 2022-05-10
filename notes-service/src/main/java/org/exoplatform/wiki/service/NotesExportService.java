@@ -87,7 +87,7 @@ public class NotesExportService implements Startable {
                                               new ExportData(exportId, notesToExportIds, exportAll, identity)));
   }
 
-  public void cancelExportNotes(int exportId) throws Exception {
+  public void cancelExportNotes(int exportId) {
     ExportResource exportResource = getExportRessourceById(exportId);
     if (exportResource != null) {
       exportResource.setStatus(ExportStatus.CANCELLED.name());
@@ -101,7 +101,7 @@ public class NotesExportService implements Startable {
     }
   }
 
-  public byte[] getExportedNotes(int exportId) throws IOException, WikiException {
+  public byte[] getExportedNotes(int exportId) throws IOException {
     ExportResource exportResource = getExportRessourceById(exportId);
     if (exportResource != null) {
       File zipped = exportResource.getZipFile();

@@ -19,7 +19,6 @@ package org.exoplatform.wiki.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
@@ -32,7 +31,6 @@ import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
-import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -58,11 +56,9 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -73,12 +69,6 @@ public class NoteServiceImpl implements NoteService {
   public static final String                              ATT_CACHE_NAME               = "wiki.PageAttachmentCache";
 
   private static final String                             UNTITLED_PREFIX              = "Untitled_";
-
-  private static final String                             IMAGE_URL_REPLACEMENT_PREFIX = "//-";
-
-  private static final String                             IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
-
-  private static final String                             EXPORT_ZIP_NAME              = "ziped.zip";
 
   private static final String                             TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
 

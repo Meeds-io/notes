@@ -38,6 +38,6 @@ public class ExportAction {
   private boolean zipCreated = false;
   private boolean tempCleaned = false;
   private boolean dataCreated = false;
-  private String Action = "";
+  private String action = "";
 
 }

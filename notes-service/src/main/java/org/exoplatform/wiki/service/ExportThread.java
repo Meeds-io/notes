@@ -15,7 +15,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
 package org.exoplatform.wiki.service;
 
 import java.io.*;
@@ -89,29 +88,30 @@ public class ExportThread implements Runnable {
 
     String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
     FileOutputStream fos = new FileOutputStream(zipPath);
-    ZipOutputStream zipOut = new ZipOutputStream(fos);
-    for (File fileToZip : addToZip) {
-      ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
-      if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
-        return null;
-      }
-      try {
-        FileInputStream fis = new FileInputStream(fileToZip);
-        ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
-        zipOut.putNextEntry(zipEntry);
-        byte[] bytes = new byte[1024];
-        int length;
-        while ((length = fis.read(bytes)) >= 0) {
-          zipOut.write(bytes, 0, length);
+    try (ZipOutputStream zipOut = new ZipOutputStream(fos)) {
+      for (File fileToZip : addToZip) {
+        ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
+        if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
+          return null;
         }
-        fis.close();
-      } catch (IOException e) {
-        log.warn("cannot add the file: {} to the zip", fileToZip.getName());
+        try (FileInputStream fis = new FileInputStream(fileToZip)) {
+          ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
+          zipOut.putNextEntry(zipEntry);
+          byte[] bytes = new byte[1024];
+          int length;
+          while ((length = fis.read(bytes)) >= 0) {
+            zipOut.write(bytes, 0, length);
+          }
+          fis.close();
+        } catch (IOException e) {
+          log.warn("cannot add the file: {} to the zip", fileToZip.getName());
+        }
       }
+      zipOut.close();
+      fos.close();
+    } catch (IOException e) {
+      log.warn("cannot zip files");
     }
-    zipOut.close();
-    fos.close();
-
     File zip = new File(zipPath);
     if (!zip.exists()) {
       throw new FileNotFoundException("The created zip file could not be found");
@@ -128,7 +128,7 @@ public class ExportThread implements Runnable {
                     exportData.isExportAll(),
                     exportData.getIdentity());
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("cannot Export Notes", e);
     } finally {
       RequestLifeCycle.end();
     }
@@ -142,7 +142,6 @@ public class ExportThread implements Runnable {
       exportResource.setStatus(ExportStatus.IN_PROGRESS.name());
       exportResource.getAction().setStarted(true);
       exportResource.getAction().setAction(ExportAction.GETTING_NOTES);
-      log.info("IN_PROGRESS ................... Getting notes to export");
       Page note_ = null;
       List<NoteToExport> noteToExportList = new ArrayList();
       if (exportAll) {
@@ -176,11 +175,11 @@ public class ExportThread implements Runnable {
             }
             noteToExportList.add(noteToExport);
             exportResource.getAction().setNotesGetted(true);
-            log.info("IN_PROGRESS ................... notes getted");
           } catch (IllegalAccessException e) {
             log.error("User does not have  permissions on the note {}", noteId, e);
           } catch (Exception ex) {
             log.warn("Failed to export note {} ", noteId, ex);
+            Thread.currentThread().interrupt();
           }
         }
       } else {
@@ -227,7 +226,6 @@ public class ExportThread implements Runnable {
         }
         exportResource.getAction().setNotesGetted(true);
         exportResource.getAction().setAction(ExportAction.UPDATING_NOTES_PARENTS);
-        log.info("IN_PROGRESS ................... Updating notes parents");
         for (NoteToExport noteToExport : allNotesToExport) {
           noteToExport.setParent(getParentOfNoteFromExistingNotes(noteToExport.getAncestors(),
                                                                   allNotesToExport,
@@ -269,7 +267,6 @@ public class ExportThread implements Runnable {
       }
       exportResource.getAction().setNotesPrepared(true);
       exportResource.getAction().setAction(ExportAction.CREATING_CONTENT_DATA);
-      log.info("IN_PROGRESS ................... CREATING_CONTENT_DATA");
       if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
         notesExportService.removeExportResource(exportId);
         return;
@@ -286,7 +283,6 @@ public class ExportThread implements Runnable {
       String filePath = "";
       exportResource.getAction().setJsonCreated(true);
       exportResource.getAction().setAction(ExportAction.UPDATING_IMAGES_URLS);
-      log.info("IN_PROGRESS ................... UPDATING_IMAGES_URLS");
       while (contentUpdated.contains(IMAGE_URL_REPLACEMENT_PREFIX)) {
         fileName = contentUpdated.split(IMAGE_URL_REPLACEMENT_PREFIX)[1].split(IMAGE_URL_REPLACEMENT_SUFFIX)[0];
         filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + fileName;
@@ -315,7 +311,6 @@ public class ExportThread implements Runnable {
         return;
       }
       exportResource.getAction().setAction(ExportAction.CREATING_ZIP_FILE);
-      log.info("IN_PROGRESS ................... CREATING_ZIP_FILE");
       String zipName = EXPORT_ZIP_PREFIX + exportId + EXPORT_ZIP_EXTENSION;
       exportResource.setZipFile(zipFile);
       zipFile = zipFiles(zipName, files, notesExportService, exportId);
@@ -332,13 +327,13 @@ public class ExportThread implements Runnable {
         return;
       }
       String date = new SimpleDateFormat("dd_MM_yyyy").format(new Date());
-      if (note_.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
+      if (zipFile != null && note_ != null && note_.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
         htmlUploadImageProcessor.uploadSpaceFile(zipFile.getPath(),
                                                  note_.getWikiOwner(),
                                                  "notesExport_" + date + ".zip",
                                                  "Documents/Notes/exports");
       }
-      if (note_.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
+      if (zipFile != null && note_ != null && note_.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
         htmlUploadImageProcessor.uploadUserFile(zipFile.getPath(),
                                                 note_.getWikiOwner(),
                                                 "notesExport_" + date + ".zip",
@@ -347,7 +342,6 @@ public class ExportThread implements Runnable {
       exportResource.setStatus(ExportStatus.ZIP_CREATED.name());
       exportResource.getAction().setZipCreated(true);
       exportResource.getAction().setAction(ExportAction.CLEANING_TEMP_FILE);
-      log.info("IN_PROGRESS ................... CLEANING_TEMP_FILE");
       for (File file : files) {
         cleanUp(file);
       }
@@ -428,11 +422,10 @@ public class ExportThread implements Runnable {
     String contentUpdated = content;
     Map<String, String> urlToReplaces = new HashMap<>();
     while (contentUpdated.contains("noteLink")) {
-      String check_content = contentUpdated;
+      String checkContent = contentUpdated;
       String noteId = contentUpdated.split(noteLinkprefix)[1].split("\"")[0];
       Page linkedNote = null;
       try {
-        long id = Long.parseLong(noteId);
         linkedNote = noteService.getNoteById(noteId);
       } catch (NumberFormatException e) {
         Page note_ = noteService.getNoteById(note.getId());
@@ -445,7 +438,7 @@ public class ExportThread implements Runnable {
         urlToReplaces.put(noteLinkprefix + linkedNote.getId() + "\"", noteLinkprefix + noteParams + "\"");
       }
       contentUpdated = contentUpdated.replace(noteLinkprefix + noteId + "\"", "");
-      if (contentUpdated.equals(check_content)) {
+      if (contentUpdated.equals(checkContent)) {
         break;
       }
     }
@@ -484,19 +477,19 @@ public class ExportThread implements Runnable {
     String restUploadUrl = "/portal/rest/wiki/attachments/";
     Map<String, String> urlToReplaces = new HashMap<>();
     while (content.contains(restUploadUrl)) {
-      String check_content = content;
+      String checkContent = content;
       String urlToReplace = content.split(restUploadUrl)[1].split("\"")[0];
       urlToReplace = restUploadUrl + urlToReplace;
       String attachmentId = StringUtils.substringAfterLast(urlToReplace, "/");
       Attachment attachment = wikiService.getAttachmentOfPageByName(attachmentId, note, true);
       if (attachment != null && attachment.getContent() != null) {
         InputStream bis = new ByteArrayInputStream(attachment.getContent());
-        File tempFile = new File(System.getProperty("java.io.tmpdir") + File.separator + attachmentId);
+        File tempFile = new File(System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + attachmentId);
         Files.copy(bis, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         urlToReplaces.put(urlToReplace, IMAGE_URL_REPLACEMENT_PREFIX + tempFile.getName() + IMAGE_URL_REPLACEMENT_SUFFIX);
       }
       content = content.replace(urlToReplace, "");
-      if (content.equals(check_content)) {
+      if (content.equals(checkContent)) {
         break;
       }
     }
@@ -513,8 +506,6 @@ public class ExportThread implements Runnable {
       if (content.contains("class=\"noteLink\" href=\"//-")) {
         while (content.contains("class=\"noteLink\" href=\"//-")) {
           String linkedParams = content.split("class=\"noteLink\" href=\"//-")[1].split("-//\"")[0];
-          String noteBookType = linkedParams.split("-////-")[0];
-          String noteBookOwner = linkedParams.split("-////-")[1];
           String NoteName = linkedParams.split("-////-")[2];
           Page linkedNote = null;
           linkedNote = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), NoteName);
