@@ -1,19 +1,20 @@
 /*
- * Copyright (C) 2003-2008 eXo Platform SAS.
- *
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2022 Meeds Association
+ * contact@meeds.io
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation; either version 3
- * of the License, or (at your option) any later version.
- *
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see<http://www.gnu.org/licenses/>.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 package org.exoplatform.wiki.service;
 
 import org.exoplatform.services.security.Identity;
@@ -354,11 +355,7 @@ public interface NoteService {
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
 
-  byte[] exportNotes(String[] notesToExportIds, boolean exportAll, Identity identity) throws IOException, WikiException;
-
-  List<NoteToExport> getNotesToExport(String[] notesToExportIds, boolean exportAll, Identity identity);
-
-  List<NoteToExport> getChildrenNoteOf(NoteToExport note) throws WikiException;
+  List<NoteToExport> getChildrenNoteOf(NoteToExport note, String userId) throws WikiException;
 
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 
