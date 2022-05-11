@@ -11,10 +11,7 @@ import org.exoplatform.wiki.mock.MockResourceBundleService;
 import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
@@ -55,6 +52,9 @@ public class NotesRestServiceTest {
   @Mock
   private UploadService    uploadService;
 
+  @Mock
+  private NotesExportService notesExportService;
+
   private NotesRestService notesRestService;
 
   @Mock
@@ -62,7 +62,7 @@ public class NotesRestServiceTest {
 
   @Before
   public void setUp() throws Exception {
-    this.notesRestService = new NotesRestService(noteService, noteBookService, uploadService, new MockResourceBundleService());
+    this.notesRestService = new NotesRestService(noteService, noteBookService, uploadService, new MockResourceBundleService(), notesExportService);
     PowerMockito.mockStatic(ConversationState.class);
     ConversationState conversationState = mock(ConversationState.class);
     when(ConversationState.getCurrent()).thenReturn(conversationState);

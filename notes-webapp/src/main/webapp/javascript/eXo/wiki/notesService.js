@@ -274,15 +274,52 @@ export function importZipNotes(noteId,uploadId,overrideMode) {
 }
 
 
-export function exportNotes(notes,exportAll) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/${notes}?exportAll=${exportAll}`, {
+export function exportNotes(notes,exportAll,exportId) {
+
+  fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/${exportId}/${notes}?exportAll=${exportAll}`, {
+    credentials: 'include',
+    method: 'POST',
+  }).then((resp) => {
+    if (!resp || !resp.ok) {
+      throw new Error('error', resp);
+    }
+  });
+}
+
+export function getExportedZip(exportId) {
+
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/zip/${exportId}`, {
     credentials: 'include',
     method: 'GET',
   }).then((resp) => {
     if (resp && resp.ok) {
       return resp;
     } else { 
-      throw new Error('Error when exporting notes');
+      throw new Error('Error when getting exported notes');
+    }
+  });
+}
+
+export function getExportStatus(exportId) {
+
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/status/${exportId}`, {
+    credentials: 'include',
+    method: 'GET',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp.json();
+    } else { 
+      throw new Error('Error when getting export status');
+    }
+  });
+}
+export function cancelExportNotes(exportId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/cancel/${exportId}`, {
+    credentials: 'include',
+    method: 'PUT',
+  }).then((resp) => {
+    if (!resp || !resp.ok) {
+      throw new Error('error', resp);
     }
   });
 }

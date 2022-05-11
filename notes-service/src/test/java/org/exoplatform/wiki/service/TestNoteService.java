@@ -1,19 +1,21 @@
 /*
- * Copyright (C) 2021 eXo Platform SAS
- *
- *  This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2022 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <gnu.org/licenses>.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+
 package org.exoplatform.wiki.service;
 
 
@@ -34,10 +36,12 @@ import java.util.*;
 public class TestNoteService extends BaseTest {
   private WikiService wService;
   private NoteService noteService;
+  private NotesExportService notesExportService;
   public void setUp() throws Exception {
     super.setUp() ;
     wService = getContainer().getComponentInstanceOfType(WikiService.class) ;
     noteService = getContainer().getComponentInstanceOfType(NoteService.class) ;
+    notesExportService = getContainer().getComponentInstanceOfType(NotesExportService.class) ;
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
   }
   
@@ -335,11 +339,24 @@ public class TestNoteService extends BaseTest {
     notes[1] = note2.getId();
     notes[2] = note3.getId();
 
-    List<NoteToExport> exportedNotes = noteService.getNotesToExport(notes,false,root);
-
-    assertNotNull(exportedNotes);
-    assertEquals(exportedNotes.size(),3);
+    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
+    File ZipFile = new File(filePath);
+    try {
+      notesExportService.startExportNotes(200231, notes, true, root);
+      boolean exportDone= false;
+      while (!exportDone){
+        if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
+          exportDone = true;
+        }
+      }
+      byte[] exportedNotes = notesExportService.getExportedNotes(200231);
+      assertNotNull(exportedNotes);
+      FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
+    } catch (Exception e) {
+      log.error("cannot Export Notes", e);
+    }
   }
+
   public void testImportNotes() throws WikiException, IllegalAccessException, IOException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
@@ -355,14 +372,22 @@ public class TestNoteService extends BaseTest {
     notes[0] = note1.getId();
     notes[1] = note2.getId();
     notes[2] = note3.getId();
-
-    byte[] exportedNotes = noteService.exportNotes(notes,false,user);
-
-    assertNotNull(exportedNotes);
     String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
     File ZipFile = new File(filePath);
-
-    FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
+    try {
+      notesExportService.startExportNotes(200231, notes, true, user);
+      boolean exportDone= false;
+      while (!exportDone){
+        if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
+          exportDone = true;
+        }
+      }
+      byte[] exportedNotes = notesExportService.getExportedNotes(200231);
+      assertNotNull(exportedNotes);
+      FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
+    } catch (Exception e) {
+      log.error("cannot Export Notes", e);
+    }
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
@@ -412,7 +437,7 @@ public class TestNoteService extends BaseTest {
      note.setWikiId(home.getWikiId());
      note.setWikiOwner(home.getWikiOwner());
      note.setWikiType(home.getWikiType());
-    int eXportCildren= noteService.getChildrenNoteOf(note).size();
+    int eXportCildren= noteService.getChildrenNoteOf(note, user.getUserId()).size();
     assertEquals(eXportCildren,childern);
   }
 
