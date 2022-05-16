@@ -129,6 +129,8 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       versionsTotal = versions.size();
     }
     templateParams.put(WIKI_PAGE_VERSION, String.valueOf(versionsTotal));
+    activity.setMetadataObjectType(Utils.NOTES_METADATA_OBJECT_TYPE);
+    activity.setMetadataObjectId(page.getId());
 
     // Create page excerpt
     StringBuilder excerpt = new StringBuilder();
