@@ -149,7 +149,8 @@ export default {
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
-      noteNavigationDisplayed: false
+      noteNavigationDisplayed: false,
+      spaceGroupId: null,
     };
   },
   computed: {
@@ -281,11 +282,14 @@ export default {
   },
   methods: {
     init() {
-      this.initCKEditor();
-      const elementNewTop = document.getElementById('notesTop');
-      elementNewTop.classList.add('darkComposerEffect');
-      this.setToolBarEffect();
-      this.initDone = true;
+      this.$spaceService.getSpaceById(this.spaceId).then(space => {
+        this.spaceGroupId = space.groupId;
+        this.initCKEditor();
+        const elementNewTop = document.getElementById('notesTop');
+        elementNewTop.classList.add('darkComposerEffect');
+        this.setToolBarEffect();
+        this.initDone = true;
+      });
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -541,6 +545,8 @@ export default {
         removePlugins: 'image,confirmBeforeReload,maximize,resize',
         allowedContent: true,
         spaceURL: self.spaceURL,
+        spaceGroupId: self.spaceGroupId,
+        imagesDownloadFolder: 'notes/images',
         toolbarLocation: 'top',
         extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
