@@ -630,6 +630,16 @@ export default {
               } );
             }
           },
+          fileUploadResponse: function() {
+            /*add plugin fileUploadResponse to handle file upload response ,
+              in this method we can get the response from server and update the editor content
+              this method is called when file upload is finished*/
+            CKEDITOR.instances.notesContent.once('afterInsertHtml', ()=> {
+              window.setTimeout(() => {
+                CKEDITOR.instances.notesContent.fire('mode');
+              }, 2000);
+            });
+          },
           doubleclick: function(evt) {
             const element = evt.data.element;
             if ( element && element.is('a')) {
