@@ -507,9 +507,7 @@ export default {
   },
   methods: {
     getHomeTitle(title) {
-      const label = `notes.label.note${title}`;
-      const translation = this.$t(label);
-      return translation === label && title || translation;
+      return title === 'Home' && this.$t('notes.label.noteHome') || title;
     },
     addNote() {
       if (!this.isDraft) {
