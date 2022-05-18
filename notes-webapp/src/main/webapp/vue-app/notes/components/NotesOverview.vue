@@ -335,7 +335,7 @@ export default {
       }
       setTimeout(() => this.hasManualChildren = false, 100);
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
-        this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
+        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
@@ -506,6 +506,11 @@ export default {
     }
   },
   methods: {
+    getHomeTitle(title) {
+      const label = `notes.label.note${title}`;
+      const translation = this.$t(label);
+      return translation === label && title || translation;
+    },
     addNote() {
       if (!this.isDraft) {
         window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&appName=${this.appName}`, '_blank');
