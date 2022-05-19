@@ -524,13 +524,27 @@ export default {
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let extraPlugins = 'sharedspace,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let removePlugins = 'image,confirmBeforeReload,maximize,resize';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
         // Disable suggester on smart-phone landscape
-        extraPlugins = 'simpleLink,selectImage';
+        extraPlugins = 'simpleLink';
       }
+
+      const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
+      if (ckEditorExtensions && ckEditorExtensions.length) {
+        ckEditorExtensions.forEach(ckEditorExtension => {
+          if (ckEditorExtension.extraPlugin) {
+            extraPlugins = `${extraPlugins},${ckEditorExtension.extraPlugin}`;
+          }
+          if (ckEditorExtension.removePlugin) {
+            removePlugins = `${extraPlugins},${ckEditorExtension.removePlugin}`;
+          }
+        });
+      }
+
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
 
@@ -542,7 +556,7 @@ export default {
       $('textarea#notesContent').ckeditor({
         customConfig: '/commons-extension/ckeditorCustom/config.js',
         extraPlugins: extraPlugins,
-        removePlugins: 'image,confirmBeforeReload,maximize,resize',
+        removePlugins: removePlugins,
         allowedContent: true,
         spaceURL: self.spaceURL,
         spaceGroupId: self.spaceGroupId,
