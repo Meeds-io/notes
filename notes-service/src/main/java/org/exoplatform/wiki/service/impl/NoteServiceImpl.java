@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.ObjectPageList;
+import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
@@ -41,13 +43,16 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 import org.gatein.api.EntityNotFoundException;
@@ -718,11 +723,6 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public Page getNoteByRootPermission(String noteBookType, String noteBookOwner, String noteId) throws WikiException {
-    return dataStorage.getPageOfWikiByName(noteBookType, noteBookOwner, noteId);
-  }
-
-  @Override
   public DraftPage updateDraftForExistPage(DraftPage draftNoteToUpdate,
                                            Page targetPage,
                                            String revision,
@@ -1041,6 +1041,16 @@ public class NoteServiceImpl implements NoteService {
       return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
   }
 
+
+  @Override
+  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
+    if (page.isDraftPage()) {
+      return page.getAuthor().equals(user.getUserId());
+    }
+    return dataStorage.hasPermissionOnPage(page, permissionType, user);
+  }
+
+
   /**
    * Recursive method to build the breadcump of a note
    *
@@ -1100,6 +1110,29 @@ public class NoteServiceImpl implements NoteService {
 
   private String getDraftNameSuffix(long clientTime) {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
+  }
+
+
+  @Override
+  public Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException {
+    return dataStorage.getPageOfWikiByName(wikiType, wikiOwner, pageId);
+  }
+
+  @Override
+  public String getNoteRenderedContent(Page note) {
+    String renderedContent = StringUtils.EMPTY;
+    try {
+      MarkupKey key = new MarkupKey(new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName()), false);
+      MarkupData cachedData = renderingCache.get(new Integer(key.hashCode()));
+      if (cachedData != null) {
+        return cachedData.build();
+      }
+      renderedContent = note.getContent();
+      renderingCache.put(new Integer(key.hashCode()), new MarkupData(renderedContent));
+    } catch (Exception e) {
+      log.error(String.format("Failed to get rendered content of note [%s:%s:%s]", note.getWikiType(), note.getWikiOwner(), note.getName()), e);
+    }
+    return renderedContent;
   }
 
   /**
@@ -1278,6 +1311,44 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
+
+
+  @Override
+  public PageList<SearchResult> search(WikiSearchData data) throws WikiException {
+    try {
+      PageList<SearchResult> result = dataStorage.search(data);
+
+      if ((data.getTitle() != null) && (data.getWikiType() != null) && (data.getWikiOwner() != null)
+              && (result.getPageSize() > 0)) {
+        Page homePage = wikiService.getWikiByTypeAndOwner(data.getWikiType(), data.getWikiOwner()).getWikiHome();
+        if (data.getTitle().equals("") || homePage != null && homePage.getTitle().contains(data.getTitle())) {
+          Calendar wikiHomeCreateDate = Calendar.getInstance();
+          wikiHomeCreateDate.setTime(homePage.getCreatedDate());
+
+          Calendar wikiHomeUpdateDate = Calendar.getInstance();
+          wikiHomeUpdateDate.setTime(homePage.getUpdatedDate());
+
+          SearchResult wikiHomeResult = new SearchResult(data.getWikiType(),
+                  data.getWikiOwner(),
+                  homePage.getName(),
+                  null,
+                  null,
+                  homePage.getTitle(),
+                  SearchResultType.PAGE,
+                  wikiHomeUpdateDate,
+                  wikiHomeCreateDate);
+          List<SearchResult> tempSearchResult = result.getAll();
+          tempSearchResult.add(wikiHomeResult);
+          result = new ObjectPageList<>(tempSearchResult, result.getPageSize());
+        }
+      }
+      return result;
+    } catch (Exception e) {
+      log.error("Cannot search on wiki " + data.getWikiType() + ":" + data.getWikiOwner() + " - Cause : " + e.getMessage(), e);
+    }
+    return new ObjectPageList<>(new ArrayList<SearchResult>(), 0);
+  }
+
 
   private void replaceIncludedPages(Page note, Wiki wiki) throws WikiException {
     Page note_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());

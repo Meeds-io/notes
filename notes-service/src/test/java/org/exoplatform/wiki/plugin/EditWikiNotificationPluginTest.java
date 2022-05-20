@@ -10,7 +10,7 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.notification.Utils.NotificationsUtils;
 import org.exoplatform.wiki.notification.plugin.EditWikiNotificationPlugin;
 import org.junit.Assert;

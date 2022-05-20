@@ -1,3 +1,22 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.exoplatform.wiki.service.impl;
 
 import org.apache.commons.lang.StringUtils;
@@ -10,9 +29,10 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.mow.api.WikiType;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.Utils;
@@ -42,6 +62,7 @@ public class WikiSearchServiceConnector extends SearchServiceConnector {
   public static String  DATE_TIME_FORMAT = "EEEEE, MMMMMMMM d, yyyy K:mm a";
   
   private WikiService wikiService;
+  private NoteService noteService;
 
   /**
    * Initializes the Wiki search service.
@@ -51,6 +72,7 @@ public class WikiSearchServiceConnector extends SearchServiceConnector {
   public WikiSearchServiceConnector(InitParams initParams) {
     super(initParams);
     wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
+    noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
   }
 
     /**
@@ -80,7 +102,7 @@ public class WikiSearchServiceConnector extends SearchServiceConnector {
     // Execute the search
     List<SearchResult> searchResults = new ArrayList<SearchResult>();
     try {
-      PageList<org.exoplatform.wiki.service.search.SearchResult> wikiSearchPageList = wikiService.search(searchData);
+      PageList<org.exoplatform.wiki.service.search.SearchResult> wikiSearchPageList = noteService.search(searchData);
       if (wikiSearchPageList != null) {
         List<org.exoplatform.wiki.service.search.SearchResult> wikiSearchResults = wikiSearchPageList.getAll();
         for (org.exoplatform.wiki.service.search.SearchResult wikiSearchResult : wikiSearchResults) {

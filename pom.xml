@@ -16,7 +16,6 @@
   <modules>
     <module>notes-service</module>
     <module>notes-webapp</module>
-    <module>notes-webui</module>
     <module>notes-social-integration</module>
     <module>notes-packaging</module>
   </modules>

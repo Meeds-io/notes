@@ -17,9 +17,12 @@
 
 package org.exoplatform.wiki.service;
 
+import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.gatein.api.EntityNotFoundException;
 
 import java.io.IOException;
@@ -297,7 +300,6 @@ public interface NoteService {
 
   boolean isExisting(String noteBookType, String noteBookOwner, String noteId) throws WikiException;
 
-  Page getNoteByRootPermission(String noteBookType, String noteBookOwner, String noteId) throws WikiException;
 
   /**
    * Update draft note for an existing page
@@ -359,9 +361,42 @@ public interface NoteService {
 
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 
-  void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
+    String getNoteRenderedContent(Page note);
+
+    void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
 
   void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
           IllegalAccessException,
           IOException;
+
+
+  /**
+   * Searches in all wiki pages.
+   *
+   * @param data The data to search.
+   * @return Search results.
+   * @throws WikiException if an error occured if an error occured
+   */
+  PageList<SearchResult> search(WikiSearchData data) throws WikiException;
+
+  /**
+   * Gets a wiki page regardless of the current user's permission.
+   *
+   * @param wikiType It can be Portal, Group, or User.
+   * @param wikiOwner The Wiki owner.
+   * @param pageId Id of the wiki page.
+   * @return The wiki page.
+   * @throws WikiException if an error occured if an error occured
+   */
+  Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException;
+
+  /**
+   * Checks if the given user has the permission on a page
+   * @param user the userName
+   * @param page the wiki page object
+   * @param permissionType permission Type
+   * @return true if user has permissions
+   * @throws WikiException if an error occured
+   */
+  boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
 }

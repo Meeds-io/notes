@@ -8,15 +8,11 @@ import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
-import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.utils.NoteConstants;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -31,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class WikiSpaceActivityPublisherTest {
 
   @Mock
-  private WikiService     wikiService;
+  private NoteService noteService;
 
   @Mock
   private IdentityManager identityManager;
@@ -46,7 +42,7 @@ public class WikiSpaceActivityPublisherTest {
   public void shouldNotCreateActivityWhenUpdateTypeIsNull() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
-        wikiService,
+        noteService,
         identityManager,
         activityManager,
         spaceService);
@@ -64,7 +60,7 @@ public class WikiSpaceActivityPublisherTest {
   public void shouldNotCreateActivityWhenPageIsNull() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
-         wikiService,
+         noteService,
          identityManager,
          activityManager,
          spaceService);
@@ -79,7 +75,7 @@ public class WikiSpaceActivityPublisherTest {
   public void shouldNotGenerateActivityWhenIsNotToBePublished() throws Exception {
 
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
-        wikiService,
+        noteService,
         identityManager,
         activityManager,
         spaceService);
@@ -107,7 +103,7 @@ public class WikiSpaceActivityPublisherTest {
   @Test
   public void shouldGenerateNewActivityWhenIsToBePublished() throws Exception {
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
-        wikiService,
+        noteService,
         identityManager,
         activityManager,
         spaceService);
@@ -136,7 +132,7 @@ public class WikiSpaceActivityPublisherTest {
   public void shouldUpdateActivityWhenIsNotNewAndNotToBePublished() throws Exception {
     // Given
     WikiSpaceActivityPublisher wikiSpaceActivityPublisher = new WikiSpaceActivityPublisher(
-        wikiService,
+        noteService,
         identityManager,
         activityManager,
         spaceService);

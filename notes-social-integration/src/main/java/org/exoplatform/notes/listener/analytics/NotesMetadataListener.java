@@ -28,7 +28,7 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.model.MetadataItem;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
 

@@ -1,3 +1,22 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.exoplatform.wiki.service.rest;
 
 import org.exoplatform.container.ExoContainer;
@@ -8,9 +27,9 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.mock.MockResourceBundleService;
-import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
@@ -84,6 +103,7 @@ public class NotesRestServiceTest {
     ExoContainer exoContainer = mock(ExoContainer.class);
     when(ExoContainerContext.getCurrentContainer()).thenReturn(exoContainer);
     when(exoContainer.getComponentInstanceOfType(WikiService.class)).thenReturn(noteBookService);
+    when(exoContainer.getComponentInstanceOfType(NoteService.class)).thenReturn(noteService);
   }
 
   @Test
@@ -175,7 +195,7 @@ public class NotesRestServiceTest {
     doCallRealMethod().when(TreeUtils.class, "getPathFromPageParams", ArgumentMatchers.any());
     doCallRealMethod().when(Utils.class, "validateWikiOwner", homePage.getWikiType(), homePage.getWikiOwner());
     doCallRealMethod().when(TreeUtils.class, "tranformToJson", ArgumentMatchers.any(), ArgumentMatchers.any());
-    when(noteBookService.getChildrenPageOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), true)).thenReturn(children);
+    when(noteService.getChildrenNoteOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), true, false)).thenReturn(children);
     when(Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
     when(Utils.isDescendantPage(homePage, page)).thenReturn(true);
     when(Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);

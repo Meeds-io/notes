@@ -1,3 +1,22 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.exoplatform.wiki.utils;
 
 import org.apache.commons.collections.map.HashedMap;
@@ -39,24 +58,18 @@ import org.exoplatform.web.url.navigation.NavigationResource;
 import org.exoplatform.web.url.navigation.NodeURL;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.*;
-import org.exoplatform.wiki.service.IDType;
-import org.exoplatform.wiki.service.WikiContext;
-import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.WikiPageHistory;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.safety.Whitelist;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
-import javax.swing.text.EditorKit;
-import javax.swing.text.html.HTMLEditorKit;
 import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -203,41 +216,7 @@ public class Utils {
     Identity userIdentity =  identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, userId, false);
    return userIdentity.getProfile().getFullName();
   }
-  
-  /**
-   * Get the list of user that're editing the wiki page
-   * 
-   * @param pageId The id of wiki page
-   * @return The list of user that're editing this wiki page 
-   */
-  public static List<String> getListOfUserEditingPage(String pageId) {
-    WikiService wikiService = (WikiService) PortalContainer.getComponent(WikiService.class);
-    List<String> edittingUsers = new ArrayList<String>();
-    List<String> outdateEdittingUser = new ArrayList<String>();
-    String currentUser = getCurrentUser();
-    
-    Map<String, WikiPageHistory> logByPage = editPageLogs.get(pageId);
-    if (logByPage != null) {
-      // Find all the user that editting this page
-      for (String username : logByPage.keySet()) {
-        WikiPageHistory log = logByPage.get(username);
-        if (System.currentTimeMillis() - log.getEditTime() < wikiService.getEditPageLivingTime()) {
-          if (!username.equals(currentUser) && !log.isNewPage()) {
-            edittingUsers.add(username);
-          }
-        } else {
-          outdateEdittingUser.add(username);
-        }
-      }
-      
-      // Remove all outdate editting user
-      for (String username : outdateEdittingUser) {
-        logByPage.remove(username);
-      }
-    }
-    return edittingUsers;
-  }
-  
+
   /**
    * Get the permalink of current wiki page <br>
    *
@@ -396,13 +375,13 @@ public class Utils {
   }
   
   public static boolean isDescendantPage(Page page, Page parentPage) throws WikiException {
-    WikiService wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
+    NoteService noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
     // if page and parentPage are the same page, it is considered as a descendant
     if(page.getWikiType().equals(parentPage.getWikiType()) && page.getWikiOwner().equals(parentPage.getWikiOwner())
             && page.getName().equals(parentPage.getName())) {
       return true;
     }
-    Page parentOfPage = wikiService.getParentPageOf(page);
+    Page parentOfPage = noteService.getParentNoteOf(page);
     // we reach the Wiki root
     if(parentOfPage == null) {
       return false;
@@ -418,6 +397,7 @@ public class Utils {
   }
   
   public static Object getObjectFromParams(WikiPageParams param) throws WikiException {
+    NoteService noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
     WikiService wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
     String wikiType = param.getType();
     String wikiOwner = param.getOwner();
@@ -426,7 +406,7 @@ public class Utils {
     if (wikiOwner != null && wikiPageId != null) {
       if (!wikiPageId.equals(NoteConstants.NOTE_HOME_NAME)) {
         // Object is a page
-        Page expandPage = wikiService.getPageByRootPermission(wikiType, wikiOwner, wikiPageId);
+        Page expandPage = noteService.getNoteByRootPermission(wikiType, wikiOwner, wikiPageId);
         return expandPage;
       } else {
         // Object is a Home page
@@ -452,12 +432,13 @@ public class Utils {
   
   public static Deque<WikiPageParams> getStackParams(Page page) throws WikiException {
     WikiService wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
+    NoteService noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
     Deque<WikiPageParams> stack = new ArrayDeque<>();
     Wiki wiki = wikiService.getWikiByTypeAndOwner(page.getWikiType(), page.getWikiOwner());
     if (wiki != null) {
       while (page != null) {
         stack.push(new WikiPageParams(wiki.getType(), wiki.getOwner(), page.getName()));
-        page = wikiService.getParentPageOf(page);
+        page = noteService.getParentNoteOf(page);
       }      
     }
     return stack;
@@ -481,15 +462,15 @@ public class Utils {
   public static String getWikiOnChangeContent(Page page)
           throws WikiException, DifferentiationFailedException {
     ExoContainer container = ExoContainerContext.getCurrentContainer();
-    WikiService wikiService = container.getComponentInstanceOfType(WikiService.class);
+    NoteService wikiService = container.getComponentInstanceOfType(NoteService.class);
     DiffService diffService = container.getComponentInstanceOfType(DiffService.class);
     
     // Get differences
     String currentVersionContent = page.getContent() != null ? new String(page.getContent()) : StringUtils.EMPTY;
-    List<PageVersion> versions = wikiService.getVersionsOfPage(page);
+    List<PageHistory> versions = wikiService.getVersionsHistoryOfNote(page,"");
     String previousVersionContent = StringUtils.EMPTY;
     if(versions != null && !versions.isEmpty()) {
-      PageVersion previousVersion = versions.get(0);
+      PageHistory previousVersion = versions.get(0);
       previousVersionContent = previousVersion.getContent();
     }
     DiffResult diffResult = diffService.getDifferencesAsHTML(previousVersionContent,
@@ -593,8 +574,8 @@ public class Utils {
   public static long countSearchResult(WikiSearchData data) throws Exception {
     data.setOffset(0);
     data.setLimit(Integer.MAX_VALUE);
-    WikiService wikiservice = (WikiService) PortalContainer.getComponent(WikiService.class);
-    PageList<SearchResult> results = wikiservice.search(data);
+    NoteService noteService = (NoteService) PortalContainer.getComponent(NoteService.class);
+    PageList<SearchResult> results = noteService.search(data);
     return results.getAll().size();
 
   }

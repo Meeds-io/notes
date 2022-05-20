@@ -1,20 +1,20 @@
 /*
+ * This file is part of the Meeds project (https://meeds.io/).
  *
- *  * Copyright (C) 2003-2015 eXo Platform SAS.
- *  *
- *  * This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Affero General Public License
- *  as published by the Free Software Foundation; either version 3
- *  of the License, or (at your option) any later version.
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see<http://www.gnu.org/licenses/>.
- *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 package org.exoplatform.wiki.jpa;
@@ -39,7 +39,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.*;
 import org.exoplatform.wiki.jpa.entity.*;
 import org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.DataStorage;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
@@ -331,79 +331,6 @@ public class JPADataStorage implements DataStorage {
     pageDAO.update(pageEntity);
   }
 
-  @Override
-  public void createTemplatePage(Wiki wiki, Template template) throws WikiException {
-    template.setWikiId(wiki.getId());
-    template.setWikiType(wiki.getType());
-    template.setWikiOwner(wiki.getOwner());
-    Date createdDate = template.getCreatedDate();
-    Date updatedDate = template.getUpdatedDate();
-    if(createdDate == null || updatedDate == null) {
-      Date now = Calendar.getInstance().getTime();
-      if(createdDate == null) {
-        template.setCreatedDate(now);
-      }
-      if(updatedDate == null) {
-        template.setUpdatedDate(now);
-      }
-    }
-    templateDAO.create(convertTemplateToTemplateEntity(template, wikiDAO));
-  }
-
-  @Override
-  public void updateTemplatePage(Template template) throws WikiException {
-    TemplateEntity templateEntity;
-    if (template.getId() != null && !template.getId().isEmpty()) {
-      templateEntity = templateDAO.find(Long.parseLong(template.getId()));
-    } else {
-      templateEntity = templateDAO.getTemplateOfWikiByName(template.getWikiType(), template.getWikiOwner(), template.getName());
-    }
-
-    if (templateEntity == null) {
-      throw new WikiException("Cannot update template " + template.getWikiType() + ":" + template.getWikiOwner() + ":"
-          + template.getName() + " because template does not exist.");
-    }
-
-    templateEntity.setName(template.getName());
-    templateEntity.setTitle(template.getTitle());
-    templateEntity.setDescription(template.getDescription());
-    templateEntity.setContent(template.getContent());
-    templateEntity.setSyntax(template.getSyntax());
-    templateEntity.setUpdatedDate(Calendar.getInstance().getTime());
-
-    templateDAO.update(templateEntity);
-  }
-
-  @Override
-  public void deleteTemplatePage(String wikiType, String wikiOwner, String templateName) throws WikiException {
-    TemplateEntity templateEntity = templateDAO.getTemplateOfWikiByName(wikiType, wikiOwner, templateName);
-    if (templateEntity == null) {
-      throw new WikiException("Cannot delete template " + wikiType + ":" + wikiOwner + ":" + templateName
-          + " because template does not exist.");
-    }
-
-    templateDAO.delete(templateEntity);
-  }
-
-  @Override
-  public Template getTemplatePage(WikiPageParams params, String templateName) throws WikiException {
-    TemplateEntity templateEntity = templateDAO.getTemplateOfWikiByName(params.getType(), params.getOwner(), templateName);
-    return convertTemplateEntityToTemplate(templateEntity);
-  }
-
-  @Override
-  public Map<String, Template> getTemplates(WikiPageParams wikiPageParams) throws WikiException {
-    Map<String, Template> templates = new HashMap<>();
-
-    List<TemplateEntity> templatesEntities = templateDAO.getTemplatesOfWiki(wikiPageParams.getType(), wikiPageParams.getOwner());
-    if (templatesEntities != null) {
-      for (TemplateEntity templateEntity : templatesEntities) {
-        templates.put(templateEntity.getName(), convertTemplateEntityToTemplate(templateEntity));
-      }
-    }
-
-    return templates;
-  }
 
   @Override
   public void deleteDraftOfPage(Page page, String username) throws WikiException {
@@ -1021,33 +948,6 @@ public class JPADataStorage implements DataStorage {
   @Override
   public Page getHelpSyntaxPage(String syntaxId, boolean fullContent, List<ValuesParam> syntaxHelpParams, ConfigurationManager configurationManager) throws WikiException {
     return null;
-  }
-
-  @Override
-  public void createEmotionIcon(EmotionIcon emotionIcon) throws WikiException {
-    EmotionIconEntity emotionIconEntity = new EmotionIconEntity();
-    emotionIconEntity.setName(emotionIcon.getName());
-    emotionIconEntity.setImage(emotionIcon.getImage());
-
-    emotionIconDAO.create(emotionIconEntity);
-  }
-
-  @Override
-  @ExoTransactional
-  public List<EmotionIcon> getEmotionIcons() throws WikiException {
-    List<EmotionIcon> emotionIcons = new ArrayList<>();
-    List<EmotionIconEntity> emotionIconsEntities = emotionIconDAO.findAll();
-    if (emotionIconsEntities != null) {
-      for (EmotionIconEntity emotionIconEntity : emotionIconsEntities) {
-        emotionIcons.add(convertEmotionIconEntityToEmotionIcon(emotionIconEntity));
-      }
-    }
-    return emotionIcons;
-  }
-
-  @Override
-  public EmotionIcon getEmotionIconByName(String emotionIconName) throws WikiException {
-    return convertEmotionIconEntityToEmotionIcon(emotionIconDAO.getEmotionIconByName(emotionIconName));
   }
 
   @Override
