@@ -72,7 +72,6 @@ public class JPADataStorage implements DataStorage {
   private PageVersionDAO pageVersionDAO;
   private PageMoveDAO    pageMoveDAO;
   private TemplateDAO    templateDAO;
-  private EmotionIconDAO emotionIconDAO;
   private FileService fileService;
   private UserACL userACL;
   
@@ -85,8 +84,6 @@ public class JPADataStorage implements DataStorage {
                         PageVersionDAO pageVersionDAO,
                         PageMoveDAO pageMoveDAO,
                         TemplateDAO templateDAO,
-                        EmotionIconDAO emotionIconDAO,
-                        DataInitializer dataInitializer,
                         FileService fileService,
                         UserACL userACL) {
     this.wikiDAO = wikiDAO;
@@ -97,7 +94,6 @@ public class JPADataStorage implements DataStorage {
     this.pageVersionDAO = pageVersionDAO;
     this.pageMoveDAO = pageMoveDAO;
     this.templateDAO = templateDAO;
-    this.emotionIconDAO = emotionIconDAO;
     this.fileService = fileService;
     this.userACL = userACL;
   }

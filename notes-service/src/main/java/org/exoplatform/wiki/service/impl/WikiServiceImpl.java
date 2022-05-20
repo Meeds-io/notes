@@ -7,8 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.utils.ListAccess;
-import org.exoplatform.commons.utils.ObjectPageList;
-import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.ComponentPlugin;
@@ -41,9 +39,6 @@ import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.AttachmentWikiListener;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.SearchResultType;
-import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.Utils;
 
 public class WikiServiceImpl implements WikiService {
@@ -51,20 +46,14 @@ public class WikiServiceImpl implements WikiService {
   public static final String                        CACHE_NAME                       = "wiki.PageRenderingCache";
   public static final String                        ATT_CACHE_NAME                   = "wiki.PageAttachmentCache";
   private static final Log                          LOG                              = ExoLogger.getLogger(WikiServiceImpl.class);
-  final static private String                       PREFERENCES                      = "preferences";
   final static private String                       DEFAULT_SYNTAX                   = "defaultSyntax";
   private static final String                       DEFAULT_WIKI_NAME                = "wiki";
-  private static final long                         DEFAULT_SAVE_DRAFT_SEQUENCE_TIME = 30000;
   private static final Log                          log                              = ExoLogger.getLogger(WikiServiceImpl.class);
-  public static String                              UPLOAD_LIMIT_PARAMETER_NAME      = "attachment.upload.limit";
   private final OrganizationService                       orgService;
   private final UserACL                                   userACL;
   private final DataStorage                               dataStorage;
   private PropertiesParam                           preferencesParams;
   private final List<ComponentPlugin>                     plugins_                         = new ArrayList<>();
-  private final long                                      autoSaveInterval;
-
-  private final long                                      editPageLivingTime_;
 
   private String                                    wikiWebappUri;
 
@@ -78,14 +67,7 @@ public class WikiServiceImpl implements WikiService {
   public WikiServiceImpl(UserACL userACL,
                          DataStorage dataStorage,
                          CacheService cacheService,
-                         OrganizationService orgService,
-                         InitParams initParams) {
-    String autoSaveIntervalProperty = System.getProperty("wiki.autosave.interval");
-    if ((autoSaveIntervalProperty == null) || autoSaveIntervalProperty.isEmpty()) {
-      autoSaveInterval = DEFAULT_SAVE_DRAFT_SEQUENCE_TIME;
-    } else {
-      autoSaveInterval = Long.parseLong(autoSaveIntervalProperty);
-    }
+                         OrganizationService orgService) {
 
     this.userACL = userACL;
     this.dataStorage = dataStorage;
@@ -98,7 +80,6 @@ public class WikiServiceImpl implements WikiService {
     if (StringUtils.isEmpty(wikiWebappUri)) {
       wikiWebappUri = DEFAULT_WIKI_NAME;
     }
-    editPageLivingTime_ = Long.parseLong(initParams.getValueParam("wiki.editPage.livingTime").getValue());
   }
 
   public ExoCache<Integer, MarkupData> getRenderingCache() {

@@ -21,7 +21,6 @@ package org.exoplatform.wiki.service;
 
 import java.util.List;
 
-import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
@@ -33,8 +32,6 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.impl.SpaceBean;
 import org.exoplatform.wiki.service.listener.AttachmentWikiListener;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.WikiSearchData;
 
 /**
  * Provides functions for processing database

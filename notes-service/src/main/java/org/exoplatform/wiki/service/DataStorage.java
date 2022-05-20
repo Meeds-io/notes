@@ -31,7 +31,6 @@ import org.exoplatform.wiki.service.search.TemplateSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
 import java.util.List;
-import java.util.Map;
 
 public interface DataStorage {
 

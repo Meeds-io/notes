@@ -31,11 +31,11 @@ public class EditWikiListener extends Listener<WikiService, Page> {
     Page page = event.getData();
 
     // How to send notification
-    NotificationContext ctx = buildContext(wikiService, page);
+    NotificationContext ctx = buildContext(page);
     dispatch(ctx, NotificationsUtils.EDIT_WIKI_NOTIFICATION_ID);
   }
 
-  private NotificationContext buildContext(WikiService wikiService, Page page) {
+  private NotificationContext buildContext(Page page) {
     String creatorId = Utils.getCurrentUser();
     String changes = null;
     try {

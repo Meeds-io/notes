@@ -27,7 +27,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.utils.Utils;
 
 import javax.servlet.http.HttpSessionEvent;
