@@ -169,16 +169,7 @@ public class NoteServiceImpl implements NoteService {
     Page parentPage = getNoteOfNoteBookByName(noteBook.getType(), noteBook.getOwner(), parentNoteName);
     if (parentPage != null) {
       note.setOwner(userIdentity.getUserId());
-      try {
-        if (StringUtils.equalsIgnoreCase(noteBook.getType(), WikiType.GROUP.name())) {
-          note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), noteBook.getOwner(), "Notes"));
-        }
-        if (StringUtils.equalsIgnoreCase(noteBook.getType(), WikiType.USER.name())) {
-          note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), noteBook.getOwner(), "Notes"));
-        }
-      } catch (Exception e) {
-        log.warn("can't process note's images");
-      }
+      note.setContent(note.getContent());
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setCanManage(canManageNotes(userIdentity.getUserId(), space, note));
@@ -230,16 +221,7 @@ public class NoteServiceImpl implements NoteService {
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
-    try {
-      if (note.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
-        note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), note.getWikiOwner(), "Notes"));
-      }
-      if (note.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
-        note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), note.getWikiOwner(), "Notes"));
-      }
-    } catch (Exception e) {
-      log.warn("can't process note's images");
-    }
+    note.setContent(note.getContent());
     updateNote(note);
     invalidateCache(note);
 
@@ -1203,23 +1185,13 @@ public class NoteServiceImpl implements NoteService {
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-          note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
-        }
-        if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-          note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-        }
+        note.setContent(note.getContent());
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-              note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
-            }
-            if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-              note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-            }
+            note.setContent(note.getContent());
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
 
           }
@@ -1232,24 +1204,14 @@ public class NoteServiceImpl implements NoteService {
             }
             note.setName(newTitle);
             note.setTitle(newTitle);
-            if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-              note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
-            }
-            if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-              note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-            }
+            note.setContent(note.getContent());
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
           }
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
               note_2.setContent(note.getContent());
               note_2.setTitle(note.getTitle());
-              if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-                note_2.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
-              }
-              if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-                note_2.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-              }
+              note_2.setContent(note.getContent());
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
             }
@@ -1260,12 +1222,7 @@ public class NoteServiceImpl implements NoteService {
       if (StringUtils.isNotEmpty(conflict) && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
         if (!note.getContent().equals(note_1.getContent())) {
-          if (wiki.getType().toUpperCase().equals(WikiType.GROUP.name())) {
-            note.setContent(htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), "Notes"));
-          }
-          if (wiki.getType().toUpperCase().equals(WikiType.USER.name())) {
-            note.setContent(htmlUploadImageProcessor.processUserImages(note.getContent(), wiki.getOwner(), "Notes"));
-          }
+          note.setContent(note.getContent());
           note_1.setContent(note.getContent());
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
           createVersionOfNote(note_1, userIdentity.getUserId());
