@@ -1,19 +1,22 @@
 /*
- * Copyright (C) 2003-2011 eXo Platform SAS.
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation; either version 3
- * of the License, or (at your option) any later version.
- *
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see<http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 package org.exoplatform.wiki.tree.utils;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -23,11 +26,11 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.mow.api.PermissionType;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.*;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.NoteConstants;
@@ -83,7 +86,7 @@ public class TreeUtils {
   }
   
   public static List<JsonNodeData> tranformToJson(TreeNode treeNode, HashMap<String, Object> context) throws Exception {
-    WikiService wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
+    NoteService noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
 
     int counter = 1;
     Boolean showExcerpt = false;
@@ -113,22 +116,22 @@ public class TreeUtils {
           isSelectable = false;
         }
         
-        if (!wikiService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
+        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
           isSelectable = false;
           child.setRetricted(true);
         }
-        if(BooleanUtils.isTrue(canEdit) && !wikiService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
+        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
           isSelectable = false;
           child.setRetricted(true);
         }
       } else if (child.getNodeType().equals(TreeNodeType.WIKIHOME)) {
         Page page = ((WikiHomeTreeNode) child).getWikiHome();
-        if (!wikiService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
+        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
           isSelectable = false;
           child.setRetricted(true);
         }
 
-        if(BooleanUtils.isTrue(canEdit) && !wikiService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
+        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
           isSelectable = false;
           child.setRetricted(true);
         }

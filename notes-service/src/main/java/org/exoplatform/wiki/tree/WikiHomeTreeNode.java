@@ -1,28 +1,32 @@
 /*
- * Copyright (C) 2003-2010 eXo Platform SAS.
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation; either version 3
- * of the License, or (at your option) any later version.
- *
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see<http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 package org.exoplatform.wiki.tree;
 
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.mow.api.PermissionType;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
@@ -39,29 +43,32 @@ public class WikiHomeTreeNode extends TreeNode {
 
   private Page wikiHome;
 
+  private NoteService noteService;
+
   private WikiService wikiService;
 
   public WikiHomeTreeNode(Page wikiHome) throws Exception {
     super(wikiHome.getTitle(), TreeNodeType.WIKIHOME);
 
+    noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
     wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
 
     this.wikiHome = wikiHome;
     this.path = this.buildPath();
-    this.hasChild = !wikiHome.isDraftPage() && !wikiService.getChildrenPageOf(wikiHome, ConversationState.getCurrent().getIdentity().getUserId(), true).isEmpty();
+    this.hasChild = !wikiHome.isDraftPage() && !noteService.getChildrenNoteOf(wikiHome, ConversationState.getCurrent().getIdentity().getUserId(), true, true).isEmpty();
   }
 
   @Override
   protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
     boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
-    Collection<Page> pages = wikiService.getChildrenPageOf(wikiHome, userId, withDrafts);
+    Collection<Page> pages = noteService.getChildrenNoteOf(wikiHome, userId, withDrafts,false);
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());
     Page currentPage = (Page) context.get(TreeNode.SELECTED_PAGE);
     while (childPageIterator.hasNext() && count < size) {
       Page childPage = childPageIterator.next();
-      if (wikiService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
+      if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
         PageTreeNode child = new PageTreeNode(childPage);
         this.children.add(child);

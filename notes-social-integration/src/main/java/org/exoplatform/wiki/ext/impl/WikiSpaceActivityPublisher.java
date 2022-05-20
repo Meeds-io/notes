@@ -24,7 +24,7 @@ import org.exoplatform.social.core.storage.SpaceStorageException;
 import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.social.metadata.favorite.model.Favorite;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.Utils;
@@ -60,7 +60,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
   private static final Log   LOG                 = ExoLogger.getExoLogger(WikiSpaceActivityPublisher.class);
 
-  private WikiService        wikiService;
+  private NoteService        noteService;
 
   private IdentityManager    identityManager;
 
@@ -68,11 +68,11 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
 
   private SpaceService       spaceService;
 
-  public WikiSpaceActivityPublisher(WikiService wikiService,
+  public WikiSpaceActivityPublisher(NoteService noteService,
                                     IdentityManager identityManager,
                                     ActivityManager activityManager,
                                     SpaceService spaceService) {
-    this.wikiService = wikiService;
+    this.noteService = noteService;
     this.identityManager = identityManager;
     this.activityManager = activityManager;
     this.spaceService = spaceService;
@@ -124,7 +124,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
     String pageURL = (page.getUrl() == null) ? (spaceUrl != null ? (spaceUrl + "/" + WIKI_PAGE_NAME) : "") : page.getUrl();
     templateParams.put(URL_KEY, pageURL);
     int versionsTotal = 0;
-    List<PageVersion> versions = wikiService.getVersionsOfPage(page);
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
     if (versions != null && !versions.isEmpty()) {
       versionsTotal = versions.size();
     }
@@ -135,7 +135,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
     // Create page excerpt
     StringBuilder excerpt = new StringBuilder();
     try {
-      excerpt.append(wikiService.getPageRenderedContent(page));
+      excerpt.append(noteService.getNoteRenderedContent(page));
     } catch (Exception e) {
       throw new WikiException("Cannot render page " + page.getWikiType() + ":" + page.getWikiOwner() + page.getName(), e);
     }
@@ -196,7 +196,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
     return result.toString();
   }
 
-  private boolean isPublic(Page page) throws WikiException {
+  private boolean isPublic(Page page) {
     List<PermissionEntry> permissions = page.getPermissions();
     // the page is public when it has permission: [any read]
     boolean isPublic = false;
@@ -223,7 +223,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
    * @return true : can, false : not can;
    * @throws Exception
    */
-  private boolean isPublicInSpace(Page page, Space space) throws WikiException {
+  private boolean isPublicInSpace(Page page, Space space){
     List<PermissionEntry> pagePermissions = page.getPermissions();
     String groupMemberShip = MembershipEntry.ANY_TYPE + ":" + space.getGroupId();
     boolean isPublic = false;
@@ -294,7 +294,7 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
       String activityId = activity.getId();
       if (!StringUtils.isEmpty(activityId)) {
         page.setActivityId(activityId);
-        wikiService.updatePage(page, null);
+        noteService.updateNote(page);
       }
 
       if (page.getMetadatas()!=null && !page.getMetadatas().isEmpty()) {

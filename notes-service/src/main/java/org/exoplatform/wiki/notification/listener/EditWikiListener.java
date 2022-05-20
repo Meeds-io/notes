@@ -9,7 +9,7 @@ import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.notification.Utils.NotificationsUtils;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.utils.Utils;
@@ -55,7 +55,7 @@ public class EditWikiListener extends Listener<WikiService, Page> {
     Set<String> receivers = new HashSet<String>();
 
     // Task creator
-    try {
+    /*try {
       List<String> watchers = wikiService.getWatchersOfPage(page);
       if (watchers != null && watchers.size() > 0) {
         for (String watcher : watchers) {
@@ -66,7 +66,7 @@ public class EditWikiListener extends Listener<WikiService, Page> {
     } catch (Exception e) {
       LOG.error("Cannot have list of watchers for wiki page {} ", page.getName(), e);
     }
-
+  */
     // Remove the user who create this comment, he should not receive the notification
     receivers.remove(creatorId);
     ctx.append(NotificationsUtils.WATCHERS, receivers);

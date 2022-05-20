@@ -18,8 +18,8 @@ package org.exoplatform.wiki.service.listener;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.Attachment;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.Page;
 
 /**
  * Created by The eXo Platform SAS

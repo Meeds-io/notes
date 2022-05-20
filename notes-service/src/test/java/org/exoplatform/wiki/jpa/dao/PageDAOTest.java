@@ -24,7 +24,7 @@ import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PermissionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
-import org.exoplatform.wiki.mow.api.PermissionType;
+import org.exoplatform.wiki.model.PermissionType;
 import org.junit.Test;
 
 import java.util.ArrayList;

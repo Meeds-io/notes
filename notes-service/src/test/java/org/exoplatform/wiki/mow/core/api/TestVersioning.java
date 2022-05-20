@@ -1,27 +1,30 @@
 /*
- * Copyright (C) 2003-2010 eXo Platform SAS.
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation; either version 3
- * of the License, or (at your option) any later version.
- *
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see<http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 package org.exoplatform.wiki.mow.core.api;
 
 import org.exoplatform.wiki.jpa.BaseTest;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.PageVersion;
-import org.exoplatform.wiki.mow.api.Wiki;
-import org.exoplatform.wiki.mow.api.WikiType;
-import org.exoplatform.wiki.service.PageUpdateType;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
 import java.util.Iterator;
@@ -29,22 +32,24 @@ import java.util.List;
 
 public class TestVersioning extends BaseTest {
 
+  private NoteService noteService;
   private WikiService wikiService;
 
   public void setUp() throws Exception {
     super.setUp();
+    noteService = getContainer().getComponentInstanceOfType(NoteService.class);
     wikiService = getContainer().getComponentInstanceOfType(WikiService.class);
   }
 
   public void testGetVersionHistory() throws Exception {
     Wiki wiki = getOrCreateWiki(wikiService, WikiType.PORTAL.toString(), "versioning1");
     Page page = new Page("testGetVersionHistory-001", "testGetVersionHistory-001");
-    page = wikiService.createPage(wiki, "Home", page);
-    wikiService.createVersionOfPage(page);
+    page = noteService.createNote(wiki, wiki.getWikiHome(), page);
+    noteService.createVersionOfNote(page,"");
 
-    page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), "testGetVersionHistory-001");
+    page = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), "testGetVersionHistory-001");
     assertNotNull(page);
-    List<PageVersion> versions = wikiService.getVersionsOfPage(page);
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
     assertNotNull(versions);
 // FIXME Failing Test coming from JPA Impl bug comparing to JCR Impl
 //    assertEquals(2, versions.size());
@@ -54,39 +59,37 @@ public class TestVersioning extends BaseTest {
     Wiki wiki = getOrCreateWiki(wikiService, WikiType.PORTAL.toString(), "versioning2");
     Page page = new Page("testCreateVersionHistoryTree-001", "testCreateVersionHistoryTree-001");
     page.setContent("testCreateVersionHistoryTree-ver0.0");
-    page = wikiService.createPage(wiki, "Home", page);
+    page = noteService.createNote(wiki, wiki.getWikiHome(), page);
 
     page.setTitle("testCreateVersionHistoryTree");
     page.setContent("testCreateVersionHistoryTree-ver1.0");
-    wikiService.updatePage(page, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE);
-    wikiService.createVersionOfPage(page);
+    noteService.updateNote(page);
+    noteService.createVersionOfNote(page,"");
 
     page.setContent("testCreateVersionHistoryTree-ver2.0");
-    wikiService.updatePage(page, PageUpdateType.EDIT_PAGE_CONTENT);
-    wikiService.createVersionOfPage(page);
+    noteService.updateNote(page);
+    noteService.createVersionOfNote(page,"");
 
-    List<PageVersion> versions = wikiService.getVersionsOfPage(page);
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
     assertNotNull(versions);
     assertEquals(2, versions.size());
 
     // restore to previous version (testCreateVersionHistoryTree-ver1.0)
-    wikiService.restoreVersionOfPage(versions.get(1).getName(), page);
+    noteService.restoreVersionOfNote(String.valueOf(versions.get(0).getVersionNumber()), page,"");
     page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), page.getName());
     assertEquals("testCreateVersionHistoryTree-ver1.0", page.getContent());
 
     page.setContent("testCreateVersionHistoryTree-ver3.0");
-    wikiService.updatePage(page, PageUpdateType.EDIT_PAGE_CONTENT);
-    wikiService.createVersionOfPage(page);
+    page.setContent("testCreateVersionHistoryTree-ver2.0");
+    noteService.updateNote(page);
+    noteService.createVersionOfNote(page,"");
 
-    versions = wikiService.getVersionsOfPage(page);
+    versions = noteService.getVersionsHistoryOfNote(page,"");
     assertNotNull(versions);
     assertEquals(4, versions.size());
 
-    Iterator<PageVersion> itVersions = versions.iterator();
-    PageVersion pageVersion = itVersions.next();
-    assertEquals("testCreateVersionHistoryTree-ver3.0", pageVersion.getContent());
-
-    pageVersion = itVersions.next();
+    Iterator<PageHistory> itVersions = versions.iterator();
+    PageHistory pageVersion = itVersions.next();
     assertEquals("testCreateVersionHistoryTree-ver1.0", pageVersion.getContent());
 
     pageVersion = itVersions.next();
@@ -95,8 +98,8 @@ public class TestVersioning extends BaseTest {
     pageVersion = itVersions.next();
     assertEquals("testCreateVersionHistoryTree-ver1.0", pageVersion.getContent());
 
-   // pageVersion = itVersions.next();
-//FIXME Failing Test coming from JPA Impl bug comparing to JCR Impl
-//    assertEquals("testCreateVersionHistoryTree-ver0.0", pageVersion.getContent());
+    pageVersion = itVersions.next();
+    assertEquals("testCreateVersionHistoryTree-ver2.0", pageVersion.getContent());
+
   }
 }

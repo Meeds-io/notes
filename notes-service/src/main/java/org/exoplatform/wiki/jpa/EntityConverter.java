@@ -1,3 +1,22 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.exoplatform.wiki.jpa;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -11,12 +30,11 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
 import org.exoplatform.wiki.jpa.entity.*;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.IDType;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Utility class to convert JPA entity objects
@@ -438,77 +456,6 @@ public class EntityConverter {
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
     }
     return pageHistory;
-  }
-
-  public static Template convertTemplateEntityToTemplate(TemplateEntity templateEntity) {
-    Template template = null;
-    if (templateEntity != null) {
-      template = new Template();
-      template.setId(String.valueOf(templateEntity.getId()));
-      template.setName(templateEntity.getName());
-      WikiEntity wiki = templateEntity.getWiki();
-      if (wiki != null) {
-        template.setWikiId(String.valueOf(wiki.getId()));
-        template.setWikiType(wiki.getType());
-        template.setWikiOwner(wiki.getOwner());
-      }
-      template.setTitle(templateEntity.getTitle());
-      template.setDescription(templateEntity.getDescription());
-      template.setContent(templateEntity.getContent());
-      template.setSyntax(templateEntity.getSyntax());
-      template.setCreatedDate(templateEntity.getCreatedDate());
-      template.setUpdatedDate(templateEntity.getUpdatedDate());
-    }
-    return template;
-  }
-
-  public static TemplateEntity convertTemplateToTemplateEntity(Template template, WikiDAO wikiDAO) {
-    TemplateEntity templateEntity = null;
-    if (template != null) {
-      templateEntity = new TemplateEntity();
-      templateEntity.setName(template.getName());
-
-      WikiEntity wiki = null;
-      if(template.getWikiId() != null) {
-        try {
-          Long wikiId = Long.parseLong(template.getWikiId());
-          wiki = wikiDAO.find(wikiId);
-        } catch (NumberFormatException e) {
-          wiki = wikiDAO.getWikiByTypeAndOwner(template.getWikiType(), template.getWikiOwner());
-        }
-      }
-      if (wiki != null) {
-        templateEntity.setWiki(wiki);
-      }
-
-      templateEntity.setTitle(template.getTitle());
-      templateEntity.setDescription(template.getDescription());
-      templateEntity.setContent(template.getContent());
-      templateEntity.setSyntax(template.getSyntax());
-      templateEntity.setCreatedDate(template.getCreatedDate());
-      templateEntity.setUpdatedDate(template.getUpdatedDate());
-    }
-    return templateEntity;
-  }
-
-  public static EmotionIcon convertEmotionIconEntityToEmotionIcon(EmotionIconEntity emotionIconEntity) {
-    EmotionIcon emotionIcon = null;
-    if (emotionIconEntity != null) {
-      emotionIcon = new EmotionIcon();
-      emotionIcon.setName(emotionIconEntity.getName());
-      emotionIcon.setImage(emotionIconEntity.getImage());
-    }
-    return emotionIcon;
-  }
-
-  public static EmotionIconEntity convertEmotionIconToEmotionIconEntity(EmotionIcon emotionIcon) {
-    EmotionIconEntity emotionIconEntity = null;
-    if (emotionIcon != null) {
-      emotionIconEntity = new EmotionIconEntity();
-      emotionIconEntity.setName(emotionIcon.getName());
-      emotionIconEntity.setImage(emotionIcon.getImage());
-    }
-    return emotionIconEntity;
   }
 
   public static PermissionEntry convertPermissionEntityToPermissionEntry(PermissionEntity permissionEntity) {

@@ -1,25 +1,26 @@
 /*
+ * This file is part of the Meeds project (https://meeds.io/).
  *
- *  * Copyright (C) 2003-2015 eXo Platform SAS.
- *  *
- *  * This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Affero General Public License
- *  as published by the Free Software Foundation; either version 3
- *  of the License, or (at your option) any later version.
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see<http://www.gnu.org/licenses/>.
- *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
 package org.exoplatform.wiki.jpa;
 
 import java.util.*;
+
+import org.exoplatform.wiki.model.*;
 import org.mockito.Mockito;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -31,7 +32,6 @@ import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.*;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
-import org.exoplatform.wiki.mow.api.*;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
@@ -497,152 +497,6 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertTrue(storage.hasPermissionOnPage(authenticatedPage, PermissionType.EDITPAGE, adminIdentity));
     assertFalse(storage.hasPermissionOnPage(adminPage, PermissionType.VIEWPAGE, userIdentity));
     assertTrue(storage.hasPermissionOnPage(adminPage, PermissionType.VIEWPAGE, adminIdentity));
-  }
-
-  @Test
-  public void testAttachmentsOfPage() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Page page1 = new Page();
-    page1.setWikiId(wiki.getId());
-    page1.setWikiType(wiki.getType());
-    page1.setWikiOwner(wiki.getOwner());
-    page1.setCreatedDate(new Date());
-    page1.setUpdatedDate(new Date());
-    page1.setName("page1");
-    page1.setTitle("Page 1");
-
-    Page page2 = new Page();
-    page2.setWikiId(wiki.getId());
-    page2.setWikiType(wiki.getType());
-    page2.setWikiOwner(wiki.getOwner());
-    page2.setCreatedDate(new Date());
-    page2.setUpdatedDate(new Date());
-    page2.setName("page2");
-    page2.setTitle("Page 2");
-
-    Attachment attachment1 = new Attachment();
-    attachment1.setCreatedDate(Calendar.getInstance());
-    attachment1.setUpdatedDate(Calendar.getInstance());
-    attachment1.setName("attachment1");
-    attachment1.setContent("content attachment1".getBytes());
-
-    Attachment attachment2 = new Attachment();
-    attachment2.setCreatedDate(Calendar.getInstance());
-    attachment2.setUpdatedDate(Calendar.getInstance());
-    attachment2.setName("attachment2");
-    attachment2.setContent("content attachment2".getBytes());
-
-    // When
-    storage.createPage(wiki, wiki.getWikiHome(), page1);
-    storage.createPage(wiki, wiki.getWikiHome(), page2);
-    storage.addAttachmentToPage(attachment1, page1);
-    storage.addAttachmentToPage(attachment2, page1);
-    List<Attachment> attachmentsOfPage1 = storage.getAttachmentsOfPage(page1,true);
-    List<Attachment> attachmentsOfPage2 = storage.getAttachmentsOfPage(page2,true);
-
-    // Then
-    assertEquals(2, pageAttachmentDAO.findAll().size());
-    assertNotNull(attachmentsOfPage1);
-    assertEquals(2, attachmentsOfPage1.size());
-    assertNotNull(attachmentsOfPage2);
-    assertEquals(0, attachmentsOfPage2.size());
-  }
-
-  @Test
-  public void testDeleteAttachmentOfPage() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Page page1 = new Page();
-    page1.setWikiId(wiki.getId());
-    page1.setWikiType(wiki.getType());
-    page1.setWikiOwner(wiki.getOwner());
-    page1.setCreatedDate(new Date());
-    page1.setUpdatedDate(new Date());
-    page1.setName("page1");
-    page1.setTitle("Page 1");
-
-    Attachment attachment1 = new Attachment();
-    attachment1.setCreatedDate(GregorianCalendar.getInstance());
-    attachment1.setUpdatedDate(GregorianCalendar.getInstance());
-    attachment1.setName("attachment1");
-    attachment1.setContent("content attachment2".getBytes());
-
-    Attachment attachment2 = new Attachment();
-    attachment2.setName("attachment2");
-    attachment2.setCreatedDate(GregorianCalendar.getInstance());
-    attachment2.setUpdatedDate(GregorianCalendar.getInstance());
-    attachment2.setContent("content attachment2".getBytes());
-
-    // When
-    storage.createPage(wiki, wiki.getWikiHome(), page1);
-    storage.addAttachmentToPage(attachment1, page1);
-    storage.addAttachmentToPage(attachment2, page1);
-    List<Attachment> attachmentsOfPage = storage.getAttachmentsOfPage(page1,true);
-    storage.deleteAttachmentOfPage("attachment1", page1);
-    List<Attachment> attachmentsOfPageAfterDeletion = storage.getAttachmentsOfPage(page1,true);
-
-    // Then
-    assertNotNull(attachmentsOfPage);
-    assertEquals(2, attachmentsOfPage.size());
-    assertNotNull(attachmentsOfPageAfterDeletion);
-    assertEquals(1, attachmentsOfPageAfterDeletion.size());
-  }
-  
-  @Test
-  public void testDeleteAttachmentOfDraftPage() throws WikiException {
-    // Given
-    startSessionAs("Jhon");
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki); 
-    
-    DraftPage draftPage = new DraftPage();
-    draftPage.setAuthor("Jhon");
-    draftPage.setName("DraftPage1");
-    draftPage.setTitle("DraftPage 1");
-    draftPage.setWikiId(wiki.getId());
-    draftPage.setWikiType(wiki.getType());
-    draftPage.setWikiOwner(wiki.getOwner());
-    draftPage.setNewPage(true);
-    draftPage.setTargetPageRevision("1");
-    draftPage.setCreatedDate(new Date());
-    draftPage.setUpdatedDate(new Date());
-    
-    Attachment attachment1 = new Attachment();
-    attachment1.setName("attachment1");
-    attachment1.setContent("content attachment2".getBytes());
-    attachment1.setCreatedDate(GregorianCalendar.getInstance());
-    attachment1.setUpdatedDate(GregorianCalendar.getInstance());
-
-    Attachment attachment2 = new Attachment();
-    attachment2.setName("attachment2");
-    attachment2.setContent("content attachment2".getBytes());
-    attachment2.setCreatedDate(GregorianCalendar.getInstance());
-    attachment2.setUpdatedDate(GregorianCalendar.getInstance());
-    
-    //When
-    storage.createDraftPageForUser(draftPage, "Jhon");
-    storage.addAttachmentToPage(attachment1, draftPage);
-    storage.addAttachmentToPage(attachment2, draftPage);
-    List<Attachment> attachmentsOfdraftPage = storage.getAttachmentsOfPage(draftPage,true);
-    storage.deleteAttachmentOfPage("attachment1", draftPage);
-    List<Attachment> attachmentsOfdraftPageAfterDeletion = storage.getAttachmentsOfPage(draftPage,true);
-    
-    //then
-    assertNotNull(attachmentsOfdraftPage);
-    assertEquals(2, attachmentsOfdraftPage.size());
-    assertNotNull(attachmentsOfdraftPageAfterDeletion);
-    assertEquals(1, attachmentsOfdraftPageAfterDeletion.size());
   }
 
   @Test
@@ -1255,220 +1109,6 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals("wiki2", relatedPage2.getWikiOwner());
     assertEquals("page2", relatedPage2.getName());
     assertNull(relatedPage3);
-  }
-
-  @Test
-  public void testGetEmotionIcons() throws WikiException {
-    // Given
-    EmotionIcon emotionIcon1 = new EmotionIcon();
-    emotionIcon1.setName("emotionIcon1");
-    emotionIcon1.setImage("image1".getBytes());
-    storage.createEmotionIcon(emotionIcon1);
-
-    EmotionIcon emotionIcon2 = new EmotionIcon();
-    emotionIcon2.setName("emotionIcon2");
-    emotionIcon2.setImage("image2".getBytes());
-    storage.createEmotionIcon(emotionIcon2);
-
-    // When
-    List<EmotionIcon> emotionIcons = storage.getEmotionIcons();
-
-    // Then
-    assertNotNull(emotionIcons);
-    assertEquals(2, emotionIcons.size());
-  }
-
-  @Test
-  public void testGetEmotionIconByName() throws WikiException {
-    // Given
-    EmotionIcon emotionIcon1 = new EmotionIcon();
-    emotionIcon1.setName("emotionIcon1");
-    emotionIcon1.setImage("image1".getBytes());
-    storage.createEmotionIcon(emotionIcon1);
-
-    EmotionIcon emotionIcon2 = new EmotionIcon();
-    emotionIcon2.setName("emotionIcon2");
-    emotionIcon2.setImage("image2".getBytes());
-    storage.createEmotionIcon(emotionIcon2);
-
-    // When
-    EmotionIcon fetchedEmotionIcon1 = storage.getEmotionIconByName("emotionIcon1");
-    EmotionIcon fetchedEmotionIcon2 = storage.getEmotionIconByName("emotionIcon2");
-    EmotionIcon fetchedEmotionIcon3 = storage.getEmotionIconByName("emotionIcon3");
-
-    // Then
-    assertNotNull(fetchedEmotionIcon1);
-    assertEquals("emotionIcon1", fetchedEmotionIcon1.getName());
-    assertTrue(Arrays.equals("image1".getBytes(), fetchedEmotionIcon1.getImage()));
-    assertNotNull(fetchedEmotionIcon2);
-    assertEquals("emotionIcon2", fetchedEmotionIcon2.getName());
-    assertTrue(Arrays.equals("image2".getBytes(), fetchedEmotionIcon2.getImage()));
-    assertNull(fetchedEmotionIcon3);
-  }
-
-  @Test
-  public void testGetTemplate() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Template template1 = new Template();
-    template1.setName("template1");
-    template1.setTitle("Template 1");
-    template1.setContent("Template 1 Content");
-    storage.createTemplatePage(wiki, template1);
-
-    // When
-    Template fetchedTemplate1 = storage.getTemplatePage(new WikiPageParams("portal", "wiki1", null), "template1");
-    Template fetchedTemplate2 = storage.getTemplatePage(new WikiPageParams("portal", "wiki1", null), "template2");
-    Template fetchedTemplate1OfWiki2 = storage.getTemplatePage(new WikiPageParams("portal", "wiki2", null), "template1");
-
-    // Then
-    assertNotNull(fetchedTemplate1);
-    assertEquals("template1", fetchedTemplate1.getName());
-    assertNull(fetchedTemplate2);
-    assertNull(fetchedTemplate1OfWiki2);
-  }
-
-  @Test
-  public void testGetTemplates() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Template template1 = new Template();
-    template1.setName("template1");
-    template1.setTitle("Template 1");
-    template1.setContent("Template 1 Content");
-    storage.createTemplatePage(wiki, template1);
-
-    Template template2 = new Template();
-    template2.setName("template2");
-    template2.setTitle("Template 2");
-    template2.setContent("Template 2 Content");
-    storage.createTemplatePage(wiki, template2);
-
-    // When
-    Map<String, Template> fetchedTemplateWiki1 = storage.getTemplates(new WikiPageParams("portal", "wiki1", null));
-    Map<String, Template> fetchedTemplateWiki2 = storage.getTemplates(new WikiPageParams("portal", "wiki2", null));
-
-    // Then
-    assertNotNull(fetchedTemplateWiki1);
-    assertEquals(2, fetchedTemplateWiki1.size());
-    assertNotNull(fetchedTemplateWiki2);
-    assertEquals(0, fetchedTemplateWiki2.size());
-  }
-
-  @Test
-  public void testUpdateTemplate() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Template template1 = new Template();
-    template1.setName("template1");
-    template1.setTitle("Template 1");
-    template1.setContent("Template 1 Content");
-    storage.createTemplatePage(wiki, template1);
-
-    Template template2 = new Template();
-    template2.setName("template2");
-    template2.setTitle("Template 2");
-    template2.setContent("Template 2 Content");
-    storage.createTemplatePage(wiki, template2);
-
-    // When
-    Template fetchedTemplate1 = storage.getTemplatePage(new WikiPageParams("portal", "wiki1", null), "template1");
-    fetchedTemplate1.setTitle("Template 1 Updated");
-    fetchedTemplate1.setContent("Template 1 Content Updated");
-    storage.updateTemplatePage(fetchedTemplate1);
-    Template fetchedTemplate1AfterUpdate = storage.getTemplatePage(new WikiPageParams("portal", "wiki1", null), "template1");
-    end();
-    begin();
-
-    // Then
-    assertNotNull(fetchedTemplate1AfterUpdate);
-    assertEquals("template1", fetchedTemplate1AfterUpdate.getName());
-    assertEquals("Template 1 Updated", fetchedTemplate1AfterUpdate.getTitle());
-    assertEquals("Template 1 Content Updated", fetchedTemplate1AfterUpdate.getContent());
-  }
-
-  @Test
-  public void testDeleteTemplate() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Template template1 = new Template();
-    template1.setName("template1");
-    template1.setTitle("Template 1");
-    template1.setContent("Template 1 Content");
-    storage.createTemplatePage(wiki, template1);
-
-    Template template2 = new Template();
-    template2.setName("template2");
-    template2.setTitle("Template 2");
-    template2.setContent("Template 2 Content");
-    storage.createTemplatePage(wiki, template2);
-
-    // When
-    Map<String, Template> fetchedTemplateWiki1 = storage.getTemplates(new WikiPageParams("portal", "wiki1", null));
-    storage.deleteTemplatePage("portal", "wiki1", "template2");
-    Map<String, Template> fetchedTemplateWiki1AfterDeletion = storage.getTemplates(new WikiPageParams("portal", "wiki1", null));
-
-    // Then
-    assertNotNull(fetchedTemplateWiki1);
-    assertEquals(2, fetchedTemplateWiki1.size());
-    assertNotNull(fetchedTemplateWiki1AfterDeletion);
-    assertEquals(1, fetchedTemplateWiki1AfterDeletion.size());
-  }
-
-  @Test
-  public void testSearchTemplates() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Template template1 = new Template();
-    template1.setName("template1");
-    template1.setTitle("Template with Title 1");
-    template1.setContent("Template 1 Content");
-    storage.createTemplatePage(wiki, template1);
-
-    Template template2 = new Template();
-    template2.setName("template2");
-    template2.setTitle("Template with Title 2");
-    template2.setContent("Template 2 Content");
-    storage.createTemplatePage(wiki, template2);
-
-    // When
-    List<TemplateSearchResult> searchResults1 = storage.searchTemplate(new TemplateSearchData("Template",
-            wiki.getType(),
-            wiki.getOwner()));
-    List<TemplateSearchResult> searchResults2 = storage.searchTemplate(new TemplateSearchData("Title 1",
-                                                                                              wiki.getType(),
-                                                                                              wiki.getOwner()));
-    List<TemplateSearchResult> searchResults3 = storage.searchTemplate(new TemplateSearchData("No Result",
-                                                                                              wiki.getType(),
-                                                                                              wiki.getOwner()));
-
-    // Then
-    assertNotNull(searchResults1);
-    assertEquals(2, searchResults1.size());
-    assertNotNull(searchResults2);
-    assertEquals(1, searchResults2.size());
-    assertNotNull(searchResults3);
-    assertEquals(0, searchResults3.size());
   }
 
   @Test

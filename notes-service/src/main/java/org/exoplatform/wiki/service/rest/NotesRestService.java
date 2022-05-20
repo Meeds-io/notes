@@ -17,15 +17,31 @@
 
 package org.exoplatform.wiki.service.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.social.rest.entity.IdentityEntity;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.wiki.service.search.TitleSearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.gatein.api.EntityNotFoundException;
+import org.json.JSONObject;
+
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
@@ -38,10 +54,9 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.DraftPage;
-import org.exoplatform.wiki.mow.api.NoteToExport;
-import org.exoplatform.wiki.mow.api.Page;
-import org.exoplatform.wiki.mow.api.Wiki;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
@@ -50,25 +65,11 @@ import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
-import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.NoteConstants;
-import org.gatein.api.EntityNotFoundException;
-import org.json.JSONObject;
+import org.exoplatform.wiki.utils.Utils;
 
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.*;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import io.swagger.annotations.*;
+import io.swagger.jaxrs.PATCH;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
@@ -76,23 +77,27 @@ import java.util.zip.ZipOutputStream;
 
 public class NotesRestService implements ResourceContainer {
 
-  private static final String         NOTE_NAME_EXISTS             = "Note name already exists";
+  private static final String         NOTE_NAME_EXISTS = "Note name already exists";
 
-  private static final Log            log                          = ExoLogger.getLogger(NotesRestService.class);
+  private static final Log            log              = ExoLogger.getLogger(NotesRestService.class);
 
   private final NoteService           noteService;
 
   private final WikiService           noteBookService;
 
-  private final NotesExportService notesExportService;
-  
-  private final UploadService uploadService;
+  private final NotesExportService    notesExportService;
+
+  private final UploadService         uploadService;
 
   private final ResourceBundleService resourceBundleService;
 
   private final CacheControl          cc;
 
-  public NotesRestService(NoteService noteService, WikiService noteBookService, UploadService uploadService, ResourceBundleService resourceBundleService, NotesExportService notesExportService) {
+  public NotesRestService(NoteService noteService,
+                          WikiService noteBookService,
+                          UploadService uploadService,
+                          ResourceBundleService resourceBundleService,
+                          NotesExportService notesExportService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.notesExportService = notesExportService;
@@ -102,6 +107,7 @@ public class NotesRestService implements ResourceContainer {
     cc.setNoCache(true);
     cc.setNoStore(true);
   }
+
   @GET
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -110,10 +116,18 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
-                          @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
-                          @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                          @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
+  public Response getNote(@ApiParam(value = "NoteBook Type", required = true)
+  @PathParam("noteBookType")
+  String noteBookType,
+                          @ApiParam(value = "NoteBook Owner", required = true)
+                          @PathParam("noteBookOwner")
+                          String noteBookOwner,
+                          @ApiParam(value = "Note id", required = true)
+                          @PathParam("noteId")
+                          String noteId,
+                          @ApiParam(value = "source", required = true)
+                          @QueryParam("source")
+                          String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Wiki noteBook = null;
@@ -140,11 +154,12 @@ public class NotesRestService implements ResourceContainer {
           linkedNote = noteService.getNoteOfNoteBookByName(note.getWikiType(), note.getWikiOwner(), NoteName);
           if (linkedNote != null) {
             content = content.replaceAll("\"noteLink\" href=\"//-" + linkedParams + "-//",
-                    "\"noteLink\" href=\"" + linkedNote.getId());
-            if(content.equals(note.getContent())) break;
+                                         "\"noteLink\" href=\"" + linkedNote.getId());
+            if (content.equals(note.getContent()))
+              break;
           }
         }
-        if(!content.equals(note.getContent())){
+        if (!content.equals(note.getContent())) {
           note.setContent(content);
           noteService.updateNote(note);
         }
@@ -169,11 +184,21 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                              @ApiParam(value = "noteBookType", required = false) @QueryParam("noteBookType") String noteBookType,
-                              @ApiParam(value = "noteBookOwner", required = false) @QueryParam("noteBookOwner") String noteBookOwner,
-                              @ApiParam(value = "withChildren", required = false) @QueryParam("withChildren") boolean withChildren,
-                              @ApiParam(value = "source", required = false) @QueryParam("source") String source) {
+  public Response getNoteById(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId,
+                              @ApiParam(value = "noteBookType", required = false)
+                              @QueryParam("noteBookType")
+                              String noteBookType,
+                              @ApiParam(value = "noteBookOwner", required = false)
+                              @QueryParam("noteBookOwner")
+                              String noteBookOwner,
+                              @ApiParam(value = "withChildren", required = false)
+                              @QueryParam("withChildren")
+                              boolean withChildren,
+                              @ApiParam(value = "source", required = false)
+                              @QueryParam("source")
+                              String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity, source);
@@ -186,11 +211,11 @@ public class NotesRestService implements ResourceContainer {
       if (StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      if(BooleanUtils.isTrue(withChildren)) {
-        note.setChildren(noteService.getChildrenNoteOf(note,identity.getUserId(),false, withChildren));
+      if (BooleanUtils.isTrue(withChildren)) {
+        note.setChildren(noteService.getChildrenNoteOf(note, identity.getUserId(), false, withChildren));
       }
       // check for old notes children container to update
-      if(note.getContent().contains("wiki-children-pages ck-widget")) {
+      if (note.getContent().contains("wiki-children-pages ck-widget")) {
         note = updateChildrenContainer(note);
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
@@ -213,7 +238,9 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getDraftNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response getDraftNoteById(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
@@ -226,8 +253,11 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       draftNote.setContent(HTMLSanitizer.sanitize(draftNote.getContent()));
-      draftNote.setBreadcrumb(noteService.getBreadCrumb(parentPage.getWikiType(), parentPage.getWikiOwner(), draftNote.getId(), true));
-      
+      draftNote.setBreadcrumb(noteService.getBreadCrumb(parentPage.getWikiType(),
+                                                        parentPage.getWikiOwner(),
+                                                        draftNote.getId(),
+                                                        true));
+
       return Response.ok(draftNote).build();
     } catch (Exception e) {
       log.error("Can't get draft note {}", noteId, e);
@@ -243,7 +273,9 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getLatestDraftOfPage(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response getLatestDraftOfPage(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
@@ -268,7 +300,9 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNoteVersions(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response getNoteVersions(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
@@ -292,7 +326,8 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response createNote(@ApiParam(value = "note object to be created", required = true) Page note) {
+  public Response createNote(@ApiParam(value = "note object to be created", required = true)
+  Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -317,7 +352,7 @@ public class NotesRestService implements ResourceContainer {
       if (StringUtils.isEmpty(noteBookType) || StringUtils.isEmpty(noteBookOwner)) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      if (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false))) {
+      if (noteService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       /* TODO: check noteBook permissions */
@@ -347,10 +382,11 @@ public class NotesRestService implements ResourceContainer {
   @Path("saveDraft")
   @RolesAllowed("users")
   @ApiOperation(value = "Add or update a new note draft page", httpMethod = "POST", response = Response.class, notes = "This adds a new note draft page or updates an existing one.")
-  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found")})
-  public Response saveDraft(@ApiParam(value = "Note draft page object to be created", required = true) DraftPage draftNoteToSave) {
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response saveDraft(@ApiParam(value = "Note draft page object to be created", required = true)
+  DraftPage draftNoteToSave) {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -390,11 +426,21 @@ public class NotesRestService implements ResourceContainer {
       draftNoteToSave.setSyntax(syntaxId);
 
       if (StringUtils.isNoneEmpty(draftNoteToSave.getId())) {
-        draftNoteToSave = targetNote != null ? noteService.updateDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser) :
-                noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+        draftNoteToSave = targetNote != null
+                                             ? noteService.updateDraftForExistPage(draftNoteToSave,
+                                                                                   targetNote,
+                                                                                   null,
+                                                                                   System.currentTimeMillis(),
+                                                                                   currentUser)
+                                             : noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
       } else {
-        draftNoteToSave = targetNote != null ? noteService.createDraftForExistPage(draftNoteToSave, targetNote, null, System.currentTimeMillis(), currentUser) :
-                noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+        draftNoteToSave = targetNote != null
+                                             ? noteService.createDraftForExistPage(draftNoteToSave,
+                                                                                   targetNote,
+                                                                                   null,
+                                                                                   System.currentTimeMillis(),
+                                                                                   currentUser)
+                                             : noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
       }
 
       return Response.ok(draftNoteToSave, MediaType.APPLICATION_JSON).cacheControl(cc).build();
@@ -411,10 +457,17 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response updateNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
-                             @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
-                             @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                             @ApiParam(value = "note object to be updated", required = true) Page note) {
+  public Response updateNote(@ApiParam(value = "NoteBook Type", required = true)
+  @PathParam("noteBookType")
+  String noteBookType,
+                             @ApiParam(value = "NoteBook Owner", required = true)
+                             @PathParam("noteBookOwner")
+                             String noteBookOwner,
+                             @ApiParam(value = "Note id", required = true)
+                             @PathParam("noteId")
+                             String noteId,
+                             @ApiParam(value = "note object to be updated", required = true)
+                             Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -434,15 +487,14 @@ public class NotesRestService implements ResourceContainer {
       }
       note_.setToBePublished(note.isToBePublished());
       if ((!note_.getTitle().equals(note.getTitle()))
-          && (noteBookService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
+          && (noteService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
-            && !note.getName().equals(newNoteName)) {
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -450,8 +502,7 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_, identity.getUserId());
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
-            && !note.getName().equals(newNoteName)) {
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
           noteService.renameNote(noteBookType, noteBookOwner, note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -480,8 +531,10 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response updateNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                                 @ApiParam(value = "note object to be updated", required = true) Page note) {
+  public Response updateNoteById(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId, @ApiParam(value = "note object to be updated", required = true)
+  Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -500,7 +553,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       if ((!note_.getTitle().equals(note.getTitle()))
-          && (noteBookService.isExisting(note.getWikiType(), note.getWikiOwner(), TitleResolver.getId(note.getTitle(), false)))) {
+          && (noteService.isExisting(note.getWikiType(), note.getWikiOwner(), TitleResolver.getId(note.getTitle(), false)))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
@@ -508,8 +561,7 @@ public class NotesRestService implements ResourceContainer {
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         note_.setTitle(note.getTitle());
         note_.setContent(note.getContent());
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
-            && !note.getName().equals(newNoteName)) {
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -520,8 +572,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())
-            && !note.getName().equals(newNoteName)) {
+        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
           noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
           note_.setName(newNoteName);
         }
@@ -540,9 +591,10 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
-      } else{
-         //in this case, the note didnt change on title nor content. As we need the page url in front side, we compute it here
-         note_.setUrl(Utils.getPageUrl(note));
+      } else {
+        // in this case, the note didnt change on title nor content. As we need the page
+        // url in front side, we compute it here
+        note_.setUrl(Utils.getPageUrl(note));
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -559,10 +611,12 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Restore a specific note version by version id", httpMethod = "PUT", response = Response.class, notes = "This restore the note if the authenticated user has UPDATE permissions.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-    @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-    @ApiResponse(code = 404, message = "Resource not found") })
-  public Response RestoreNoteVersion(@ApiParam(value = "Version Number", required = true) @PathParam("noteVersion") String noteVersion,
-                                 @ApiParam(value = "note object to be updated", required = true) Page note) {
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response RestoreNoteVersion(@ApiParam(value = "Version Number", required = true)
+  @PathParam("noteVersion")
+  String noteVersion, @ApiParam(value = "note object to be updated", required = true)
+  Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -581,7 +635,7 @@ public class NotesRestService implements ResourceContainer {
       if (!note_.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
-      noteService.restoreVersionOfNote(noteVersion,note,currentUser);
+      noteService.restoreVersionOfNote(noteVersion, note, currentUser);
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have permissions to restore the note {} version", note.getId(), e);
@@ -599,9 +653,15 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteNote(@ApiParam(value = "NoteBook Type", required = true) @PathParam("noteBookType") String noteBookType,
-                             @ApiParam(value = "NoteBook Owner", required = true) @PathParam("noteBookOwner") String noteBookOwner,
-                             @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response deleteNote(@ApiParam(value = "NoteBook Type", required = true)
+  @PathParam("noteBookType")
+  String noteBookType,
+                             @ApiParam(value = "NoteBook Owner", required = true)
+                             @PathParam("noteBookOwner")
+                             String noteBookOwner,
+                             @ApiParam(value = "Note id", required = true)
+                             @PathParam("noteId")
+                             String noteId) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -627,7 +687,9 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteNoteById(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  public Response deleteNoteById(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -656,10 +718,12 @@ public class NotesRestService implements ResourceContainer {
   @Path("/draftNote/{noteId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
-  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found")})
-  public Response deleteDraftNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response deleteDraftNote(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId) {
 
     try {
       String currentUserId = ConversationState.getCurrent().getIdentity().getUserId();
@@ -683,8 +747,12 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response moveNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                           @ApiParam(value = "Destination Note id", required = true) @PathParam("destinationNoteId") String toNoteId) {
+  public Response moveNote(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId,
+                           @ApiParam(value = "Destination Note id", required = true)
+                           @PathParam("destinationNoteId")
+                           String toNoteId) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -720,14 +788,20 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response exportNote(@ApiParam(value = "List of notes ids", required = true) @PathParam("notes") String notesList,
-                             @ApiParam(value = "export ID", required = true) @PathParam("exportId") int exportId,
-                             @ApiParam(value = "exportAll") @QueryParam("exportAll") Boolean exportAll) {
+  public Response exportNote(@ApiParam(value = "List of notes ids", required = true)
+  @PathParam("notes")
+  String notesList,
+                             @ApiParam(value = "export ID", required = true)
+                             @PathParam("exportId")
+                             int exportId,
+                             @ApiParam(value = "exportAll")
+                             @QueryParam("exportAll")
+                             Boolean exportAll) {
 
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String[] notes = notesList.split(",");
-      notesExportService.startExportNotes(exportId,notes, exportAll,identity);
+      notesExportService.startExportNotes(exportId, notes, exportAll, identity);
       return Response.ok().build();
 
     } catch (Exception ex) {
@@ -741,33 +815,38 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-                @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getExportedZip(@ApiParam(value = "List of notes ids", required = true) @PathParam("exportId") int exportId) {
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getExportedZip(@ApiParam(value = "List of notes ids", required = true)
+  @PathParam("exportId")
+  int exportId) {
 
     try {
-        byte[] filesBytes = notesExportService.getExportedNotes(exportId);
-        return Response.ok(filesBytes)
-                .type("application/zip")
-                .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
-                .build();
+      byte[] filesBytes = notesExportService.getExportedNotes(exportId);
+      return Response.ok(filesBytes)
+                     .type("application/zip")
+                     .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
+                     .build();
     } catch (Exception ex) {
       log.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
+
   @GET
   @Path("/note/export/status/{exportId}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-                @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getExportNoteStatus(@ApiParam(value = "export id", required = true) @PathParam("exportId") int exportId) {
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getExportNoteStatus(@ApiParam(value = "export id", required = true)
+  @PathParam("exportId")
+  int exportId) {
 
     try {
-        return Response.ok(notesExportService.getStatus(exportId)).build();
+      return Response.ok(notesExportService.getStatus(exportId)).build();
     } catch (Exception ex) {
       log.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -780,18 +859,21 @@ public class NotesRestService implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This cancel export.")
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-                @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-                @ApiResponse(code = 404, message = "Resource not found") })
-  public Response cancelExportNote(@ApiParam(value = "export id", required = true) @PathParam("exportId") int exportId) {
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response cancelExportNote(@ApiParam(value = "export id", required = true)
+  @PathParam("exportId")
+  int exportId) {
 
     try {
-        notesExportService.cancelExportNotes(exportId);
-        return Response.ok().build();
+      notesExportService.cancelExportNotes(exportId);
+      return Response.ok().build();
     } catch (Exception ex) {
       log.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
+
   @POST
   @Path("/note/import/{noteId}/{uploadId}")
   @RolesAllowed("users")
@@ -799,9 +881,15 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response importNote(@ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId,
-                             @ApiParam(value = "Upload id", required = true) @PathParam("uploadId") String uploadId,
-                             @ApiParam(value = "Conflict", required = true) @QueryParam("conflict") String conflict) {
+  public Response importNote(@ApiParam(value = "Note id", required = true)
+  @PathParam("noteId")
+  String noteId,
+                             @ApiParam(value = "Upload id", required = true)
+                             @PathParam("uploadId")
+                             String uploadId,
+                             @ApiParam(value = "Conflict", required = true)
+                             @QueryParam("conflict")
+                             String conflict) {
 
     try {
 
@@ -836,12 +924,13 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
       @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
       @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getTreeData(@PathParam("type") String type,
-                              @QueryParam(TreeNode.PATH) String path,
-                              @QueryParam(TreeNode.CURRENT_PATH) String currentPath,
-                              @QueryParam(TreeNode.CAN_EDIT) Boolean canEdit,
-                              @QueryParam(TreeNode.SHOW_EXCERPT) Boolean showExcerpt,
-                              @QueryParam(TreeNode.DEPTH) String depth) {
+  public Response getTreeData(@PathParam("type")
+  String type, @QueryParam(TreeNode.PATH)
+  String path, @QueryParam(TreeNode.CURRENT_PATH)
+  String currentPath, @QueryParam(TreeNode.CAN_EDIT)
+  Boolean canEdit, @QueryParam(TreeNode.SHOW_EXCERPT)
+  Boolean showExcerpt, @QueryParam(TreeNode.DEPTH)
+  String depth) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData = new ArrayList<JsonNodeData>();
@@ -915,11 +1004,15 @@ public class NotesRestService implements ResourceContainer {
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Get node's tree", httpMethod = "GET", response = Response.class, notes = "Display the current tree of a noteBook based on is path")
-  @ApiResponses(value = {@ApiResponse(code = 200, message = "Request fulfilled"),
-          @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-          @ApiResponse(code = 404, message = "Resource not found")})
-  public Response getFullTreeData(@ApiParam(value = "Note path", required = true) @QueryParam(TreeNode.PATH) String path,
-                                  @ApiParam(value = "With draft notes", required = true) @QueryParam("withDrafts") Boolean withDrafts) {
+  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
+      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getFullTreeData(@ApiParam(value = "Note path", required = true)
+  @QueryParam(TreeNode.PATH)
+  String path,
+                                  @ApiParam(value = "With draft notes", required = true)
+                                  @QueryParam("withDrafts")
+                                  Boolean withDrafts) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData;
@@ -930,18 +1023,19 @@ public class NotesRestService implements ResourceContainer {
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
 
       // Put select note to context
-      path = URLDecoder.decode(path, "utf-8");
+      path = URLDecoder.decode(path, StandardCharsets.UTF_8);
       context.put(TreeNode.PATH, path);
       WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
-      Page note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
+      Page note =
+                noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
       if (note == null) {
         log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
-                ConversationState.getCurrent().getIdentity().getUserId(),
-                path);
+                 ConversationState.getCurrent().getIdentity().getUserId(),
+                 path);
         note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
         if (note == null) {
           ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
-                  request.getLocale());
+                                                                                  request.getLocale());
           String errorMessage = "";
           if (resourceBundle != null) {
             errorMessage = resourceBundle.getString("UIWikiMovePageForm.msg.no-permission-at-wiki-destination");
@@ -972,11 +1066,14 @@ public class NotesRestService implements ResourceContainer {
         for (JsonNodeData parent : parents) {
           if (parent.isHasChild()) {
             // Put select note to context
-            path = URLDecoder.decode(parent.getPath(), "utf-8");
+            path = URLDecoder.decode(parent.getPath(), StandardCharsets.UTF_8);
             context.put(TreeNode.PATH, path);
             noteParam = TreeUtils.getPageParamsFromPath(path);
             try {
-              Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
+              Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(),
+                                                                    noteParam.getOwner(),
+                                                                    noteParam.getPageName(),
+                                                                    identity);
               context.put(TreeNode.SELECTED_PAGE, parentNote);
             } catch (EntityNotFoundException e) {
               log.warn("Cannot find the note {}", noteParam.getPageName());
@@ -993,8 +1090,13 @@ public class NotesRestService implements ResourceContainer {
       } while (!children.isEmpty());
 
       // from the bottom children nodes
-      List<JsonNodeData> bottomChildren = Boolean.TRUE.equals(withDrafts) ? finalTree.stream().filter(JsonNodeData::isDraftPage).collect(Collectors.toList()) :
-              finalTree.stream().filter(jsonNodeData -> !jsonNodeData.isHasChild()).collect(Collectors.toList());
+      List<JsonNodeData> bottomChildren =
+                                        Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
+                                                                                   .filter(JsonNodeData::isDraftPage)
+                                                                                   .collect(Collectors.toList())
+                                                                        : finalTree.stream()
+                                                                                   .filter(jsonNodeData -> !jsonNodeData.isHasChild())
+                                                                                   .collect(Collectors.toList());
 
       // prepare draft note nodes tree
       if (Boolean.TRUE.equals(withDrafts)) {
@@ -1003,7 +1105,10 @@ public class NotesRestService implements ResourceContainer {
           do {
             parent = null;
             String parentId = child.getParentPageId();
-            Optional<JsonNodeData> parentOptional = finalTree.stream().filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(), parentId)).findFirst();
+            Optional<JsonNodeData> parentOptional = finalTree.stream()
+                                                             .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
+                                                                                                        parentId))
+                                                             .findFirst();
             if (parentOptional.isPresent()) {
               parent = parentOptional.get();
               parent.setHasDraftDescendant(true);
@@ -1011,18 +1116,24 @@ public class NotesRestService implements ResourceContainer {
               finalTree.set(index, parent);
             }
             child = parent;
-                    
+
           } while (parent != null);
         }
-        finalTree = finalTree.stream().filter(jsonNodeData -> jsonNodeData.isDraftPage() || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant())).collect(Collectors.toList());
+        finalTree = finalTree.stream()
+                             .filter(jsonNodeData -> jsonNodeData.isDraftPage()
+                                 || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
+                             .collect(Collectors.toList());
       }
       while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
         for (JsonNodeData bottomChild : bottomChildren) {
           String parentPageId = bottomChild.getParentPageId();
-          Optional<JsonNodeData> parentOptional = finalTree.stream().filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(), parentPageId)).findFirst();
+          Optional<JsonNodeData> parentOptional = finalTree.stream()
+                                                           .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
+                                                                                                      parentPageId))
+                                                           .findFirst();
           if (parentOptional.isPresent()) {
             JsonNodeData parent = parentOptional.get();
-            
+
             if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
               children = parent.getChildren();
               if (Boolean.TRUE.equals(withDrafts)) {
@@ -1033,7 +1144,7 @@ public class NotesRestService implements ResourceContainer {
               }
               int indexChild = children.indexOf(bottomChild);
               children.remove(bottomChild);
-              
+
               if (!Boolean.TRUE.equals(withDrafts) || bottomChild.isDraftPage()
                   || Boolean.TRUE.equals(bottomChild.isHasDraftDescendant())) {
                 children.add(indexChild, bottomChild);
@@ -1074,6 +1185,88 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  /**
+   * Return a list of title based on a searched words.
+   *
+   * @param uriInfo uriInfo
+   * @param keyword Word to search
+   * @param wikiType It can be a Portal, Group, User type of wiki
+   * @param wikiOwner Is the owner of the wiki
+   * @return List of title
+   * @throws Exception if an error occured
+   */
+  @GET
+  @Path("contextsearch/")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  public Response searchData(@Context
+                                     UriInfo uriInfo, @QueryParam("keyword")
+                                     String keyword, @QueryParam("limit")
+                                     int limit, @QueryParam("wikiType")
+                                     String wikiType, @QueryParam("wikiOwner")
+                                     String wikiOwner, @QueryParam("favorites")
+                                     boolean favorites) throws Exception {
+    limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
+    try {
+
+      keyword = keyword.toLowerCase();
+      Identity currentIdentity = ConversationState.getCurrent().getIdentity();
+      WikiSearchData data = new WikiSearchData(keyword, currentIdentity.getUserId());
+      data.setLimit(limit);
+      data.setFavorites(favorites);
+      List<SearchResult> results = noteService.search(data).getAll();
+      List<TitleSearchResult> titleSearchResults = new ArrayList<>();
+      for (SearchResult searchResult : results) {
+        Page page = noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
+                searchResult.getWikiOwner(),
+                searchResult.getPageName(),
+                currentIdentity);
+        if (page != null) {
+          page.setUrl(Utils.getPageUrl(page));
+          if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
+            Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
+                            page);
+            TitleSearchResult titleSearchResult = new TitleSearchResult();
+            titleSearchResult.setTitle(attachment.getName());
+            titleSearchResult.setId(page.getId());
+            titleSearchResult.setActivityId(page.getActivityId());
+            titleSearchResult.setType(searchResult.getType());
+            titleSearchResult.setUrl(attachment.getDownloadURL());
+            titleSearchResult.setMetadatas(page.getMetadatas());
+            titleSearchResults.add(titleSearchResult);
+          } else if (searchResult.getPoster() != null) {
+            IdentityEntity posterIdentity = EntityBuilder.buildEntityIdentity(searchResult.getPoster(), uriInfo.getPath(), "all");
+            IdentityEntity wikiOwnerIdentity =
+                    searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
+                            uriInfo.getPath(),
+                            "all")
+                            : null;
+            TitleSearchResult titleSearchResult = new TitleSearchResult();
+            titleSearchResult.setTitle(searchResult.getTitle());
+            titleSearchResult.setId(page.getId());
+            titleSearchResult.setActivityId(page.getActivityId());
+            titleSearchResult.setPoster(posterIdentity);
+            titleSearchResult.setWikiOwner(wikiOwnerIdentity);
+            titleSearchResult.setExcerpt(searchResult.getExcerpt());
+            titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
+            titleSearchResult.setType(searchResult.getType());
+            titleSearchResult.setUrl(page.getUrl());
+            titleSearchResult.setMetadatas(page.getMetadatas());
+            titleSearchResults.add(titleSearchResult);
+          }
+        } else {
+          log.warn("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
+                  + searchResult.getPageName());
+        }
+      }
+      return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (Exception e) {
+      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
+
+
   private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
     WikiTreeNode noteBookNode = new WikiTreeNode(noteBook);
@@ -1108,14 +1301,12 @@ public class NotesRestService implements ResourceContainer {
 
   private Page updateChildrenContainer(Page note) throws WikiException {
     String content = note.getContent();
-    String oldChildrenContainer = "<div class=\"wiki-children-pages ck-widget\" contenteditable=\"false\"><exo-wiki-children-pages>&nbsp;</exo-wiki-children-pages></div>";
-    String childrenContainer = "<div class=\"navigation-img-wrapper\" contenteditable=\"false\" id=\"note-children-container\">\n" +
-            "<figure class=\"image-navigation\" contenteditable=\"false\"><img alt=\"\" data-plugin-name=\"selectImage\" referrerpolicy=\"no-referrer\" role=\"presentation\" src=\"/notes/images/children.png\" /><img alt=\"remove treeview\" data-plugin-name=\"selectImage\" id=\"remove-treeview\" referrerpolicy=\"no-referrer\" src=\"/notes/images/trash.png\" />\n" +
-            "<figcaption class=\"note-navigation-label\">Navigation</figcaption>\n" +
-            "</figure>\n" +
-            "</div>\n" +
-            "\n" +
-            "<p>&nbsp;</p>\n";
+    String oldChildrenContainer =
+                                "<div class=\"wiki-children-pages ck-widget\" contenteditable=\"false\"><exo-wiki-children-pages>&nbsp;</exo-wiki-children-pages></div>";
+    String childrenContainer = "<div class=\"navigation-img-wrapper\" contenteditable=\"false\" id=\"note-children-container\">\n"
+        + "<figure class=\"image-navigation\" contenteditable=\"false\"><img alt=\"\" data-plugin-name=\"selectImage\" referrerpolicy=\"no-referrer\" role=\"presentation\" src=\"/notes/images/children.png\" /><img alt=\"remove treeview\" data-plugin-name=\"selectImage\" id=\"remove-treeview\" referrerpolicy=\"no-referrer\" src=\"/notes/images/trash.png\" />\n"
+        + "<figcaption class=\"note-navigation-label\">Navigation</figcaption>\n" + "</figure>\n" + "</div>\n" + "\n"
+        + "<p>&nbsp;</p>\n";
     content = content.replace(oldChildrenContainer, childrenContainer);
     note.setContent(content);
     return noteService.updateNote(note);

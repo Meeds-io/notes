@@ -1,3 +1,0 @@
-<div class="btn-group " id="$uicomponent.id">
-  <% uicomponent.renderChildren(); %>
-</div>	

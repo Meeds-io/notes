@@ -8,7 +8,7 @@ import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.wiki.jpa.search.WikiPageIndexingServiceConnector;
-import org.exoplatform.wiki.mow.api.Page;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
 

@@ -40,7 +40,7 @@
               <string>notes</string>
             </field>
             <field name="uri">
-              <string><![CDATA[/portal/rest/wiki/contextsearch?limit={limit}&keyword={keyword}]]></string>
+              <string><![CDATA[/portal/rest/notes/contextsearch?limit={limit}&keyword={keyword}]]></string>
             </field>
             <field name="enabled">
               <boolean>${exo.search.wiki.enabled:true}</boolean>

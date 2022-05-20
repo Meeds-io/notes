@@ -1,43 +1,53 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.exoplatform.wiki.service;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.nullable;
 import static org.mockito.Mockito.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.ServletContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.compress.utils.IOUtils;
-import org.exoplatform.commons.utils.ObjectPageList;
-import org.exoplatform.commons.utils.PageList;
-import org.exoplatform.services.rest.impl.EnvironmentContext;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.metadata.favorite.FavoriteService;
-import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.wiki.mow.api.*;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.WikiSearchData;
-
 import org.junit.Test;
-
-import com.ibm.icu.util.Calendar;
-
-import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mock.MockResourceBundleService;
-import org.exoplatform.wiki.service.impl.WikiRestServiceImpl;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import org.exoplatform.commons.utils.ObjectPageList;
+import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.wiki.mock.MockResourceBundleService;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.rest.NotesRestService;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 
 /**
  *
@@ -46,49 +56,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PowerMockIgnore({ "javax.management.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xalan.internal.*",
     "jdk.xml.internal.*", "com.sun.org.apache.xerces.*" })
 public class TestWikiRestService {
-
-  @Test
-  public void shouldGetEmotionIcon() throws WikiException, IOException {
-    // Given
-    WikiService wikiService = mock(WikiService.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-
-    EmotionIcon emotionIcon = new EmotionIcon();
-    emotionIcon.setName("test.gif");
-    emotionIcon.setImage("image".getBytes());
-
-    when(wikiService.getEmotionIconByName("test.gif")).thenReturn(emotionIcon);
-
-    // When
-    Response emotionIconResponse = wikiRestService.getEmotionIcon(null, "test.gif");
-
-    // Then
-    assertNotNull(emotionIconResponse);
-    assertEquals(200, emotionIconResponse.getStatus());
-    Object responseEntity = emotionIconResponse.getEntity();
-    assertNotNull(responseEntity);
-    assertArrayEquals(emotionIcon.getImage(), IOUtils.toByteArray((ByteArrayInputStream) responseEntity));
-  }
-
-  @Test
-  public void shouldGetNotFoundResponseWhenEmotionIconDoesNotExist() throws WikiException {
-    // Given
-    WikiService wikiService = mock(WikiService.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-
-    when(wikiService.getEmotionIconByName("test.gif")).thenReturn(null);
-
-    // When
-    Response emotionIconResponse = wikiRestService.getEmotionIcon(null, "test.gif");
-
-    // Then
-    assertNotNull(emotionIconResponse);
-    assertEquals(404, emotionIconResponse.getStatus());
-  }
-
-  @PrepareForTest({EntityBuilder.class})
+  @PrepareForTest({ EntityBuilder.class })
   @Test
   public void testSearchData() throws Exception {
     org.exoplatform.services.security.Identity root = new org.exoplatform.services.security.Identity("root");
@@ -99,7 +67,8 @@ public class TestWikiRestService {
     EntityBuilder entityBuilder = mock(EntityBuilder.class);
     java.util.Calendar cDate1 = java.util.Calendar.getInstance();
     UriInfo uriInfo = mock(UriInfo.class);
-    org.exoplatform.social.core.identity.model.Identity identityResult = new org.exoplatform.social.core.identity.model.Identity();
+    org.exoplatform.social.core.identity.model.Identity identityResult =
+                                                                       new org.exoplatform.social.core.identity.model.Identity();
     identityResult.setProviderId("organization");
     identityResult.setRemoteId("root");
     identityResult.setId("1");
@@ -126,16 +95,21 @@ public class TestWikiRestService {
     entity.setId("1");
     entity.setDeleted(false);
     when(wikiService.getPageOfWikiByName(any(), any(), any())).thenReturn(page);
-    when(noteService.getNoteOfNoteBookByName(any(), any(), any(), any(org.exoplatform.services.security.Identity.class))).thenReturn(page);
-    List<org.exoplatform.wiki.service.search.SearchResult> results = new ArrayList<org.exoplatform.wiki.service.search.SearchResult>();
+    when(noteService.getNoteOfNoteBookByName(any(),
+                                             any(),
+                                             any(),
+                                             any(org.exoplatform.services.security.Identity.class))).thenReturn(page);
+    List<org.exoplatform.wiki.service.search.SearchResult> results =
+                                                                   new ArrayList<org.exoplatform.wiki.service.search.SearchResult>();
     results.add(result1);
     results.add(result2);
     PowerMockito.mockStatic(EntityBuilder.class);
     PageList<org.exoplatform.wiki.service.search.SearchResult> pageList = new ObjectPageList<>(results, 2);
-    when(wikiService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
+    when(noteService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
     when(uriInfo.getPath()).thenReturn("/wiki/contextsearch");
     when(EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString())).thenReturn(entity);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
+    NotesRestService wikiRestService =
+                                     new NotesRestService(noteService, wikiService, null, new MockResourceBundleService(), null);
 
     // When
     Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua", false);
@@ -145,187 +119,5 @@ public class TestWikiRestService {
 
     PowerMockito.verifyStatic(EntityBuilder.class, times(1));
     EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString());
-  }
-  
-  @Test
-  public void testGetPageAttachmentResponseHeader() throws WikiException {
-    //Given
-    WikiService wikiService = mock(WikiService.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-    
-    Wiki wiki = new Wiki("user", "root");
-    when(wikiService.createWiki("portal", "wikiAttachement1")).thenReturn(wiki);
-    String wikiType = wiki.getType();
-    String wikiOwner = wiki.getOwner();
-    
-    Page wikiHomePage = new Page("wikiHomePage", "wikiHomePage");
-    wikiHomePage.setId("wikiHomePageId");
-    String pageId = wikiHomePage.getId();
-    
-    Attachment attachment1 = new Attachment();
-    attachment1.setName("attachment1.png");
-    attachment1.setTitle("attachment1.png");
-    attachment1.setContent("logo".getBytes());
-    attachment1.setMimeType("multipart/mixed");
-    attachment1.setCreator("root");
-    
-    Attachment attachment2 = new Attachment();
-    attachment2.setName("attachment2.png");
-    attachment2.setTitle("attachment2.png");
-    attachment2.setContent("logo".getBytes());
-    attachment2.setMimeType("application/octet-stream");
-    attachment2.setCreator("root");
-    
-    Attachment attachment3 = new Attachment();
-    attachment3.setName("attachment3.png");
-    attachment3.setTitle("attachment3.png");
-    attachment3.setContent("logo".getBytes());
-    attachment3.setMimeType("text/xhtml");
-    attachment3.setCreator("root");
-
-    when(wikiService.getPageOfWikiByName(wikiType, wikiOwner, "wikiHomePageId")).thenReturn(wikiHomePage);
-    when(wikiService.getAttachmentOfPageByName("attachment1.png", wikiHomePage, true)).thenReturn(attachment1);
-    when(wikiService.getAttachmentOfPageByName("attachment2.png", wikiHomePage, true)).thenReturn(attachment2);
-    when(wikiService.getAttachmentOfPageByName("attachment3.png", wikiHomePage, true)).thenReturn(attachment3);
-  
-    // When
-    Response response = wikiRestService.getAttachment(null, wikiType , wikiOwner, pageId, "attachment1.png", null);
-    // Then
-    assertNotNull(response);
-    assertEquals(200, response.getStatus());
-    assertEquals(2, response.getMetadata().size());
-    assertNotNull(response.getMetadata().containsKey("cache-control"));
-    assertNotNull(response.getMetadata().containsKey("Content-Disposition"));
-    assertTrue(response.getMetadata().get("Content-Disposition").contains("attachment; filename="+attachment1.getTitle()));
-    //when
-    Response response1 = wikiRestService.getAttachment(null, wikiType , wikiOwner, pageId, "attachment2.png", null);
-    // Then
-    assertNotNull(response1);
-    assertEquals(200, response1.getStatus());
-    assertEquals(2, response1.getMetadata().size());
-    assertNotNull(response1.getMetadata().containsKey("cache-control"));
-    assertNotNull(response1.getMetadata().containsKey("Content-Disposition"));
-    assertTrue(response1.getMetadata().get("Content-Disposition").contains("attachment; filename="+attachment2.getTitle()));
-  
-    //when
-    Response response2 = wikiRestService.getAttachment(null, wikiType , wikiOwner, pageId, "attachment3.png", null);
-    // Then
-    assertNotNull(response2);
-    assertEquals(200, response2.getStatus());
-    assertEquals(2, response2.getMetadata().size());
-    assertNotNull(response2.getMetadata().containsKey("cache-control"));
-    assertNotNull(response2.getMetadata().containsKey("Content-Disposition"));
-    assertTrue(response2.getMetadata().get("Content-Disposition").contains("attachment; filename="+attachment3.getTitle()));
-  }
-  
-
-  @Test
-  public void testSanitizePageTitle() throws Exception {
-    //Given
-    WikiService wikiService = mock(WikiService.class);
-    UriInfo uriInfo = mock(UriInfo.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-    
-    Wiki wiki = new Wiki("user", "root");
-    when(wikiService.createWiki("portal", "wikiAttachement1")).thenReturn(wiki);
-    String wikiType = wiki.getType();
-    String wikiOwner = wiki.getOwner();
-    
-    Page wikiHomePage = new Page("wikiHomePage", "wikiHomePage<script>alert();</script>");
-    wikiHomePage.setId("wikiHomePageId");
-    wikiHomePage.setWikiType(wikiType);
-    wikiHomePage.setWikiOwner(wikiOwner);
-    wikiHomePage.setUpdatedDate(Calendar.getInstance().getTime());
-    String pageId = wikiHomePage.getId();
-
-    when(wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner)).thenReturn(wiki);
-    when(wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId)).thenReturn(wikiHomePage);
-    when(uriInfo.getAbsolutePath()).thenReturn(new URI("/"));
-    when(uriInfo.getBaseUri()).thenReturn(new URI("/"));
-
-    // When
-    org.exoplatform.wiki.service.rest.model.Page page = wikiRestService.getPage(uriInfo, wikiType, wikiOwner, pageId, "root");
-    // Then
-    verify(wikiService, times(1)).getPageOfWikiByName(wikiType, wikiOwner, pageId);
-    assertEquals("wikiHomePage", page.getTitle());
-  }
-
-  @Test
-  public void testSanitizePageContent() throws Exception {
-    //Given
-    WikiService wikiService = mock(WikiService.class);
-    UriInfo uriInfo = mock(UriInfo.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-    EnvironmentContext.setCurrent(new EnvironmentContext());
-    ServletContext servletContext = mock(ServletContext.class);
-    when(servletContext.getResourceAsStream(anyString())).thenReturn(new ByteArrayInputStream("<div>$content</div>".getBytes()));
-
-    Wiki wiki = new Wiki("user", "root");
-    when(wikiService.createWiki("portal", "wikiSanitizePageContent1")).thenReturn(wiki);
-    String wikiType = wiki.getType();
-    String wikiOwner = wiki.getOwner();
-
-    Page wikiHomePage = new Page("wikiHomePage", "wikiHomePage");
-    wikiHomePage.setId("wikiHomePageId");
-    wikiHomePage.setWikiType(wikiType);
-    wikiHomePage.setWikiOwner(wikiOwner);
-    wikiHomePage.setUpdatedDate(Calendar.getInstance().getTime());
-    wikiHomePage.setContent("<div>my<script>alert();</script> page</div>");
-    String pageId = wikiHomePage.getId();
-
-    when(wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner)).thenReturn(wiki);
-    when(wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId)).thenReturn(wikiHomePage);
-    when(uriInfo.getAbsolutePath()).thenReturn(new URI("/"));
-    when(uriInfo.getBaseUri()).thenReturn(new URI("/"));
-
-    // When
-    Response response = wikiRestService.getWikiPageContent(wikiHomePage.getContent());
-
-    // Then
-    assertNotNull(response);
-    assertEquals(200, response.getStatus());
-    assertEquals("<div>my page</div>", response.getEntity());
-  }
-
-  @Test
-  public void testSaveDraftName() throws Exception {
-    //Given
-    WikiService wikiService = mock(WikiService.class);
-    NoteService noteService = mock(NoteService.class);
-    WikiRestServiceImpl wikiRestService = new WikiRestServiceImpl(wikiService, noteService, new MockResourceBundleService());
-
-    DraftPage newDraftPage = new DraftPage();
-    newDraftPage.setTitle("newDraft");
-    newDraftPage.setName("new_Draft");
-    newDraftPage.setId("1");
-    newDraftPage.setNewPage(true);
-    newDraftPage.setTargetPageId("1");
-    newDraftPage.setTargetPageRevision("1");
-    newDraftPage.setContent("new content");
-
-    Wiki wiki = new Wiki("portal", "global");
-    String wikiType = wiki.getType();
-    String wikiOwner = wiki.getOwner();
-
-    Page wikiHomePage = new Page("Home", "Home");
-    wikiHomePage.setId("1");
-    wikiHomePage.setWikiId("1");
-    wikiHomePage.setSyntax("xhtml/1.0");
-    wikiHomePage.setWikiType(wikiType);
-    wikiHomePage.setWikiOwner(wikiOwner);
-    String pageId = wikiHomePage.getId();
-
-
-    when(wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner)).thenReturn(wiki);
-    when(wikiService.getPageOfWikiByName(wikiType, wikiOwner, pageId)).thenReturn(wikiHomePage);
-    when(wikiService.createDraftForNewPage(any(DraftPage.class),any(Page.class),anyLong())).thenReturn(newDraftPage);
-
-    // When
-    Response response = wikiRestService.saveDraft(wikiType, wikiOwner, pageId,"undefined","",true, 1594394768847L,"newDraft","new content","false");
-    // Then
-    assertEquals(200, response.getStatus());
   }
 }

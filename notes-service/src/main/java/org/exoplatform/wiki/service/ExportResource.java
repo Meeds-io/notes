@@ -19,7 +19,7 @@
 package org.exoplatform.wiki.service;
 
 import lombok.Data;
-import org.exoplatform.wiki.mow.api.ExportList;
+import org.exoplatform.wiki.model.ExportList;
 import java.io.File;
 
 @Data

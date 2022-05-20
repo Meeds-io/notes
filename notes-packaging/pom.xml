@@ -38,12 +38,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>notes-webui</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>notes-social-integration</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
