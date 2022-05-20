@@ -406,8 +406,7 @@ public class Utils {
     if (wikiOwner != null && wikiPageId != null) {
       if (!wikiPageId.equals(NoteConstants.NOTE_HOME_NAME)) {
         // Object is a page
-        Page expandPage = noteService.getNoteByRootPermission(wikiType, wikiOwner, wikiPageId);
-        return expandPage;
+        return noteService.getNoteByRootPermission(wikiType, wikiOwner, wikiPageId);
       } else {
         // Object is a Home page
         Wiki wiki = wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner);

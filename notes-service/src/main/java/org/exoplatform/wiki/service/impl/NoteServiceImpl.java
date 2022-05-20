@@ -1123,12 +1123,12 @@ public class NoteServiceImpl implements NoteService {
     String renderedContent = StringUtils.EMPTY;
     try {
       MarkupKey key = new MarkupKey(new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName()), false);
-      MarkupData cachedData = renderingCache.get(new Integer(key.hashCode()));
+      MarkupData cachedData = renderingCache.get(key.hashCode());
       if (cachedData != null) {
         return cachedData.build();
       }
       renderedContent = note.getContent();
-      renderingCache.put(new Integer(key.hashCode()), new MarkupData(renderedContent));
+      renderingCache.put(key.hashCode(), new MarkupData(renderedContent));
     } catch (Exception e) {
       log.error(String.format("Failed to get rendered content of note [%s:%s:%s]", note.getWikiType(), note.getWikiOwner(), note.getName()), e);
     }
