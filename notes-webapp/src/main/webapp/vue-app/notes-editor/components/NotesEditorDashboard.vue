@@ -535,14 +535,14 @@ export default {
 
       const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
       if (ckEditorExtensions && ckEditorExtensions.length) {
-        ckEditorExtensions.forEach(ckEditorExtension => {
-          if (ckEditorExtension.extraPlugin) {
-            extraPlugins = `${extraPlugins},${ckEditorExtension.extraPlugin}`;
-          }
-          if (ckEditorExtension.removePlugin) {
-            removePlugins = `${extraPlugins},${ckEditorExtension.removePlugin}`;
-          }
-        });
+        const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
+        const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
+        if (ckEditorExtraPlugins) {
+          extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
+        }
+        if (ckEditorRemovePlugins) {
+          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
+        }
       }
 
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
