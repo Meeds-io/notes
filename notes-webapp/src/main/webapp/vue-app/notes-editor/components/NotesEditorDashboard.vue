@@ -278,18 +278,17 @@ export default {
 
   },
   mounted() {
-    this.init();
+    if (this.spaceId) {
+      this.init();
+    }
   },
   methods: {
     init() {
-      this.$spaceService.getSpaceById(this.spaceId).then(space => {
-        this.spaceGroupId = space.groupId;
-        this.initCKEditor();
-        const elementNewTop = document.getElementById('notesTop');
-        elementNewTop.classList.add('darkComposerEffect');
-        this.setToolBarEffect();
-        this.initDone = true;
-      });
+      this.initCKEditor();
+      const elementNewTop = document.getElementById('notesTop');
+      elementNewTop.classList.add('darkComposerEffect');
+      this.setToolBarEffect();
+      this.initDone = true;
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -317,6 +316,10 @@ export default {
     },
     getNote(id) {
       return this.$notesService.getLatestDraftOfPage(id).then(latestDraft => {
+        if (latestDraft.wikiType === 'group') {
+          this.spaceGroupId = latestDraft.wikiOwner;
+        }
+        this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
@@ -337,6 +340,10 @@ export default {
     },
     getDraftNote(id) {
       return this.$notesService.getDraftNoteById(id).then(data => {
+        if (data.wikiType === 'group') {
+          this.spaceGroupId = data.wikiOwner;
+        }
+        this.init();
         this.fillNote(data);
       }).finally(() => {
         const messageObject = {
