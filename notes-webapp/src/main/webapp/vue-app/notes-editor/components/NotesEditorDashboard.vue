@@ -59,7 +59,7 @@
             </div>
           </div>
         </div>
-        <div id="notesTop" class="width-full"></div>
+        <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
       <form class="notes-content">
@@ -285,8 +285,6 @@ export default {
   methods: {
     init() {
       this.initCKEditor();
-      const elementNewTop = document.getElementById('notesTop');
-      elementNewTop.classList.add('darkComposerEffect');
       this.setToolBarEffect();
       this.initDone = true;
     },
