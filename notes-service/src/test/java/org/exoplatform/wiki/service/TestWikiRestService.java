@@ -106,7 +106,7 @@ public class TestWikiRestService {
     PowerMockito.mockStatic(EntityBuilder.class);
     PageList<org.exoplatform.wiki.service.search.SearchResult> pageList = new ObjectPageList<>(results, 2);
     when(noteService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
-    when(uriInfo.getPath()).thenReturn("/wiki/contextsearch");
+    when(uriInfo.getPath()).thenReturn("/notes/contextsearch");
     when(EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString())).thenReturn(entity);
     NotesRestService wikiRestService =
                                      new NotesRestService(noteService, wikiService, null, new MockResourceBundleService(), null);
