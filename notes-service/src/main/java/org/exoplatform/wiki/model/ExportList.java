@@ -28,12 +28,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ExportList {
 
-  private long version;
+  private long               version;
 
-  private long exportDate;
+  private long               exportDate;
 
   private List<NoteToExport> notes;
-
 
   public ExportList(long exportDate, List<NoteToExport> notes) {
     this.exportDate = exportDate;

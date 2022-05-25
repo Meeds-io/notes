@@ -23,52 +23,52 @@ import java.util.List;
 
 public class Attachment {
 
-  private String name;
+  private String                name;
 
   /**
    * Get the weight of the attachment in bytes
    */
-  private long weightInBytes;
+  private long                  weightInBytes;
 
   /**
    * Creator of the last version of the attachment
    */
-  private String creator;
+  private String                creator;
 
   /**
    * Date of the creation
    */
-  private Calendar createdDate;
+  private Calendar              createdDate;
 
   /**
    * Date of last update of this attachment
    */
-  private Calendar updatedDate;
+  private Calendar              updatedDate;
 
   /**
    * URL to download the attachment
    */
-  private String downloadURL;
+  private String                downloadURL;
 
   /**
    * Title of the attachment
    */
-  private String title;
+  private String                title;
 
   /**
    * Full title of the attachment
    */
-  private String fullTitle;
+  private String                fullTitle;
 
   /**
    * Content of the attachment
    */
-  private byte[] content;
+  private byte[]                content;
 
   /**
    * Mime type of the attachment
    */
-  private String mimeType;
+  private String                mimeType;
 
   /**
    * Permissions on the attachment

@@ -19,41 +19,41 @@
 
 package org.exoplatform.wiki.model;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
 public class NoteToExport {
 
-  private String id;
+  private String             id;
 
-  private String name;
+  private String             name;
 
-  private String owner;
+  private String             owner;
 
-  private String author;
+  private String             author;
 
-  private String content;
+  private String             content;
 
-  private String syntax;
+  private String             syntax;
 
-  private String title;
+  private String             title;
 
-  private String comment;
+  private String             comment;
 
-  private String wikiId;
+  private String             wikiId;
 
-  private String wikiType;
+  private String             wikiType;
 
-  private String wikiOwner;
+  private String             wikiOwner;
 
   private List<NoteToExport> children;
 
-  private NoteToExport parent;
+  private NoteToExport       parent;
 
   private LinkedList<String> ancestors;
 
@@ -64,7 +64,17 @@ public class NoteToExport {
     this.name = name;
   }
 
-  public NoteToExport(String id, String name, String owner, String author, String content, String syntax, String title, String comment, String wikiId, String wikiType, String wikiOwner) {
+  public NoteToExport(String id,
+                      String name,
+                      String owner,
+                      String author,
+                      String content,
+                      String syntax,
+                      String title,
+                      String comment,
+                      String wikiId,
+                      String wikiType,
+                      String wikiOwner) {
     this();
     this.id = id;
     this.name = name;
@@ -95,6 +105,5 @@ public class NoteToExport {
     this.parent = noteToExport.getParent();
     this.ancestors = noteToExport.getAncestors();
   }
-
 
 }

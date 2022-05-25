@@ -19,16 +19,16 @@
 
 package org.exoplatform.wiki.model;
 
-import org.exoplatform.wiki.service.*;
-
 import java.util.Arrays;
 
-public class PermissionEntry {
-  private String id;
-  
-  private String fullName;
+import org.exoplatform.wiki.service.IDType;
 
-  private IDType idType;
+public class PermissionEntry {
+  private String       id;
+
+  private String       fullName;
+
+  private IDType       idType;
 
   private Permission[] permissions;
 
@@ -49,11 +49,11 @@ public class PermissionEntry {
   public void setId(String id) {
     this.id = id;
   }
-  
+
   public String getFullName() {
     return fullName;
   }
-  
+
   public void setFullName(String fullName) {
     this.fullName = fullName;
   }
@@ -76,17 +76,20 @@ public class PermissionEntry {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof PermissionEntry)) return false;
+    if (this == o)
+      return true;
+    if (!(o instanceof PermissionEntry))
+      return false;
 
     PermissionEntry that = (PermissionEntry) o;
 
-    if (fullName != null ? !fullName.equals(that.fullName) : that.fullName != null) return false;
-    if (id != null ? !id.equals(that.id) : that.id != null) return false;
-    if (idType != that.idType) return false;
-    if (!Arrays.equals(permissions, that.permissions)) return false;
-
-    return true;
+    if (fullName != null ? !fullName.equals(that.fullName) : that.fullName != null)
+      return false;
+    if (id != null ? !id.equals(that.id) : that.id != null)
+      return false;
+    if (idType != that.idType)
+      return false;
+      return Arrays.equals(permissions, that.permissions);
   }
 
   @Override
