@@ -110,7 +110,7 @@ export default {
       if (id==='table'){
         this.$root.$emit('note-table-plugins');
       } else if ( id === 'note') {
-        this.$root.$emit('display-treeview-items');
+        this.$root.$emit('display-treeview-items', 'published');
 
       } else if ( id === 'Navigation') {
         this.instance.execCommand('ToC');
