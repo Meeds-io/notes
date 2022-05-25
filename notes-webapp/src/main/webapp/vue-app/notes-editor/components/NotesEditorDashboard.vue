@@ -236,13 +236,13 @@ export default {
     this.$root.$on('show-alert', message => {
       this.displayMessage(message);
     });
-    this.$root.$on('display-treeview-items', () => {
+    this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
-        this.$refs.noteTreeview.open(this.note, 'includePages');
+        this.$refs.noteTreeview.open(this.note, 'includePages', null, filter);
       } else if (urlParams.has('parentNoteId')) {
         this.$notesService.getNoteById(this.parentPageId).then(data => {
           const note = data;
-          this.$refs.noteTreeview.open(note, 'includePages');
+          this.$refs.noteTreeview.open(note, 'includePages', null, filter);
         });
       }
     });

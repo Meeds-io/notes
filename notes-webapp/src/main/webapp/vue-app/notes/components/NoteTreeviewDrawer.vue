@@ -511,13 +511,13 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
-    open(note, source, includeDisplay) {
+    open(note, source, includeDisplay,filter) {
       this.render = false;
       if (note.draftPage) {
-        this.filter = this.filterOptions[1];
+        this.filter = filter === 'published' && this.filterOptions[0] || this.filterOptions[1];
         this.getDraftNote(note.id);
       } else {
-        this.filter = this.filterOptions[0];
+        this.filter = filter === 'draft' && this.filterOptions[1] || this.filterOptions[0];
         this.getNoteById(note.id);
       }
       if (source === 'includePages') {
