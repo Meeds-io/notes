@@ -26,29 +26,29 @@ public class Wiki {
   /**
    * Wiki unique id
    */
-  private String id;
+  private String                id;
 
   /**
-   * Name of the owner of this wiki. May be a portal name, a group name or a
-   * user name depending on the type of the wiki
+   * Name of the owner of this wiki. May be a portal name, a group name or a user
+   * name depending on the type of the wiki
    */
-  private String owner;
+  private String                owner;
 
   /**
    * Type of this wiki. May be a portal type, a group type or a user type
    */
-  private String type;
+  private String                type;
 
   /**
    * Home page of the wiki
    */
-  private Page wikiHome;
+  private Page                  wikiHome;
 
   private List<PermissionEntry> permissions;
-  
-  private WikiPreferences preferences;
-  
-  private boolean defaultPermissionsInited;
+
+  private WikiPreferences       preferences;
+
+  private boolean               defaultPermissionsInited;
 
   public Wiki() {
   }

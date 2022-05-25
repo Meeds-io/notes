@@ -22,7 +22,7 @@ package org.exoplatform.wiki.model;
 public class Permission {
   private PermissionType permissionType;
 
-  private boolean isAllowed = false;
+  private boolean        isAllowed = false;
 
   public Permission() {
   }
@@ -50,15 +50,16 @@ public class Permission {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Permission)) return false;
+    if (this == o)
+      return true;
+    if (!(o instanceof Permission))
+      return false;
 
     Permission that = (Permission) o;
 
-    if (isAllowed != that.isAllowed) return false;
-    if (permissionType != that.permissionType) return false;
-
-    return true;
+    if (isAllowed != that.isAllowed)
+      return false;
+    return permissionType == that.permissionType;
   }
 
   @Override

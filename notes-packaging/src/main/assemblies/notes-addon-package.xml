@@ -42,24 +42,8 @@
       <includes>
         <include>${project.groupId}:*:jar</include>
         <include>commons-configuration:commons-configuration:jar</include>
-        <include>org.bouncycastle:bctsp-jdk15:jar</include>
-        <include>net.sourceforge.cssparser:cssparser:jar</include>
-        <include>net.sf.ezmorph:ezmorph:jar</include>
-        <include>org.xhtmlrenderer:flying-saucer-core:jar</include>
-        <include>org.xhtmlrenderer:flying-saucer-pdf:jar</include>
-        <include>com.google.gwt:gwt-servlet:jar</include>
-        <include>com.lowagie:itext:jar</include>
-        <include>org.jfree:jcommon:jar</include>
-        <include>org.jfree:jfreechart:jar</include>
         <include>org.suigeneris:jrcs.rcs:jar</include>
         <include>net.sf.json-lib:jar</include>
-        <include>org.python:jython-standalone:jar</include>
-        <include>org.pygments:pygments:jar</include>
-        <include>org.w3c.css:sac:jar</include>
-        <include>net.java.dev.stax-utils:stax-utils:jar</include>
-        <include>com.lowagie:itext:jar</include>
-        <include>org.apache.velocity:velocity:jar</include>
-        <include>org.apache.velocity:velocity-tools:jar</include>
       </includes>
       <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
       <useProjectArtifact>false</useProjectArtifact>

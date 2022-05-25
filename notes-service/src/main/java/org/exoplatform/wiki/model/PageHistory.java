@@ -18,22 +18,22 @@
  */
 package org.exoplatform.wiki.model;
 
-import lombok.Data;
-
 import java.util.Date;
+
+import lombok.Data;
 
 @Data
 public class PageHistory {
 
-	private Long versionNumber;
+  private Long   versionNumber;
 
-	private String author;
+  private String author;
 
-	private String authorFullName;
+  private String authorFullName;
 
-	private Date createdDate;
+  private Date   createdDate;
 
-	private Date updatedDate;
+  private Date   updatedDate;
 
-	private String content;
+  private String content;
 }

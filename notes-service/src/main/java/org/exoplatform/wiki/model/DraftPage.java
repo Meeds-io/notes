@@ -19,16 +19,17 @@
 
 package org.exoplatform.wiki.model;
 
-import lombok.Data;
 import org.exoplatform.commons.diff.DiffResult;
+
+import lombok.Data;
 
 @Data
 public class DraftPage extends Page {
-  private String targetPageId;
+  private String     targetPageId;
 
-  private String targetPageRevision;
+  private String     targetPageRevision;
 
-  private boolean newPage;
+  private boolean    newPage;
 
   private DiffResult changes;
 

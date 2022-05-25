@@ -25,7 +25,7 @@ package org.exoplatform.wiki.model;
 public class WikiPreferences {
   private WikiPreferencesSyntax wikiPreferencesSyntax;
 
-  private String path;
+  private String                path;
 
   public WikiPreferencesSyntax getWikiPreferencesSyntax() {
     return wikiPreferencesSyntax;

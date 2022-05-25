@@ -23,7 +23,7 @@ package org.exoplatform.wiki.model;
  * @author Thomas Delhoménie
  */
 public class WikiPreferencesSyntax {
-  private String defaultSyntax;
+  private String  defaultSyntax;
 
   private boolean allowMultipleSyntaxes;
 

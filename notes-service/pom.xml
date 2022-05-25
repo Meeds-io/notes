@@ -82,24 +82,6 @@
       <artifactId>exo.portal.component.common</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.gatein.portal</groupId>
-      <artifactId>exo.portal.webui.framework</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.exoplatform.gatein.portal</groupId>
-      <artifactId>exo.portal.webui.portal</artifactId>
-      <exclusions>
-        <exclusion>          
-          <groupId>xml-apis</groupId>
-          <artifactId>xml-apis</artifactId>
-        </exclusion>
-        <exclusion>
-		      <groupId>xml-apis</groupId>
-          <artifactId>xml-apis-ext</artifactId>          
-        </exclusion>        
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.exoplatform.gatein.wci</groupId>
       <artifactId>wci-wci</artifactId>
     </dependency>
@@ -112,25 +94,11 @@
       <artifactId>social-component-common</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.lowagie</groupId>
-      <artifactId>itext</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
       <groupId>org.suigeneris</groupId>
       <artifactId>jrcs.rcs</artifactId>
       <scope>runtime</scope>
     </dependency>
-    <dependency>
-      <groupId>org.xhtmlrenderer</groupId>
-      <artifactId>flying-saucer-core</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.xhtmlrenderer</groupId>
-      <artifactId>flying-saucer-pdf</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
