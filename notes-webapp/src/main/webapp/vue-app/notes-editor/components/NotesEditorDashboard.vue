@@ -59,7 +59,7 @@
             </div>
           </div>
         </div>
-        <div id="notesTop" class="width-full"></div>
+        <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
       <form class="notes-content">
@@ -149,7 +149,8 @@ export default {
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
-      noteNavigationDisplayed: false
+      noteNavigationDisplayed: false,
+      spaceGroupId: null,
     };
   },
   computed: {
@@ -277,13 +278,13 @@ export default {
 
   },
   mounted() {
-    this.init();
+    if (this.spaceId) {
+      this.init();
+    }
   },
   methods: {
     init() {
       this.initCKEditor();
-      const elementNewTop = document.getElementById('notesTop');
-      elementNewTop.classList.add('darkComposerEffect');
       this.setToolBarEffect();
       this.initDone = true;
     },
@@ -313,6 +314,10 @@ export default {
     },
     getNote(id) {
       return this.$notesService.getLatestDraftOfPage(id).then(latestDraft => {
+        if (latestDraft.wikiType === 'group') {
+          this.spaceGroupId = latestDraft.wikiOwner;
+        }
+        this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
@@ -333,6 +338,10 @@ export default {
     },
     getDraftNote(id) {
       return this.$notesService.getDraftNoteById(id).then(data => {
+        if (data.wikiType === 'group') {
+          this.spaceGroupId = data.wikiOwner;
+        }
+        this.init();
         this.fillNote(data);
       }).finally(() => {
         const messageObject = {
@@ -520,13 +529,27 @@ export default {
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'sharedspace,simpleLink,selectImage,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let extraPlugins = 'sharedspace,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let removePlugins = 'image,confirmBeforeReload,maximize,resize';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
       if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
         // Disable suggester on smart-phone landscape
-        extraPlugins = 'simpleLink,selectImage';
+        extraPlugins = 'simpleLink';
       }
+
+      const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
+      if (ckEditorExtensions && ckEditorExtensions.length) {
+        const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
+        const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
+        if (ckEditorExtraPlugins) {
+          extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
+        }
+        if (ckEditorRemovePlugins) {
+          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
+        }
+      }
+
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
 
@@ -538,9 +561,11 @@ export default {
       $('textarea#notesContent').ckeditor({
         customConfig: '/commons-extension/ckeditorCustom/config.js',
         extraPlugins: extraPlugins,
-        removePlugins: 'image,confirmBeforeReload,maximize,resize',
+        removePlugins: removePlugins,
         allowedContent: true,
         spaceURL: self.spaceURL,
+        spaceGroupId: self.spaceGroupId,
+        imagesDownloadFolder: 'notes/images',
         toolbarLocation: 'top',
         extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
