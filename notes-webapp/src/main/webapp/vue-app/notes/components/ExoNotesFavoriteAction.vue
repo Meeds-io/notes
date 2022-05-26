@@ -37,7 +37,7 @@ export default {
     },
   },
   data: () => ({
-    spaceId: null,
+    spaceId: eXo.env.portal.spaceId,
     templateParams: {},
   }),
   computed: {
