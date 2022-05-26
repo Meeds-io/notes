@@ -17,16 +17,17 @@
 
 package org.exoplatform.wiki.service;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.gatein.api.EntityNotFoundException;
+
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.gatein.api.EntityNotFoundException;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * Provides functions for processing database with notes, including: adding,
@@ -357,18 +358,63 @@ public interface NoteService {
    */
   DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
 
+  /**
+   * Return the list of children of the note to export
+   *
+   * @param note   The Note to export
+   * @param userId the current user Id
+   * @return the list of children of the note to export
+   * @throws WikiException
+   */
   List<NoteToExport> getChildrenNoteOf(NoteToExport note, String userId) throws WikiException;
 
+  /**
+   * Return the Parent of the note to export
+   *
+   * @param note   The Note to export
+   * @return the parent of the note to export
+   * @throws WikiException
+   */
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
 
-    String getNoteRenderedContent(Page note);
+  /**
+   * Return the content of the note to be rendred
+   *
+   * @param note   The Note
+   * @return Content to be rendred
+   * @throws WikiException
+   */
+  String getNoteRenderedContent(Page note);
 
-    void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException, IllegalAccessException, IOException;
+  /**
+   * Import Notes from a zip file location
+   *
+   * @param zipLocation   the zip file location path
+   * @param parent   The parent page where notes will be impoprted
+   * @param conflict import strategy ( can be "overwrite","replaceAll","duplicate" or "duplicate")
+   * @param userIdentity current user Identity
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights on the note
+   * @throws IOException if can't read zip file
+   */
+  void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
+                                                                                            IllegalAccessException,
+                                                                                            IOException;
 
+  /**
+   * Import Notes from a list if files
+   *
+   * @param files   the zlist of files
+   * @param parent   The parent page where notes will be impoprted
+   * @param conflict import strategy ( can be "overwrite","replaceAll","duplicate" or "duplicate")
+   * @param userIdentity current user Identity
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights on the note
+   * @throws IOException if can't read files
+   */
   void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
-          IllegalAccessException,
-          IOException;
-
+                                                                                            IllegalAccessException,
+                                                                                            IOException;
 
   /**
    * Searches in all wiki pages.
