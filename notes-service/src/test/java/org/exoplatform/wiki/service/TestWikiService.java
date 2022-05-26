@@ -20,7 +20,9 @@
 package org.exoplatform.wiki.service;
 
 import java.util.List;
+
 import org.apache.commons.codec.binary.StringUtils;
+
 import org.exoplatform.portal.config.DataStorage;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -32,15 +34,13 @@ import org.exoplatform.wiki.model.PermissionEntry;
 import org.exoplatform.wiki.model.Wiki;
 
 @SuppressWarnings("deprecation")
-public class
+public class TestWikiService extends BaseTest {
 
-TestWikiService extends BaseTest {
   private WikiService wService;
 
   public void setUp() throws Exception {
     super.setUp();
     wService = getContainer().getComponentInstanceOfType(WikiService.class);
-
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
   }
 
@@ -51,9 +51,7 @@ TestWikiService extends BaseTest {
   public void testCreateWiki() throws WikiException {
     Wiki wiki = wService.getWikiByTypeAndOwner(PortalConfig.PORTAL_TYPE, "wiki1");
     assertNull(wiki);
-
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "wiki1");
-
     wiki = wService.getWikiByTypeAndOwner(PortalConfig.PORTAL_TYPE, "wiki1");
     assertNotNull(wiki);
 
@@ -67,14 +65,11 @@ TestWikiService extends BaseTest {
     assertTrue(siteWiki.getPermissions()
                        .stream()
                        .noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
-
     Page wikiHome = siteWiki.getWikiHome();
     assertNotNull(wikiHome);
-
     DataStorage dataStorage = getContainer().getComponentInstanceOfType(DataStorage.class);
     PortalConfig portalConfig = dataStorage.getPortalConfig(defaultPortal);
     assertNotNull(portalConfig);
-
     List<PermissionEntry> permissions = wikiHome.getPermissions();
     assertNotNull(permissions);
     assertTrue(permissions.stream().noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
