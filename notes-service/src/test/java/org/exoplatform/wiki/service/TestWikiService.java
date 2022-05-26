@@ -19,10 +19,8 @@
 
 package org.exoplatform.wiki.service;
 
-
+import java.util.List;
 import org.apache.commons.codec.binary.StringUtils;
-import org.apache.commons.io.IOUtils;
-import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.portal.config.DataStorage;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -32,31 +30,22 @@ import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionEntry;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.TemplateSearchData;
-import org.exoplatform.wiki.service.search.TemplateSearchResult;
-import org.exoplatform.wiki.service.search.WikiSearchData;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
 
 @SuppressWarnings("deprecation")
 public class
 
-
-
 TestWikiService extends BaseTest {
   private WikiService wService;
+
   public void setUp() throws Exception {
-    super.setUp() ;
-    wService = getContainer().getComponentInstanceOfType(WikiService.class) ;
+    super.setUp();
+    wService = getContainer().getComponentInstanceOfType(WikiService.class);
 
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
   }
-  
+
   public void testWikiService() {
-    assertNotNull(wService) ;
+    assertNotNull(wService);
   }
 
   public void testCreateWiki() throws WikiException {
@@ -91,4 +80,3 @@ TestWikiService extends BaseTest {
     assertTrue(permissions.stream().noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
   }
 }
-
