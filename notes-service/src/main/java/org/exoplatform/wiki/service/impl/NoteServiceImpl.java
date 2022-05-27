@@ -1224,9 +1224,16 @@ public class NoteServiceImpl implements NoteService {
 
           }
           if (conflict.equals("duplicate")) {
-            int i = 1;
+            String title = note.getTitle();
+            int i;
+            try {
+              i = title.lastIndexOf("_") != -1 ? Integer.valueOf(title.substring(title.lastIndexOf("_") + 1)) + 1 : 1;
+            } catch (NumberFormatException e) {
+              i = 1;
+            }
             String newTitle = note.getTitle() + "_" + i;
-            while (getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), newTitle) != null) {
+            while (getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), newTitle) != null ||
+                    isExisting(wiki.getType(), wiki.getOwner(), TitleResolver.getId(newTitle, false))) {
               i++;
               newTitle = note.getTitle() + "_" + i;
             }
