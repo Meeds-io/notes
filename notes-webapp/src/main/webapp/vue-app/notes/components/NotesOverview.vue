@@ -326,6 +326,7 @@ export default {
       childNodes: [],
       exportStatus: '', 
       exportId: 0,
+      popStateChange: false
     };
   },
   watch: {
@@ -493,19 +494,27 @@ export default {
     this.$root.$on('import-notes', (uploadId,overrideMode) => {
       this.importNotes(uploadId,overrideMode);
     });
+    window.addEventListener('popstate', () => {
+      this.currentPath = window.location.pathname;
+      this.popStateChange = true;
+      this.handleChangePages();
+    });
   },
   mounted() {
-    if (this.noteId) {
-      if (this.isDraft) {
-        this.getDraftNote(this.noteId);
-      } else {
-        this.getNoteById(this.noteId);
-      }
-    } else {
-      this.getNoteByName(this.notesPageName);
-    }
+    this.handleChangePages();
   },
   methods: {
+    handleChangePages() {
+      if (this.noteId) {
+        if (this.isDraft) {
+          this.getDraftNote(this.noteId);
+        } else {
+          this.getNoteById(this.noteId);
+        }
+      } else {
+        this.getNoteByName(this.notesPageName);
+      }
+    },
     getHomeTitle(title) {
       return title === 'Home' && this.$t('notes.label.noteHome') || title;
     },
@@ -857,7 +866,10 @@ export default {
     updateURL(){
       const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
-      window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+      if (!this.popStateChange) {
+        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+      }
+      this.popStateChange = false;
     }
   }
 };
