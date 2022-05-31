@@ -22,7 +22,7 @@
               class="notes-header-icons text-right">
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="!isMobile && !note.draftPage && note.canManage">
+                <v-tooltip bottom v-if="!isMobile && !hasDraft && isManager">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       v-on="on"
@@ -42,7 +42,7 @@
               </div>
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="note.canManage && !isMobile">
+                <v-tooltip bottom v-if="isManager && !isMobile">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       icon
@@ -109,12 +109,12 @@
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, note.canManage)">V{{ lastNoteVersion }}</span>
+            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
         <v-divider class="my-4" />
-        <div class="note-content" v-if="note.content && !isHomeNoteDefaultContent">
+        <div class="note-content" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div v-if="showManualChild" id="showManualChild"> 
             <v-treeview
               dense
@@ -132,8 +132,8 @@
             v-html="noteVersionContent">
           </div>
         </div>
-        <div v-else-if="noteChildren && noteChildren[0] && !noteChildren[0].children.length">
-          <div v-if="note.canManage" class="notes-application-content d-flex flex-column justify-center text-center">
+        <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
+          <div v-if="isManager" class="notes-application-content d-flex flex-column justify-center text-center">
             <v-img
               :src="emptyNoteNoManager"
               class="mx-auto mb-4"
@@ -161,8 +161,8 @@
                   </template>
                   <span class="caption">{{ $t('notes.label.editPage') }}</span>
                 </v-tooltip>
-                <span>{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
-                <v-tooltip bottom>
+                <span v-if="!hasDraft">{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
+                <v-tooltip bottom v-if="!hasDraft">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       class="pa-0"
@@ -240,11 +240,11 @@
       :default-path="defaultPath" 
       @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
       @export-pdf="createPDF(note)"
-      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,note.canManage)"
+      @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,isManager)"
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
-      ref="notesBreadcrumb"/>
+      ref="notesBreadcrumb" />
     <note-history-drawer
       ref="noteVersionsHistoryDrawer"
       @open-version="displayVersion($event)"
@@ -254,7 +254,7 @@
     <exo-confirm-dialog
       ref="DeleteNoteDialog"
       :message="confirmMessage"
-      :title="note.draftPage ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
+      :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
       :ok-label="$t('notes.button.ok')"
       :cancel-label="$t('notes.button.cancel')"
       persistent
@@ -427,6 +427,18 @@ export default {
     notebreadcrumb() {
       return this.currentNoteBreadcrumb;
     },
+    hasDraft(){
+      return !!this.note?.draftPage;
+    },
+    hasEmptyContent(){
+      return !this.note?.content;
+    },
+    hasChildren(){
+      return this.noteChildren && this.noteChildren[0] && this.noteChildren[0].children?.length > 0;
+    },
+    isManager(){
+      return this.note?.canManage;
+    },
     notesPageName() {
       if (this.currentPath.endsWith(eXo.env.portal.selectedNodeUri)||this.currentPath.endsWith(`${eXo.env.portal.selectedNodeUri}/`)){
         return 'homeNote';
@@ -520,14 +532,14 @@ export default {
     },
     addNote() {
       if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&appName=${this.appName}`, '_blank');
       }
     },
     editNote() {
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}`, '_blank');
     },
     deleteNote() {
-      if (this.note.draftPage) {
+      if (this.hasDraft) {
         this.$notesService.deleteDraftNote(this.note).then(() => {
           this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
         }).catch(e => {
