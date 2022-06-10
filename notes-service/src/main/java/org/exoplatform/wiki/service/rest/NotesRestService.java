@@ -132,7 +132,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
-        noteBookOwner = validateGroupWikiOwner(noteBookOwner);
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
       }
 
       Wiki noteBook = null;
@@ -482,7 +482,7 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
-        noteBookOwner = validateGroupWikiOwner(noteBookOwner);
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
       }
 
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -674,7 +674,7 @@ public class NotesRestService implements ResourceContainer {
 
     try {
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
-        noteBookOwner = validateGroupWikiOwner(noteBookOwner);
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
       }
 
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -1325,7 +1325,7 @@ public class NotesRestService implements ResourceContainer {
     return noteService.updateNote(note);
   }
 
-  private String validateGroupWikiOwner(String wikiOwner) {
+  private String formatWikiOwnerToGroupId(String wikiOwner) {
     if (wikiOwner == null || wikiOwner.length() == 0) {
       return null;
     }
