@@ -215,6 +215,7 @@ export default {
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
       this.spaceId = urlParams.get('spaceId');
+      this.spaceGroupId  = urlParams.get('spaceGroupId');
       this.note.parentPageId = this.parentPageId;
     }
     this.displayFormTitle();
@@ -564,7 +565,7 @@ export default {
         removePlugins: removePlugins,
         allowedContent: true,
         spaceURL: self.spaceURL,
-        spaceGroupId: self.spaceGroupId,
+        spaceGroupId: `/spaces/${  this.spaceGroupId}`,
         imagesDownloadFolder: 'notes/images',
         toolbarLocation: 'top',
         extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
