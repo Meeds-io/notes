@@ -42,6 +42,7 @@ import org.exoplatform.wiki.mow.api.DraftPage;
 import org.exoplatform.wiki.mow.api.NoteToExport;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.Wiki;
+import org.exoplatform.wiki.mow.api.WikiType;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
@@ -116,6 +117,10 @@ public class NotesRestService implements ResourceContainer {
                           @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
+      if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
+
       Wiki noteBook = null;
       noteBook = noteBookService.getWikiByTypeAndOwner(noteBookType, noteBookOwner);
       if (noteBook == null) {
@@ -423,6 +428,10 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
+      if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
+
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId);
       if (note_ == null) {
@@ -604,6 +613,10 @@ public class NotesRestService implements ResourceContainer {
                              @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
 
     try {
+      if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
+
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
       if (note_ == null) {
@@ -1119,6 +1132,19 @@ public class NotesRestService implements ResourceContainer {
     content = content.replace(oldChildrenContainer, childrenContainer);
     note.setContent(content);
     return noteService.updateNote(note);
+  }
+
+  private String formatWikiOwnerToGroupId(String wikiOwner) {
+    if (wikiOwner == null || wikiOwner.length() == 0) {
+      return null;
+    }
+    if (!wikiOwner.startsWith("/")) {
+      wikiOwner = "/" + wikiOwner;
+    }
+    if (wikiOwner.endsWith("/")) {
+      wikiOwner = wikiOwner.substring(0, wikiOwner.length() - 1);
+    }
+    return wikiOwner;
   }
 
 }
