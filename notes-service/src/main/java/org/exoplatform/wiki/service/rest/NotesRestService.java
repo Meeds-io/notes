@@ -40,6 +40,7 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.mow.api.Page;
 import org.exoplatform.wiki.mow.api.PermissionType;
 import org.exoplatform.wiki.mow.api.Wiki;
+import org.exoplatform.wiki.mow.api.WikiType;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
@@ -174,6 +175,9 @@ public class NotesRestService implements ResourceContainer {
     String noteBookType = note.getWikiType();
     String noteBookOwner = note.getWikiOwner();
     try {
+    if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNotEmpty(note.getParentPageId())) {
         Page note_ = noteService.getNoteById(note.getParentPageId(), identity);
@@ -378,6 +382,9 @@ public class NotesRestService implements ResourceContainer {
                              @ApiParam(value = "Note id", required = true) @PathParam("noteId") String noteId) {
 
     try {
+    if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteOfNoteBookByName(noteBookType, noteBookOwner, noteId, identity);
       if (note_ == null) {
@@ -569,6 +576,18 @@ public class NotesRestService implements ResourceContainer {
         encodeWikiTree(data.children, locale);
       }
     }
+  }
+  private String formatWikiOwnerToGroupId(String wikiOwner) {
+    if (wikiOwner == null || wikiOwner.length() == 0) {
+      return null;
+    }
+    if (!wikiOwner.startsWith("/")) {
+      wikiOwner = "/" + wikiOwner;
+    }
+    if (wikiOwner.endsWith("/")) {
+      wikiOwner = wikiOwner.substring(0, wikiOwner.length() - 1);
+    }
+    return wikiOwner;
   }
 
 }
