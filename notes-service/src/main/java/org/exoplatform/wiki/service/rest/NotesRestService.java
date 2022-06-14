@@ -94,6 +94,9 @@ public class NotesRestService implements ResourceContainer {
                           @ApiParam(value = "source", required = true) @QueryParam("source") String source) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
+      if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
+        noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
+      }
       Wiki noteBook = null;
       noteBook = noteBookService.getWikiByTypeAndOwner(noteBookType,noteBookOwner);
       if(noteBook == null) {
