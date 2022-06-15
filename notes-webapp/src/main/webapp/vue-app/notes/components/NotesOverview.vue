@@ -338,7 +338,7 @@ export default {
         this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
-      this.noteTitle = !this.note.parentPageId ? `${this.getHomeTitle(this.note.breadcrumb[0].title)} ${this.spaceDisplayName}` : this.note.title;
+      this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
       if (!this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)) {
