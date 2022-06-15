@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.exoplatform.addons.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.5-patched</version>
   <packaging>pom</packaging>
   <name>eXo PLF:: Notes</name>
   <description>eXo Notes</description>
