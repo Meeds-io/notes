@@ -1,7 +1,10 @@
 <template>
   <v-list-item class="clickable" :href="noteUrl">
     <v-list-item-icon class="me-3 my-auto">
-      <v-icon size="22" class="icon-default-color"> fas fa-clipboard </v-icon>
+      <v-img
+        :src="noteImg"
+        max-height= "28"
+        max-width= "25" />
     </v-list-item-icon>
 
     <v-list-item-content>
@@ -32,7 +35,8 @@ export default {
   data: () => ({
     noteTitle: '',
     noteUrl: '', 
-    isFavorite: true
+    isFavorite: true,
+    noteImg: '/notes/images/wiki.png',
   }),
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
