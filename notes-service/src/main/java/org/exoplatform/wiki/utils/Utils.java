@@ -22,10 +22,8 @@ package org.exoplatform.wiki.utils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.api.notification.plugin.NotificationPluginUtils;
-import org.exoplatform.commons.api.settings.ExoFeatureService;
 import org.exoplatform.commons.diff.DiffResult;
 import org.exoplatform.commons.diff.DiffService;
-import org.exoplatform.commons.dlp.processor.DlpOperationProcessor;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.ExoContainer;
@@ -597,11 +595,6 @@ public class Utils {
     cssClass.append(append);
     cssClass.append(((String)mimeType).replaceAll("/|\\.", ""));
     return cssClass.toString();
-  }
-
-  public static boolean isDlpFeatureEnabled() {
-    ExoFeatureService featureService = CommonsUtils.getService(ExoFeatureService.class);
-    return featureService.isActiveFeature(DlpOperationProcessor.DLP_FEATURE);
   }
 
   /**
