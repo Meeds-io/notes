@@ -36,7 +36,7 @@ export default {
     noteTitle: '',
     noteUrl: '', 
     isFavorite: true,
-    noteImg: '/notes/images/wiki.png',
+    noteImg: '/notes/images/notes-appicon.png',
   }),
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
