@@ -54,7 +54,7 @@
     " href="$WIKI_URL" target="_blank"><%=_ctx.appRes("Notification.label.ViewFullDiscussion")%></a>
     </p>
 
-                                    <p style="margin: 0 0 10px; color: #999999">
+                                    <p style="margin: 0 0 10px; color: #767676">
                                     </p>
             </td>
                             </tr>
