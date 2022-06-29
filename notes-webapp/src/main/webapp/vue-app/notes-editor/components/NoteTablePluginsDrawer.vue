@@ -264,6 +264,7 @@ export default {
     internal: 0,
     alignmentSelected: '',
     table: '',
+    countIdTable: 1,
     summary: '',
     alignment: [
       {name: ''},{name: 'left'},{name: 'center'},{name: 'right'}
@@ -330,7 +331,8 @@ export default {
         contentSummary.setAttribute('id', `summary-${tableContainerId}`);
         contentSummary.appendChild(document.createTextNode(this.summary));
         contentSummary.style.display = 'none';
-        table.setAttribute('id', 'table');
+        const idTable= `table${this.countIdTable}`;
+        table.setAttribute('id', idTable);
         elementContainer.appendChild(contentSummary);
         elementContainer.appendChild(table);
         div.appendChild(elementContainer);
@@ -351,12 +353,20 @@ export default {
 
           for (let j = 0; j < this.columns; j++) {
             const td = document.createElement('TD');
-            td.width = '50';
-            td.height = '25';
+            const widthTd =this.columns !== 0 ? this.width/Math.abs(this.columns) : this.width;
+            const heightTd =this.lines !== 0 ? this.height/Math.abs(this.lines) : this.height;
+            td.width = widthTd.toString();
+            td.height = heightTd.toString();
             tr.appendChild(td);
           }
         }
         this.instance.insertHtml(div.innerHTML);
+        const selector = `#${idTable} br`;
+        const elements= CKEDITOR.instances['notesContent'].document.find(selector);
+        for (let i = 0; i<elements.$.length ;i++){
+          elements.$[i].remove();
+        }
+        this.countIdTable+=1;
       } else {
         this.instance.elementPath().contains('table', 1).setAttribute('width', this.width);
         this.instance.elementPath().contains('table', 1).setAttribute('height', this.height);
