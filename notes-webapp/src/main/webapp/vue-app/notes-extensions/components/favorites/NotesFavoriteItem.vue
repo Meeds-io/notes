@@ -3,8 +3,8 @@
     <v-list-item-icon class="me-3 my-auto">
       <v-img
         :src="noteImg"
-        max-height= "28"
-        max-width= "25" />
+        max-height="28"
+        max-width="25" />
     </v-list-item-icon>
 
     <v-list-item-content>
@@ -32,17 +32,22 @@ export default {
       default: () => null,
     },
   },
-  data: () => ({
-    noteTitle: '',
-    noteUrl: '', 
+  data: () => ({ 
     isFavorite: true,
+    note: {},
     noteImg: '/notes/images/notes-appicon.png',
   }),
+  computed: {
+    noteTitle() {
+      return this.note?.title || '';
+    },
+    noteUrl() {
+      return this.note?.url || '#';
+    }
+  },
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
-      const noteSpace = note.wikiOwner.split('/')[2];
-      this.noteTitle = note.title;
-      this.noteUrl = `${eXo.env.portal.context}/g/:spaces:${noteSpace}/${noteSpace}/notes/${note.id}`;
+      this.note = note;
     });
   },
   methods: {
