@@ -42,7 +42,7 @@ export default {
     this.$notesService.getNoteById(this.id).then(note => {
       const noteSpace = note.wikiOwner.split('/')[2];
       this.noteTitle = note.title;
-      this.noteUrl = `${eXo.env.portal.context}/g/:spaces:${noteSpace}/${noteSpace}/notes/${note.id}`;
+      this.noteUrl = `${eXo.env.portal.context}/g/:spaces:${noteSpace}/${note.url}/notes/${note.id}`;
     });
   },
   methods: {
