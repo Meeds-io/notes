@@ -32,16 +32,22 @@ export default {
       default: () => null,
     },
   },
-  data: () => ({
-    noteTitle: '',
-    noteUrl: '', 
+  data: () => ({ 
     isFavorite: true,
+    note: {},
     noteImg: '/notes/images/notes-appicon.png',
   }),
+  computed: {
+    noteTitle() {
+      return this.note?.title || '';
+    },
+    noteUrl() {
+      return this.note?.url || '#';
+    }
+  },
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
-      this.noteTitle = note.title;
-      this.noteUrl = note?.url || '';
+      this.note = note;
     });
   },
   methods: {
