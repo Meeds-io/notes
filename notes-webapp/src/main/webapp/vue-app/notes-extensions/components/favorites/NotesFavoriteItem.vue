@@ -19,6 +19,7 @@
         :right="right"
         type="notes"
         type-label="notes"
+        data-type="Notes"
         @removed="removed"
         @remove-error="removeError" />
     </v-list-item-action>
