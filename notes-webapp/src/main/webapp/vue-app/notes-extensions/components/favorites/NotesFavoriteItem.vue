@@ -1,7 +1,10 @@
 <template>
   <v-list-item class="clickable" :href="noteUrl">
     <v-list-item-icon class="me-3 my-auto">
-      <v-icon size="22" class="icon-default-color"> fas fa-clipboard </v-icon>
+      <v-img
+        :src="noteImg"
+        max-height="28"
+        max-width="25" />
     </v-list-item-icon>
 
     <v-list-item-content>
@@ -29,16 +32,22 @@ export default {
       default: () => null,
     },
   },
-  data: () => ({
-    noteTitle: '',
-    noteUrl: '', 
-    isFavorite: true
+  data: () => ({ 
+    isFavorite: true,
+    note: {},
+    noteImg: '/notes/images/notes-appicon.png',
   }),
+  computed: {
+    noteTitle() {
+      return this.note?.title || '';
+    },
+    noteUrl() {
+      return this.note?.url || '#';
+    }
+  },
   created() {
     this.$notesService.getNoteById(this.id).then(note => {
-      const noteSpace = note.wikiOwner.split('/')[2];
-      this.noteTitle = note.title;
-      this.noteUrl = `${eXo.env.portal.context}/g/:spaces:${noteSpace}/${noteSpace}/notes/${note.id}`;
+      this.note = note;
     });
   },
   methods: {
