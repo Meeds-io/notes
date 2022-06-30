@@ -817,9 +817,6 @@ export default {
         }
       }
       for (const table of tables) {
-        if (!table.hasAttribute('role')) {
-          table.setAttribute('role', 'presentation');
-        }
         if (!table.hasAttribute('summary')) {
           const customId = table.parentElement.id.split('-').pop();
           const tableSummary = document.getElementById(`summary-${customId}`);
