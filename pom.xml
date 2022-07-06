@@ -4,12 +4,12 @@
   <parent>
     <artifactId>addons-parent-pom</artifactId>
     <groupId>org.exoplatform.addons</groupId>
-    <version>17</version>
+    <version>18-meed-M03</version>
     <relativePath />
   </parent>
   <groupId>org.exoplatform.addons.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>1.4.x-SNAPSHOT</version>
+  <version>1.4.x-meed-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>eXo PLF:: Notes</name>
   <description>eXo Notes</description>
@@ -29,10 +29,10 @@
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-    <org.exoplatform.social.version>6.6.x-SNAPSHOT</org.exoplatform.social.version>
-    <org.exoplatform.platform-ui.version>6.6.x-SNAPSHOT</org.exoplatform.platform-ui.version>
-    <addon.exo.gamification.version>2.6.x-SNAPSHOT</addon.exo.gamification.version>
-    <addon.exo.analytics.version>1.5.x-SNAPSHOT</addon.exo.analytics.version>
+    <org.exoplatform.social.version>6.6.x-meed-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.platform-ui.version>6.6.x-meed-SNAPSHOT</org.exoplatform.platform-ui.version>
+    <addon.exo.gamification.version>2.6.x-meed-SNAPSHOT</addon.exo.gamification.version>
+    <addon.exo.analytics.version>1.5.x-meed-SNAPSHOT</addon.exo.analytics.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
