@@ -4,7 +4,6 @@
     role="main"
     flat>
     <div>
-      <notes-notification-alert />
       <div
         v-if="isAvailableNote"
         class="notes-application white border-radius pa-6"
