@@ -11,6 +11,10 @@
   <name>eXo PLF:: Notes Service</name>
 
   <properties>
+    <rest.api.doc.title>Notes Rest Api</rest.api.doc.title>
+    <rest.api.doc.version>1.0</rest.api.doc.version>
+    <rest.api.doc.description>Notes addon rest endpoints</rest.api.doc.description>
+
     <exo.test.coverage.ratio>0.42</exo.test.coverage.ratio>
   </properties>
 
@@ -197,6 +201,27 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>io.openapitools.swagger</groupId>
+        <artifactId>swagger-maven-plugin</artifactId>
+        <configuration>
+          <useResourcePackagesChildren>true</useResourcePackagesChildren>
+          <resourcePackages>
+            <locations>org.exoplatform.wiki.service.rest</locations>
+          </resourcePackages>
+          <swaggerConfig>
+            <info>
+              <title>${rest.api.doc.title}</title>
+              <version>${rest.api.doc.version}</version>
+              <description>${rest.api.doc.description}</description>
+              <license>
+                <url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+                <name>LGPL</name>
+              </license>
+            </info>
+          </swaggerConfig>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
