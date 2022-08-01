@@ -512,6 +512,7 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have view the note.");
       }
       page.setCanView(true);
+      page.setUrl(Utils.getPageUrl(page));
       page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
