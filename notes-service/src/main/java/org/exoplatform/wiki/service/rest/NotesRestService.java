@@ -70,7 +70,7 @@ import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
+import org.exoplatform.services.rest.http.PATCH;
 
 @Path("/notes")
 @Api(value = "/notes", description = "Managing notes")
