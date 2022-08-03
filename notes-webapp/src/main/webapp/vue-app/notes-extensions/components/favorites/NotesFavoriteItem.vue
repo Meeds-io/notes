@@ -39,10 +39,10 @@ export default {
   }),
   computed: {
     noteTitle() {
-      return this.note?.title || '';
+      return (this.note && this.note.title) || '';
     },
     noteUrl() {
-      return this.note?.url || '#';
+      return (this.note && this.note.url) || '#';
     }
   },
   created() {
