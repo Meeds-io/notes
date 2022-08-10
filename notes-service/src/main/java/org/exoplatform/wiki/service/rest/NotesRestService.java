@@ -1189,12 +1189,12 @@ public class NotesRestService implements ResourceContainer {
       encodeWikiTree(bottomChildren, request.getLocale());
       finalTree.forEach(item -> {
         item.setChildren(item.getChildren().stream().sorted(new Comparator<JsonNodeData>() {
-          //  sorted the same name contains a numbers
+          //  sorted the  name contains a numbers or the same names contains characters and numbers
           public int compare(JsonNodeData o1, JsonNodeData o2) {
-            if (o1.getName().matches(".*\\d+.*") && o2.getName().matches(".*\\d+.*")) {
-              //extract the number from the name
-              String number1 = o1.getName().replaceAll("\\D", "");
-              String number2 = o2.getName().replaceAll("\\D", "");
+            //extract the number from the name
+            String number1 = o1.getName().replaceAll("\\D", "");
+            String number2 = o2.getName().replaceAll("\\D", "");
+            if (!number1.isEmpty() && !number2.isEmpty()) {
               //extract the name without the numbers part
               String name1 = o1.getName().substring(0, o1.getName().indexOf(number1.charAt(0)));
               String name2 = o2.getName().substring(0, o2.getName().indexOf(number2.charAt(0)));
