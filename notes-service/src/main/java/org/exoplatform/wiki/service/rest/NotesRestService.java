@@ -1187,6 +1187,26 @@ public class NotesRestService implements ResourceContainer {
       }
 
       encodeWikiTree(bottomChildren, request.getLocale());
+      finalTree.forEach(item -> {
+        item.setChildren(item.getChildren().stream().sorted(new Comparator<JsonNodeData>() {
+          //  sorted the same name contains a numbers
+          public int compare(JsonNodeData o1, JsonNodeData o2) {
+            if (o1.getName().matches(".*\\d+.*") && o2.getName().matches(".*\\d+.*")) {
+              //extract the number from the name
+              String number1 = o1.getName().replaceAll("\\D", "");
+              String number2 = o2.getName().replaceAll("\\D", "");
+              //extract the name without the numbers part
+              String name1 = o1.getName().substring(0, o1.getName().indexOf(number1.charAt(0)));
+              String name2 = o2.getName().substring(0, o2.getName().indexOf(number2.charAt(0)));
+              //check if both names as equals
+              if(name1.equals(name2)){
+                return (Integer.parseInt(number1) - Integer.parseInt(number2)) ;
+              }}
+            return  0 ;
+          }
+        }).collect(Collectors.toList()));
+      });
+
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
