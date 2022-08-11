@@ -102,7 +102,12 @@
       <artifactId>jrcs.rcs</artifactId>
       <scope>runtime</scope>
     </dependency>
-
+    <!-- swagger -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
