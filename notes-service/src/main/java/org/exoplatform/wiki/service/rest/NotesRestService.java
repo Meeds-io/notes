@@ -27,6 +27,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -39,9 +45,9 @@ import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.TitleSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.json.JSONObject;
 import org.gatein.api.EntityNotFoundException;
 import org.json.JSONObject;
-
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
@@ -69,11 +75,10 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
-import io.swagger.annotations.*;
 import org.exoplatform.services.rest.http.PATCH;
 
 @Path("/notes")
-@Api(value = "/notes", description = "Managing notes")
+@Tag(name = "/notes", description = "Managing notes")
 @RolesAllowed("users")
 
 public class NotesRestService implements ResourceContainer {
@@ -113,20 +118,21 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get note by notes params", httpMethod = "GET", response = Response.class, notes = "This get the not if the authenticated user has permissions to view the objects linked to this note.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNote(@ApiParam(value = "NoteBook Type", required = true)
+  @Operation(summary = "Get note by notes params", method = "GET", description = "This get the not if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getNote(@Parameter(description = "NoteBook Type", required = true)
   @PathParam("noteBookType")
   String noteBookType,
-                          @ApiParam(value = "NoteBook Owner", required = true)
+                          @Parameter(description = "NoteBook Owner", required = true)
                           @PathParam("noteBookOwner")
                           String noteBookOwner,
-                          @ApiParam(value = "Note id", required = true)
+                          @Parameter(description = "Note id", required = true)
                           @PathParam("noteId")
                           String noteId,
-                          @ApiParam(value = "source", required = true)
+                          @Parameter(description = "source", required = true)
                           @QueryParam("source")
                           String source) {
     try {
@@ -185,23 +191,24 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get note by id", httpMethod = "GET", response = Response.class, notes = "This get the note if the authenticated user has permissions to view the objects linked to this note.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNoteById(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Get note by id", method = "GET", description = "This get the note if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getNoteById(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId,
-                              @ApiParam(value = "noteBookType", required = false)
+                              @Parameter(description = "noteBookType")
                               @QueryParam("noteBookType")
                               String noteBookType,
-                              @ApiParam(value = "noteBookOwner", required = false)
+                              @Parameter(description = "noteBookOwner")
                               @QueryParam("noteBookOwner")
                               String noteBookOwner,
-                              @ApiParam(value = "withChildren", required = false)
+                              @Parameter(description = "withChildren")
                               @QueryParam("withChildren")
                               boolean withChildren,
-                              @ApiParam(value = "source", required = false)
+                              @Parameter(description = "source", required = false)
                               @QueryParam("source")
                               String source) {
     try {
@@ -239,11 +246,12 @@ public class NotesRestService implements ResourceContainer {
   @Path("/draftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get draft note by id", httpMethod = "GET", response = Response.class, notes = "This returns the draft note if the authenticated user is the author of the draft.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getDraftNoteById(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Get draft note by id", method = "GET", description = "This returns the draft note if the authenticated user is the author of the draft.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getDraftNoteById(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId) {
     try {
@@ -274,11 +282,13 @@ public class NotesRestService implements ResourceContainer {
   @Path("/latestDraftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get latest draft note of page", httpMethod = "GET", response = Response.class, notes = "This returns the latest draft of the note if the authenticated user is the author of the draft.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getLatestDraftOfPage(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Get latest draft note of page", method = "GET", description = "This returns the latest draft of the note if the authenticated user is the author of the draft.")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getLatestDraftOfPage(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId) {
     try {
@@ -301,11 +311,12 @@ public class NotesRestService implements ResourceContainer {
   @Path("/versions/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @ApiOperation(value = "Get versions of note by id", httpMethod = "GET", response = Response.class, notes = "This get the versions of a note if the authenticated user has permissions to view the objects linked to this note.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getNoteVersions(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Get versions of note by id", method = "GET", description = "This get the versions of a note if the authenticated user has permissions to view the objects linked to this note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+       @ApiResponse(responseCode = "400", description = "Invalid query input"),
+       @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+       @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getNoteVersions(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId) {
     try {
@@ -327,11 +338,12 @@ public class NotesRestService implements ResourceContainer {
   @POST
   @Path("/note")
   @RolesAllowed("users")
-  @ApiOperation(value = "Add a new note", httpMethod = "POST", response = Response.class, notes = "This adds a new note.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response createNote(@ApiParam(value = "note object to be created", required = true)
+  @Operation(summary = "Add a new note", method = "POST", description = "This adds a new note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response createNote(@Parameter(description = "note object to be created", required = true)
   Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
@@ -386,11 +398,11 @@ public class NotesRestService implements ResourceContainer {
   @POST
   @Path("saveDraft")
   @RolesAllowed("users")
-  @ApiOperation(value = "Add or update a new note draft page", httpMethod = "POST", response = Response.class, notes = "This adds a new note draft page or updates an existing one.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response saveDraft(@ApiParam(value = "Note draft page object to be created", required = true)
+  @Operation(summary = "Add or update a new note draft page", method = "POST", description = "This adds a new note draft page or updates an existing one.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response saveDraft(@RequestBody(description = "Note draft page object to be created", required = true)
   DraftPage draftNoteToSave) {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
@@ -458,20 +470,20 @@ public class NotesRestService implements ResourceContainer {
   @PUT
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Updates a specific note by note's params", httpMethod = "PUT", response = Response.class, notes = "This updates the note if the authenticated user has UPDATE permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response updateNote(@ApiParam(value = "NoteBook Type", required = true)
+  @Operation(summary = "Updates a specific note by note's params", method = "PUT", description = "This updates the note if the authenticated user has UPDATE permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response updateNote(@Parameter(description = "NoteBook Type", required = true)
   @PathParam("noteBookType")
   String noteBookType,
-                             @ApiParam(value = "NoteBook Owner", required = true)
+                             @Parameter(description = "NoteBook Owner", required = true)
                              @PathParam("noteBookOwner")
                              String noteBookOwner,
-                             @ApiParam(value = "Note id", required = true)
+                             @Parameter(description = "Note id", required = true)
                              @PathParam("noteId")
                              String noteId,
-                             @ApiParam(value = "note object to be updated", required = true)
+                             @RequestBody(description = "note object to be updated", required = true)
                              Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
@@ -536,13 +548,13 @@ public class NotesRestService implements ResourceContainer {
   @PUT
   @Path("/note/{noteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Updates a specific note by id", httpMethod = "PUT", response = Response.class, notes = "This updates the note if the authenticated user has UPDATE permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response updateNoteById(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Updates a specific note by id", method = "PUT", description = "This updates the note if the authenticated user has UPDATE permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+    public Response updateNoteById(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
-  String noteId, @ApiParam(value = "note object to be updated", required = true)
+  String noteId, @RequestBody(description = "note object to be updated", required = true)
   Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
@@ -618,13 +630,13 @@ public class NotesRestService implements ResourceContainer {
   @PUT
   @Path("/restore/{noteVersion}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Restore a specific note version by version id", httpMethod = "PUT", response = Response.class, notes = "This restore the note if the authenticated user has UPDATE permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response RestoreNoteVersion(@ApiParam(value = "Version Number", required = true)
+  @Operation(summary = "Restore a specific note version by version id", method = "PUT", description = "This restore the note if the authenticated user has UPDATE permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response RestoreNoteVersion(@Parameter(description = "Version Number", required = true)
   @PathParam("noteVersion")
-  String noteVersion, @ApiParam(value = "note object to be updated", required = true)
+  String noteVersion, @RequestBody(description = "note object to be updated", required = true)
   Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
@@ -658,17 +670,17 @@ public class NotesRestService implements ResourceContainer {
   @DELETE
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteNote(@ApiParam(value = "NoteBook Type", required = true)
+  @Operation(summary = "Delete note by note's params", method = "PUT", description = "This delets the note if the authenticated user has EDIT permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response deleteNote(@Parameter(description = "NoteBook Type", required = true)
   @PathParam("noteBookType")
   String noteBookType,
-                             @ApiParam(value = "NoteBook Owner", required = true)
+                             @Parameter(description = "NoteBook Owner", required = true)
                              @PathParam("noteBookOwner")
                              String noteBookOwner,
-                             @ApiParam(value = "Note id", required = true)
+                             @Parameter(description = "Note id", required = true)
                              @PathParam("noteId")
                              String noteId) {
 
@@ -696,11 +708,11 @@ public class NotesRestService implements ResourceContainer {
   @DELETE
   @Path("/note/{noteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteNoteById(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Delete note by note's params", method = "PUT", description = "This deletes the note if the authenticated user has EDIT permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response deleteNoteById(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId) {
 
@@ -730,11 +742,11 @@ public class NotesRestService implements ResourceContainer {
   @DELETE
   @Path("/draftNote/{noteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Delete note by note's params", httpMethod = "PUT", response = Response.class, notes = "This delets the note if the authenticated user has EDIT permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response deleteDraftNote(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Delete note by note's params", method = "PUT", description = "This deletes the note if the authenticated user has EDIT permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response deleteDraftNote(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId) {
 
@@ -756,14 +768,14 @@ public class NotesRestService implements ResourceContainer {
   @PATCH
   @Path("/note/move/{noteId}/{destinationNoteId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Move note under the destination one", httpMethod = "PUT", response = Response.class, notes = "This moves the note if the authenticated user has EDIT permissions.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response moveNote(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Move note under the destination one", method = "PUT", description = "This moves the note if the authenticated user has EDIT permissions.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response moveNote(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId,
-                           @ApiParam(value = "Destination Note id", required = true)
+                           @Parameter(description = "Destination Note id", required = true)
                            @PathParam("destinationNoteId")
                            String toNoteId) {
 
@@ -797,17 +809,17 @@ public class NotesRestService implements ResourceContainer {
   @POST
   @Path("/note/export/{exportId}/{notes}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Export notes", httpMethod = "PUT", response = Response.class, notes = "This export selected notes and provide a zip file.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response exportNote(@ApiParam(value = "List of notes ids", required = true)
+  @Operation(summary = "Export notes", method = "PUT", description = "This export selected notes and provide a zip file.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response exportNote(@Parameter(description = "List of notes ids", required = true)
   @PathParam("notes")
   String notesList,
-                             @ApiParam(value = "export ID", required = true)
+                             @Parameter(description = "export ID", required = true)
                              @PathParam("exportId")
                              int exportId,
-                             @ApiParam(value = "exportAll")
+                             @Parameter(description = "exportAll")
                              @QueryParam("exportAll")
                              Boolean exportAll) {
 
@@ -826,11 +838,11 @@ public class NotesRestService implements ResourceContainer {
   @GET
   @Path("/note/export/zip/{exportId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getExportedZip(@ApiParam(value = "List of notes ids", required = true)
+  @Operation(summary = "Export notes", method = "GET", description = "This export selected notes and provide a zip file.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getExportedZip(@Parameter(description = "List of notes ids", required = true)
   @PathParam("exportId")
   int exportId) {
 
@@ -850,11 +862,12 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/export/status/{exportId}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This export selected notes and provide a zip file.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getExportNoteStatus(@ApiParam(value = "export id", required = true)
+  @Operation(summary = "Export notes", method = "GET", description = "This export selected notes and provide a zip file.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getExportNoteStatus(@Parameter(description = "export id", required = true)
   @PathParam("exportId")
   int exportId) {
 
@@ -870,11 +883,11 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/export/cancel/{exportId}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Export notes", httpMethod = "GET", response = Response.class, notes = "This cancel export.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response cancelExportNote(@ApiParam(value = "export id", required = true)
+  @Operation(summary = "Export notes", method = "GET", description = "This cancel export.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response cancelExportNote(@Parameter(description = "export id", required = true)
   @PathParam("exportId")
   int exportId) {
 
@@ -890,17 +903,18 @@ public class NotesRestService implements ResourceContainer {
   @POST
   @Path("/note/import/{noteId}/{uploadId}")
   @RolesAllowed("users")
-  @ApiOperation(value = "Import notes from a zip file", httpMethod = "POST", response = Response.class, notes = "This import notes from defined zip file under given note.")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response importNote(@ApiParam(value = "Note id", required = true)
+  @Operation(summary = "Import notes from a zip file", method = "POST", description = "This import notes from defined zip file under given note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response importNote(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   String noteId,
-                             @ApiParam(value = "Upload id", required = true)
+                             @Parameter(description = "Upload id", required = true)
                              @PathParam("uploadId")
                              String uploadId,
-                             @ApiParam(value = "Conflict", required = true)
+                             @Parameter(description = "Conflict", required = true)
                              @QueryParam("conflict")
                              String conflict) {
 
@@ -933,10 +947,11 @@ public class NotesRestService implements ResourceContainer {
   @Path("/tree/{type}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Get node's tree", httpMethod = "GET", response = Response.class, notes = "Display the current tree of a noteBook based on is path")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
+  @Operation(summary = "Get node's tree", method = "GET", description = "Display the current tree of a noteBook based on is path")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response getTreeData(@PathParam("type")
   String type, @QueryParam(TreeNode.PATH)
   String path, @QueryParam(TreeNode.CURRENT_PATH)
@@ -1016,14 +1031,15 @@ public class NotesRestService implements ResourceContainer {
   @Path("/tree/full")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Get node's tree", httpMethod = "GET", response = Response.class, notes = "Display the current tree of a noteBook based on is path")
-  @ApiResponses(value = { @ApiResponse(code = 200, message = "Request fulfilled"),
-      @ApiResponse(code = 400, message = "Invalid query input"), @ApiResponse(code = 403, message = "Unauthorized operation"),
-      @ApiResponse(code = 404, message = "Resource not found") })
-  public Response getFullTreeData(@ApiParam(value = "Note path", required = true)
+  @Operation(summary = "Get node's tree", method = "GET", description = "Display the current tree of a noteBook based on is path")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getFullTreeData(@Parameter(description = "Note path", required = true)
   @QueryParam(TreeNode.PATH)
   String path,
-                                  @ApiParam(value = "With draft notes", required = true)
+                                  @Parameter(description = "With draft notes", required = true)
                                   @QueryParam("withDrafts")
                                   Boolean withDrafts) {
     try {
