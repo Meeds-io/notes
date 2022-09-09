@@ -278,7 +278,7 @@ export function exportNotes(notes,exportAll,exportId) {
 
   fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/${exportId}/${notes}?exportAll=${exportAll}`, {
     credentials: 'include',
-    method: 'POST',
+    method: 'GET',
   }).then((resp) => {
     if (!resp || !resp.ok) {
       throw new Error('error', resp);
@@ -316,7 +316,7 @@ export function getExportStatus(exportId) {
 export function cancelExportNotes(exportId) {
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/export/cancel/${exportId}`, {
     credentials: 'include',
-    method: 'PUT',
+    method: 'GET',
   }).then((resp) => {
     if (!resp || !resp.ok) {
       throw new Error('error', resp);
