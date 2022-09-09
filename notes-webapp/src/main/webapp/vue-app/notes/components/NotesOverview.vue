@@ -816,11 +816,13 @@ export default {
         }
       }
       for (const table of tables) {
-        if (!table.hasAttribute('summary')) {
+        if (!table.hasAttribute('summary') || table?.summary?.trim().length) {
           const customId = table.parentElement.id.split('-').pop();
           const tableSummary = document.getElementById(`summary-${customId}`);
-          if ( tableSummary !== null ) {
+          if ( tableSummary !== null && tableSummary.innerText.trim().length) {
             table.setAttribute('summary', tableSummary.innerText);
+          } else {
+            table.removeAttribute('summary');
           }
         }
       }
