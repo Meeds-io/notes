@@ -550,7 +550,9 @@ export default {
           removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
         }
       }
-
+      CKEDITOR.addCss('h1 { font-size: 32px;font-weight: bold;}');
+      CKEDITOR.addCss('h2 { font-size: 24px;font-weight: bold;}');
+      CKEDITOR.addCss('h3 { font-size: 18.5px;font-weight: bold;}');
       CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
 
