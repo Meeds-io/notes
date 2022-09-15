@@ -806,10 +806,10 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  @POST
+  @GET
   @Path("/note/export/{exportId}/{notes}")
   @RolesAllowed("users")
-  @Operation(summary = "Export notes", method = "PUT", description = "This export selected notes and provide a zip file.")
+  @Operation(summary = "Export notes", method = "GET", description = "This export selected notes and provide a zip file.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
       @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
       @ApiResponse(responseCode = "404", description = "Resource not found") })
@@ -879,7 +879,7 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  @PUT
+  @GET
   @Path("/note/export/cancel/{exportId}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
