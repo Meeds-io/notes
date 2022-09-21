@@ -2,7 +2,6 @@ import NotesOverview from './components/NotesOverview.vue';
 import NoteTreeviewDrawer from './components/NoteTreeviewDrawer.vue';
 import NotesActionsMenu from './components/NotesActionsMenu.vue';
 import NoteBreadcrumb from './components/NoteBreadcrumb.vue';
-import NoteHistoryDrawer from './components/NoteHistoryDrawer.vue';
 import NoteImportDrawer from './components/NoteImportDrawer.vue';
 import AttachmentsNotesUploadInput from './components/importNotes/AttachmentsNotesUploadInput.vue';
 import AttachmentsUploadedNotes from './components/importNotes/AttachmentsNotesUploaded.vue';
@@ -14,7 +13,6 @@ const components = {
   'note-treeview-drawer': NoteTreeviewDrawer,
   'notes-actions-menu': NotesActionsMenu,
   'note-breadcrumb': NoteBreadcrumb,
-  'note-history-drawer': NoteHistoryDrawer,
   'note-import-drawer': NoteImportDrawer,
   'attachments-notes-upload-input': AttachmentsNotesUploadInput,
   'attachments-uploaded-notes': AttachmentsUploadedNotes,

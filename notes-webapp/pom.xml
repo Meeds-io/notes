@@ -77,7 +77,7 @@
           <artifactId>lesscss-maven-plugin</artifactId>
           <executions>
             <execution>
-              <id>core</id>
+              <id>notes</id>
               <configuration>
                 <!-- SourceDirectory shouldn't exist and we should have as default the lesss folder in /src/main/less     -->
                 <sourceDirectory>${project.build.directory}/src/main/webapp/skin/less</sourceDirectory>

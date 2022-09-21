@@ -1,5 +1,5 @@
 <template>
-  <v-app 
+  <v-app
     class="transparent"
     role="main"
     flat>
@@ -114,7 +114,7 @@
         </div>
         <v-divider class="my-4" />
         <div class="note-content" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
-          <div v-if="showManualChild" id="showManualChild"> 
+          <div v-if="showManualChild" id="showManualChild">
             <v-treeview
               dense
               :items="noteAllChildren"
@@ -236,7 +236,7 @@
     </div>
     <notes-actions-menu
       :note="note"
-      :default-path="defaultPath" 
+      :default-path="defaultPath"
       @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
       @export-pdf="createPDF(note)"
       @open-history="$refs.noteVersionsHistoryDrawer.open(noteVersions,isManager)"
@@ -244,10 +244,14 @@
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
       ref="notesBreadcrumb" />
-    <note-history-drawer
-      ref="noteVersionsHistoryDrawer"
+    <version-history-drawer
+      :versions="noteVersionsArray"
+      :can-manage="this.note.canManage"
+      :show-load-more="hasMoreVersions"
       @open-version="displayVersion($event)"
-      @restore-version="restoreVersion($event)" />
+      @restore-version="restoreVersion($event)"
+      @load-more="loadMoreVersions"
+      ref="noteVersionsHistoryDrawer" />
     <note-import-drawer
       ref="noteImportDrawer" />
     <exo-confirm-dialog
@@ -280,6 +284,7 @@ import JSPDF from 'jspdf';
 export default {
   data() {
     return {
+      versionsPageSize: null,
       note: {},
       lastUpdatedTime: '',
       lang: eXo.env.portal.language,
@@ -305,7 +310,7 @@ export default {
       emptyNoteNoManager: '/notes/images/no-content-no-manager.png',
       defaultPath: 'Home',
       existingNote: true,
-      currentPath: window.location.pathname, 
+      currentPath: window.location.pathname,
       currentNoteBreadcrumb: [],
       alert: false,
       type: '',
@@ -323,7 +328,7 @@ export default {
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
       hasManualChildren: false,
       childNodes: [],
-      exportStatus: '', 
+      exportStatus: '',
       exportId: 0,
       popStateChange: false
     };
@@ -366,15 +371,24 @@ export default {
       if (this.exportStatus.status==='ZIP_CREATED'){
         this.stopGetSatus();
         this.getExportedZip();
-        this.exportStatus={};  
+        this.exportStatus={};
       }
       if (this.exportStatus.status===null){
         this.stopGetSatus();
-        this.exportStatus={};  
+        this.exportStatus={};
       }
     }
   },
   computed: {
+    noteVersionsArray() {
+      return this.noteVersions.slice(0, this.versionsPageSize);
+    },
+    allNoteVersionsCount() {
+      return this.noteVersions.length;
+    },
+    hasMoreVersions() {
+      return this.allNoteVersionsCount > this.versionsPageSize;
+    },
     showManualChild() {
       return this.hasManualChildren;
     },
@@ -448,7 +462,7 @@ export default {
         } else {
           return 'homeNote';
         }
-        
+
       }
     },
     noteId() {
@@ -515,6 +529,9 @@ export default {
     this.handleChangePages();
   },
   methods: {
+    loadMoreVersions(){
+      this.versionsPageSize += this.versionsPageSize;
+    },
     handleChangePages() {
       if (this.noteId) {
         if (this.isDraft) {
@@ -595,7 +612,7 @@ export default {
         elm.href = URL.createObjectURL(bytes);
         elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}.zip`);
         elm.click();
-        this.exportId=0;  
+        this.exportId=0;
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.exported')});
       }).catch(e => {
         console.error('Error when export note page', e);
@@ -608,12 +625,12 @@ export default {
     getExportStatus() {
       this.intervalId = window.setInterval(() =>{
         return this.$notesService.getExportStatus(this.exportId).then(data => {
-          this.exportStatus = data; 
+          this.exportStatus = data;
           this.$refs.notesBreadcrumb.setExportStaus(this.exportStatus);
         }).catch(() => {
           this.stopGetSatus();
         });
-      }, 500);    
+      }, 500);
     },
     stopGetSatus(){
       clearInterval(this.intervalId);
@@ -701,15 +718,15 @@ export default {
           parentsBreadcrumb = parentsBreadcrumb.concat('>');
         }
       }
-      this.confirmMessage = `${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo1', { 0: `<b>${this.note && this.note.title}</b>` }) : 
+      this.confirmMessage = `${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo1', { 0: `<b>${this.note && this.note.title}</b>` }) :
         this.$t('popup.msg.confirmation.DeleteInfo1', { 0: `<b>${this.note && this.note.title}</b>` })}`
-        + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
-        + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
-        + `<li>${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo5', {
-          0: `<b>${parentsBreadcrumb}</b>`
-        }) : this.$t('popup.msg.confirmation.DeleteInfo5', {
-          0: `<b>${parentsBreadcrumb}</b>`
-        })}</li>`;
+          + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
+          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
+          + `<li>${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo5', {
+            0: `<b>${parentsBreadcrumb}</b>`
+          }) : this.$t('popup.msg.confirmation.DeleteInfo5', {
+            0: `<b>${parentsBreadcrumb}</b>`
+          })}</li>`;
       this.$refs.DeleteNoteDialog.open();
     },
     createPDF(note) {
@@ -771,14 +788,17 @@ export default {
       localStorage.setItem(`displayAlertSpaceId-${this.spaceId}`, 'already_display');
     },
     getNoteVersionByNoteId(noteId) {
+      this.noteVersionsArray = [];
+      this.noteVersions = [];
       return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
         this.noteVersions = data && data.reverse() || [];
         this.displayVersion(this.noteVersions[0]);
-        this.$root.$emit('refresh-versions-history', this.noteVersions );
+        this.$root.$emit('version-restored', this.noteVersions[0]);
       });
     },
     displayVersion(version) {
       this.actualVersion = version;
+      this.actualVersion.current = true;
       this.note.content = version.content;
     },
     restoreVersion(version) {
@@ -793,6 +813,7 @@ export default {
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
+          this.$root.$emit('version-restore-error');
         })
         .finally(() => {
           this.getNoteVersionByNoteId(this.note.id);
@@ -839,7 +860,12 @@ export default {
     },
     openNoteVersionsHistoryDrawer() {
       if (!this.isDraft) {
-        this.$refs.noteVersionsHistoryDrawer.open(this.noteVersions, this.note.canManage);
+        if ( this.note.canManage ) {
+          this.versionsPageSize = Math.round((window.innerHeight-79)/80);
+        } else {
+          this.versionsPageSize = Math.round((window.innerHeight-79)/60);
+        }
+        this.$refs.noteVersionsHistoryDrawer.open();
       }
     },
     retrieveNoteTreeById() {
