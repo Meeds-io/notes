@@ -34,6 +34,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -99,14 +100,17 @@ public class NoteServiceImpl implements NoteService {
 
   private final SpaceService                              spaceService;
 
-  public NoteServiceImpl(ConfigurationManager configManager,
-                         UserACL userACL,
-                         DataStorage dataStorage,
-                         CacheService cacheService,
-                         OrganizationService orgService,
-                         WikiService wikiService,
-                         IdentityManager identityManager,
-                         SpaceService spaceService) {
+  private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
+
+  public NoteServiceImpl( ConfigurationManager configManager,
+                          UserACL userACL,
+                          DataStorage dataStorage,
+                          CacheService cacheService,
+                          OrganizationService orgService,
+                          WikiService wikiService,
+                          IdentityManager identityManager,
+                          SpaceService spaceService,
+                          HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.configManager = configManager;
     this.userACL = userACL;
     this.dataStorage = dataStorage;
@@ -116,6 +120,7 @@ public class NoteServiceImpl implements NoteService {
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
+    this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
 
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
@@ -1214,13 +1219,15 @@ public class NoteServiceImpl implements NoteService {
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        note.setContent(note.getContent());
+        String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+        note.setContent(processedContent);
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            note.setContent(note.getContent());
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
 
           }
@@ -1240,14 +1247,15 @@ public class NoteServiceImpl implements NoteService {
             }
             note.setName(newTitle);
             note.setTitle(newTitle);
-            note.setContent(note.getContent());
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
           }
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
-              note_2.setContent(note.getContent());
               note_2.setTitle(note.getTitle());
-              note_2.setContent(note.getContent());
+              String processedContent = htmlUploadImageProcessor.processSpaceImages(note_2.getContent(), wiki.getOwner(), null);
+              note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
             }
@@ -1258,8 +1266,9 @@ public class NoteServiceImpl implements NoteService {
       if (StringUtils.isNotEmpty(conflict) && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
         if (!note.getContent().equals(note_1.getContent())) {
-          note.setContent(note.getContent());
-          note_1.setContent(note.getContent());
+          String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+          note.setContent(processedContent);
+          note_1.setContent(processedContent);
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
           createVersionOfNote(note_1, userIdentity.getUserId());
         }
