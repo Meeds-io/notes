@@ -43,6 +43,7 @@
         <include>${project.groupId}:*:jar</include>
         <include>commons-configuration:commons-configuration:jar</include>
         <include>org.suigeneris:jrcs.rcs:jar</include>
+        <include>org.jsoup:jsoup:jar</include>
       </includes>
       <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
       <useProjectArtifact>false</useProjectArtifact>
