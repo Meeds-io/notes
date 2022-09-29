@@ -788,10 +788,12 @@ export default {
       localStorage.setItem(`displayAlertSpaceId-${this.spaceId}`, 'already_display');
     },
     getNoteVersionByNoteId(noteId) {
+      this.noteVersionsArray = [];
+      this.noteVersions = [];
       return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
         this.noteVersions = data && data.reverse() || [];
         this.displayVersion(this.noteVersions[0]);
-        this.$root.$emit('refresh-versions-history', this.noteVersions );
+        this.$root.$emit('version-restored', this.noteVersions[0]);
       });
     },
     displayVersion(version) {
@@ -811,6 +813,7 @@ export default {
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
+          this.$root.$emit('version-restore-error');
         })
         .finally(() => {
           this.getNoteVersionByNoteId(this.note.id);
