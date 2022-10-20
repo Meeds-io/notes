@@ -281,6 +281,7 @@ export default {
   mounted() {
     if (this.spaceId) {
       this.init();
+      this.$root.$on('initCkeditor',() => this.initCKEditor());
     }
   },
   methods: {
