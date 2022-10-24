@@ -17,22 +17,44 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.gatein.api.EntityNotFoundException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -43,50 +65,43 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.ImportList;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.BreadcrumbData;
+import org.exoplatform.wiki.service.DataStorage;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.PageUpdateType;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
-import org.gatein.api.EntityNotFoundException;
-
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class NoteServiceImpl implements NoteService {
 
-  public static final String                              CACHE_NAME                   = "wiki.PageRenderingCache";
+  public static final String                              CACHE_NAME          = "wiki.PageRenderingCache";
 
-  public static final String                              ATT_CACHE_NAME               = "wiki.PageAttachmentCache";
+  public static final String                              ATT_CACHE_NAME      = "wiki.PageAttachmentCache";
 
-  private static final String                             UNTITLED_PREFIX              = "Untitled_";
+  private static final String                             UNTITLED_PREFIX     = "Untitled_";
 
-  private static final String                             TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+  private static final String                             TEMP_DIRECTORY_PATH = "java.io.tmpdir";
 
-  private static final Log                                log                          =
-                                                              ExoLogger.getLogger(NoteServiceImpl.class);
-
-  private final ConfigurationManager                      configManager;
-
-  private final OrganizationService                       orgService;
+  private static final Log                                log                 = ExoLogger.getLogger(NoteServiceImpl.class);
 
   private final WikiService                               wikiService;
-
-  private final UserACL                                   userACL;
 
   private final DataStorage                               dataStorage;
 
@@ -94,7 +109,7 @@ public class NoteServiceImpl implements NoteService {
 
   private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
 
-  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                 = new ConcurrentHashMap<>();
+  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap        = new ConcurrentHashMap<>();
 
   private final IdentityManager                           identityManager;
 
@@ -102,19 +117,27 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
-  public NoteServiceImpl( ConfigurationManager configManager,
-                          UserACL userACL,
-                          DataStorage dataStorage,
+  public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
-                          OrganizationService orgService,
+                          WikiService wikiService,
+                          IdentityManager identityManager,
+                          SpaceService spaceService) {
+    this.dataStorage = dataStorage;
+    this.wikiService = wikiService;
+    this.identityManager = identityManager;
+    this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
+    this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
+    this.spaceService = spaceService;
+    this.htmlUploadImageProcessor = null;
+  }
+  
+  public NoteServiceImpl( DataStorage dataStorage,
+                          CacheService cacheService,
                           WikiService wikiService,
                           IdentityManager identityManager,
                           SpaceService spaceService,
                           HTMLUploadImageProcessor htmlUploadImageProcessor) {
-    this.configManager = configManager;
-    this.userACL = userACL;
     this.dataStorage = dataStorage;
-    this.orgService = orgService;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
