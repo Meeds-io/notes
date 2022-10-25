@@ -25,6 +25,8 @@ import lombok.Data;
 @Data
 public class PageHistory {
 
+  private Long   id;
+
   private Long   versionNumber;
 
   private String author;
