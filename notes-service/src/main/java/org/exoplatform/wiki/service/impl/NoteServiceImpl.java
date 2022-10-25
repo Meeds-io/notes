@@ -1237,19 +1237,20 @@ public class NoteServiceImpl implements NoteService {
     if (parent_ == null) {
       parent_ = wiki.getWikiHome();
     }
+    String imagesSubLocationPath = "Documents/notes/images";
     Page note_ = note;
     if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())) {
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+        String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
         note.setContent(processedContent);
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
             note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
 
@@ -1270,14 +1271,14 @@ public class NoteServiceImpl implements NoteService {
             }
             note.setName(newTitle);
             note.setTitle(newTitle);
-            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
             note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
           }
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
               note_2.setTitle(note.getTitle());
-              String processedContent = htmlUploadImageProcessor.processSpaceImages(note_2.getContent(), wiki.getOwner(), null);
+              String processedContent = htmlUploadImageProcessor.processSpaceImages(note_2.getContent(), wiki.getOwner(), imagesSubLocationPath);
               note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
@@ -1289,7 +1290,7 @@ public class NoteServiceImpl implements NoteService {
       if (StringUtils.isNotEmpty(conflict) && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
         if (!note.getContent().equals(note_1.getContent())) {
-          String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), null);
+          String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
           note.setContent(processedContent);
           note_1.setContent(processedContent);
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
