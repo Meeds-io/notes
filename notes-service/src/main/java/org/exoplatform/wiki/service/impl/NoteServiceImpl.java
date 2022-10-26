@@ -17,21 +17,44 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.gatein.api.EntityNotFoundException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -40,47 +63,37 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mow.api.*;
+import org.exoplatform.wiki.mow.api.DraftPage;
+import org.exoplatform.wiki.mow.api.ImportList;
+import org.exoplatform.wiki.mow.api.NoteToExport;
+import org.exoplatform.wiki.mow.api.PageHistory;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.BreadcrumbData;
+import org.exoplatform.wiki.service.DataStorage;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.PageUpdateType;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
-import org.gatein.api.EntityNotFoundException;
-
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class NoteServiceImpl implements NoteService {
 
-  public static final String                              CACHE_NAME                   = "wiki.PageRenderingCache";
+  public static final String                              CACHE_NAME          = "wiki.PageRenderingCache";
 
-  public static final String                              ATT_CACHE_NAME               = "wiki.PageAttachmentCache";
+  public static final String                              ATT_CACHE_NAME      = "wiki.PageAttachmentCache";
 
-  private static final String                             UNTITLED_PREFIX              = "Untitled_";
+  private static final String                             UNTITLED_PREFIX     = "Untitled_";
 
-  private static final String                             TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+  private static final String                             TEMP_DIRECTORY_PATH = "java.io.tmpdir";
 
-  private static final Log                                log                          =
-                                                              ExoLogger.getLogger(NoteServiceImpl.class);
-
-  private final ConfigurationManager                      configManager;
-
-  private final OrganizationService                       orgService;
+  private static final Log                                log                 = ExoLogger.getLogger(NoteServiceImpl.class);
 
   private final WikiService                               wikiService;
-
-  private final UserACL                                   userACL;
 
   private final DataStorage                               dataStorage;
 
@@ -88,29 +101,41 @@ public class NoteServiceImpl implements NoteService {
 
   private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
 
-  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                 = new ConcurrentHashMap<>();
+  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap        = new ConcurrentHashMap<>();
 
   private final IdentityManager                           identityManager;
 
   private final SpaceService                              spaceService;
 
-  public NoteServiceImpl(ConfigurationManager configManager,
-                         UserACL userACL,
-                         DataStorage dataStorage,
-                         CacheService cacheService,
-                         OrganizationService orgService,
-                         WikiService wikiService,
-                         IdentityManager identityManager,
-                         SpaceService spaceService) {
-    this.configManager = configManager;
-    this.userACL = userACL;
+  private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
+
+  public NoteServiceImpl( DataStorage dataStorage,
+                          CacheService cacheService,
+                          WikiService wikiService,
+                          IdentityManager identityManager,
+                          SpaceService spaceService) {
     this.dataStorage = dataStorage;
-    this.orgService = orgService;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
+    this.htmlUploadImageProcessor = null;
+  }
+  
+  public NoteServiceImpl( DataStorage dataStorage,
+                          CacheService cacheService,
+                          WikiService wikiService,
+                          IdentityManager identityManager,
+                          SpaceService spaceService,
+                          HTMLUploadImageProcessor htmlUploadImageProcessor) {
+    this.dataStorage = dataStorage;
+    this.wikiService = wikiService;
+    this.identityManager = identityManager;
+    this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
+    this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
+    this.spaceService = spaceService;
+    this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
 
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
@@ -1176,18 +1201,21 @@ public class NoteServiceImpl implements NoteService {
     if (parent_ == null) {
       parent_ = wiki.getWikiHome();
     }
+    String imagesSubLocationPath = "Documents/notes/images";
     Page note_ = note;
     if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())) {
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        note.setContent(note.getContent());
+        String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
+        note.setContent(processedContent);
         note_ = createNote(wiki, parent_.getName(), note, userIdentity);
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            note.setContent(note.getContent());
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
+            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
 
           }
@@ -1207,14 +1235,15 @@ public class NoteServiceImpl implements NoteService {
             }
             note.setName(newTitle);
             note.setTitle(newTitle);
-            note.setContent(note.getContent());
+            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
+            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
           }
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
-              note_2.setContent(note.getContent());
               note_2.setTitle(note.getTitle());
-              note_2.setContent(note.getContent());
+              String processedContent = htmlUploadImageProcessor.processSpaceImages(note_2.getContent(), wiki.getOwner(), imagesSubLocationPath);
+              note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
             }
@@ -1225,8 +1254,9 @@ public class NoteServiceImpl implements NoteService {
       if (StringUtils.isNotEmpty(conflict) && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
         if (!note.getContent().equals(note_1.getContent())) {
-          note.setContent(note.getContent());
-          note_1.setContent(note.getContent());
+          String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
+          note.setContent(processedContent);
+          note_1.setContent(processedContent);
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
           createVersionOfNote(note_1, userIdentity.getUserId());
         }
