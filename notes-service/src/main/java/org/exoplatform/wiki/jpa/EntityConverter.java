@@ -449,6 +449,7 @@ public class EntityConverter {
     PageHistory pageHistory = null;
     if (pageVersionEntity != null) {
       pageHistory = new PageHistory();
+      pageHistory.setId(pageVersionEntity.getId());
       pageHistory.setVersionNumber(pageVersionEntity.getVersionNumber());
       pageHistory.setAuthor(pageVersionEntity.getAuthor());
       pageHistory.setContent(pageVersionEntity.getContent());
