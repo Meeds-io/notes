@@ -382,7 +382,6 @@ public interface NoteService {
    *
    * @param note   The Note
    * @return Content to be rendred
-   * @throws WikiException
    */
   String getNoteRenderedContent(Page note);
 

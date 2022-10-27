@@ -1149,7 +1149,6 @@ public class NoteServiceImpl implements NoteService {
    * @param conflict     import mode if there in conflicts it can be : overwrite,
    *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
-   * @return
    * @throws WikiException
    */
   @Override
@@ -1168,7 +1167,6 @@ public class NoteServiceImpl implements NoteService {
    * @param conflict     import mode if there in conflicts it can be : overwrite,
    *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
-   * @return
    * @throws WikiException
    */
   @Override
@@ -1227,7 +1225,6 @@ public class NoteServiceImpl implements NoteService {
    * @param conflict     import mode if there in conflicts it can be : overwrite,
    *                     duplicate, update or nothing
    * @param userIdentity Identity of the user that execute the import
-   * @return
    * @throws WikiException
    */
   public void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException,
