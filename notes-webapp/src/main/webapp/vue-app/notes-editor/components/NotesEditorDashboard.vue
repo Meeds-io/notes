@@ -281,7 +281,10 @@ export default {
   mounted() {
     if (this.spaceId) {
       this.init();
-      this.$root.$on('initCkeditor',() => this.initCKEditor());
+      this.$root.$on('initCkeditor',() => {
+        this.initCKEditor();
+        CKEDITOR.instances.notesContent.fire('mode');
+      });
     }
   },
   methods: {
