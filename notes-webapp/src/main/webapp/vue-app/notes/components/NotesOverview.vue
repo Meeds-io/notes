@@ -532,7 +532,7 @@ export default {
     },
     addNote() {
       if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&appName=${this.appName}`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}`, '_blank');
       }
     },
     editNote() {
