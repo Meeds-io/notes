@@ -177,5 +177,25 @@
       <path>/javascript/eXo/wiki/jspdf.js</path>
     </script>
    </module>
+
+  <module>
+    <name>engagementCenterActionsNoteExtensions</name>
+    <load-group>engagement-center-user-actions</load-group>
+    <script>
+      <path>/javascript/engagementCenterExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
   
 </gatein-resources>
