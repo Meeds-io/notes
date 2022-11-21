@@ -4,7 +4,7 @@
   <parent>
     <artifactId>notes</artifactId>
     <groupId>org.exoplatform.addons.notes</groupId>
-    <version>1.2.x-meed-SNAPSHOT</version>
+    <version>1.2.0-meed-20221121</version>
   </parent>
   <artifactId>notes-webapp</artifactId>
   <packaging>war</packaging>
