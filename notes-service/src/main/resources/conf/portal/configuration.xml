@@ -103,12 +103,6 @@
     </init-params>
   </component>
 
-
-  <component>
-    <key>org.exoplatform.commons.api.search.SearchServiceConnector</key>
-    <type>org.exoplatform.wiki.service.impl.WikiSearchServiceConnector</type>
-  </component>
-
   <component>
     <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
   </component>
