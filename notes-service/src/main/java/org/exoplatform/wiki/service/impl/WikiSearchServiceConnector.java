@@ -20,9 +20,7 @@
 package org.exoplatform.wiki.service.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.commons.api.search.SearchServiceConnector;
-import org.exoplatform.commons.api.search.data.SearchContext;
-import org.exoplatform.commons.api.search.data.SearchResult;
+
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.xml.InitParams;
@@ -36,6 +34,10 @@ import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.Utils;
+
+import io.meeds.notes.legacy.api.search.SearchServiceConnector;
+import io.meeds.notes.legacy.api.search.data.SearchContext;
+import io.meeds.notes.legacy.api.search.data.SearchResult;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
