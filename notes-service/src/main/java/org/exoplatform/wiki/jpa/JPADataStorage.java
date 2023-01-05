@@ -125,7 +125,7 @@ public class JPADataStorage implements DataStorage {
     return searchText;
   }
 
-  private SearchResult toSearchResult(org.exoplatform.commons.api.search.data.SearchResult input) {
+  private SearchResult toSearchResult(io.meeds.notes.legacy.api.search.data.SearchResult input) {
     SearchResult output = new SearchResult();
     output.setTitle(input.getTitle());
     Calendar cal = Calendar.getInstance();
