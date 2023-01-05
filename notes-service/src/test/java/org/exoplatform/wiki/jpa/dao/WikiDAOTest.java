@@ -20,9 +20,6 @@
 package org.exoplatform.wiki.jpa.dao;
 
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-
 import java.util.List;
 
 import org.junit.After;
@@ -44,9 +41,11 @@ public class WikiDAOTest extends BaseWikiJPAIntegrationTest {
     wikiDAO.deleteAll();
   }
 
+  @Override
   @After
-  public void tearDown()  {
+  public void tearDown() throws Exception  {
     wikiDAO.deleteAll();
+    super.tearDown();
   }
 
   @Test
@@ -57,7 +56,7 @@ public class WikiDAOTest extends BaseWikiJPAIntegrationTest {
     //When
     List<Long> ids = wikiDAO.findAllIds(0, 10);
     //Then
-    assertThat(ids.size(), is(2));
+    assertEquals(2, ids.size());
   }
 
   @Test
