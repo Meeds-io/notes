@@ -39,6 +39,11 @@ public class TestNoteService extends BaseTest {
   private WikiService wService;
   private NoteService noteService;
   private NotesExportService notesExportService;
+
+  public TestNoteService() {
+    setForceContainerReload(true);
+  }
+
   public void setUp() throws Exception {
     super.setUp() ;
     wService = getContainer().getComponentInstanceOfType(WikiService.class) ;

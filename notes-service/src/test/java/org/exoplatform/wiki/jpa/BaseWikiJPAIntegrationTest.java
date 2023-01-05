@@ -22,7 +22,15 @@ package org.exoplatform.wiki.jpa;
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.wiki.jpa.dao.*;
+import org.exoplatform.wiki.jpa.dao.DraftPageAttachmentDAO;
+import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
+import org.exoplatform.wiki.jpa.dao.EmotionIconDAO;
+import org.exoplatform.wiki.jpa.dao.PageAttachmentDAO;
+import org.exoplatform.wiki.jpa.dao.PageDAO;
+import org.exoplatform.wiki.jpa.dao.PageMoveDAO;
+import org.exoplatform.wiki.jpa.dao.PageVersionDAO;
+import org.exoplatform.wiki.jpa.dao.TemplateDAO;
+import org.exoplatform.wiki.jpa.dao.WikiDAO;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -40,6 +48,7 @@ public abstract class BaseWikiJPAIntegrationTest extends BaseTest {
   protected EmotionIconDAO emotionIconDAO;
   protected FileService fileService;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
 
@@ -63,6 +72,7 @@ public abstract class BaseWikiJPAIntegrationTest extends BaseTest {
     cleanDB();
   }
 
+  @Override
   public void tearDown() throws Exception {
     // Clean Data
     cleanDB();
