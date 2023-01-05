@@ -17,8 +17,14 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.exoplatform.wiki.jpa;
-import org.exoplatform.component.test.*;
-import org.exoplatform.services.security.*;
+import org.exoplatform.component.test.AbstractKernelTest;
+import org.exoplatform.component.test.ConfigurationUnit;
+import org.exoplatform.component.test.ConfiguredBy;
+import org.exoplatform.component.test.ContainerScope;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.WikiService;
@@ -30,14 +36,10 @@ import org.exoplatform.wiki.service.WikiService;
  *          exo@exoplatform.com
  * Jun 25, 2015  
  */
-@ConfiguredBy({
-  @ConfigurationUnit(scope = ContainerScope.ROOT, path = "conf/configuration.xml"),
-  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/portal/configuration.xml"),
-  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/portal/test-configuration.xml"),
-})
 public abstract class BaseTest extends AbstractKernelTest {
 
-  protected void setUp() throws Exception {
+  @Override
+  public void setUp() throws Exception {
     super.setUp();
     begin();
     Identity systemIdentity = new Identity(IdentityConstants.SYSTEM);
@@ -45,9 +47,10 @@ public abstract class BaseTest extends AbstractKernelTest {
     System.setProperty("gatein.email.domain.url", "localhost");
   }
 
-  protected void tearDown() throws Exception {
-    super.tearDown();
+  @Override
+  public void tearDown() throws Exception {
     end();
+    super.tearDown();
   }
 
   protected void startSessionAs(String user) {
