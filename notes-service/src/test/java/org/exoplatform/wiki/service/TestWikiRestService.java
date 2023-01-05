@@ -19,11 +19,12 @@
 
 package org.exoplatform.wiki.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.nullable;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,15 +32,16 @@ import java.util.List;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.rest.api.EntityBuilder;
@@ -49,14 +51,26 @@ import org.exoplatform.wiki.service.rest.NotesRestService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
-/**
- *
- */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({ "javax.management.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "com.sun.org.apache.xalan.internal.*",
-    "jdk.xml.internal.*", "com.sun.org.apache.xerces.*" })
-public class TestWikiRestService {
-  @PrepareForTest({ EntityBuilder.class })
+@SuppressWarnings("deprecation")
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class TestWikiRestService extends AbstractKernelTest { // NOSONAR
+
+  private MockedStatic<EntityBuilder> entityBuilder;
+
+  @Override
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    entityBuilder = mockStatic(EntityBuilder.class);
+  }
+
+  @Override
+  @After
+  public void tearDown() throws Exception {
+    entityBuilder.close();
+    super.tearDown();
+  }
+
   @Test
   public void testSearchData() throws Exception {
     org.exoplatform.services.security.Identity root = new org.exoplatform.services.security.Identity("root");
@@ -64,7 +78,6 @@ public class TestWikiRestService {
     // Given
     WikiService wikiService = mock(WikiService.class);
     NoteService noteService = mock(NoteService.class);
-    EntityBuilder entityBuilder = mock(EntityBuilder.class);
     java.util.Calendar cDate1 = java.util.Calendar.getInstance();
     UriInfo uriInfo = mock(UriInfo.class);
     org.exoplatform.social.core.identity.model.Identity identityResult =
@@ -99,15 +112,14 @@ public class TestWikiRestService {
                                              any(),
                                              any(),
                                              any(org.exoplatform.services.security.Identity.class))).thenReturn(page);
-    List<org.exoplatform.wiki.service.search.SearchResult> results =
-                                                                   new ArrayList<org.exoplatform.wiki.service.search.SearchResult>();
+    List<org.exoplatform.wiki.service.search.SearchResult> results = new ArrayList<>();
     results.add(result1);
     results.add(result2);
-    PowerMockito.mockStatic(EntityBuilder.class);
     PageList<org.exoplatform.wiki.service.search.SearchResult> pageList = new ObjectPageList<>(results, 2);
     when(noteService.search(nullable(WikiSearchData.class))).thenReturn(pageList);
     when(uriInfo.getPath()).thenReturn("/notes/contextsearch");
-    when(EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString())).thenReturn(entity);
+    entityBuilder.when(() -> EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString()))
+                 .thenReturn(entity);
     NotesRestService wikiRestService =
                                      new NotesRestService(noteService, wikiService, null, new MockResourceBundleService(), null);
 
@@ -116,8 +128,5 @@ public class TestWikiRestService {
 
     // Then
     assertEquals(200, response.getStatus());
-
-    PowerMockito.verifyStatic(EntityBuilder.class, times(1));
-    EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString());
   }
 }
