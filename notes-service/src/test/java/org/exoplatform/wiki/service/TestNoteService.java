@@ -316,7 +316,7 @@ public class TestNoteService extends BaseTest {
     assertNotNull(note1) ;
   }
 
-  public void testExportNotes() throws WikiException, IllegalAccessException {
+  public void testExportNotes() throws Exception {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "exportPortal");
     Page page1 = new Page("exported1", "exported1");
@@ -341,25 +341,18 @@ public class TestNoteService extends BaseTest {
     notes[1] = note2.getId();
     notes[2] = note3.getId();
 
-    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
-    File ZipFile = new File(filePath);
-    try {
-      notesExportService.startExportNotes(200231, notes, true, root);
-      boolean exportDone= false;
-      while (!exportDone){
-        if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
-          exportDone = true;
-        }
+    notesExportService.startExportNotes(200231, notes, true, root);
+    boolean exportDone= false;
+    while (!exportDone){
+      if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
+        exportDone = true;
       }
-      byte[] exportedNotes = notesExportService.getExportedNotes(200231);
-      assertNotNull(exportedNotes);
-      FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
-    } catch (Exception e) {
-      log.error("cannot Export Notes", e);
     }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200231);
+    assertNotNull(exportedNotes);
   }
 
-  public void testImportNotes() throws WikiException, IllegalAccessException, IOException {
+  public void testImportNotes() throws Exception {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
     Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
@@ -374,28 +367,23 @@ public class TestNoteService extends BaseTest {
     notes[0] = note1.getId();
     notes[1] = note2.getId();
     notes[2] = note3.getId();
-    String filePath = System.getProperty("java.io.tmpdir") + File.separator + "zippzed.zip";
-    File ZipFile = new File(filePath);
-    try {
-      notesExportService.startExportNotes(200231, notes, true, user);
-      boolean exportDone= false;
-      while (!exportDone){
-        if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
-          exportDone = true;
-        }
+    File zipFile = File.createTempFile("notesExport", ".zip");
+    notesExportService.startExportNotes(200231, notes, true, user);
+    boolean exportDone= false;
+    while (!exportDone){
+      if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
+        exportDone = true;
       }
-      byte[] exportedNotes = notesExportService.getExportedNotes(200231);
-      assertNotNull(exportedNotes);
-      FileUtils.writeByteArrayToFile(ZipFile,exportedNotes);
-    } catch (Exception e) {
-      log.error("cannot Export Notes", e);
     }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200231);
+    assertNotNull(exportedNotes);
+    FileUtils.writeByteArrayToFile(zipFile,exportedNotes);
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
     int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false, false).size();
-    noteService.importNotes(filePath, userWiki.getWikiHome(), "update", user);
-    ZipFile.delete();
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", user);
+    assertTrue(zipFile.delete());
     assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false, false).size(),childern+3);
   }
 
