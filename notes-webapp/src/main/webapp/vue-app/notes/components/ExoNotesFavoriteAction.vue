@@ -1,5 +1,6 @@
 <template>
   <favorite-button
+    :key="note.id"
     :id="note.id"
     :favorite="isFavorite"
     :absolute="absolute"
