@@ -160,12 +160,8 @@
           <value>5</value>
         </value-param>
         <value-param>
-          <name>rule-zone</name>
-          <value>Knowledge</value>
-        </value-param>
-        <value-param>
           <name>rule-enable</name>
-          <value>true</value>
+          <value>false</value>
         </value-param>
       </init-params>
     </component-plugin>
@@ -191,12 +187,8 @@
           <value>2</value>
         </value-param>
         <value-param>
-          <name>rule-zone</name>
-          <value>Knowledge</value>
-        </value-param>
-        <value-param>
           <name>rule-enable</name>
-          <value>true</value>
+          <value>false</value>
         </value-param>
       </init-params>
     </component-plugin>
