@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.apache.commons.codec.binary.StringUtils;
 
-import org.exoplatform.portal.config.DataStorage;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
@@ -67,8 +67,8 @@ public class TestWikiService extends BaseTest {
                        .noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
     Page wikiHome = siteWiki.getWikiHome();
     assertNotNull(wikiHome);
-    DataStorage dataStorage = getContainer().getComponentInstanceOfType(DataStorage.class);
-    PortalConfig portalConfig = dataStorage.getPortalConfig(defaultPortal);
+    LayoutService layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
+    PortalConfig portalConfig = layoutService.getPortalConfig(defaultPortal);
     assertNotNull(portalConfig);
     List<PermissionEntry> permissions = wikiHome.getPermissions();
     assertNotNull(permissions);
