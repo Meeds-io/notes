@@ -555,8 +555,8 @@ export default {
       CKEDITOR.addCss('h2 { font-size: 28px;font-weight: 400;}');
       CKEDITOR.addCss('h3 { font-size: 21.84px;font-weight: 400;}');
       CKEDITOR.addCss('p,li { font-size: 18.6667px;}');
-      CKEDITOR.addCss('blockquote p  { font-size: 17.5px;font-weight: 300;}');
-      CKEDITOR.addCss('.cke_editable { font-size: 14px;}');
+      CKEDITOR.addCss('blockquote p { font-size: 17.5px;font-weight: 300;}');
+      CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
 
       // this line is mandatory when a custom skin is defined
