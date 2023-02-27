@@ -237,29 +237,30 @@
           </v-list-item>
         </v-layout>
         <v-col column>
-          <v-row v-if="!exportNotes && !movePage">
-            <v-col class="my-auto">
+          <div v-if="!exportNotes && !movePage" class="d-flex mb-4">
+            <div class="flex-grow-1 me-2 d-flex content-box-sizing">
               <v-text-field
                 v-model="search"
-                class="search"
                 :placeholder=" $t('notes.label.filter') "
+                class="search mt-auto"
                 clearable
+                hide-details
                 font-size="18"
                 prepend-inner-icon="fa-filter" />
-            </v-col>
-            <v-col class="filter" cols="4">
-              <div class="btn-group">
-                <button class="btn dropdown-toggle" data-toggle="dropdown">
-                  {{ filter }}
-                  <i class="uiIconMiniArrowDown uiIconLightGray"></i><span></span>
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a href="#" @click="filter = filterOptions[0]"> {{ filterOptions[0] }} </a></li>
-                  <li><a href="#" @click="filter = filterOptions[1]"> {{ filterOptions[1] }} </a></li>
-                </ul>
-              </div>
-            </v-col>
-          </v-row>
+            </div>
+            <div class="filter">
+              <select
+                v-model="filter"
+                class="selectSpacesFilter my-auto width-auto me-2 subtitle-1 ignore-vuetify-classes d-none d-sm-inline">
+                <option
+                  v-for="filterOption in filterOptions"
+                  :key="filterOption"
+                  :value="filterOption">
+                  {{ filterOption }}
+                </option>
+              </select>
+            </div>
+          </div>
           <template v-if="home && !exportNotes && resultSearch && !search">
             <v-list-item @click.prevent="openNote(event,home)" class="ma-0 border-box-sizing">
               <v-list-item-content>
