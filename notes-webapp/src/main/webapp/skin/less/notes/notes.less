@@ -15,7 +15,6 @@
 @import "UIViewContentDisplay/Style.less";
 @import "UINotesPageContent/Style.less";
 @import "UIWikiRichTextEditor/Stylesheet.less";
-@import "../social/skin/VersionHistoryDrawer/style.less";
 
 .UIWikiToolBar {
   float: right ~'; /** orientation=lt */ ';
@@ -85,8 +84,6 @@
     z-index: 99999 !important;
 
     .uiArrowBAckIcon:before {
-      content: "\e913";
-      font-family: "PLF-FONT-ICONS" !important;
       font-style: normal;
       font-size: 22px;
     }
@@ -322,13 +319,8 @@
 
       .notes-treeview {
         .uiTreeviewIcon {
-          font-family: "PLF-FONT-ICONS" !important;
           font-style: normal;
           font-size: 20px;
-
-          &:before {
-            content: "\e698";
-          }
         }
       }
     }
@@ -548,12 +540,12 @@
 .wikiBox {
   background: @baseBackground;
   border: 1px solid @borderColor;
-  .border-radius(5px);
-  .box-shadow(0px 1px 2px rgba(0, 0, 0, 0.08));
+  border-radius: 5px;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
 
   .titleWikiBox {
-    .border-radius(5px 5px 0px 0px);
-    .box-shadow(0px 1px 2px rgba(13, 13, 13, 0.08));
+    border-radius: 5px 5px 0px 0px;
+    box-shadow: 0px 1px 2px rgba(13, 13, 13, 0.08);
     background: @primaryBackground;
     border-bottom: 1px solid @borderColor;
     margin: 0px;
@@ -675,7 +667,7 @@
 }
 
 .fileHidden {
-  .opacity(0);
+  opacity: 0;
   position: relative;
   z-index: 2;
   outline: none;
@@ -736,9 +728,11 @@
     }
 
     .resizeButton {
-      #gradient .vertical(@baseBackground, @primaryBackground);
-      .border-radius(@borderRadiusSmall 0px 0px @borderRadiusSmall);
-      .size(24px, 14px);
+      background-image: linear-gradient(to bottom, @baseBackground, @primaryBackground);
+      background-repeat: repeat-x;
+      border-radius: @borderRadiusSmall 0px 0px @borderRadiusSmall;
+      height: 24px;
+      width: 14px;
       float: right ~'; /** orientation=lt */ ';
       float: left ~'; /** orientation=rt */ ';
       margin: auto;
@@ -789,7 +783,7 @@
         border: 1px solid @borderColor;
         border-left: none ~'; /** orientation=lt */ ';
         border-right: none ~'; /** orientation=rt */ ';
-        .border-radius(0px @borderRadiusSmall @borderRadiusSmall 0px);
+        border-radius: 0px @borderRadiusSmall @borderRadiusSmall 0px;
         float: left ~'; /** orientation=lt */ ';
         float: right ~'; /** orientation=rt */ ';
       }
@@ -1128,10 +1122,9 @@
 
 /******* wiki search card ************/
 .wikiSearchCard {
-  .uiIconWiki:before {
-    font-family: "PLF-FONT-ICONS";
-    content: "\e695";
-    font-size: unset;
+  .uiIconWiki {
+    .fa();
+    .fa-book-open();
   }
 }
 
