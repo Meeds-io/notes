@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,15 +31,10 @@ import org.picocontainer.Startable;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
-import org.exoplatform.wiki.WikiException;
 
 public class NotesExportService implements Startable {
-
-  private static final Log                  log                = ExoLogger.getLogger(NotesExportService.class);
 
   private static final List<ExportResource> exportResourceList = new ArrayList<>();
 
@@ -48,17 +44,18 @@ public class NotesExportService implements Startable {
 
   private final HTMLUploadImageProcessor    htmlUploadImageProcessor;
 
-  private ExecutorService                   exportThreadPool;
+  private final ExecutorService                   exportThreadPool;
 
   public NotesExportService(NoteService noteService, WikiService wikiService, HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.noteService = noteService;
     this.wikiService = wikiService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
+    this.exportThreadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
   }
 
   @Override
   public void start() {
-    exportThreadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
+    // Nothing to start
   }
 
   @Override
@@ -74,17 +71,19 @@ public class NotesExportService implements Startable {
     }
   }
 
-  public void startExportNotes(int exportId, String[] notesToExportIds, boolean exportAll, Identity identity) throws Exception {
+  public void startExportNotes(int exportId, String[] notesToExportIds, boolean exportAll, Identity identity) {
     ExportResource exportResource = new ExportResource();
     exportResource.setExportId(exportId);
     exportResource.setStatus(ExportStatus.STARTED.name());
     exportResource.setAction(new ExportAction());
     exportResourceList.add(exportResource);
-    exportThreadPool.execute(new ExportThread(noteService,
-                                              wikiService,
-                                              this,
-                                              htmlUploadImageProcessor,
-                                              new ExportData(exportId, notesToExportIds, exportAll, identity)));
+
+    CompletableFuture.runAsync(new ExportThread(noteService,
+                                                wikiService,
+                                                this,
+                                                htmlUploadImageProcessor,
+                                                new ExportData(exportId, notesToExportIds, exportAll, identity)),
+                               exportThreadPool);
   }
 
   public void cancelExportNotes(int exportId) {
@@ -111,7 +110,7 @@ public class NotesExportService implements Startable {
       exportResourceList.remove(exportResource);
       return filesBytes;
     } else
-      return null;
+      return null; // NOSONAR
   }
 
   public ExportingStatus getStatus(int exportId) {

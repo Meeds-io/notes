@@ -19,6 +19,28 @@
 
 package org.exoplatform.wiki.service.rest;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
@@ -30,80 +52,86 @@ import org.exoplatform.wiki.mock.MockResourceBundleService;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.BreadcrumbData;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.NotesExportService;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
-import static org.powermock.api.mockito.PowerMockito.*;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ConversationState.class, EnvironmentContext.class, TreeUtils.class, Utils.class, ExoContainerContext.class,
-    ExoContainer.class })
-@PowerMockIgnore({ "javax.management.*", "jdk.internal.*", "javax.xml.*", "org.apache.xerces.*", "org.xml.*",
-        "com.sun.org.apache.*", "org.w3c.*" })
-public class NotesRestServiceTest {
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Mock
-  private NoteService      noteService;
+  private NoteService                       noteService;
 
   @Mock
-  private WikiService      noteBookService;
+  private WikiService                       noteBookService;
 
   @Mock
-  private UploadService    uploadService;
+  private UploadService                     uploadService;
 
   @Mock
-  private NotesExportService notesExportService;
+  private NotesExportService                notesExportService;
 
-  private NotesRestService notesRestService;
+  private NotesRestService                  notesRestService;
 
   @Mock
-  private Identity         identity;
+  private Identity                          identity;
 
+  private MockedStatic<ConversationState>   conversationStateStatic;
+
+  private MockedStatic<EnvironmentContext>  environmentContextStatic;
+
+  private MockedStatic<TreeUtils>           treeUtilsStatic;
+
+  private MockedStatic<Utils>               utilsStatic;
+
+  private MockedStatic<ExoContainerContext> containerContextStatic;
+
+  @Override
   @Before
   public void setUp() throws Exception {
-    this.notesRestService = new NotesRestService(noteService, noteBookService, uploadService, new MockResourceBundleService(), notesExportService);
-    PowerMockito.mockStatic(ConversationState.class);
-    ConversationState conversationState = mock(ConversationState.class);
-    when(ConversationState.getCurrent()).thenReturn(conversationState);
-    when(ConversationState.getCurrent().getIdentity()).thenReturn(identity);
+    super.setUp();
+    conversationStateStatic = mockStatic(ConversationState.class);
+    environmentContextStatic = mockStatic(EnvironmentContext.class);
+    treeUtilsStatic = mockStatic(TreeUtils.class);
+    utilsStatic = mockStatic(Utils.class);
+    containerContextStatic = mockStatic(ExoContainerContext.class);
 
-    PowerMockito.mockStatic(EnvironmentContext.class);
+    this.notesRestService = new NotesRestService(noteService,
+                                                 noteBookService,
+                                                 uploadService,
+                                                 new MockResourceBundleService(),
+                                                 notesExportService);
+    ConversationState currentConversationState = mock(ConversationState.class);
+    conversationStateStatic.when(() -> ConversationState.getCurrent()).thenReturn(currentConversationState);
+    conversationStateStatic.when(() -> ConversationState.getCurrent().getIdentity()).thenReturn(identity);
+
     EnvironmentContext environmentContext = mock(EnvironmentContext.class);
-    when(EnvironmentContext.getCurrent()).thenReturn(environmentContext);
+    environmentContextStatic.when(() -> EnvironmentContext.getCurrent()).thenReturn(environmentContext);
 
     HttpServletRequest request = mock(HttpServletRequest.class);
     when(request.getLocale()).thenReturn(new Locale("en"));
     when(environmentContext.get(HttpServletRequest.class)).thenReturn(request);
 
-    PowerMockito.mockStatic(TreeUtils.class);
-    PowerMockito.mockStatic(Utils.class);
-
-    PowerMockito.mockStatic(ExoContainerContext.class);
-    PowerMockito.mockStatic(ExoContainer.class);
     ExoContainer exoContainer = mock(ExoContainer.class);
-    when(ExoContainerContext.getCurrentContainer()).thenReturn(exoContainer);
+    containerContextStatic.when(() -> ExoContainerContext.getCurrentContainer()).thenReturn(exoContainer);
     when(exoContainer.getComponentInstanceOfType(WikiService.class)).thenReturn(noteBookService);
     when(exoContainer.getComponentInstanceOfType(NoteService.class)).thenReturn(noteService);
+  }
+
+  @Override
+  @After
+  public void tearDown() throws Exception {
+    conversationStateStatic.close();
+    environmentContextStatic.close();
+    treeUtilsStatic.close();
+    utilsStatic.close();
+    containerContextStatic.close();
+    super.tearDown();
   }
 
   @Test
@@ -139,11 +167,11 @@ public class NotesRestServiceTest {
     Response response4 = notesRestService.getNoteById("1", "note", "user", true, "source");
     assertEquals(Response.Status.OK.getStatusCode(), response4.getStatus());
 
-    doThrow(new IllegalAccessException()).when(noteService).getNoteById("1", identity, "source");
+    doThrow(new IllegalAccessException("Fake Exception")).when(noteService).getNoteById("1", identity, "source");
     Response response5 = notesRestService.getNoteById("1", "note", "user", true, "source");
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response5.getStatus());
 
-    doThrow(new RuntimeException()).when(noteService).getNoteById("1", identity, "source");
+    doThrow(new IllegalStateException("Fake Exception")).when(noteService).getNoteById("1", identity, "source");
     Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
@@ -177,10 +205,11 @@ public class NotesRestServiceTest {
     pageParams.setType("WIKI");
     List<Page> children = new ArrayList<>(List.of(page, draftPage));
     homePage.setChildren(children);
-    Deque paramsDeque = mock(Deque.class);
+    @SuppressWarnings("unchecked")
+    Deque<Object> paramsDeque = mock(Deque.class);
     when(identity.getUserId()).thenReturn("1");
-    when(TreeUtils.getPageParamsFromPath("path")).thenReturn(pageParams);
-    when(Utils.getStackParams(homePage)).thenReturn(paramsDeque);
+    treeUtilsStatic.when(() -> TreeUtils.getPageParamsFromPath("path")).thenReturn(pageParams);
+    utilsStatic.when(() -> Utils.getStackParams(homePage)).thenReturn(paramsDeque);
     when(paramsDeque.pop()).thenReturn(pageParams);
     when(noteService.getNoteOfNoteBookByName(pageParams.getType(),
                                              pageParams.getOwner(),
@@ -192,20 +221,24 @@ public class NotesRestServiceTest {
 
     when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
     when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
-    doCallRealMethod().when(TreeUtils.class, "getPathFromPageParams", ArgumentMatchers.any());
-    doCallRealMethod().when(Utils.class, "validateWikiOwner", homePage.getWikiType(), homePage.getWikiOwner());
-    doCallRealMethod().when(TreeUtils.class, "tranformToJson", ArgumentMatchers.any(), ArgumentMatchers.any());
-    when(noteService.getChildrenNoteOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), true, false)).thenReturn(children);
-    when(Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
-    when(Utils.isDescendantPage(homePage, page)).thenReturn(true);
-    when(Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
+    when(noteService.getChildrenNoteOf(homePage,
+                                       ConversationState.getCurrent().getIdentity().getUserId(),
+                                       true,
+                                       false)).thenReturn(children);
+
+    treeUtilsStatic.when(() -> TreeUtils.getPathFromPageParams(any())).thenCallRealMethod();
+    treeUtilsStatic.when(() -> TreeUtils.tranformToJson(any(), any())).thenCallRealMethod();
+
+    utilsStatic.when(() -> Utils.validateWikiOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenCallRealMethod();
+    utilsStatic.when(() -> Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, page)).thenReturn(true);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
 
     Response response = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
     Response response3 = notesRestService.getFullTreeData("path", false);
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
-
 
     doThrow(new IllegalAccessException()).when(noteService)
                                          .getNoteOfNoteBookByName(pageParams.getType(),

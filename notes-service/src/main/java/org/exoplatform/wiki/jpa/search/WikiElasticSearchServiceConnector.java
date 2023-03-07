@@ -24,13 +24,15 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.wiki.utils.Utils;
+
+import io.meeds.notes.legacy.search.es.ElasticSearchServiceConnector;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import org.exoplatform.commons.search.es.ElasticSearchException;
-import org.exoplatform.commons.search.es.ElasticSearchServiceConnector;
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.IOUtil;
