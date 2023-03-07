@@ -19,50 +19,67 @@
 
 package org.exoplatform.wiki.listener;
 
+import static org.mockito.Mockito.mockStatic;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import org.exoplatform.commons.api.notification.NotificationContext;
 import org.exoplatform.commons.api.notification.model.NotificationInfo;
-import org.exoplatform.commons.api.notification.model.PluginKey;
 import org.exoplatform.commons.api.notification.service.NotificationCompletionService;
 import org.exoplatform.commons.api.notification.service.storage.NotificationService;
 import org.exoplatform.commons.notification.impl.NotificationContextImpl;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.idgenerator.IDGeneratorService;
 import org.exoplatform.wiki.notification.Utils.NotificationsUtils;
 import org.exoplatform.wiki.notification.plugin.EditWikiNotificationPlugin;
 
-import org.apache.commons.lang3.ObjectUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.Serializable;
-import java.util.*;
-
-import static org.mockito.Mockito.when;
-
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
-public class TestEditWikiNotificationListener {
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class TestEditWikiNotificationListener extends AbstractKernelTest { // NOSONAR
 
   @Mock
-  private InitParams initParams;
+  private InitParams                        initParams;
 
-  @PrepareForTest({ CommonsUtils.class, PluginKey.class, ExoContainerContext.class })
+  private MockedStatic<CommonsUtils>        commonsUtils;
+
+  private MockedStatic<ExoContainerContext> containerContext;
+
+  @Override
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    commonsUtils = mockStatic(CommonsUtils.class);
+    containerContext = mockStatic(ExoContainerContext.class);
+  }
+
+  @Override
+  @After
+  public void tearDown() throws Exception {
+    commonsUtils.close();
+    containerContext.close();
+    super.tearDown();
+  }
+
   @Test
   public void testSendNotificationToWatchersOfWiki() {
     // Given
-    PowerMockito.mockStatic(CommonsUtils.class);
-    when(CommonsUtils.getService(NotificationService.class)).thenReturn(null);
-    when(CommonsUtils.getService(NotificationCompletionService.class)).thenReturn(null);
-    PowerMockito.mockStatic(ExoContainerContext.class);
-    when(ExoContainerContext.getService(IDGeneratorService.class)).thenReturn(new IDGeneratorService() {
+    commonsUtils.when(() -> CommonsUtils.getService(NotificationService.class)).thenReturn(null);
+    commonsUtils.when(() -> CommonsUtils.getService(NotificationCompletionService.class)).thenReturn(null);
+    containerContext.when(() -> ExoContainerContext.getService(IDGeneratorService.class)).thenReturn(new IDGeneratorService() {
 
       @Override
       public String generateStringID(Object o) {

@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!--
 
-    Copyright (C) 2009 eXo Platform SAS.
+  This file is part of the Meeds project (https://meeds.io/).
 
-    This is free software; you can redistribute it and/or modify it
-    under the terms of the GNU Lesser General Public License as
-    published by the Free Software Foundation; either version 2.1 of
-    the License, or (at your option) any later version.
+  Copyright (C) 2022 Meeds Association contact@meeds.io
 
-    This software is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this software; if not, write to the Free
-    Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-    02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
 <configuration
@@ -104,12 +103,6 @@
     </init-params>
   </component>
 
-
-  <component>
-    <key>org.exoplatform.commons.api.search.SearchServiceConnector</key>
-    <type>org.exoplatform.wiki.service.impl.WikiSearchServiceConnector</type>
-  </component>
-
   <component>
     <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
   </component>
@@ -143,6 +136,11 @@
   </component>
 
   <component>
+    <key>org.exoplatform.wiki.service.DataStorage</key>
+    <type>org.exoplatform.wiki.jpa.JPADataStorage</type>
+  </component>
+
+  <component>
     <type>org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector</type>
     <init-params>
       <value-param>
@@ -157,30 +155,6 @@
       </properties-param>
     </init-params>
   </component>
-
-  <!-- SEARCH - Override default wiki search connector (use same type 'wiki') -->
-  <external-component-plugins>
-    <target-component>org.exoplatform.commons.api.search.SearchService</target-component>
-    <component-plugin>
-      <name>ElasticSearchConnector</name>
-      <set-method>addConnector</set-method>
-      <type>org.exoplatform.wiki.jpa.search.WikiElasticUnifiedSearchServiceConnector</type>
-      <description>Wiki ElasticSearch Connector</description>
-      <init-params>
-        <properties-param>
-          <name>constructor.params</name>
-          <property name="searchType" value="note"/>
-          <property name="displayName" value="note"/>
-          <property name="index" value="notes_alias"/>
-          <property name="type" value="note-page,note-attachment"/>
-          <property name="enable" value="${exo.unified-search.connector.notes.enable:true}"/>
-          <property name="titleField" value="title"/>
-          <property name="updatedDateField" value="updatedDate"/>
-          <property name="searchFields" value="name,title,content,comment,attachment.content"/>
-        </properties-param>
-      </init-params>
-    </component-plugin>
-  </external-component-plugins>
 
   <!-- INDEXING -->
   <external-component-plugins>
@@ -306,6 +280,4 @@
     </component-plugin>
   </external-component-plugins>
 
-  <import>jar:/conf/portal/cache-configuration.xml</import>
-  
 </configuration>

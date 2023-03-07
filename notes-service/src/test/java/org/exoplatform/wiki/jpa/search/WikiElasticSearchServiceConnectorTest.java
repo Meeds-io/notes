@@ -1,28 +1,22 @@
 package org.exoplatform.wiki.jpa.search;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.exoplatform.commons.api.notification.model.PluginKey;
-import org.exoplatform.commons.api.notification.service.storage.NotificationService;
-import org.exoplatform.commons.search.es.ElasticSearchServiceConnector;
-import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.wiki.service.WikiService;
-import org.exoplatform.wiki.utils.Utils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
+import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
@@ -35,17 +29,10 @@ import org.exoplatform.social.core.space.SpaceListAccess;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.wiki.service.search.SearchResult;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.exoplatform.wiki.utils.Utils;
 
-/**
- *
- */
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({ "javax.xml.*", "org.apache.xerces.*", "org.xml.*" })
-public class WikiElasticSearchServiceConnectorTest {
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
 
   private WikiElasticSearchServiceConnector searchServiceConnector;
 
@@ -64,19 +51,36 @@ public class WikiElasticSearchServiceConnectorTest {
   @Mock
   private ConfigurationManager              configurationManager;
 
-  @PrepareForTest({CommonsUtils.class, Utils.class})
+  private MockedStatic<CommonsUtils>        commonsUtils;
+
+  private MockedStatic<Utils>               utils;
+
+  @Override
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    commonsUtils = mockStatic(CommonsUtils.class);
+    utils = mockStatic(Utils.class);
+  }
+
+  @Override
+  @After
+  public void tearDown() throws Exception {
+    commonsUtils.close();
+    utils.close();
+    super.tearDown();
+  }
+
   @Test
   public void shouldReturnResultsWithoutExcerptWhenNoHighlight() {
 
     Identity systemIdentity = new Identity(IdentityConstants.SYSTEM);
     ConversationState.setCurrent(new ConversationState(systemIdentity));
-    PowerMockito.mockStatic(CommonsUtils.class);
-    PowerMockito.mockStatic(Utils.class);
-    when(CommonsUtils.getService(SpaceService.class)).thenReturn(spaceService);
-    when(CommonsUtils.getService(IdentityManager.class)).thenReturn(identityManager);
-    when(Utils.html2text(anyString())).thenReturn("");
+    commonsUtils.when(() -> CommonsUtils.getService(SpaceService.class)).thenReturn(spaceService);
+    commonsUtils.when(() -> CommonsUtils.getService(IdentityManager.class)).thenReturn(identityManager);
+    utils.when(() -> Utils.html2text(anyString())).thenReturn("");
     // Given
-    Mockito.when(elasticSearchingClient.sendRequest(anyString(),anyString()))
+    when(elasticSearchingClient.sendRequest(anyString(),anyString()))
            .thenReturn("{\n" + "  \"took\": 939,\n" + "  \"timed_out\": false,\n" + "  \"_shards\": {\n" + "    \"total\": 5,\n"
                + "    \"successful\": 5,\n" + "    \"failed\": 0\n" + "  },\n" + "  \"hits\": {\n" + "    \"total\": 4,\n"
                + "    \"max_score\": 1.0,\n" + "    \"hits\": [{\n" + "      \"_index\": \"wiki\",\n"
@@ -126,11 +130,11 @@ public class WikiElasticSearchServiceConnectorTest {
         + "        \"post_tags\" : [\"</span>\"]\n" + "      },\n" + "      \"location\" : {\n"
         + "        \"pre_tags\" : [\"<span class='searchMatchExcerpt'>\"],\n" + "        \"post_tags\" : [\"</span>\"]\n"
         + "      }\n" + "    }\n" + "  }\n" + "}");
-    Mockito.when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
+    when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
                                                                                   "__system",
                                                                                   SpaceListAccess.Type.MEMBER));
-    Mockito.when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
-    Mockito.when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
+    when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
+    when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
 
     // when
     List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", false, 0, 20);
