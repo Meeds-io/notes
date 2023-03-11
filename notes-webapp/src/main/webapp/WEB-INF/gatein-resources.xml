@@ -101,28 +101,45 @@
     </module>
   </portlet>
 
+  <module>
+    <name>NotesActivityStreamExtension</name>
+    <load-group>ActivityStreamGRP</load-group>
+    <script>
+      <path>/javascript/notesActivityStreamExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
 
-  <portlet>
-    <name>NotesExtensions</name>
-    <module>
-      <script>
-        <path>/javascript/notesExtension.bundle.js</path>
-      </script>
-      <depends>
-        <module>extensionRegistry</module>
-      </depends>
-      <depends>
-        <module>eXoVueI18n</module>
-      </depends>
-      <depends>
-        <module>vue</module>
-      </depends>
-      <depends>
-        <module>commonVueComponents</module>
-      </depends>
-    </module>
-  </portlet>
-
+  <module>
+    <name>NotesFavoriteDrawerExtension</name>
+    <load-group>FavoriteDrawerGRP</load-group>
+    <script>
+      <path>/javascript/notesFavoriteDrawerExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
 
   <module>
     <name>wikiPageContent</name>
@@ -132,6 +149,9 @@
     </script>
     <depends>
       <module>vue</module>
+    </depends>
+    <depends>
+      <module>NotesActivityStreamExtension</module>
     </depends>
     <depends>
       <module>vueCustomElement</module>
@@ -180,6 +200,16 @@
       <path>/javascript/eXo/wiki/jspdf.js</path>
     </script>
    </module>
+
+  <module>
+    <name>vueCustomElement</name>
+    <script>
+      <path>/javascript/lib/vue-custom-element.min.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+  </module>
 
   <module>
     <name>engagementCenterActionsNoteExtensions</name>
