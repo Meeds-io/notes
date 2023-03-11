@@ -1,5 +1,5 @@
 import './initComponents.js';
-import {initNotesExtensions} from '../../javascript/eXo/wiki/notesExtensions.js';
+import {initNotesExtensions} from './extensions.js';
 
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 
