@@ -548,11 +548,11 @@ export default {
     },
     addNote() {
       if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&showMaxWindow=true&hideSharedLayout=true`, '_blank');
       }
     },
     editNote() {
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}`, '_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
