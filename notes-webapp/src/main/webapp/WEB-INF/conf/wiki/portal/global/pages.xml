@@ -26,6 +26,7 @@
     <title>Notes Editor</title>
     <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
     <edit-permission>*:/platform/administrators</edit-permission>
+    <show-max-window>true</show-max-window>
     <container id="top-notes-editor-container" template="system:/groovy/portal/webui/container/UIAddOnContainer.gtmpl">
       <name>top-notes-editor-container</name>
       <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
