@@ -647,13 +647,6 @@ export default {
         console.error('Error when getting note', e);
         this.existingNote = false;
       }).finally(() => {
-        if (!this.note.canManage && !this.alertWarningDisplayed){
-          const messageObject = {
-            type: 'warning',
-            message: `${this.$t('notes.alert.warning.label.notification')}`
-          };
-          this.displayMessage(messageObject, true);
-        }
         this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeView-items', this.note);
       });
@@ -681,14 +674,6 @@ export default {
         console.error('Error when getting note', e);
         this.existingNote = false;
       }).finally(() => {
-        const alertDisplayed = localStorage.getItem(`displayAlertSpaceId-${this.spaceId}`);
-        if (!this.note.canManage && !(alertDisplayed === 'already_display')){
-          const messageObject = {
-            type: 'warning',
-            message: `${this.$t('notes.alert.warning.label.notification')}`
-          };
-          this.displayMessage(messageObject, true);
-        }
         this.$root.$applicationLoaded();
         this.$root.$emit('refresh-treeView-items', this.note);
       });
