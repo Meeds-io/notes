@@ -36,11 +36,11 @@ import org.exoplatform.wiki.utils.NoteConstants;
 @Asynchronous
 public class GamificationWikiListener extends PageWikiListener {
 
-  private static final Log      LOG                           = ExoLogger.getLogger(GamificationWikiListener.class);
-
   private static final String   GAMIFICATION_WIKI_ADD_PAGE    = "addWikiPage";
 
   private static final String   GAMIFICATION_WIKI_UPDATE_PAGE = "updateWikiPage";
+  
+  private static final String   NOTES_OBJECT_TYPE             = "notes";
 
   protected RuleService         ruleService;
 
@@ -58,7 +58,7 @@ public class GamificationWikiListener extends PageWikiListener {
   }
 
   @Override
-  public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+  public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) {
     if (NoteConstants.NOTE_HOME_NAME.equals(pageId)) {
       // catch the case of the Wiki Home added as it's created by the system,
       // not by users.
@@ -72,11 +72,10 @@ public class GamificationWikiListener extends PageWikiListener {
       String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
 
       // Compute user id
-      String actorId = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, actorUsername, false).getId();
+      String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
 
-      gamificationService.createHistory(GAMIFICATION_WIKI_ADD_PAGE, actorId, actorId, page.getUrl());
+      gamificationService.createHistory(GAMIFICATION_WIKI_ADD_PAGE, actorId, actorId, page.getId(), NOTES_OBJECT_TYPE);
     }
-
   }
 
   @Override
@@ -100,11 +99,10 @@ public class GamificationWikiListener extends PageWikiListener {
                              String wikiOwner,
                              String pageId,
                              Page page,
-                             PageUpdateType wikiUpdateType) throws WikiException {
+                             PageUpdateType wikiUpdateType) {
     // Generate an activity only in the following cases
     if (page != null && wikiUpdateType != null
-        && (wikiUpdateType.equals(PageUpdateType.ADD_PAGE)
-            || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT)
+        && (wikiUpdateType.equals(PageUpdateType.ADD_PAGE) || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT)
             || wikiUpdateType.equals(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE))
         && ConversationState.getCurrent() != null) {
 
@@ -112,9 +110,9 @@ public class GamificationWikiListener extends PageWikiListener {
       String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
 
       // Compute user id
-      String actorId = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, actorUsername, false).getId();
+      String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
 
-      gamificationService.createHistory(GAMIFICATION_WIKI_UPDATE_PAGE, actorId, actorId, page.getUrl());
+      gamificationService.createHistory(GAMIFICATION_WIKI_UPDATE_PAGE, actorId, actorId, page.getId(), NOTES_OBJECT_TYPE);
     }
   }
 }
