@@ -565,7 +565,7 @@ export default {
       const self = this;
 
       $('textarea#notesContent').ckeditor({
-        customConfig: '/commons-extension/ckeditorCustom/config.js',
+        customConfig: `${eXo.env.portal.context}/${eXo.env.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
         extraPlugins: extraPlugins,
         removePlugins: removePlugins,
         allowedContent: true,
