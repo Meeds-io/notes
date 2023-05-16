@@ -137,11 +137,11 @@
   </external-component-plugins>
 
   <external-component-plugins profiles="gamification">
-    <target-component>org.exoplatform.addons.gamification.service.setting.rule.RuleRegistry</target-component>
+    <target-component>io.meeds.gamification.service.RuleRegistry</target-component>
     <component-plugin>
       <name>rule.AddWikiPage</name>
       <set-method>addPlugin</set-method>
-      <type>org.exoplatform.addons.gamification.service.setting.rule.model.RuleConfig</type>
+      <type>io.meeds.gamification.plugin.RuleConfigPlugin</type>
       <init-params>
         <value-param>
           <name>rule-title</name>
@@ -168,7 +168,7 @@
     <component-plugin>
       <name>rule.UpdateWikiPage</name>
       <set-method>addPlugin</set-method>
-      <type>org.exoplatform.addons.gamification.service.setting.rule.model.RuleConfig</type>
+      <type>io.meeds.gamification.plugin.RuleConfigPlugin</type>
       <init-params>
         <value-param>
           <name>rule-title</name>

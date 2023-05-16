@@ -18,17 +18,17 @@
  */
 package org.exoplatform.wiki.integration.gamification;
 
-import static org.exoplatform.addons.gamification.GamificationConstant.EVENT_NAME;
-import static org.exoplatform.addons.gamification.GamificationConstant.OBJECT_ID_PARAM;
-import static org.exoplatform.addons.gamification.GamificationConstant.OBJECT_TYPE_PARAM;
-import static org.exoplatform.addons.gamification.GamificationConstant.RECEIVER_ID;
-import static org.exoplatform.addons.gamification.GamificationConstant.SENDER_ID;
-import static org.exoplatform.addons.gamification.listener.generic.GamificationGenericListener.GENERIC_EVENT_NAME;
+import static io.meeds.gamification.constant.GamificationConstant.EVENT_NAME;
+import static io.meeds.gamification.constant.GamificationConstant.OBJECT_ID_PARAM;
+import static io.meeds.gamification.constant.GamificationConstant.OBJECT_TYPE_PARAM;
+import static io.meeds.gamification.constant.GamificationConstant.RECEIVER_ID;
+import static io.meeds.gamification.constant.GamificationConstant.SENDER_ID;
+import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.exoplatform.addons.gamification.service.configuration.RuleService;
+import io.meeds.gamification.service.RuleService;
 import org.exoplatform.services.listener.Asynchronous;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.ConversationState;
