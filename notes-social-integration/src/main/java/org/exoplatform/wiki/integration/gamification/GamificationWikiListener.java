@@ -18,14 +18,20 @@
  */
 package org.exoplatform.wiki.integration.gamification;
 
-import org.exoplatform.addons.gamification.entities.domain.effective.GamificationActionsHistory;
-import org.exoplatform.addons.gamification.service.configuration.RuleService;
-import org.exoplatform.addons.gamification.service.effective.GamificationService;
+import static io.meeds.gamification.constant.GamificationConstant.EVENT_NAME;
+import static io.meeds.gamification.constant.GamificationConstant.OBJECT_ID_PARAM;
+import static io.meeds.gamification.constant.GamificationConstant.OBJECT_TYPE_PARAM;
+import static io.meeds.gamification.constant.GamificationConstant.RECEIVER_ID;
+import static io.meeds.gamification.constant.GamificationConstant.SENDER_ID;
+import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import io.meeds.gamification.service.RuleService;
 import org.exoplatform.services.listener.Asynchronous;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
+import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
@@ -46,15 +52,15 @@ public class GamificationWikiListener extends PageWikiListener {
 
   protected IdentityManager     identityManager;
 
-  protected GamificationService gamificationService;
+  protected ListenerService     listenerService;
 
   public GamificationWikiListener(RuleService ruleService,
                                   IdentityManager identityManager,
-                                  GamificationService gamificationService) {
+                                  ListenerService listenerService) {
 
     this.ruleService = ruleService;
     this.identityManager = identityManager;
-    this.gamificationService = gamificationService;
+    this.listenerService = listenerService;
   }
 
   @Override
@@ -65,33 +71,29 @@ public class GamificationWikiListener extends PageWikiListener {
       return;
     }
 
-    GamificationActionsHistory aHistory = null;
     if (ConversationState.getCurrent() != null) {
-
       // Get the space's creator username
       String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
-
       // Compute user id
       String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
-
-      gamificationService.createHistory(GAMIFICATION_WIKI_ADD_PAGE, actorId, actorId, page.getId(), NOTES_OBJECT_TYPE);
+      createGamificationRealization(actorId, actorId, page.getId(), GAMIFICATION_WIKI_ADD_PAGE);
     }
   }
 
   @Override
   public void postDeletePage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
+    // Nothing to do
   }
 
 
   @Override
   public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
+    // Nothing to do
   }
 
   @Override
   public void postgetPagefromBreadCrumb(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
+    // Nothing to do
   }
 
   @Override
@@ -112,7 +114,25 @@ public class GamificationWikiListener extends PageWikiListener {
       // Compute user id
       String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
 
-      gamificationService.createHistory(GAMIFICATION_WIKI_UPDATE_PAGE, actorId, actorId, page.getId(), NOTES_OBJECT_TYPE);
+      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_UPDATE_PAGE, page.getId());
     }
   }
+
+  private void createGamificationRealization(String earnerIdentityId,
+                                             String receiverId,
+                                             String gamificationEventName,
+                                             String pageId) {
+    Map<String, String> gam = new HashMap<>();
+    try {
+      gam.put(EVENT_NAME, gamificationEventName);
+      gam.put(OBJECT_ID_PARAM, pageId);
+      gam.put(OBJECT_TYPE_PARAM, NOTES_OBJECT_TYPE);
+      gam.put(SENDER_ID, earnerIdentityId);
+      gam.put(RECEIVER_ID, receiverId);
+      listenerService.broadcast(GENERIC_EVENT_NAME, gam, null);
+    } catch (Exception e) {
+      throw new IllegalStateException("Error triggering Gamification Listener Event: " + gam, e);
+    }
+  }
+
 }
