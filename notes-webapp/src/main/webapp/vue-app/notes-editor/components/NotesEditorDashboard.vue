@@ -316,9 +316,6 @@ export default {
     },
     getNote(id) {
       return this.$notesService.getLatestDraftOfPage(id).then(latestDraft => {
-        if (latestDraft.wikiType === 'group') {
-          this.spaceGroupId = latestDraft.wikiOwner;
-        }
         this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
@@ -340,9 +337,6 @@ export default {
     },
     getDraftNote(id) {
       return this.$notesService.getDraftNoteById(id).then(data => {
-        if (data.wikiType === 'group') {
-          this.spaceGroupId = data.wikiOwner;
-        }
         this.init();
         this.fillNote(data);
       }).finally(() => {
