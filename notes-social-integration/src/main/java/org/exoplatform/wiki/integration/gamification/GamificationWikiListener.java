@@ -28,7 +28,6 @@ import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC
 import java.util.HashMap;
 import java.util.Map;
 
-import io.meeds.gamification.service.RuleService;
 import org.exoplatform.services.listener.Asynchronous;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.ConversationState;
@@ -42,23 +41,18 @@ import org.exoplatform.wiki.utils.NoteConstants;
 @Asynchronous
 public class GamificationWikiListener extends PageWikiListener {
 
-  private static final String   GAMIFICATION_WIKI_ADD_PAGE    = "addWikiPage";
+  public static final String GAMIFICATION_WIKI_ADD_PAGE    = "addWikiPage";
 
-  private static final String   GAMIFICATION_WIKI_UPDATE_PAGE = "updateWikiPage";
-  
-  private static final String   NOTES_OBJECT_TYPE             = "notes";
+  public static final String GAMIFICATION_WIKI_UPDATE_PAGE = "updateWikiPage";
 
-  protected RuleService         ruleService;
+  public static final String NOTES_OBJECT_TYPE             = "notes";
 
-  protected IdentityManager     identityManager;
+  protected IdentityManager  identityManager;
 
-  protected ListenerService     listenerService;
+  protected ListenerService  listenerService;
 
-  public GamificationWikiListener(RuleService ruleService,
-                                  IdentityManager identityManager,
+  public GamificationWikiListener(IdentityManager identityManager,
                                   ListenerService listenerService) {
-
-    this.ruleService = ruleService;
     this.identityManager = identityManager;
     this.listenerService = listenerService;
   }
@@ -76,7 +70,7 @@ public class GamificationWikiListener extends PageWikiListener {
       String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
       // Compute user id
       String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
-      createGamificationRealization(actorId, actorId, page.getId(), GAMIFICATION_WIKI_ADD_PAGE);
+      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_ADD_PAGE, page.getId());
     }
   }
 
@@ -84,7 +78,6 @@ public class GamificationWikiListener extends PageWikiListener {
   public void postDeletePage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
     // Nothing to do
   }
-
 
   @Override
   public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
