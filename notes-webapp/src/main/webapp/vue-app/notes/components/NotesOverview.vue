@@ -114,21 +114,9 @@
         </div>
         <v-divider class="my-4" />
         <div class="note-content" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
-          <div v-if="showManualChild" id="showManualChild">
-            <v-treeview
-              dense
-              :items="noteAllChildren"
-              item-key="noteId">
-              <template #label="{ item }">
-                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
-                  <span>{{ item.name }}</span>
-                </v-list-item-title>
-              </template>
-            </v-treeview>
-          </div>
           <div
-            class="notes-application-content text-color"
-            v-html="noteVersionContent">
+            class="notes-application-content text-color">
+            <component :is="notesContentProcessor" />
           </div>
         </div>
         <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
@@ -326,7 +314,6 @@ export default {
       isDraft: false,
       noteTitle: '',
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
-      hasManualChildren: false,
       childNodes: [],
       exportStatus: '',
       exportId: 0,
@@ -338,7 +325,6 @@ export default {
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
       }
-      setTimeout(() => this.hasManualChildren = false, 100);
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
         this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
         this.currentNoteBreadcrumb = this.note.breadcrumb;
@@ -350,17 +336,6 @@ export default {
         this.updateNote(this.note);
       }
     },
-    hasManualChildren () {
-      if (this.hasManualChildren) {
-        window.setTimeout(() => {
-          const oldContainer = document.getElementById('showManualChild');
-          const newContainers = document.getElementById('note-children-container');
-          if (oldContainer && !newContainers.childNodes.length) {
-            newContainers.append(...oldContainer.childNodes);
-          }
-        }, 100);
-      }
-    },
     actualVersion() {
       if (!this.isDraft) {
         this.noteContent = this.actualVersion.content;
@@ -369,17 +344,74 @@ export default {
     },
     exportStatus(){
       if (this.exportStatus.status==='ZIP_CREATED'){
-        this.stopGetSatus();
+        this.stopGetStatus();
         this.getExportedZip();
         this.exportStatus={};
       }
       if (this.exportStatus.status===null){
-        this.stopGetSatus();
+        this.stopGetStatus();
         this.exportStatus={};
       }
     }
   },
   computed: {
+    notesContentProcessor() {
+      return {
+        template: `<div>${this.formatContent(this.noteContent)}</div>`,
+        data() {
+          return {
+            vTreeComponent: {
+              template: '<v-treeview \
+              dense \
+              :items="noteChildItems" \
+              item-key="noteId"> \
+              <template #label="{ item }"> \
+                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text"> \
+                <span>{{ item.name }}</span> \
+              </v-list-item-title> \
+              </template> \
+              </v-treeview >',
+              props: {
+                noteId: 0,
+                source: '',
+                noteBookType: '',
+                noteBookOwner: ''
+              },
+              data: function () {
+                return {
+                  noteChildItems: [],
+                  note: null
+                };
+              },
+              created: function () {
+                this.$nextTick().then(() => {
+                  this.getNodeById(this.noteId, this.source, this.noteBookType, this.noteBookOwner);
+                });
+              },
+              methods: {
+                getNodeById(noteId, source, noteBookType, noteBookOwner) {
+                  return this.$notesService.getNoteById(noteId, source, noteBookType, noteBookOwner).then(data => {
+                    this.note = data || {};
+                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
+                      if (data && data.jsonList.length) {
+                        const allNotesTreeview = data.jsonList;
+                        this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
+                      }
+                    });
+                  }).catch(e => {
+                    console.error('Error when getting note', e);
+                  });
+                },
+                openNoteChild(item) {
+                  const noteName = item.path.split('%2F').pop();
+                  this.$root.$emit('open-note-by-name', noteName);
+                },
+              }
+            }
+          };
+        }
+      };
+    },
     noteVersionsArray() {
       return this.noteVersions.slice(0, this.versionsPageSize);
     },
@@ -388,9 +420,6 @@ export default {
     },
     hasMoreVersions() {
       return this.allNoteVersionsCount > this.versionsPageSize;
-    },
-    showManualChild() {
-      return this.hasManualChildren;
     },
     noteVersionContent() {
       return this.note.content && this.noteContent && this.formatContent(this.noteContent);
@@ -473,7 +502,6 @@ export default {
       } else {
         return 0;
       }
-
     },
     appName() {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
@@ -593,7 +621,7 @@ export default {
       this.getExportStatus();
     },
     cancelExportNotes() {
-      this.stopGetSatus();
+      this.stopGetStatus();
       this.$notesService.cancelExportNotes(this.exportId).then(() => {
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.export.canceled')});
       }).catch(e => {
@@ -628,16 +656,15 @@ export default {
           this.exportStatus = data;
           this.$refs.notesBreadcrumb.setExportStaus(this.exportStatus);
         }).catch(() => {
-          this.stopGetSatus();
+          this.stopGetStatus();
         });
       }, 500);
     },
-    stopGetSatus(){
+    stopGetStatus(){
       clearInterval(this.intervalId);
     },
     getNoteById(noteId, source) {
       return this.$notesService.getNoteById(noteId, source, this.noteBookType, this.noteBookOwner).then(data => {
-        this.note = {};
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
@@ -836,12 +863,18 @@ export default {
         for (let i = 0; i < contentChildren.length; i++) { // NOSONAR not iterable
           const child = contentChildren[i];
           if (child.classList.value.includes('navigation-img-wrapper')) {
-            child.innerHTML = '';
-            window.setTimeout(() => {this.hasManualChildren = true;},100);
+            // Props object
+            const componentProps = {
+              noteId: this.note.id,
+              source: '',
+              noteBookType: this.noteBookType,
+              noteBookOwner: this.noteBookOwner
+            };
+            contentChildren[i].innerHTML = `<component v-bind:is="vTreeComponent" note-id="${componentProps.noteId}" note-book-type="${componentProps.noteBookType}" note-book-owner="${componentProps.noteBookOwner}"></component>`;
           }
         }
       }
-      return docElement.innerHTML;
+      return docElement?.children[1].innerHTML;
     },
     openNoteVersionsHistoryDrawer() {
       if (!this.isDraft) {
