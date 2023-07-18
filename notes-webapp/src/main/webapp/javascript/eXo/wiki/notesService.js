@@ -84,7 +84,10 @@ export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
 }
 
 export function getFullNoteTree(noteBookType, noteBookOwner, noteId, withDrafts) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}/${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`, {
+  if (noteBookOwner.indexOf('/') !== 0) {
+    noteBookOwner = `/${noteBookOwner}`;
+  }
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
