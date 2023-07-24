@@ -281,14 +281,15 @@ export default {
   mounted() {
     if (this.spaceId) {
       this.init();
-      this.$root.$on('initCkeditor',() => this.initCKEditor());
     }
   },
   methods: {
     init() {
-      this.initCKEditor();
-      this.setToolBarEffect();
-      this.initDone = true;
+      setTimeout(() => {
+        this.initCKEditor();
+        this.setToolBarEffect();
+        this.initDone = true;
+      },200);
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment

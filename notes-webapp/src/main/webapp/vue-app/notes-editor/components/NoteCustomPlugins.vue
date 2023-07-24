@@ -97,7 +97,6 @@ export default {
   methods: {
     open() {
       this.$refs.customPluginsDrawer.open();
-      this.$root.$emit('initCkeditor');
     },
     close() {
       this.$refs.customPluginsDrawer.close();
