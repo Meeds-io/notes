@@ -129,13 +129,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
                                      long limit) {
     term = removeSpecialCharacters(term);
     term = StringUtils.isBlank(term) ? "*:*" : term;
-    List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
-      word = word.trim();
-      if (word.length() > 5) {
-        word = word + "~1";
-      }
-      return word;
-    }).collect(Collectors.toList());
+    List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> "*" + word + "*").collect(Collectors.toList());
     Map<String, List<String>> metadataFilters = buildMetadataFilter(isFavorites, userId);
     String metadataQuery = buildMetadataQueryStatement(metadataFilters);
     String termQuery = StringUtils.join(termsQuery, " AND ");
@@ -200,12 +194,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       SearchResultType type = SearchResultType.PAGE;
       String pageName = (String) hitSource.get("name");
       String attachmentName = null;
-
-      // Result can be an attachment
-      if (((JSONObject) jsonHit).get("_type").equals("wiki-attachment")) {
-        pageName = (String) hitSource.get("pageName");
-        attachmentName = (String) hitSource.get("name");
-      }
 
       // Get the excerpt
       JSONObject hitHighlight = (JSONObject) ((JSONObject) jsonHit).get("highlight");
