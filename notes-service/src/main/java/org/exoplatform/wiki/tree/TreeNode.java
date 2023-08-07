@@ -20,6 +20,7 @@
 package org.exoplatform.wiki.tree;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.WikiPageParams;
@@ -193,6 +194,7 @@ public class TreeNode {
   public void pushDescendants(HashMap<String, Object> context, String userId) throws Exception {
     addChildren(context, userId);
     pushChildren(context, userId);
+    this.children = this.children.stream().sorted((childItem1, childItem2) -> new NaturalComparator().compare(childItem1.getName(), childItem2.getName())).toList();
   }
   
   protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {

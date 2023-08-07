@@ -24,14 +24,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.*;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 
+import org.exoplatform.services.resources.ResourceBundleService;
+import org.exoplatform.services.rest.impl.ResponseImpl;
+import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.tree.JsonNodeData;
+import org.exoplatform.wiki.tree.TreeNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,6 +80,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   private NotesRestService                  notesRestService;
 
+  private ResourceBundleService             resourceBundleService;
+
   @Mock
   private Identity                          identity;
 
@@ -101,11 +105,20 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic = mockStatic(Utils.class);
     containerContextStatic = mockStatic(ExoContainerContext.class);
 
+    this.resourceBundleService = mock(ResourceBundleService.class);
+    ResourceBundle resourceBundle = mock(ResourceBundle.class);
+    when(resourceBundle.getString(anyString())).thenReturn("Notes" + System.currentTimeMillis());
+    when(resourceBundleService.getResourceBundle(anyString(), any())).thenReturn(resourceBundle);
+
+
     this.notesRestService = new NotesRestService(noteService,
                                                  noteBookService,
                                                  uploadService,
-                                                 new MockResourceBundleService(),
+                                                 resourceBundleService,
                                                  notesExportService);
+
+
+
     ConversationState currentConversationState = mock(ConversationState.class);
     conversationStateStatic.when(() -> ConversationState.getCurrent()).thenReturn(currentConversationState);
     conversationStateStatic.when(() -> ConversationState.getCurrent().getIdentity()).thenReturn(identity);
@@ -184,14 +197,42 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     homePage.setOwner("user");
     homePage.setId("1");
     homePage.setParentPageId("0");
+    homePage.setHasChild(true);
     Wiki noteBook = new Wiki();
     noteBook.setOwner("user");
     noteBook.setType("WIKI");
     noteBook.setId("0");
     noteBook.setWikiHome(homePage);
     Page page = new Page("testPage");
-    page.setId("2");
+    page.setName("testPage");
+    page.setTitle("testPage");
+    page.setId("10");
     page.setParentPageId("1");
+    page.setWikiType("PAGE");
+    Page page1 = new Page("testPage 1");
+    page1.setName("testPage 1");
+    page1.setTitle("testPage 1");
+    page1.setId("11");
+    page1.setParentPageId("1");
+    page1.setWikiType("PAGE");
+    Page page2 = new Page("testPage 2");
+    page2.setName("testPage 22");
+    page2.setTitle("testPage 22");
+    page2.setId("12");
+    page2.setParentPageId("1");
+    page2.setWikiType("PAGE");
+    Page page10 = new Page("testPage 10");
+    page10.setName("testPage 10");
+    page10.setTitle("testPage 10");
+    page10.setId("13");
+    page10.setParentPageId("1");
+    page10.setWikiType("PAGE");
+    Page page12 = new Page("testPage 12");
+    page12.setName("testPage 2");
+    page12.setTitle("testPage 2");
+    page12.setId("14");
+    page12.setParentPageId("1");
+    page12.setWikiType("PAGE");
     Page draftPage = new DraftPage();
     draftPage.setId("3");
     draftPage.setName("testPageDraft");
@@ -203,8 +244,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     pageParams.setPageName("home");
     pageParams.setOwner("user");
     pageParams.setType("WIKI");
-    List<Page> children = new ArrayList<>(List.of(page, draftPage));
-    homePage.setChildren(children);
+    List<Page> childrenWithDraft = new ArrayList<>(List.of(page, draftPage, page10, page12, page2, page1));
+    List<Page> childrenWithoutDrafts = new ArrayList<>(List.of(page12, page10, page1, page, page2)); // return an unordered list
     @SuppressWarnings("unchecked")
     Deque<Object> paramsDeque = mock(Deque.class);
     when(identity.getUserId()).thenReturn("1");
@@ -224,7 +265,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     when(noteService.getChildrenNoteOf(homePage,
                                        ConversationState.getCurrent().getIdentity().getUserId(),
                                        true,
-                                       false)).thenReturn(children);
+                                       false)).thenReturn(childrenWithDraft);
+    when(noteService.getChildrenNoteOf(homePage,
+            ConversationState.getCurrent().getIdentity().getUserId(),
+            false,
+            false)).thenReturn(childrenWithoutDrafts);
 
     treeUtilsStatic.when(() -> TreeUtils.getPathFromPageParams(any())).thenCallRealMethod();
     treeUtilsStatic.when(() -> TreeUtils.tranformToJson(any(), any())).thenCallRealMethod();
@@ -232,6 +277,10 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.validateWikiOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenCallRealMethod();
     utilsStatic.when(() -> Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page)).thenReturn(true);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, page1)).thenReturn(true);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, page2)).thenReturn(true);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, page10)).thenReturn(true);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
 
     Response response = notesRestService.getFullTreeData("path", true);
@@ -239,6 +288,15 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     Response response3 = notesRestService.getFullTreeData("path", false);
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
+    assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
+    List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
+    JsonNodeData jsonNodeData = treeNodeList.get(0);
+    assertEquals(5, jsonNodeData.getChildren().size());
+    assertEquals("testPage", jsonNodeData.getChildren().get(0).getName());
+    assertEquals("testPage 1", jsonNodeData.getChildren().get(1).getName());
+    assertEquals("testPage 2", jsonNodeData.getChildren().get(2).getName());
+    assertEquals("testPage 10", jsonNodeData.getChildren().get(3).getName());
+    assertEquals("testPage 22", jsonNodeData.getChildren().get(4).getName());
 
     doThrow(new IllegalAccessException()).when(noteService)
                                          .getNoteOfNoteBookByName(pageParams.getType(),
