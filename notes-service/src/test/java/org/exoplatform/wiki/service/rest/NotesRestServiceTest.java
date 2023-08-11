@@ -21,6 +21,7 @@ package org.exoplatform.wiki.service.rest;
 
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
@@ -31,6 +32,8 @@ import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
@@ -47,12 +50,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.*;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -75,6 +76,8 @@ public class NotesRestServiceTest {
   private NotesExportService notesExportService;
 
   private NotesRestService notesRestService;
+
+  private ResourceBundleService resourceBundleService;
 
   @Mock
   private Identity         identity;
@@ -156,14 +159,42 @@ public class NotesRestServiceTest {
     homePage.setOwner("user");
     homePage.setId("1");
     homePage.setParentPageId("0");
+    homePage.setHasChild(true);
     Wiki noteBook = new Wiki();
     noteBook.setOwner("user");
     noteBook.setType("WIKI");
     noteBook.setId("0");
     noteBook.setWikiHome(homePage);
     Page page = new Page("testPage");
-    page.setId("2");
+    page.setName("testPage");
+    page.setTitle("testPage");
+    page.setId("10");
     page.setParentPageId("1");
+    page.setWikiType("PAGE");
+    Page page1 = new Page("testPage 1");
+    page1.setName("testPage 1");
+    page1.setTitle("testPage 1");
+    page1.setId("11");
+    page1.setParentPageId("1");
+    page1.setWikiType("PAGE");
+    Page page2 = new Page("testPage 2");
+    page2.setName("testPage 22");
+    page2.setTitle("testPage 22");
+    page2.setId("12");
+    page2.setParentPageId("1");
+    page2.setWikiType("PAGE");
+    Page page10 = new Page("testPage 10");
+    page10.setName("testPage 10");
+    page10.setTitle("testPage 10");
+    page10.setId("13");
+    page10.setParentPageId("1");
+    page10.setWikiType("PAGE");
+    Page page12 = new Page("testPage 12");
+    page12.setName("testPage 2");
+    page12.setTitle("testPage 2");
+    page12.setId("14");
+    page12.setParentPageId("1");
+    page12.setWikiType("PAGE");
     Page draftPage = new DraftPage();
     draftPage.setId("3");
     draftPage.setName("testPageDraft");
@@ -175,8 +206,8 @@ public class NotesRestServiceTest {
     pageParams.setPageName("home");
     pageParams.setOwner("user");
     pageParams.setType("WIKI");
-    List<Page> children = new ArrayList<>(List.of(page, draftPage));
-    homePage.setChildren(children);
+    List<Page> childrenWithDraft = new ArrayList<>(List.of(page, draftPage, page10, page12, page2, page1));
+    List<Page> childrenWithoutDrafts = new ArrayList<>(List.of(page12, page10, page1, page, page2)); // return an unordered list
     Deque paramsDeque = mock(Deque.class);
     when(identity.getUserId()).thenReturn("1");
     when(TreeUtils.getPageParamsFromPath("path")).thenReturn(pageParams);
@@ -195,9 +226,14 @@ public class NotesRestServiceTest {
     doCallRealMethod().when(TreeUtils.class, "getPathFromPageParams", ArgumentMatchers.any());
     doCallRealMethod().when(Utils.class, "validateWikiOwner", homePage.getWikiType(), homePage.getWikiOwner());
     doCallRealMethod().when(TreeUtils.class, "tranformToJson", ArgumentMatchers.any(), ArgumentMatchers.any());
-    when(noteService.getChildrenNoteOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), true, false)).thenReturn(children);
+    when(noteService.getChildrenNoteOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), true, false)).thenReturn(childrenWithDraft);
+    when(noteService.getChildrenNoteOf(homePage, ConversationState.getCurrent().getIdentity().getUserId(), false, false)).thenReturn(childrenWithoutDrafts);
     when(Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
     when(Utils.isDescendantPage(homePage, page)).thenReturn(true);
+    when(Utils.isDescendantPage(homePage, page1)).thenReturn(true);
+    when(Utils.isDescendantPage(homePage, page2)).thenReturn(true);
+    when(Utils.isDescendantPage(homePage, page10)).thenReturn(true);
+    when(Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     when(Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
 
     Response response = notesRestService.getFullTreeData("path", true);
@@ -205,6 +241,15 @@ public class NotesRestServiceTest {
 
     Response response3 = notesRestService.getFullTreeData("path", false);
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
+    assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
+    List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
+    JsonNodeData jsonNodeData = treeNodeList.get(0);
+    assertEquals(5, jsonNodeData.getChildren().size());
+    assertEquals("testPage", jsonNodeData.getChildren().get(0).getName());
+    assertEquals("testPage 1", jsonNodeData.getChildren().get(1).getName());
+    assertEquals("testPage 2", jsonNodeData.getChildren().get(2).getName());
+    assertEquals("testPage 10", jsonNodeData.getChildren().get(3).getName());
+    assertEquals("testPage 22", jsonNodeData.getChildren().get(4).getName());
 
 
     doThrow(new IllegalAccessException()).when(noteService)
