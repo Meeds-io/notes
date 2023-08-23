@@ -155,19 +155,19 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     List<BreadcrumbData> breadcrumb = new ArrayList<>();
     breadcrumb.add(new BreadcrumbData("1", "test", "note", "user"));
     page.setDeleted(true);
-    when(noteService.getNoteById("1", identity, "source")).thenReturn(null);
-    Response response = notesRestService.getNoteById("1", "note", "user", true, "source");
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", null)).thenReturn(null);
+    Response response = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
-    when(noteService.getNoteById("1", identity, "source")).thenReturn(page);
-    Response response1 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(page);
+    Response response1 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response1.getStatus());
     page.setDeleted(false);
     page.setWikiType("type");
-    Response response2 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    Response response2 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response2.getStatus());
     page.setWikiType("note");
     page.setWikiOwner("owner");
-    Response response3 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    Response response3 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response3.getStatus());
 
     page.setWikiOwner("user");
@@ -177,15 +177,15 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteService.getBreadCrumb("note", "user", "1", false)).thenReturn(breadcrumb);
     when(noteService.updateNote(page)).thenReturn(page);
-    Response response4 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    Response response4 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.OK.getStatusCode(), response4.getStatus());
 
-    doThrow(new IllegalAccessException("Fake Exception")).when(noteService).getNoteById("1", identity, "source");
-    Response response5 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    doThrow(new IllegalAccessException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
+    Response response5 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response5.getStatus());
 
-    doThrow(new IllegalStateException("Fake Exception")).when(noteService).getNoteById("1", identity, "source");
-    Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source");
+    doThrow(new IllegalStateException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
+    Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
 
@@ -313,5 +313,22 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                             identity);
     Response response2 = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
+  }
+
+  @Test
+  public void testGetPageAvailableTranslationLanguages() {
+   List<String> langs = new ArrayList<>();
+   langs.add("ar");
+   langs.add("en");
+   Response response = notesRestService.getPageAvailableTranslationLanguages(null);
+   assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+   when(noteService.getPageAvailableTranslationLanguages(1L)).thenReturn(langs);
+   response = notesRestService.getPageAvailableTranslationLanguages(1L);
+   assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+
+   doThrow(new RuntimeException()).when(noteService).getPageAvailableTranslationLanguages(2L);
+   response = notesRestService.getPageAvailableTranslationLanguages(2L);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+
   }
 }

@@ -35,8 +35,10 @@ import java.util.List;
         @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.name = :draftPageName ORDER BY d.updatedDate DESC"),
         @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC"),
         @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPagesByUserAndParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.parentPage.id = :parentPageId")
-})
+        @NamedQuery(name = "wikiDraftPage.findDraftPagesByUserAndParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.parentPage.id = :parentPageId"),
+        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId AND " +
+                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"),
+        @NamedQuery(name = "wikiDraftPage.findDraftByIdAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.id = :id AND ((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang))") })
 public class DraftPageEntity extends BasePageEntity {
 
   @Id
@@ -61,6 +63,9 @@ public class DraftPageEntity extends BasePageEntity {
 
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "draftPage")
   private List<DraftPageAttachmentEntity> attachments;
+
+  @Column(name = "LANG")
+  private String lang;
 
   public PageEntity getTargetPage() {
     return targetPage;
@@ -108,5 +113,13 @@ public class DraftPageEntity extends BasePageEntity {
 
   public void setAttachments(List<DraftPageAttachmentEntity> attachments) {
     this.attachments = attachments;
+  }
+
+  public String getLang() {
+    return lang;
+  }
+
+  public void setLang(String lang) {
+    this.lang = lang;
   }
 }
