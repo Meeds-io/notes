@@ -39,6 +39,7 @@ import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 import static org.junit.Assert.assertThrows;
 
@@ -371,6 +372,78 @@ public class TestNoteService extends BaseTest {
 
     assertNotNull(deletedNote);
     assertTrue(deletedNote.isDeleted());
+  }
+
+  public void testGetNoteByIdAndLang() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("testPage", "testPage"), root) ;
+    note1.setLang("en");
+    noteService.createVersionOfNote(note1, "root");
+
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "testPage")) ;
+
+    Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()),root,"", "en");
+
+    assertNotNull(note);
+    assertEquals(note.getName(),note1.getName());
+
+    assertFalse(note.isDeleted());
+
+    noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), note.getName());
+    Page deletedNote = noteService.getNoteById(note1.getId(),root,"");
+
+    assertNotNull(deletedNote);
+    assertTrue(deletedNote.isDeleted());
+  }
+
+  public void testGetPageAvailableTranslationLanguages() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testLang", "testLang"), root) ;
+    note.setLang("ar");
+    noteService.createVersionOfNote(note, "root");
+    noteService.createVersionOfNote(note, "root");
+    note.setLang("en");
+    noteService.createVersionOfNote(note, "root");
+    note.setLang("fr");
+    noteService.createVersionOfNote(note, "root");
+
+    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()));
+
+    assertNotNull(langs);
+    assertEquals(3, langs.size());
+  }
+
+  public void testGetVersionsHistoryOfNoteByLang() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testVersionHistory", "testVersionHistory"), root) ;
+    List<PageHistory> pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, "root", null);
+    assertEquals(1, pageHistories.size());
+    assertNull(pageHistories.get(0).getLang());
+    note.setLang("ar");
+    noteService.createVersionOfNote(note, "root");
+    pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, "root", "ar");
+    assertEquals(1, pageHistories.size());
+    assertNotNull(pageHistories.get(0).getLang());
+    assertEquals("ar", pageHistories.get(0).getLang());
+    pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, "root", "en");
+    assertEquals(0, pageHistories.size());
+  }
+
+  public void testGetLatestDraftPageByUserAndTargetPageAndLang() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testLatestDraft", "testLatestDraft"), root) ;
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("test draft");
+    draftPage.setContent(note.getContent());
+    draftPage.setName("test draft");
+    draftPage.setTargetPageId(note.getId());
+    noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+    DraftPage latestDraft = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(note.getId()), "root", null);
+    assertNotNull(latestDraft);
   }
 
   public void testGetNoteOfNoteBookByName() throws WikiException, IllegalAccessException {
