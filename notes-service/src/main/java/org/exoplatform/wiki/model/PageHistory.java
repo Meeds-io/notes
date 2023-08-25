@@ -38,4 +38,6 @@ public class PageHistory {
   private Date   updatedDate;
 
   private String content;
+
+  private String lang;
 }
