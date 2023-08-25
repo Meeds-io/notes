@@ -207,4 +207,50 @@ public interface DataStorage {
    * @return the List pf pages of the wiki
    */
   public List<Page> getPagesOfWiki(String wikiType, String wikiOwner);
+
+  /**
+   * Retrieves list of page versions by page id and lang
+   *
+   * @param pageId page id
+   * @param lang content language
+   * @return {@link List} of {@link PageHistory}
+   */
+  List<PageHistory> getPageHistoryVersionsByPageIdAndLang(Long pageId, String lang);
+
+  /**
+   * Retrieves latest draft of a specific page by target page id and content language
+   * and owner username
+   *
+   * @param targetPageId target page id
+   * @param username owner username
+   * @param lang content language
+   * @return {@link DraftPage}
+   */
+  DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
+
+  /**
+   * Retrieves the published note page version by its id and content language
+   * @param pageId page id
+   * @param lang content language
+   * @return {@link PageVersion}
+   */
+  PageVersion getPublishedVersionByPageIdAndLang(Long pageId, String lang);
+
+  /**
+   * Retrieves list of available translations languages of a page
+   *
+   * @param pageId page id
+   * @return {@link List} of {@link String}
+   */
+  List<String> getPageAvailableTranslationLanguages(Long pageId);
+
+  /**
+   * Retrieves a draft note by its id and content language
+   *
+   * @param draftNoteId draft note id
+   * @param lang content language
+   * @return {@link DraftPage}
+   */
+  DraftPage getDraftPageByIdAndLang(Long draftNoteId, String lang);
+
 }
