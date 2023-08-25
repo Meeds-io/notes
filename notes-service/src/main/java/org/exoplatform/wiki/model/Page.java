@@ -99,6 +99,8 @@ public class Page {
 
   private Map<String, List<MetadataItem>> metadatas;
 
+  private String                          lang;
+
   public Page(String name) {
     this.name = name;
   }
