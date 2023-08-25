@@ -24,8 +24,12 @@ import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
@@ -375,6 +379,7 @@ public class EntityConverter {
       draftPage.setAuthor(draftPageEntity.getAuthor());
       draftPage.setOwner(draftPageEntity.getAuthor());
       draftPage.setContent(draftPageEntity.getContent());
+      draftPage.setLang(draftPageEntity.getLang());
       draftPage.setSyntax(draftPageEntity.getSyntax());
       draftPage.setCreatedDate(draftPageEntity.getCreatedDate());
       draftPage.setUpdatedDate(draftPageEntity.getUpdatedDate());
@@ -416,6 +421,7 @@ public class EntityConverter {
       draftPageEntity.setTitle(draftPage.getTitle());
       draftPageEntity.setAuthor(draftPage.getAuthor());
       draftPageEntity.setContent(draftPage.getContent());
+      draftPageEntity.setLang(draftPage.getLang());
       draftPageEntity.setSyntax(draftPage.getSyntax());
       draftPageEntity.setCreatedDate(draftPage.getCreatedDate());
       draftPageEntity.setUpdatedDate(draftPage.getUpdatedDate());
@@ -442,6 +448,7 @@ public class EntityConverter {
       pageVersion.setContent(pageVersionEntity.getContent());
       pageVersion.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageVersion.setUpdatedDate(pageVersionEntity.getUpdatedDate());
+      pageVersion.setLang(pageVersionEntity.getLang());
     }
     return pageVersion;
   }
@@ -456,6 +463,7 @@ public class EntityConverter {
       pageHistory.setContent(pageVersionEntity.getContent());
       pageHistory.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
+      pageHistory.setLang(pageVersionEntity.getLang());
     }
     return pageHistory;
   }
@@ -471,4 +479,20 @@ public class EntityConverter {
     return permissionEntry;
   }
 
+  public static List<PageHistory> toPageHistoryVersions(List<PageVersionEntity> pageVersionEntities) {
+    IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
+    
+    return pageVersionEntities.stream().map(EntityConverter::convertPageVersionEntityToPageHistory)
+                                       .peek(pageHistory -> {
+                                         Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+                                                                                        pageHistory.getAuthor());
+                                         if (identity != null && identity.getProfile() != null
+                                                             && identity.getProfile().getFullName() != null) {
+                                            pageHistory.setAuthorFullName(identity.getProfile().getFullName());
+                                         }}).toList();
+  }
+
+  public static List<DraftPage> toDraftPages(List<DraftPageEntity> draftPageEntities) {
+    return draftPageEntities.stream().map(EntityConverter::convertDraftPageEntityToDraftPage).toList();
+  }
 }

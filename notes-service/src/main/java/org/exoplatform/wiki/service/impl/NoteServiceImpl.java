@@ -42,6 +42,7 @@ import java.util.zip.ZipOutputStream;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -70,13 +71,6 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.wiki.model.ImportList;
-import org.exoplatform.wiki.model.NoteToExport;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PageHistory;
-import org.exoplatform.wiki.model.PermissionType;
-import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
@@ -250,6 +244,7 @@ public class NoteServiceImpl implements NoteService {
     createdPage.setToBePublished(note.isToBePublished());
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
+    createdPage.setLang(note.getLang());
     invalidateCache(parentPage);
     invalidateCache(note);
 
@@ -518,7 +513,12 @@ public class NoteServiceImpl implements NoteService {
       return null;
     }
     DraftPage draftPage = dataStorage.getDraftPageById(id);
+    computeDraftProps(draftPage, userId);
 
+    return draftPage;
+  }
+
+  private void computeDraftProps(DraftPage draftPage, String userId) throws WikiException, IllegalAccessException {
     if (draftPage != null) {
       Space space = spaceService.getSpaceByGroupId(draftPage.getWikiOwner());
       if (!canViewNotes(userId, space, draftPage)) {
@@ -528,10 +528,17 @@ public class NoteServiceImpl implements NoteService {
       draftPage.setCanManage(canManageNotes(userId, space, draftPage));
       draftPage.setCanImport(canImportNotes(userId, space, draftPage));
       String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
-                                             .getProfile()
-                                             .getFullName();
+              .getProfile()
+              .getFullName();
       draftPage.setAuthorFullName(authorFullName);
     }
+  }
+
+  @Override
+  public DraftPage getDraftNoteByIdAndLang(Long draftNoteId, String userId, String lang) throws WikiException, IllegalAccessException {
+    DraftPage draftPage = dataStorage.getDraftPageByIdAndLang(draftNoteId, lang);
+    computeDraftProps(draftPage, userId);
+
     return draftPage;
   }
 
@@ -581,7 +588,7 @@ public class NoteServiceImpl implements NoteService {
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
       page.setMetadatas(metadata);
-      if (StringUtils.isNotEmpty(source)) {
+      if (StringUtils.isNotBlank(source)) {
         if (source.equals("tree")) {
           postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
         }
@@ -781,6 +788,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageId(draftNoteToUpdate.getTargetPageId());
     newDraftPage.setParentPageId(draftNoteToUpdate.getParentPageId());
     newDraftPage.setContent(draftNoteToUpdate.getContent());
+    newDraftPage.setLang(draftNoteToUpdate.getLang());
     newDraftPage.setSyntax(draftNoteToUpdate.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
@@ -814,6 +822,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setParentPageId(draftNoteToUpdate.getParentPageId());
     newDraftPage.setTargetPageRevision("1");
     newDraftPage.setContent(draftNoteToUpdate.getContent());
+    newDraftPage.setLang(draftNoteToUpdate.getLang());
     newDraftPage.setSyntax(draftNoteToUpdate.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
@@ -839,6 +848,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageId(targetPage.getId());
     newDraftPage.setParentPageId(draftPage.getParentPageId());
     newDraftPage.setContent(draftPage.getContent());
+    newDraftPage.setLang(draftPage.getLang());
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
@@ -853,7 +863,7 @@ public class NoteServiceImpl implements NoteService {
       newDraftPage.setTargetPageRevision(revision);
     }
 
-    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, username);
 
     return newDraftPage;
   }
@@ -871,6 +881,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageRevision("1");
     newDraftPage.setParentPageId(draftPage.getParentPageId());
     newDraftPage.setContent(draftPage.getContent());
+    newDraftPage.setLang(draftPage.getLang());
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
@@ -1493,5 +1504,49 @@ public class NoteServiceImpl implements NoteService {
       }
     }
     return aclIdentity;
+  }
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Page getNoteByIdAndLang(Long pageId, Identity userIdentity, String source, String lang) throws WikiException,
+                                                                                                 IllegalAccessException {
+    Page page = getNoteById(String.valueOf(pageId), userIdentity, source);
+    PageVersion publishedVersion = dataStorage.getPublishedVersionByPageIdAndLang(pageId, lang);
+    if (page != null && publishedVersion != null) {
+      page.setTitle(publishedVersion.getTitle());
+      page.setContent(publishedVersion.getContent());
+      page.setLang(publishedVersion.getLang());
+    }
+    return page;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<String> getPageAvailableTranslationLanguages(Long pageId) {
+    return dataStorage.getPageAvailableTranslationLanguages(pageId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException {
+    List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
+    if (lang == null && pageHistories.isEmpty()) {
+      dataStorage.addPageVersion(note, userName);
+      pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), null);
+    }
+    return pageHistories;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
+    return dataStorage.getLatestDraftPageByUserAndTargetPageAndLang(targetPageId, username, lang);
   }
 }
