@@ -720,4 +720,12 @@
     <createSequence sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID" startValue="1" />
   </changeSet>
 
+  <changeSet id="1.0.0-60" author="wiki">
+    <addColumn tableName="WIKI_DRAFT_PAGES">
+      <column name="LANG" type="NVARCHAR(50)"/>
+    </addColumn>
+    <addColumn tableName="WIKI_PAGE_VERSIONS">
+      <column name="LANG" type="NVARCHAR(50)"/>
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>
