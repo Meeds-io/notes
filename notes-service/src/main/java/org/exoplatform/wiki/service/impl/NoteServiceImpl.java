@@ -30,6 +30,7 @@ import java.util.zip.ZipOutputStream;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -57,7 +58,10 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
+<<<<<<< HEAD
 import org.exoplatform.wiki.model.*;
+=======
+>>>>>>> 73d4db09f (feat: Add multilangue backend services - EXO-65935 - Meeds-io/MIPs#70 (#711))
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
@@ -226,6 +230,7 @@ public class NoteServiceImpl implements NoteService {
     createdPage.setToBePublished(note.isToBePublished());
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
+    createdPage.setLang(note.getLang());
     invalidateCache(parentPage);
     invalidateCache(note);
 

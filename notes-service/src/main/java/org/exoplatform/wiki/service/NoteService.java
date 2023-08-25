@@ -170,6 +170,16 @@ public interface NoteService {
 
 
   /**
+   * Retrieves a draft note by its id and content language
+   *
+   * @param draftNoteId draft note id
+   * @param userId user id
+   * @param lang content language
+   * @return {@link DraftPage}
+   */
+  DraftPage getDraftNoteByIdAndLang(Long draftNoteId, String userId, String lang) throws WikiException, IllegalAccessException;
+
+  /**
    * Returns latest draft of given page.
    *
    * @param targetPage
