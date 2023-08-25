@@ -36,7 +36,11 @@ import javax.persistence.*;
         @NamedQuery(name = "wikiPageVersion.getLastversionNumberOfPage", query = "SELECT max(p.versionNumber) FROM WikiPageVersionEntity p WHERE p.page.id = :pageId"),
         @NamedQuery(name = "wikiPageVersion.getPageversionByPageIdAndVersion", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.versionNumber = :versionNumber"),
         @NamedQuery(name = "wikiPageVersion.getAllPagesVersionsBySyntax", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC"),
-        @NamedQuery(name = "wikiPageVersion.countAllPagesVersionsBySyntax", query = "SELECT COUNT(p) FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL")
+        @NamedQuery(name = "wikiPageVersion.countAllPagesVersionsBySyntax", query = "SELECT COUNT(p) FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL"),
+        @NamedQuery(name = "wikiPageVersion.getPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang))"),
+        @NamedQuery(name = "wikiPageVersion.getLatestPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang)) ORDER BY  p.versionNumber DESC"),
+        @NamedQuery(name = "wikiPageVersion.getPageAvailableTranslationLanguages", query = "SELECT DISTINCT p.lang FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.lang IS NOT NULL")
+
 })
 public class PageVersionEntity extends BasePageEntity {
   @Id
@@ -57,6 +61,9 @@ public class PageVersionEntity extends BasePageEntity {
 
   @Column(name = "MINOR_EDIT")
   private boolean minorEdit;
+
+  @Column(name = "LANG")
+  private String lang;
 
   public long getId() {
     return id;
@@ -92,5 +99,13 @@ public class PageVersionEntity extends BasePageEntity {
 
   public void setMinorEdit(boolean minorEdit) {
     this.minorEdit = minorEdit;
+  }
+
+  public String getLang() {
+    return lang;
+  }
+
+  public void setLang(String lang) {
+    this.lang = lang;
   }
 }
