@@ -17,12 +17,9 @@
 package org.exoplatform.wiki.jpa.dao;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 
-import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -98,6 +95,35 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
 
     try {
       query.setMaxResults(1);
+      return query.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
+
+  public DraftPageEntity findLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
+    TypedQuery<DraftPageEntity> query =
+                                      getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByUserAndTargetPageAndLang",
+                                                                          DraftPageEntity.class)
+                                                        .setParameter("username", username)
+                                                        .setParameter("targetPageId", targetPageId)
+                                                        .setParameter("lang", lang);
+    query.setMaxResults(1);
+    try {
+      return query.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
+
+  public DraftPageEntity findDraftNoteByIdAndLang(Long draftNoteId, String lang) {
+    TypedQuery<DraftPageEntity> query = getEntityManager()
+                                                          .createNamedQuery("wikiDraftPage.findDraftByIdAndLang",
+                                                                            DraftPageEntity.class)
+                                                          .setParameter("id", draftNoteId)
+                                                          .setParameter("lang", lang);
+
+    try {
       return query.getSingleResult();
     } catch (NoResultException e) {
       return null;
