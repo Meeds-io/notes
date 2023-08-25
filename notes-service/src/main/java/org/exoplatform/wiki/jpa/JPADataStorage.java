@@ -20,7 +20,6 @@
 package org.exoplatform.wiki.jpa;
 
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.ObjectPageList;
@@ -1121,10 +1120,10 @@ public class JPADataStorage implements DataStorage {
       pageVersionEntity.setVersionNumber(versionNumber);
       pageVersionEntity.setName(pageEntity.getName());
       pageVersionEntity.setTitle(pageEntity.getTitle());
-      if(StringUtils.isNotEmpty(userName)){
+      if (StringUtils.isNotEmpty(userName)) {
         pageVersionEntity.setAuthor(userName);
-      } else{
-      pageVersionEntity.setAuthor(pageEntity.getAuthor());
+      } else {
+        pageVersionEntity.setAuthor(pageEntity.getAuthor());
       }
       pageVersionEntity.setContent(pageEntity.getContent());
       pageVersionEntity.setSyntax(pageEntity.getSyntax());
@@ -1133,6 +1132,7 @@ public class JPADataStorage implements DataStorage {
       Date now = Calendar.getInstance().getTime();
       pageVersionEntity.setCreatedDate(now);
       pageVersionEntity.setUpdatedDate(now);
+      pageVersionEntity.setLang(page.getLang());
 
       // attachment must be saved here because of Hibernate bug HHH-6776
       pageVersionDAO.create(pageVersionEntity);
@@ -1444,5 +1444,66 @@ public class JPADataStorage implements DataStorage {
     }
 
     return sb.toString();
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<PageHistory> getPageHistoryVersionsByPageIdAndLang(Long pageId, String lang) {
+    if (pageId == null) {
+      throw new IllegalArgumentException("pageId argument is null");
+    }
+    return EntityConverter.toPageHistoryVersions(pageVersionDAO.findPageVersionsByPageIdAndLang(pageId, lang));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
+    if (username == null) {
+      throw new IllegalArgumentException("username argument is null");
+    }
+    if (targetPageId == null) {
+      throw new IllegalArgumentException("targetPageId argument is null");
+    }
+    return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByUserAndTargetPageAndLang(targetPageId,
+                                                                                                                        username,
+                                                                                                                        lang));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public PageVersion getPublishedVersionByPageIdAndLang(Long pageId, String lang) {
+    if (pageId == null) {
+      throw new IllegalArgumentException("targetPageId argument is null");
+    }
+    return convertPageVersionEntityToPageVersion(pageVersionDAO.findLatestVersionByPageIdAndLang(pageId, lang));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<String> getPageAvailableTranslationLanguages(Long pageId) {
+    if (pageId == null) {
+      throw new IllegalArgumentException("pageId argument is null");
+    }
+    return pageVersionDAO.findPageAvailableTranslationLanguages(pageId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DraftPage getDraftPageByIdAndLang(Long draftNoteId, String lang) {
+    if (draftNoteId == null) {
+      throw new IllegalArgumentException("draftNoteId argument is null");
+    }
+    return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findDraftNoteByIdAndLang(draftNoteId, lang));
   }
 }
