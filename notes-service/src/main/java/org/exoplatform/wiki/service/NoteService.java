@@ -147,11 +147,21 @@ public interface NoteService {
    * Gets a draft note based on its unique id.
    *
    * @param id Unique id of the draft note.
-   * @param userId
+   * @param userId user id
    * @return The note.
    * @throws WikiException if an error occured
    */
   DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException;
+
+  /**
+   * Retrieves a draft note by its id and content language
+   *
+   * @param draftNoteId draft note id
+   * @param userId user id
+   * @param lang content language
+   * @return {@link DraftPage}
+   */
+  DraftPage getDraftNoteByIdAndLang(Long draftNoteId, String userId, String lang) throws WikiException, IllegalAccessException;
 
   /**
    * Returns latest draft of given page.
@@ -233,6 +243,16 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException;
+
+  /**
+   * Retrieves the history version of given note by language
+   *
+   * @param note the target note id
+   * @param userName user name
+   * @param lang content language
+   * @return {@link List} of {@link PageHistory}
+   */
+  List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException;
 
   /**
    * Creates a version of a note. This method only tag the current note data as a
@@ -444,4 +464,36 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
+
+  /**
+   * Retrieves note page by its id and content lang
+   * 
+   * @param pageId page id
+   * @param userIdentity user identity id
+   * @param source source
+   * @param lang content language
+   * @return {@link Page}
+   * @throws WikiException
+   * @throws IllegalAccessException
+   */
+  Page getNoteByIdAndLang(Long pageId, Identity userIdentity, String source, String lang) throws WikiException, IllegalAccessException;
+
+  /**
+   * Retrieves list of available translations languages of a page
+   *
+   * @param pageId page id
+   * @return {@link List} of {@link String}
+   */
+  List<String> getPageAvailableTranslationLanguages(Long pageId);
+
+  /**
+   * Retrieves latest draft of a specific page by target page id and content language
+   * and owner username
+   *
+   * @param targetPageId target page id
+   * @param username owner username
+   * @param lang content language
+   * @return {@link DraftPage}
+   */
+  DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
 }
