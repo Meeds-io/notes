@@ -23,6 +23,7 @@ import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import java.util.Collections;
 import java.util.List;
 
 public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
@@ -62,4 +63,42 @@ public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
             .setParameter("syntax", syntax)
             .getSingleResult();
   }
+
+  public List<PageVersionEntity> findPageVersionsByPageIdAndLang(Long pageId, String lang) {
+    TypedQuery<PageVersionEntity> query = getEntityManager()
+                                                            .createNamedQuery("wikiPageVersion.getPageVersionsByPageIdAndLang",
+                                                                              PageVersionEntity.class)
+                                                            .setParameter("pageId", pageId)
+                                                            .setParameter("lang", lang);
+    try {
+      return query.getResultList();
+    } catch (NoResultException e) {
+      return Collections.emptyList();
+    }
+  }
+  
+  public PageVersionEntity findLatestVersionByPageIdAndLang(Long pageId, String lang) {
+    TypedQuery<PageVersionEntity> query = getEntityManager()
+                                                            .createNamedQuery("wikiPageVersion.getLatestPageVersionsByPageIdAndLang",
+                                                                              PageVersionEntity.class)
+                                                            .setParameter("pageId", pageId)
+                                                            .setParameter("lang", lang);
+    query.setMaxResults(1);
+    try {
+      return query.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
+  
+  public List<String> findPageAvailableTranslationLanguages(Long pageId) {
+    Query query = getEntityManager().createNamedQuery("wikiPageVersion.getPageAvailableTranslationLanguages")
+                                                 .setParameter("pageId", pageId);
+    try {
+      return query.getResultList();
+    } catch (NoResultException e) {
+      return Collections.emptyList();
+    }
+  }
+  
 }
