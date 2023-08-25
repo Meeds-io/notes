@@ -38,8 +38,8 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.social.rest.entity.IdentityEntity;
+import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
@@ -47,7 +47,6 @@ import org.exoplatform.wiki.service.search.TitleSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.json.JSONObject;
 import org.gatein.api.EntityNotFoundException;
-import org.json.JSONObject;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
@@ -208,12 +207,13 @@ public class NotesRestService implements ResourceContainer {
                               @Parameter(description = "withChildren")
                               @QueryParam("withChildren")
                               boolean withChildren,
-                              @Parameter(description = "source", required = false)
-                              @QueryParam("source")
-                              String source) {
+                              @Parameter(description = "source")
+                              @QueryParam("source") String source,
+                              @Parameter(description = "note content language")
+                              @QueryParam("lang") String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      Page note = noteService.getNoteById(noteId, identity, source);
+      Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, source, lang);
       if (note == null || note.isDeleted()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -243,6 +243,31 @@ public class NotesRestService implements ResourceContainer {
   }
 
   @GET
+  @Path("/note/langs/{noteId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @Operation(summary = "Get available translation languages by page id",
+             method = "GET",
+             description = "This get gets the available translation languages by page id.")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "500", description = "Server internal error") })
+  public Response getPageAvailableTranslationLanguages(@Parameter(description = "Note id", required = true)
+                                                       @PathParam("noteId") Long noteId) {
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
+    }
+    try {
+      List<String> languages = noteService.getPageAvailableTranslationLanguages(noteId);
+      return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).build();
+    } catch (Exception e) {
+     log.error("Error while getting available translation languages of the page with id : {}", noteId, e);
+     return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+  }
+
+  @GET
   @Path("/draftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
@@ -252,12 +277,13 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
           @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response getDraftNoteById(@Parameter(description = "Note id", required = true)
-  @PathParam("noteId")
-  String noteId) {
+                                   @PathParam("noteId") Long noteId,
+                                   @Parameter(description = "draft content language")
+                                   @QueryParam("lang") String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
-      DraftPage draftNote = noteService.getDraftNoteById(noteId, currentUserId);
+      DraftPage draftNote = noteService.getDraftNoteByIdAndLang(noteId, currentUserId, lang);
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -289,8 +315,9 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
           @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response getLatestDraftOfPage(@Parameter(description = "Note id", required = true)
-  @PathParam("noteId")
-  String noteId) {
+                                       @PathParam("noteId") String noteId,
+                                       @Parameter(description = "draft content language")
+                                       @QueryParam("lang") String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
@@ -298,8 +325,9 @@ public class NotesRestService implements ResourceContainer {
       if (targetPage == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      DraftPage draftNote = noteService.getLatestDraftOfPage(targetPage, currentUserId);
-
+      DraftPage draftNote = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(targetPage.getId()),
+                                                                                     currentUserId,
+                                                                                     lang);
       return Response.ok(draftNote != null ? draftNote : JSONObject.NULL).build();
     } catch (Exception e) {
       log.error("Can't get draft note {}", noteId, e);
@@ -317,15 +345,17 @@ public class NotesRestService implements ResourceContainer {
        @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
        @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response getNoteVersions(@Parameter(description = "Note id", required = true)
-  @PathParam("noteId")
-  String noteId) {
+                                  @PathParam("noteId") String noteId,
+                                  @Parameter(description = "versions content language")
+                                  @QueryParam("lang") String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      return Response.ok(noteService.getVersionsHistoryOfNote(note, identity.getUserId())).build();
+      return Response.ok(noteService.getVersionsHistoryOfNoteByLang(note, identity.getUserId(), lang))
+                     .build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
