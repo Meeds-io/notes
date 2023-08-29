@@ -29,7 +29,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
 
-import javax.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionEvent;
 
 public class SessionDestroyedListener extends Listener<PortalContainer, HttpSessionEvent> {
 
