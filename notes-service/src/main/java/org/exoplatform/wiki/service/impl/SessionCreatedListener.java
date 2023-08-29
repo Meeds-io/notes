@@ -16,7 +16,7 @@
  */
 package org.exoplatform.wiki.service.impl;
 
-import javax.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionEvent;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.listener.Event;
