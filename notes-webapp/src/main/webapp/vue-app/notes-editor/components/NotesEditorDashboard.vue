@@ -546,13 +546,23 @@ export default {
           removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
         }
       }
-      CKEDITOR.addCss('h1 { font-size: 34px;font-weight: 400;}');
-      CKEDITOR.addCss('h2 { font-size: 28px;font-weight: 400;}');
-      CKEDITOR.addCss('h3 { font-size: 21.84px;font-weight: 400;}');
-      CKEDITOR.addCss('p,li { font-size: 18.6667px;}');
-      CKEDITOR.addCss('blockquote p { font-size: 17.5px;font-weight: 300;}');
+
+      CKEDITOR.addCss('h1 { font-size: 28px;margin-top:45px; }');
+      CKEDITOR.addCss('h2 { font-size: 23px;margin-top:35px; }');
+      CKEDITOR.addCss('h3 { font-size: 18px;margin-top:25px; }');
+      CKEDITOR.addCss('h1, h2, h3 { font-weight: 500; line-height:1.2; }');
+      CKEDITOR.addCss('p,li { font-size: 16px; line-height:1.4}');
+      CKEDITOR.addCss('p, li, blockquote { font-size: 16px;}');
+      CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 40px;padding: 0 40px;}');
+      CKEDITOR.addCss('ul li {list-style: revert; list-style-type: inherit !important;}');
+      CKEDITOR.addCss('blockquote {font-weight: 400;}');
       CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
+      CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
+      CKEDITOR.addCss('ol ol li {list-style-type: lower-latin !important;}');
+      CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
+      CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
+      CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
 
       // this line is mandatory when a custom skin is defined
 
@@ -582,6 +592,10 @@ export default {
           { name: 'insert' },
           { name: 'links', items: [ 'simpleLink','InsertOptions'] },
         ],
+        indentBlock: {
+          offset: 40,
+          unit: 'px'
+        },
         format_tags: 'p;h1;h2;h3',
         autoGrow_minHeight: self.noteFormContentHeight,
         height: self.noteFormContentHeight,
