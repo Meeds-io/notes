@@ -7,8 +7,7 @@
 @import "Notifications/Style.less";
 @import "Sprites/Style.less";
 @import "UIWikiRichTextEditor/Stylesheet.less";
-@import "../../../ckeditor/skins/common/extendedRichContent.less";
-
+@import "editor.less";
 /************ New css feature notes ****************/
 .customPluginsDrawer {
   z-index: 99999 !important;
@@ -188,6 +187,7 @@
   .notes-application-content {
     overflow: auto;
     min-height: calc(~"100vh - 350px");
+    margin: 4px;
   }
 }
 
@@ -214,6 +214,14 @@
 		  font-size: 18px;
 		  margin: 5px auto 0;
 	  }
+  }
+
+  table {
+    width: auto;
+
+    td {
+      padding: 5px;
+    }
   }
 
   .notes-application {

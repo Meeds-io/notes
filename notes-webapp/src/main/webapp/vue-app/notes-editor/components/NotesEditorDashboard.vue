@@ -641,7 +641,32 @@ export default {
           targetField['default'] = '_self';
           targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
         }
-      });
+        if (ckEditorRemovePlugins) {
+          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
+        }
+      }
+
+      CKEDITOR.addCss('h1 { font-size: 28px;margin-top:45px; }');
+      CKEDITOR.addCss('h2 { font-size: 23px;margin-top:35px; }');
+      CKEDITOR.addCss('h3 { font-size: 18px;margin-top:25px; }');
+      CKEDITOR.addCss('h1, h2, h3 { font-weight: 500; line-height:1.2; }');
+      CKEDITOR.addCss('p,li, table td { line-height:1.4}');
+      CKEDITOR.addCss('p, li, table td, blockquote { font-size: 16px;}');
+      CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 0px;padding: 0 40px;}');
+      CKEDITOR.addCss('ul li {list-style: revert; list-style-type: inherit !important;}');
+      CKEDITOR.addCss('table td:not(:has(p)) {padding-bottom: 10px;}');
+      CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
+      CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
+      CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
+      CKEDITOR.addCss('img {margin:10px !important; }');
+      CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
+      CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
+      CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
+      CKEDITOR.addCss('ol ol li {list-style-type: lower-latin !important;}');
+      CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
+      CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
+      CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
+
       // this line is mandatory when a custom skin is defined
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
       const self = this;
@@ -657,7 +682,16 @@ export default {
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
-        copyFormatting_allowedContexts: true,
+        toolbar: [
+          { name: 'format', items: ['Format'] },
+          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
+          { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Blockquote' ] },
+          { name: 'fontsize', items: ['FontSize'] },
+          { name: 'colors', items: [ 'TextColor' ] },
+          { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+          { name: 'insert' },
+          { name: 'links', items: [ 'simpleLink','InsertOptions'] },
+        ],
         indentBlock: {
           offset: 40,
           unit: 'px'
