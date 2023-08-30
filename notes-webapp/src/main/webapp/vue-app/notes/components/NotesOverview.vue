@@ -354,7 +354,7 @@ export default {
               :items="noteChildItems" \
               item-key="noteId"> \
               <template #label="{ item }"> \
-                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text"> \
+                <v-list-item-title @click="openNoteChild(item)" class="body-2 content-link clickable primary--text"> \
                 <span>{{ item.name }}</span> \
               </v-list-item-title> \
               </template> \
