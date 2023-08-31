@@ -18,7 +18,7 @@
             color="primary"
             class="ma-1"
             small
-            :outlined="''!==selectedTranslation.value"
+            :outlined="!!selectedTranslation?.value"
             @click="changeTranslation({value: ''})">
             {{ $t('notes.label.translation.originalVersion') }}
           </v-chip>
@@ -67,7 +67,7 @@
               small
               v-bind="attrs"
               v-on="on">
-              {{ selectedTranslation.value!==''?selectedTranslation.text:$t('notes.label.translation.originalVersion') }}
+              {{ !!selectedTranslation.value ? selectedTranslation.text : $t('notes.label.translation.originalVersion') }}
             </v-chip>
           </template>
 

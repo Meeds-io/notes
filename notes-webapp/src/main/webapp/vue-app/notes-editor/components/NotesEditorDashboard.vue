@@ -16,13 +16,15 @@
       id="notesEditor"
       class="notesEditor width-full">
       <div class="notes-topbar">
-        <div class="notesActions white" v-if="!showTranslationBar">
+        <div
+          v-if="!showTranslationBar"
+          class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
               <v-icon
-                v-if="notesMultilingualActive && note && note.id"
+                v-if="notesMultilingualActive && note?.id"
                 size="22"
                 class="primary--text clickable pa-2"
                 @click="showTranslations">
