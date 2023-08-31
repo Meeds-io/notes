@@ -43,7 +43,7 @@ export function getLatestDraftOfPage(noteId) {
   });
 }
 
-export function getNoteById(noteId,source,type,owner,withChildren) {
+export function getNoteById(noteId,lang,source,type,owner,withChildren) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
     url=`${url}${getSeparator(url)}source=${source}`;
@@ -53,6 +53,8 @@ export function getNoteById(noteId,source,type,owner,withChildren) {
     url=`${url}${getSeparator(url)}noteBookOwner=${owner}`;
   } if (withChildren){
     url=`${url}${getSeparator(url)}withChildren=${withChildren}`;
+  } if (lang){
+    url=`${url}${getSeparator(url)}lang=${lang}`;
   }
   return fetch(url, {
     method: 'GET',
@@ -339,3 +341,43 @@ export function getNoteVersionsByNoteId(noteId) {
     }
   });
 }
+
+export function getAvailableLanguages() {
+  const lang = eXo && eXo.env.portal.language || 'en';
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/languages?lang=${lang}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
+export function getNoteLanguages(noteId) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/langs/${noteId}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  });
+}
+
+export function deleteNoteTranslation(noteId, lang) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translations/${noteId}/${lang}`, {
+    credentials: 'include',
+    method: 'DELETE',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when deleting translation');
+    }
+  });
+}
+
