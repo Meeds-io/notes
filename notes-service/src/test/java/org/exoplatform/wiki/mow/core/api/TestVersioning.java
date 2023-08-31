@@ -96,7 +96,7 @@ public class TestVersioning extends BaseTest {
     assertEquals("testCreateVersionHistoryTree-ver2.0", pageVersion.getContent());
 
     pageVersion = itVersions.next();
-    assertEquals("testCreateVersionHistoryTree-ver1.0", pageVersion.getContent());
+    assertEquals("testCreateVersionHistoryTree-ver2.0", pageVersion.getContent());
 
     pageVersion = itVersions.next();
     assertEquals("testCreateVersionHistoryTree-ver2.0", pageVersion.getContent());
