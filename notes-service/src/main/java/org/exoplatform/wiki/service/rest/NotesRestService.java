@@ -45,7 +45,8 @@ import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.TitleSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.gatein.api.EntityNotFoundException;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -73,7 +74,7 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
-
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.rest.http.PATCH;
 
 @Path("/notes")
@@ -328,7 +329,7 @@ public class NotesRestService implements ResourceContainer {
       DraftPage draftNote = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      currentUserId,
                                                                                      lang);
-      return Response.ok(draftNote != null ? draftNote : JSONObject.NULL).build();
+      return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
     } catch (Exception e) {
       log.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
@@ -608,35 +609,56 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
-      String newNoteName = TitleResolver.getId(note.getTitle(), false);
+      String newNoteName = note_.getName();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
-        note_.setTitle(note.getTitle());
-        note_.setContent(note.getContent());
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
-          noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
-          note_.setName(newNoteName);
+        if (StringUtils.isEmpty(note.getLang())) {
+          newNoteName = TitleResolver.getId(note.getTitle(), false);
+          note_.setTitle(note.getTitle());
+          note_.setContent(note.getContent());
+          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
+            noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
+            note_.setName(newNoteName);
+          }
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        } else {
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+          note_.setTitle(note.getTitle());
+          note_.setContent(note.getContent());
+          note_.setLang(note.getLang());
         }
-        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
-          noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
-          note_.setName(newNoteName);
+        if (StringUtils.isEmpty(note.getLang())) {
+          newNoteName = TitleResolver.getId(note.getTitle(), false);
+          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
+            noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
+            note_.setName(newNoteName);
+          }
+          note_.setTitle(note.getTitle());
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+        } else {
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+          note_.setTitle(note.getTitle());
+          note_.setLang(note.getLang());
         }
-        note_.setTitle(note.getTitle());
-        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getContent().equals(note.getContent())) {
-        note_.setContent(note.getContent());
-        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        if (StringUtils.isNotEmpty(note.getLang())) {
+          note_.setContent(note.getContent());
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+        } else {
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+          note_.setContent(note.getContent());
+          note_.setLang(note.getLang());
+        }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
@@ -1326,7 +1348,46 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-
+  /**
+   * Return a list of available languages.
+   *
+   * @return List of languages
+   */
+  @GET
+  @Path("languages")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  public Response getAvailableLanguages(@Context
+  UriInfo uriInfos, @QueryParam("lang")
+  String lang) {
+    try {
+      Set<Locale> locales = LocaleContextInfoUtils.getSupportedLocales();
+      List<Locale> localesList = new ArrayList<>(locales);
+      JSONArray localesJSON = new JSONArray();
+      Locale currentLocal = Locale.ENGLISH;
+      if (!lang.isEmpty()) {
+        Optional<Locale> opLocal = Arrays.stream(Locale.getAvailableLocales())
+                                         .filter(local -> local.getLanguage().equals(lang))
+                                         .findAny();
+        if (opLocal.isPresent()) {
+          currentLocal = opLocal.get();
+        }
+      }
+      for (Locale locale : localesList) {
+        JSONObject object = new JSONObject();
+        if (locale.toString().equals("ma")) {
+          continue;
+        } else {
+          object.put("value", locale.toString());
+          object.put("text", locale.getDisplayName(currentLocal) + " / " + locale.getDisplayName(locale));
+        }
+        localesJSON.add(object);
+      }
+      return Response.ok(localesJSON, MediaType.APPLICATION_JSON).build();
+    } catch (Exception e) {
+      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
+    }
+  }
 
   private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
