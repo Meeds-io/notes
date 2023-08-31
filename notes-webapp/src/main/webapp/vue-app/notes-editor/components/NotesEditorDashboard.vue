@@ -199,11 +199,13 @@ export default {
     'note.title'() {
       if (this.note.title !== this.actualNote.title ) {
         this.autoSave();
+        this.hideTranslations();
       }
     },
     'note.content'() {
       if (this.note.content !== this.actualNote.content) {
         this.autoSave();
+        this.hideTranslations();
       }
     },
   },
@@ -926,6 +928,10 @@ export default {
     showTranslations() {
       this.showTranslationBar=true;
       this.$refs.translationsEditBar.show();
+    },
+    hideTranslations() {
+      this.showTranslationBar=false;
+      this.$refs.translationsEditBar.hide();
     },
     isDefaultContent(noteContent) {
       const div = document.createElement('div');
