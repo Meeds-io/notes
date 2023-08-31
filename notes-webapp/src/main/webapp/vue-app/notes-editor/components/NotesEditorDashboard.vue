@@ -76,8 +76,8 @@
       </div>
 
       <form class="notes-content">
-        <div class="notes-content-form px-4">
-          <div class="formInputGroup notesTitle mx-3">
+        <div class="notes-content-form singlePageApplication py-1 px-5">
+          <div class="formInputGroup notesTitle white px-5">
             <input
               id="notesTitle"
               ref="noteTitle"

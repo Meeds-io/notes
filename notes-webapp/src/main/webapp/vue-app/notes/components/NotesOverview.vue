@@ -6,10 +6,10 @@
     <div>
       <div
         v-if="isAvailableNote"
-        class="notes-application white border-radius pa-6"
+        class="notes-application white border-radius pa-5"
         ref="content">
         <div class="notes-application-header">
-          <div class="notes-title d-flex justify-space-between pb-4">
+          <div class="notes-title d-flex justify-space-between pb-4 ps-1">
             <span
               ref="noteTitle"
               class="title text-color mt-n1">
