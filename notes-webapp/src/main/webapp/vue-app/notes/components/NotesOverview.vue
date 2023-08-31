@@ -378,7 +378,7 @@ export default {
               },
               methods: {
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
-                  return this.$notesService.getNoteById(noteId, source, noteBookType, noteBookOwner).then(data => {
+                  return this.$notesService.getNoteById(noteId,'', source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
                       if (data && data.jsonList.length) {
@@ -652,7 +652,7 @@ export default {
       clearInterval(this.intervalId);
     },
     getNoteById(noteId, source) {
-      return this.$notesService.getNoteById(noteId, source, this.noteBookType, this.noteBookOwner).then(data => {
+      return this.$notesService.getNoteById(noteId,'', source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;

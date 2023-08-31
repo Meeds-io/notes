@@ -444,6 +444,7 @@ public class EntityConverter {
     if (pageVersionEntity != null) {
       pageVersion = new PageVersion();
       pageVersion.setName(String.valueOf(pageVersionEntity.getVersionNumber()));
+      pageVersion.setTitle(pageVersionEntity.getTitle());
       pageVersion.setAuthor(pageVersionEntity.getAuthor());
       pageVersion.setContent(pageVersionEntity.getContent());
       pageVersion.setCreatedDate(pageVersionEntity.getCreatedDate());
