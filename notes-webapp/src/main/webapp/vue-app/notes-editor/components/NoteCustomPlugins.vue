@@ -102,7 +102,7 @@ export default {
       this.$refs.customPluginsDrawer.close();
     },
     retrieveNoteChildren(noteId) {
-      this.$notesService.getNoteById(noteId, '','','',true).then(data => {
+      this.$notesService.getNoteById(noteId,'', '','','',true).then(data => {
         this.noteChildren = data && data.children || [];
       });
     },
