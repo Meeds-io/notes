@@ -1118,14 +1118,14 @@ public class JPADataStorage implements DataStorage {
 
       pageVersionEntity.setPage(pageEntity);
       pageVersionEntity.setVersionNumber(versionNumber);
-      pageVersionEntity.setName(pageEntity.getName());
-      pageVersionEntity.setTitle(pageEntity.getTitle());
+      pageVersionEntity.setName(page.getName());
+      pageVersionEntity.setTitle(page.getTitle());
       if (StringUtils.isNotEmpty(userName)) {
         pageVersionEntity.setAuthor(userName);
       } else {
         pageVersionEntity.setAuthor(pageEntity.getAuthor());
       }
-      pageVersionEntity.setContent(pageEntity.getContent());
+      pageVersionEntity.setContent(page.getContent());
       pageVersionEntity.setSyntax(pageEntity.getSyntax());
       pageVersionEntity.setMinorEdit(pageEntity.isMinorEdit());
       pageVersionEntity.setComment(pageEntity.getComment());
@@ -1141,7 +1141,6 @@ public class JPADataStorage implements DataStorage {
       if (pageVersionEntities == null) {
         pageVersionEntities = new ArrayList<>();
       }
-
       pageVersionEntities.add(pageVersionEntity);
       pageEntity.setVersions(pageVersionEntities);
 
