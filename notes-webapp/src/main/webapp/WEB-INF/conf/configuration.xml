@@ -32,6 +32,7 @@
   <import>war:/conf/wiki/spaces-templates-configuration.xml</import>
   <import>war:/conf/wiki/dynamic-container-configuration.xml</import>
   <import>war:/conf/wiki/search-configuration.xml</import>
+  <import>war:/conf/wiki/features-flags-configuration.xml</import>
   <import profiles="analytics">war:/conf/wiki/analytics-ui-watchers-configuration.xml</import>
   <import>war:/conf/wiki/metadata-configuration.xml</import>
 
