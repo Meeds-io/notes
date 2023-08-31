@@ -4,11 +4,20 @@
       id="notesEditor"
       class="notesEditor width-full">
       <div class="notes-topbar">
-        <div class="notesActions white">
+        <div
+          v-if="!showTranslationBar"
+          class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
+              <v-icon
+                v-if="notesMultilingualActive && note?.id"
+                size="22"
+                class="primary--text clickable pa-2"
+                @click="showTranslations">
+                fa-language
+              </v-icon>
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
@@ -39,7 +48,7 @@
                   @click.stop="postNote(true)"
                   class="px-2">
                   <v-icon
-                    size="19"
+                    size="16"
                     class="primary--text clickable pr-2">
                     mdi-arrow-collapse-up
                   </v-icon>
@@ -49,6 +58,10 @@
             </div>
           </div>
         </div>
+        <note-translation-edit-bar
+          v-if="notesMultilingualActive"
+          ref="translationsEditBar"
+          :note="note" />
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -142,6 +155,8 @@ export default {
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       oembedMinWidth: 300,
+      showTranslationBar: false,
+      slectedLanguage: null,
     };
   },
   computed: {
@@ -166,16 +181,21 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('webPageNote') === 'true';
     },
+    notesMultilingualActive() {
+      return eXo?.env?.portal?.notesMultilingual;
+    }
   },
   watch: {
     'note.title'() {
       if (this.note.title !== this.actualNote.title ) {
         this.autoSave();
+        this.hideTranslations();
       }
     },
     'note.content'() {
       if (this.note.content !== this.actualNote.content) {
         this.autoSave();
+        this.hideTranslations();
       }
     },
   },
@@ -194,6 +214,9 @@ export default {
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('appName')) {
       this.appName = urlParams.get('appName');
+    }
+    if (urlParams.has('lang')) {
+      this.slectedLanguage = urlParams.get('lang');
     }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
@@ -228,6 +251,9 @@ export default {
       this.note.content= data;
     });
     this.$root.$on('show-alert', this.displayMessage);
+    this.$root.$on('hide-translations', () => {
+      this.showTranslationBar=false;
+    });
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.note, 'includePages', null, filter);
@@ -237,6 +263,20 @@ export default {
           this.$refs.noteTreeview.open(note, 'includePages', null, filter);
         });
       }
+    });
+    this.$root.$on('add-translation', lang => {
+      this.slectedLanguage=lang;
+      this.note.content='';
+      this.note.title='';
+      this.note.lang=lang;
+      this.initCKEditor();
+    });
+    this.$root.$on('lang-translation-changed', lang => {
+      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
+      this.slectedLanguage=lang;
+      this.getNote(noteId);
+      this.note.lang=lang;
+      this.initCKEditor();
     });
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
@@ -315,7 +355,7 @@ export default {
           this.displayDraftMessage();
           this.initActualNoteDone = true;
         } else {
-          this.$notesService.getNoteById(id).then(data => {
+          this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
             this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
@@ -340,6 +380,7 @@ export default {
           name: this.note.name,
           title: this.note.title,
           content: this.note.content,
+          lang: this.note.lang,
           author: this.note.author,
           owner: this.note.owner,
           breadcrumb: this.note.breadcrumb,
@@ -348,9 +389,11 @@ export default {
         const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
         +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
         +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
-        CKEDITOR.instances['notesContent'].setData(data.content);
+        if (CKEDITOR.instances['notesContent']) {
+          CKEDITOR.instances['notesContent'].setData(data.content);
+        }
         if ((this.note.content.trim().length === 0)) {
-          this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
+          this.$notesService.getNoteById(this.noteId,this.slectedLanguage,'','','',true).then(data => {
             if (data && data.children && data.children.length) {
               CKEDITOR.instances['notesContent'].setData(childContainer);
               this.setFocus();
@@ -369,6 +412,7 @@ export default {
             id: this.note.targetPageId ? this.note.targetPageId : null,
             title: this.note.title,
             name: this.note.name,
+            lang: this.note.lang,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
             content: this.getBody() || this.note.content,
@@ -381,6 +425,7 @@ export default {
             id: this.note.id,
             title: this.note.title,
             name: this.note.name,
+            lang: this.note.lang,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
             content: this.getBody() || this.note.content,
@@ -440,6 +485,7 @@ export default {
         title: this.note.title,
         content: this.getBody() || this.note.content,
         name: this.note.name,
+        lang: this.note.lang,
         appName: this.appName,
         wikiType: this.note.wikiType,
         wikiOwner: this.note.wikiOwner,
@@ -685,7 +731,7 @@ export default {
             const element = evt.data.element;
             if ( element && element.is('a')) {
               const noteId = element.getAttribute( 'href' );
-              self.$notesService.getNoteById(noteId).then(data => {
+              self.$notesService.getNoteById(noteId,this.slectedLanguage).then(data => {
                 const note = data;
                 self.$refs.noteTreeview.open(note, 'includePages', 'no-arrow');
               });
@@ -860,6 +906,14 @@ export default {
     enableClickOnce() {
       this.postingNote = false;
       this.postKey++;
+    },
+    showTranslations() {
+      this.showTranslationBar=true;
+      this.$refs.translationsEditBar.show();
+    },
+    hideTranslations() {
+      this.showTranslationBar=false;
+      this.$refs.translationsEditBar.hide();
     },
     isDefaultContent(noteContent) {
       const div = document.createElement('div');
