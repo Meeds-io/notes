@@ -562,7 +562,7 @@ export default {
           this.$refs.breadcrumbDrawer.close();
         } else if (this.movePage) {
           if (note.noteId !== this.note.id) {
-            this.$notesService.getNoteById(note.noteId, '', '', '', true).then(data => {
+            this.$notesService.getNoteById(note.noteId,'', '', '', '', true).then(data => {
               this.breadcrumb = data && data.breadcrumb || [];
               this.breadcrumb[0].name = this.$t('notes.label.noteHome');
               this.destinationNote = data;
