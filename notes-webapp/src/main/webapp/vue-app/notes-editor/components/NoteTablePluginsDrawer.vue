@@ -336,7 +336,7 @@ export default {
         elementContainer.appendChild(contentSummary);
         elementContainer.appendChild(table);
         div.appendChild(elementContainer);
-        table.setAttribute('width', this.width);
+        table.setAttribute('style', `width:${this.width}px !important`);
         table.setAttribute('border', this.border);
         table.setAttribute('cellPadding', this.internal);
         table.setAttribute('height', this.height);

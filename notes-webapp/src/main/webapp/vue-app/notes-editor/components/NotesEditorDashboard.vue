@@ -24,7 +24,7 @@
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
               <v-icon
-                v-if="notesMultilingualActive && note?.id"
+                v-if="notesMultilingualActive && note.id"
                 size="22"
                 class="primary--text clickable pa-2"
                 @click="showTranslations">
@@ -598,11 +598,15 @@ export default {
       CKEDITOR.addCss('h2 { font-size: 23px;margin-top:35px; }');
       CKEDITOR.addCss('h3 { font-size: 18px;margin-top:25px; }');
       CKEDITOR.addCss('h1, h2, h3 { font-weight: 500; line-height:1.2; }');
-      CKEDITOR.addCss('p,li { font-size: 16px; line-height:1.4}');
-      CKEDITOR.addCss('p, li, blockquote { font-size: 16px;}');
-      CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 40px;padding: 0 40px;}');
+      CKEDITOR.addCss('p,li, table td { line-height:1.4}');
+      CKEDITOR.addCss('p, li, table td, blockquote { font-size: 16px;}');
+      CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 0px;padding: 0 40px;}');
       CKEDITOR.addCss('ul li {list-style: revert; list-style-type: inherit !important;}');
-      CKEDITOR.addCss('blockquote {font-weight: 400;}');
+      CKEDITOR.addCss('table td:not(:has(p)) {padding-bottom: 10px;}');
+      CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal important; padding: 10px 0 0 10px !important; margin: 0 0 10px 0!important;}');
+      CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
+      CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
+      CKEDITOR.addCss('img {margin:10px !important; }');
       CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
       CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
@@ -627,7 +631,7 @@ export default {
         toolbarLocation: 'top',
         extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
-        enterMode: CKEDITOR.ENTER_BR,
+        enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
         toolbar: [
           { name: 'format', items: ['Format'] },
