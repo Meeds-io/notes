@@ -215,10 +215,7 @@ export default {
         this.autoSave();
         this.hideTranslations();
       }
-    },
-    'note.id'() {
-      console.warn(this.note.id);
-    },
+    }
   },
   created() {
     this.getAvailableLanguages();
