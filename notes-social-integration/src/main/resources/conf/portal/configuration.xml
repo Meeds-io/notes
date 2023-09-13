@@ -61,34 +61,6 @@
 		</component-plugin>
 	</external-component-plugins>
 
-  <external-component-plugins>
-    <target-component>org.exoplatform.commons.api.notification.service.setting.PluginContainer</target-component>
-    <component-plugin>
-      <name>notification.plugins</name>
-      <set-method>addChildPlugin</set-method>
-      <type>org.exoplatform.wiki.notification.plugin.WikiActivityChildPlugin</type>
-      <description>Initial information for forum child notification plugin.</description>
-      <init-params>
-        <value-param>
-          <name>templatePath</name>
-          <value><![CDATA[war:/groovy/wiki/social-integration/plugin/notification/WikiActivity.gtmpl]]></value>
-        </value-param>
-        <object-param>
-          <name>template.WikiActivityChildPlugin</name>
-          <description>The template of WikiActivityChildPlugin</description>
-          <object type="org.exoplatform.commons.api.notification.plugin.config.PluginConfig">
-            <field name="pluginId">
-              <string>ks-wiki:spaces</string>
-            </field>
-            <field name="bundlePath">
-              <string>locale.wiki.integration.notification.WikiNotification</string>
-            </field>
-          </object>
-        </object-param>
-      </init-params>
-    </component-plugin>
-  </external-component-plugins>
-
 	<external-component-plugins>
 		<target-component>org.exoplatform.commons.api.event.EventManager</target-component>
 		<component-plugin>
@@ -97,35 +69,6 @@
 			<type>org.exoplatform.wiki.addons.rdbms.listener.WikiActivityUpdaterListener</type>
 		</component-plugin>
 	</external-component-plugins>
-
-  <external-component-plugins>
-    <target-component>org.exoplatform.social.common.router.ExoRouter</target-component>
-    <component-plugin>
-      <name>addRoutes</name>
-      <set-method>addRoutes</set-method>
-      <type>org.exoplatform.social.common.router.ExoRouterConfig</type>
-      <init-params>
-        <object-param>
-          <name>uri.configuration</name>
-          <description>defines action name which associate with uri pattern.</description>
-          <object type="org.exoplatform.social.common.router.ExoRouterConfig">
-            <field name="routeMapping">
-              <map type="java.util.HashMap">
-                <entry>
-                  <key><string>wiki.owner.extended.show</string></key>
-                  <value><string><![CDATA[/wiki/user/{streamOwnerId}/{<.*>path}]]></string></value>
-                </entry>
-                <entry>
-                  <key><string>wiki.owner.show</string></key>
-                  <value><string>/wiki/user/{streamOwnerId}</string></value>
-                </entry>
-              </map>
-            </field>
-          </object>
-        </object-param>
-      </init-params>
-    </component-plugin>
-  </external-component-plugins>
 
   <external-component-plugins profiles="gamification">
     <target-component>org.exoplatform.wiki.service.WikiService</target-component>
