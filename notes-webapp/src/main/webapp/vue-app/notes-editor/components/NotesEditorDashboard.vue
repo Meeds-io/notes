@@ -11,6 +11,7 @@
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
+<<<<<<< HEAD
               <v-tooltip bottom>
                 <template #activator="{ on, attrs }">
                   <v-icon
@@ -26,6 +27,16 @@
                 </template>
                 <span class="caption">{{ langBottonTooltipText }}</span>
               </v-tooltip>
+=======
+              <v-icon
+                v-if="notesMultilingualActive && noteId"
+                size="22"
+                class="clickable pa-2"
+                :class="langBottonColor"
+                @click="showTranslations">
+                fa-language
+              </v-icon>
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
@@ -70,8 +81,12 @@
           ref="translationsEditBar"
           :note="note"
           :languages="languages"
+<<<<<<< HEAD
           :translations="translations"
           :is-mobile="isMobile" />
+=======
+          :translations="translations" />
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -179,10 +194,13 @@ export default {
       slectedLanguage: null,
       translations: null,
       languages: [],
+<<<<<<< HEAD
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
       noteEditorExtensions: null
+=======
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     };
   },
   computed: {
@@ -207,6 +225,7 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('webPageNote') === 'true';
     },
+<<<<<<< HEAD
     langBottonColor(){
       if (!this.noteId){
         return 'disabled--text not-clickable remove-focus';
@@ -223,6 +242,14 @@ export default {
         return this.$t('notes.message.firstVersionShouldBeCreated');
       }
     },
+=======
+    notesMultilingualActive() {
+      return eXo?.env?.portal?.notesMultilingual;
+    },
+    langBottonColor(){
+      return this.translations?.length>0 ? 'primary--text':'';
+    }
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
 
   },
   watch: {
@@ -240,10 +267,13 @@ export default {
     }
   },
   created() {
+<<<<<<< HEAD
     this.refreshTranslationExtensions();
     document.addEventListener('automatic-translation-extensions-updated', () => {
       this.refreshTranslationExtensions();
     });
+=======
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
@@ -266,8 +296,12 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
+<<<<<<< HEAD
     } else {
       this.initActualNoteDone=true;
+=======
+      this.getNoteLanguages();
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -309,7 +343,16 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
+<<<<<<< HEAD
       this.addTranslation(lang);
+=======
+      this.slectedLanguage=lang.value;
+      this.translations.unshift(lang);
+      this.note.content='';
+      this.note.title='';
+      this.note.lang=lang.value;
+      this.initCKEditor();
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     });
     this.$root.$on('lang-translation-changed', lang => {
       this.changeTranslation(lang);
@@ -1028,6 +1071,7 @@ export default {
       return documentElement?.children[1].innerHTML;
     },
     getNoteLanguages(){
+<<<<<<< HEAD
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       return this.$notesService.getNoteLanguages(noteId,true).then(data => {
         this.translations =  data || [];
@@ -1045,19 +1089,33 @@ export default {
             this.translations=this.translations.filter(item => item.value !== lang.value);
             this.translations.unshift(lang);
           }
+=======
+      return this.$notesService.getNoteLanguages(this.noteId).then(data => {
+        this.translations =  data || [];
+        if (this.translations.length>0) {
+          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+        }
+        if (this.isMobile) {
+          this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         }
       });
     },
     getAvailableLanguages(){
       return this.$notesService.getAvailableLanguages().then(data => {
         this.languages = data || [];
+<<<<<<< HEAD
         this.languages.sort((a, b) => a.text.localeCompare(b.text));
         this.allLanguages=this.languages;
+=======
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
         if (this.translations){
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
       });
+<<<<<<< HEAD
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);
@@ -1125,6 +1183,9 @@ export default {
     refreshTranslationExtensions() {
       this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
     },
+=======
+    }
+>>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
   }
 };
 </script>
