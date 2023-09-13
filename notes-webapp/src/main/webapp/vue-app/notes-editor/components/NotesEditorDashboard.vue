@@ -24,9 +24,10 @@
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
               <v-icon
-                v-if="notesMultilingualActive && note.id"
+                v-if="notesMultilingualActive && noteId"
                 size="22"
-                class="primary--text clickable pa-2"
+                class="clickable pa-2"
+                :class="langBottonColor"
                 @click="showTranslations">
                 fa-language
               </v-icon>
@@ -71,7 +72,9 @@
         <note-translation-edit-bar
           v-if="notesMultilingualActive"
           ref="translationsEditBar"
-          :note="note" />
+          :note="note"
+          :languages="languages"
+          :translations="translations" />
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -167,6 +170,8 @@ export default {
       spaceGroupId: null,
       showTranslationBar: false,
       slectedLanguage: null,
+      translations: null,
+      languages: [],
     };
   },
   computed: {
@@ -192,7 +197,11 @@ export default {
     },
     notesMultilingualActive() {
       return eXo?.env?.portal?.notesMultilingual;
+    },
+    langBottonColor(){
+      return this.translations?.length>0 ? 'primary--text':'';
     }
+
   },
   watch: {
     'note.title'() {
@@ -207,8 +216,12 @@ export default {
         this.hideTranslations();
       }
     },
+    'note.id'() {
+      console.warn(this.note.id);
+    },
   },
   created() {
+    this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
@@ -235,6 +248,7 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
+      this.getNoteLanguages();
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -276,10 +290,11 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
-      this.slectedLanguage=lang;
+      this.slectedLanguage=lang.value;
+      this.translations.unshift(lang);
       this.note.content='';
       this.note.title='';
-      this.note.lang=lang;
+      this.note.lang=lang.value;
       this.initCKEditor();
     });
     this.$root.$on('lang-translation-changed', lang => {
@@ -750,16 +765,18 @@ export default {
     setToolBarEffect() {
       const element = CKEDITOR.instances['notesContent'] ;
       const elementNewTop = document.getElementById('notesTop');
-      element.on('contentDom', function () {
-        this.document.on('click', function(){
-          elementNewTop.classList.add('darkComposerEffect');
+      if (element){
+        element.on('contentDom', function () {
+          this.document.on('click', function(){
+            elementNewTop.classList.add('darkComposerEffect');
+          });
         });
-      });
-      element.on('contentDom', function () {
-        this.document.on('keyup', function(){
-          elementNewTop.classList.add('darkComposerEffect');
+        element.on('contentDom', function () {
+          this.document.on('keyup', function(){
+            elementNewTop.classList.add('darkComposerEffect');
+          });
         });
-      });
+      }
       $('#notesEditor').parent().click(() => {
         elementNewTop.classList.remove('darkComposerEffect');
         elementNewTop.classList.add('greyComposerEffect');
@@ -776,7 +793,7 @@ export default {
         if (CKEDITOR.instances['notesContent']) {
           CKEDITOR.instances['notesContent'].status = 'ready';
           window.setTimeout(() => {
-            this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
+            this.$nextTick().then(() => CKEDITOR.instances['notesContent']?.focus());
           }, 200);
         }        
       }
@@ -923,9 +940,30 @@ export default {
       }
     },
     getBody: function() {
-      const newData = CKEDITOR.instances['notesContent'].getData();
+      const newData = CKEDITOR.instances['notesContent']?.getData();
       return newData ? newData : null;
-    }
+    },
+    getNoteLanguages(){
+      return this.$notesService.getNoteLanguages(this.noteId).then(data => {
+        this.translations =  data || [];
+        if (this.translations.length>0) {
+          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+        }
+        if (this.isMobile) {
+          this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+        }
+      });
+    },
+    getAvailableLanguages(){
+      return this.$notesService.getAvailableLanguages().then(data => {
+        this.languages = data || [];
+        this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
+        if (this.translations){
+          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+        }
+      });
+    },
   }
 };
 </script>

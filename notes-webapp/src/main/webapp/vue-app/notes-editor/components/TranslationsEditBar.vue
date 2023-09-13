@@ -3,27 +3,36 @@
     v-if="showTranslationbar"
     id="translationBar"
     class="d-flex flex-nowrap text-truncate px-1 pt-4 pb-3">
-    <v-btn
-      id="translationBarBackButton"
-      class="px-4  my-auto "
-      small
-      icon
-      @click="hide">
-      <v-icon size="22" class="icon-default-color">fa-arrow-left</v-icon>
-    </v-btn>
-    <div class="px-4 height-auto left-separator right-separator d-flex flex-nowrap">
+    <v-tooltip bottom>
+      <template #activator="{ on, attrs }">
+        <v-btn
+          id="translationBarBackButton"
+          aria-label="translation back button"
+          class="mx-4  my-auto "
+          small
+          icon
+          v-on="on"
+          v-bind="attrs"
+          @click="hide">
+          <v-icon size="22">fa-arrow-left</v-icon>
+        </v-btn>
+      </template>
+      <span class="caption">{{ $t('notes.label.button.back') }}</span>
+    </v-tooltip>
+    <div class="bar-separator my-auto"></div>
+    <div class="px-4 height-auto d-flex flex-nowrap">
       <div class=" d-flex flex-wrap my-auto  height-auto translation-chips">
         <div v-if="!isMobile" class=" d-flex flex-wrap my-auto  height-auto">
           <v-chip
             color="primary"
-            class="ma-1"
+            class="my-auto mx-1"
             small
             :outlined="!!selectedTranslation.value"
             @click="changeTranslation({value: ''})">
             {{ $t('notes.label.translation.originalVersion') }}
           </v-chip>
-          <div v-if="!isMobile" class="ps-2 ma-2">{{ $t('notes.label.translations') }}</div>
-          <div v-if="!translations || translations.length===0" class="ps-2 ma-2 text-sub-title">{{ $t('notes.label.noTranslations') }}</div>
+          <div v-if="!isMobile" class="ps-2 my-auto mx-1">{{ $t('notes.label.translations') }}</div>
+          <div v-if="!translations || translations.length===0" class="ps-2 my-auto mx-1 text-sub-title">{{ $t('notes.label.noTranslations') }}</div>
           <v-chip
             v-for="(translation, i) in translationToShow"
             :key="i"
@@ -31,9 +40,10 @@
             small
             :outlined="translation.value!==selectedTranslation.value"
             color="primary"
+            close-label="translation remove button"
             @click:close="removeTranslation(translation)"
             @click="changeTranslation(translation)"
-            class="ma-1">
+            class="my-auto mx-1">
             {{ translation.text }}
           </v-chip>
         </div>
@@ -49,11 +59,11 @@
               width="32"
               fab
               depressed
+              class="my-1"
               v-bind="attrs"
               v-on="on">
               <v-avatar
-                size="
-              32"
+                size="32"
                 class="notDisplayedIdentitiesOverlay">
                 <div class="notDisplayedIdentities d-flex align-center justify-center">
                   +{{ moreTranslations.length }}
@@ -63,7 +73,7 @@
             <v-chip
               v-show="isMobile"
               color="primary"
-              class="ma-1"
+              class="my-auto mx-1"
               small
               v-bind="attrs"
               v-on="on">
@@ -81,9 +91,10 @@
                 small
                 :outlined="item.value!==selectedTranslation.value"
                 color="primary"
+                close-label="translation remove button"
                 @click:close="removeTranslation(item)"
                 @click="changeTranslation(item)"
-                class="ma-2">
+                class="my-auto mx-1">
                 {{ item.text }}
               </v-chip>
             </v-list-item>
@@ -91,6 +102,7 @@
         </v-menu>
       </div>
     </div>
+    <div class="bar-separator my-auto"></div>
     <div class="px-2  my-auto  height-auto width-auto  d-flex flex-nowrap">
       <div v-if="!isMobile" class="ma-2">{{ $t('notes.label.translation.add') }}</div>
       <select
@@ -104,13 +116,22 @@
           {{ item.text }}
         </option>
       </select>
-      <v-btn
-        class="my-auto "
-        small
-        icon
-        @click="add()">
-        <v-icon size="18" class="icon-default-color py-3">fa-plus</v-icon>
-      </v-btn>
+      <v-tooltip bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            aria-label="translation add button"
+            class="my-auto "
+            small
+            icon
+            v-on="on"
+            v-bind="attrs"
+            :disabled="selectedLang.value===''"
+            @click="add()">
+            <v-icon size="18" class="icon-default-color py-3">fa-plus</v-icon>
+          </v-btn>
+        </template>
+        <span class="caption">{{ $t('notes.label.addTheTranslation') }}</span>
+      </v-tooltip>
     </div>
   </div>
 </template>
@@ -121,17 +142,23 @@ export default {
       type: Object,
       default: () => null,
     },
+    translations: {
+      type: Object,
+      default: () => null,
+    },
+    languages: {
+      type: Object,
+      default: () => null,
+    },
   },
 
   data: () => ({
     moreTranslationsMenu: false,
     showTranslationbar: false,
-    languages: [],
     selectedLang: {},
     selectedTranslation: {value: ''},
     displayActionMenu: true,
     noteLanguages: [],
-    translations: null,
   }),
 
   mounted() {
@@ -141,9 +168,6 @@ export default {
 
   },
 
-  created() {
-    this.getAvailableLanguages();
-  },
 
   computed: {
     moreTranslations(){
@@ -177,10 +201,10 @@ export default {
       this.$root.$emit('hide-translations');
     },
     add(){
-      this.translations.unshift(this.selectedLang);
+      //this.translations.unshift(this.selectedLang);
+      this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
       this.languages = this.languages.filter(item => item.value !== this.selectedLang.value);
-      this.$root.$emit('add-translation', this.selectedLang.value);
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
       
     },
@@ -191,27 +215,6 @@ export default {
       }
       this.selectedTranslation=translation;
       this.$root.$emit('lang-translation-changed', this.selectedTranslation.value);
-    },
-    getAvailableLanguages(){
-      return this.$notesService.getAvailableLanguages().then(data => {
-        this.languages = data || [];
-        this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
-        if (this.translations){
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
-        }       
-      });
-    },
-    getNoteLanguages(){
-      return this.$notesService.getNoteLanguages(this.noteId).then(data => {
-        this.translations =  data || [];
-        if (this.translations.length>0) {
-          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
-        }
-        if (this.isMobile) {
-          this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
-        }
-      });
     },
     removeTranslation(translation){
       return this.$notesService.deleteNoteTranslation(this.noteId,translation.value).then(() => {
