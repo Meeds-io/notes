@@ -201,7 +201,6 @@ export default {
       this.$root.$emit('hide-translations');
     },
     add(){
-      //this.translations.unshift(this.selectedLang);
       this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
       this.languages = this.languages.filter(item => item.value !== this.selectedLang.value);
