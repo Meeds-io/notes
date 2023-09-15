@@ -21,7 +21,6 @@ package org.exoplatform.wiki.utils;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.commons.api.notification.plugin.NotificationPluginUtils;
 import org.exoplatform.commons.diff.DiffResult;
 import org.exoplatform.commons.diff.DiffService;
 import org.exoplatform.commons.utils.CommonsUtils;
@@ -520,34 +519,6 @@ public class Utils {
     }
     return permissionMap;
   }
-
-  private static String makeNotificationSender(String from) {
-    InternetAddress addr = null;
-    if (from == null) return null;
-    try {
-      addr = new InternetAddress(from);
-    } catch (AddressException e) {
-      if (log_.isDebugEnabled()) { log_.debug("value of 'from' field in message made by forum notification feature is not in format of mail address", e); }
-      return null;
-    }
-    Properties props = new Properties(System.getProperties());
-    String mailAddr = props.getProperty("gatein.email.smtp.from");
-    if (mailAddr == null || mailAddr.length() == 0) mailAddr = props.getProperty("mail.from");
-    if (mailAddr != null) {
-      try {
-        String companyName = NotificationPluginUtils.getBrandingPortalName();
-        InternetAddress serMailAddr = new InternetAddress(mailAddr);
-        addr.setAddress(serMailAddr.getAddress());
-        return companyName + "<" + addr.toUnicodeString() + ">";
-      } catch (AddressException e) {
-        if (log_.isDebugEnabled()) { log_.debug("value of 'gatein.email.smtp.from' or 'mail.from' in configuration file is not in format of mail address", e); }
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-  
 
   private static String insertStyle(String rawHTML) {
     String result = rawHTML;
