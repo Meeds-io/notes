@@ -2,14 +2,24 @@
 
   .notes-application-content {
 
+    code {
+      white-space: pre-wrap !important;
+      display: block;
+      padding: 0.5em;
+      background: @primaryBackgroundDefault;
+      font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+    }
+
     blockquote {
       font-weight: 400 !important;
-      padding: 10px 0 0 10px !important;
+      padding: 10px !important;
       border-left-color: @primaryColor !important;
       margin: 0 0 10px 0 !important;
 
       p {
         margin-bottom: 0 !important;
+        line-height: 1.4 !important;
+        font-size: 16px !important;
       }
 
       strong {
@@ -120,7 +130,7 @@
     }
 
     img {
-      margin: 10px !important;
+      margin: 0 10px 10px 0 !important;
     }
 
   }
