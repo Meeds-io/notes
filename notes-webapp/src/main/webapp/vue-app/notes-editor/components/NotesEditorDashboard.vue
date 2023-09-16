@@ -169,6 +169,7 @@ export default {
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       oembedMinWidth: 300,
+<<<<<<< HEAD
       showTranslationBar: false,
       slectedLanguage: null,
       translations: null,
@@ -176,6 +177,8 @@ export default {
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
+=======
+>>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
     };
   },
   computed: {
@@ -635,6 +638,31 @@ export default {
       }
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
+      let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,' +
+          'tagSuggester,emoji,link,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
+      const windowWidth = $(window).width();
+      const windowHeight = $(window).height();
+      if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
+        // Disable suggester on smart-phone landscape
+        extraPlugins = 'simpleLink';
+      }
+      const toolbar = [
+        { name: 'format', items: ['Format'] },
+        { name: 'fontsize', items: ['FontSize'] },
+        {
+          name: 'basicstyles',
+          groups: ['basicstyles', 'cleanup'],
+          items: ['Bold', 'Italic', 'Underline', 'Strike', 'TextColor','RemoveFormat', 'CopyFormatting']
+        },
+        {
+          name: 'paragraph',
+          groups: ['align','list','indent'],
+          items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'NumberedList', 'BulletedList', 'Outdent', 'Indent'],
+        },
+        { name: 'links', items: [ 'Link', 'Anchor' ] },
+        { name: 'blocks', items: ['Blockquote', 'tagSuggester', 'emoji', 'selectImage', 'Table', 'EmbedSemantic', 'CodeSnippet', 'InsertOptions'] },
+      ];
 
       CKEDITOR.on('dialogDefinition', function (e) {
         if (e.data.name === 'link') {
@@ -646,6 +674,20 @@ export default {
         if (ckEditorRemovePlugins) {
           removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
         }
+      }
+      const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
+      if (notesEditorExtensions?.length && this.useExtraPlugins) {
+        notesEditorExtensions.forEach(notesEditorExtension => {
+          if (notesEditorExtension.extraPlugin) {
+            extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
+          }
+          if (notesEditorExtension.removePlugin) {
+            removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
+          }
+          if (notesEditorExtension.extraToolbarItem) {
+            toolbar[0].push(notesEditorExtension.extraToolbarItem);
+          }
+        });
       }
 
       CKEDITOR.addCss('h1 { font-size: 28px;margin-top:45px; }');
@@ -660,7 +702,8 @@ export default {
       CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
       CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
       CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
-      CKEDITOR.addCss('img {margin:10px !important; }');
+      CKEDITOR.addCss('img {margin: 0 10px 10px 0 !important;}');
+      CKEDITOR.addCss('blockquote p { margin-bottom: 0 !important; line-height: 1.4 !important; font-size: 16px !important;;}');
       CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
       CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
@@ -680,20 +723,22 @@ export default {
         spaceGroupId: `/spaces/${this.spaceGroupId}`,
         imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',
+<<<<<<< HEAD
         extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
+=======
+        extraAllowedContent: 'table[!summary];img[style,class,src,referrerpolicy,alt,width,height];code span;span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
+>>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
-        toolbar: [
-          { name: 'format', items: ['Format'] },
-          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
-          { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Blockquote' ] },
-          { name: 'fontsize', items: ['FontSize'] },
-          { name: 'colors', items: [ 'TextColor' ] },
-          { name: 'align', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
-          { name: 'insert' },
-          { name: 'links', items: [ 'simpleLink','InsertOptions'] },
+        toolbar: toolbar,
+        toolbarGroups: [
+          { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+          { name: 'paragraph', groups: ['align', 'list', 'indent', ] },
+          { name: 'links'},
+          { name: 'blocks'},
         ],
+        copyFormatting_allowedContexts: true,
         indentBlock: {
           offset: 40,
           unit: 'px'
@@ -710,6 +755,16 @@ export default {
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
+<<<<<<< HEAD
+=======
+            CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
+              if ( element.getAscendant( 'table', true ) ) {
+                return {
+                  tableProperties: CKEDITOR.TRISTATE_ON
+                };
+              }
+            });
+>>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
@@ -996,6 +1051,7 @@ export default {
       const oEmbeds = docElement.querySelectorAll('oembed');
       oEmbeds.forEach((oembed, index) => {
         oembed.innerHTML = decodeURIComponent(oembed.innerHTML);
+<<<<<<< HEAD
         oembed.dataset.iframe = iframes[index]?.parentNode?.innerHTML?.toString();
         const width = iframes[index]?.parentNode?.offsetWidth;
         const height = iframes[index]?.parentNode?.offsetHeight;
@@ -1005,10 +1061,26 @@ export default {
           min-height: ${minHeight}px;
           min-width: ${this.oembedMinWidth}px;
           width: 100%;
+=======
+        oembed.dataset.htmlSource = iframes[index]?.parentNode?.innerHTML?.toString();
+        const width = iframes[index]?.parentNode?.offsetWidth;
+        const height = iframes[index]?.parentNode?.offsetHeight;
+        const aspectRatio = width / height;
+        const minWidth = parseInt(this.oembedMinWidth) / aspectRatio;
+        const style = `
+          position: relative;
+          display: flex;
+          margin: auto;
+          min-height: ${minWidth}px;
+          min-width: ${this.oembedMinWidth}px;
+          width: ${width}px;
+          height:${height}px;
+>>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
           margin-bottom: 10px;
           aspect-ratio: ${aspectRatio};
         `;
         oembed.setAttribute('style', style);
+<<<<<<< HEAD
         oembed.setAttribute('class', 'd-flex position-relative ml-auto mr-auto');
       });
       return docElement?.children[1].innerHTML;
@@ -1094,6 +1166,10 @@ export default {
         params.append('translation', this.slectedLanguage);
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
+=======
+      });
+      return docElement?.children[1].innerHTML;
+>>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
     }
   }
 };

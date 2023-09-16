@@ -17,8 +17,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -40,8 +42,7 @@ public class NotesMetadataListenerTest {
 
   @Before
   public void setUp() throws Exception {
-    notesMetadataListener =
-                          new NotesMetadataListener(indexingService, identityManager, spaceService, tagService);
+    notesMetadataListener = new NotesMetadataListener(indexingService, identityManager, spaceService, tagService);
   }
 
   @Test
