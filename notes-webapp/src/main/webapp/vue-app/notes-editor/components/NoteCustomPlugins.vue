@@ -64,14 +64,9 @@ export default {
   computed: {
     plugins() {
       const pluginsList = [
-        { id: 'video',title: 'Video', src: '/notes/images/video.png', tooltip: this.$t('notes.label.insertVideo') },
-        { id: 'table',title: 'Table', src: '/notes/images/table.png', tooltip: this.$t('notes.label.insertTable') },
         { id: 'note',title: 'Note', src: '/notes/images/notes.png', tooltip: this.$t('notes.label.insertNote')  },
         { id: 'Navigation',title: 'Navigation', src: '/notes/images/children.png', tooltip: this.$t('notes.label.Navigation') }
       ];
-      if (eXo.ecm){
-        pluginsList.unshift({ id: 'selectImage',title: 'Image', src: '/notes/images/photo.png', tooltip: this.$t('notes.label.insertImage')  });
-      }
       if (this.hideNavigation || !this.noteChildren.length) {
         return pluginsList.filter( plugin => plugin.id !== 'Navigation' );
       } else {
