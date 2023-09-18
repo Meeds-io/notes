@@ -1379,7 +1379,7 @@ public class NotesRestService implements ResourceContainer {
           continue;
         } else {
           object.put("value", locale.toString());
-          object.put("text", locale.getDisplayName(currentLocal) + " / " + locale.getDisplayName(locale));
+          object.put("text", locale.getDisplayName(currentLocal));
         }
         localesJSON.add(object);
       }
