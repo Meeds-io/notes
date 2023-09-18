@@ -522,13 +522,12 @@ export default {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('video','/notes/javascript/eXo/wiki/ckeditor/plugins/video/','plugin.js');
       CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
       let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,' +
-          'tagSuggester,emoji,link,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
+          'tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
       let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
@@ -601,8 +600,16 @@ export default {
       CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
       CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
 
-      // this line is mandatory when a custom skin is defined
+      CKEDITOR.on('dialogDefinition', function (e) {
+        if (e.data.name === 'link') {
+          const informationTab = e.data.definition.getContents('target');
+          const targetField = informationTab.get('linkTargetType');
+          targetField['default'] = '_self';
+          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
+        }
+      });
 
+      // this line is mandatory when a custom skin is defined
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
       const self = this;
 
