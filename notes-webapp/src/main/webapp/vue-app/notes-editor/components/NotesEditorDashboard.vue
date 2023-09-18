@@ -527,7 +527,7 @@ export default {
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,' +
+      let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,' +
           'tagSuggester,emoji,link,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
       let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
       const windowWidth = $(window).width();
@@ -636,6 +636,7 @@ export default {
         height: self.noteFormContentHeight,
         bodyClass: 'notesContent',
         dialog_noConfirmCancel: true,
+        colorButton_enableMore: true,
         sharedSpaces: {
           top: 'notesTop'
         },
