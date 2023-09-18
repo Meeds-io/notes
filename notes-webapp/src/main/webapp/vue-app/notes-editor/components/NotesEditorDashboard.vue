@@ -660,8 +660,16 @@ export default {
       CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
       CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
 
-      // this line is mandatory when a custom skin is defined
+      CKEDITOR.on('dialogDefinition', function (e) {
+        if (e.data.name === 'link') {
+          const informationTab = e.data.definition.getContents('target');
+          const targetField = informationTab.get('linkTargetType');
+          targetField['default'] = '_self';
+          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
+        }
+      });
 
+      // this line is mandatory when a custom skin is defined
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
       const self = this;
 
