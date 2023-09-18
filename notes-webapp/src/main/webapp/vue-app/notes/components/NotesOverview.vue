@@ -820,7 +820,6 @@ export default {
           href = href.slice(0, -1);
         }
         if (href !== location.host && !href.startsWith(internal)) {
-          link.setAttribute('target', '_blank');
           link.setAttribute('rel', 'noopener noreferrer');
         }
       }
