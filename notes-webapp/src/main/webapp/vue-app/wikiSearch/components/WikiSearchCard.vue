@@ -3,7 +3,7 @@
     class="wikiSearchCard d-flex flex-column border-radius box-shadow"
     flat
     min-height="227">
-    <exo-notes-favorite-action
+    <note-favorite-action
       :note="result"
       absolute
       top="0"
@@ -35,7 +35,7 @@
             <a
               :title="wikiTitleText"
               class="wikiTitle px-3 pt-2 pb-1 ps-0 text-start text-truncate"
-              v-html="wikiTitle">
+              v-sanitized-html="wikiTitle">
             </a>
           </v-list-item-title>
           <v-list-item-subtitle>

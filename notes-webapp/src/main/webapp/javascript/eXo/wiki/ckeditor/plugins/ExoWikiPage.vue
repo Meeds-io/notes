@@ -1,5 +1,5 @@
 <template>
-  <div class="wiki-include-page" v-html="pageContent"></div>
+  <div class="wiki-include-page reset-style-box rich-editor-content" v-sanitized-html="pageContent"></div>
 </template>
 
 <script>

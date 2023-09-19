@@ -6,7 +6,7 @@ import NoteImportDrawer from './components/NoteImportDrawer.vue';
 import AttachmentsNotesUploadInput from './components/importNotes/AttachmentsNotesUploadInput.vue';
 import AttachmentsUploadedNotes from './components/importNotes/AttachmentsNotesUploaded.vue';
 import AttachmentsNotesItem from './components/importNotes/AttachmentsNotesItem.vue';
-import ExoNotesFavoriteAction from './components/ExoNotesFavoriteAction.vue';
+import NoteFavoriteAction from './components/NoteFavoriteAction.vue';
 
 const components = {
   'notes-overview': NotesOverview,
@@ -17,7 +17,7 @@ const components = {
   'attachments-notes-upload-input': AttachmentsNotesUploadInput,
   'attachments-uploaded-notes': AttachmentsUploadedNotes,
   'attachments-notes-item': AttachmentsNotesItem,
-  'exo-notes-favorite-action': ExoNotesFavoriteAction
+  'note-favorite-action': NoteFavoriteAction
 };
 
 for (const key in components) {

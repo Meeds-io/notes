@@ -1,9 +1,9 @@
 import WikiSearchCard from './components/WikiSearchCard.vue';
-import ExoNotesFavoriteAction from '../notes/components/ExoNotesFavoriteAction.vue';
+import NoteFavoriteAction from '../notes/components/NoteFavoriteAction.vue';
 
 const components = {
   'wiki-search-card': WikiSearchCard,
-  'exo-notes-favorite-action': ExoNotesFavoriteAction,
+  'note-favorite-action': NoteFavoriteAction,
 };
 
 for (const key in components) {
