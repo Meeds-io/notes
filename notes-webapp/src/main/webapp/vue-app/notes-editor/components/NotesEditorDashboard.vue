@@ -646,7 +646,7 @@ export default {
       CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 0px;padding: 0 40px;}');
       CKEDITOR.addCss('ul li {list-style: revert; list-style-type: inherit !important;}');
       CKEDITOR.addCss('table td:not(:has(p)) {padding-bottom: 10px;}');
-      CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal important; padding: 10px 0 0 10px !important; margin: 0 0 10px 0!important;}');
+      CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
       CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
       CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
       CKEDITOR.addCss('img {margin: 0 10px 10px 0 !important;}');
