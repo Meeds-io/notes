@@ -60,7 +60,7 @@
                 </v-tooltip>
               </div>
 
-              <exo-notes-favorite-action
+              <note-favorite-action
                 :note="note"
                 :activity-id="note.activityId" />
               <div
@@ -357,7 +357,7 @@ export default {
   computed: {
     notesContentProcessor() {
       return {
-        template: `<div>${this.formatContent(this.noteContent)}</div>`,
+        template: `<div class='reset-style-box rich-editor-content'>${this.formatContent(this.noteContent)}</div>`,
         data() {
           return {
             vTreeComponent: {
