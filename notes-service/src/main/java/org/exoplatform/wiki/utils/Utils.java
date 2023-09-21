@@ -33,6 +33,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.webui.util.Util;
+import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -73,45 +74,52 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class Utils {
-  public static final String                               SLASH                            = "SLASH";
 
-  public static final String                               DOT                              = "DOT";
+  private static final Log                                       LOG                              =
+                                                                     ExoLogger.getLogger(Utils.class);
 
-  public static final String                               SPACE                            = "space";
+  public static final String                                     SLASH                            = "SLASH";
 
-  public static final String                               PAGE                             = "page";
+  public static final String                                     DOT                              = "DOT";
 
-  public static final String                               NOTE_LINK                        = "class=\"noteLink\" href=\"//-";
+  public static final String                                     SPACE                            = "space";
 
-  public static final String                               ANONYM_IDENTITY                  = "__anonim";
+  public static final String                                     PAGE                             = "page";
 
-  private static final Log                                 log_                             = ExoLogger.getLogger(Utils.class);
+  public static final String                                     NOTE_LINK                        =
+                                                                           "class=\"noteLink\" href=\"//-";
 
-  public static final String                               COMPARE_REVISION                 = "CompareRevision";
+  public static final String                                     ANONYM_IDENTITY                  = "__anonim";
 
-  public static final String                               VER_NAME                         = "verName";
+  private static final Log                                       log_                             =
+                                                                      ExoLogger.getLogger(Utils.class);
 
-  final private static String                              MIMETYPE_TEXTHTML                = "text/html";
+  public static final String                                     COMPARE_REVISION                 = "CompareRevision";
 
-  private static final Map<String, Map<String, WikiPageHistory>> editPageLogs               = new HashMap<>();
+  public static final String                                     VER_NAME                         = "verName";
 
-  public static final String                               WIKI_RESOUCE_BUNDLE_NAME         = "locale.wiki.service.WikiService";
+  final private static String                                    MIMETYPE_TEXTHTML                = "text/html";
 
-  private static final String                              ILLEGAL_SEARCH_CHARACTERS        = "\\!^()+{}[]:-\"";
+  private static final Map<String, Map<String, WikiPageHistory>> editPageLogs                     = new HashMap<>();
 
-  private static final String                              ILLEGAL_NAME_CHARACTERS          = "*|\":[]/',^<>";
+  public static final String                                     WIKI_RESOUCE_BUNDLE_NAME         =
+                                                                                          "locale.wiki.service.WikiService";
 
-  public static final String                               SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE = "_A_A_";
+  private static final String                                    ILLEGAL_SEARCH_CHARACTERS        = "\\!^()+{}[]:-\"";
 
-  public static final String                               NOTES_METADATA_OBJECT_TYPE       = "notes";
+  private static final String                                    ILLEGAL_NAME_CHARACTERS          = "*|\":[]/',^<>";
 
-  public static final String                               WIKI_APP_ID                      = "ks-wiki:spaces";
+  public static final String                                     SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE = "_A_A_";
 
-  public static final String                               PAGE_ID_KEY                      = "page_id";
+  public static final String                                     NOTES_METADATA_OBJECT_TYPE       = "notes";
 
-  public static final String                               PAGE_TYPE_KEY                    = "page_type";
+  public static final String                                     WIKI_APP_ID                      = "ks-wiki:spaces";
 
-  public static final String                               PAGE_OWNER_KEY                   = "page_owner";
+  public static final String                                     PAGE_ID_KEY                      = "page_id";
+
+  public static final String                                     PAGE_TYPE_KEY                    = "page_type";
+
+  public static final String                                     PAGE_OWNER_KEY                   = "page_owner";
 
   public static String normalizeUploadedFilename(String name) {
     name = name.replace("%22", "\"");  // Fix the bug in Chrome which a double quotes is encoded to %22
@@ -684,4 +692,11 @@ public class Utils {
     return doc.text();
   }
 
+  public static <S, D> void broadcast(ListenerService listenerService, String eventName, S source, D data) {
+    try {
+      listenerService.broadcast(eventName, source, data);
+    } catch (Exception e) {
+      LOG.error("Error while broadcasting event: {}", eventName, e);
+    }
+  }
 }

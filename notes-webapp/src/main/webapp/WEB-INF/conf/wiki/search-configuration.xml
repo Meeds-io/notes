@@ -60,6 +60,12 @@
             <field name="uiComponent">
               <string>wiki-search-card</string>
             </field>
+            <field name="favoritesEnabled">
+              <boolean>true</boolean>
+            </field>
+            <field name="tagsEnabled">
+              <boolean>true</boolean>
+            </field>
           </object>
         </object-param>
       </init-params>

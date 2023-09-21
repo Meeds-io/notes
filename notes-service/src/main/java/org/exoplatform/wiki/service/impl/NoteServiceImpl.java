@@ -132,6 +132,7 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
+
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
@@ -153,7 +154,7 @@ public class NoteServiceImpl implements NoteService {
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = null;
   }
-  
+
   public NoteServiceImpl(DataStorage dataStorage,
                          CacheService cacheService,
                          WikiService wikiService,
@@ -176,7 +177,6 @@ public class NoteServiceImpl implements NoteService {
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
-
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
 
     String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
@@ -242,13 +242,13 @@ public class NoteServiceImpl implements NoteService {
 
       // call listeners
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
-
+      Utils.broadcast(listenerService, "note.posted", userIdentity.getUserId(), createdPage);
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not foond");
     }
   }
-
+  
   @Override
   public Page createNote(Wiki noteBook, Page parentPage, Page note) throws WikiException {
 
@@ -275,6 +275,7 @@ public class NoteServiceImpl implements NoteService {
       }
     }
     Page updatedPage = updateNote(note, type);
+    Utils.broadcast(listenerService, "note.updated", userIdentity.getUserId(), updatedPage);
 
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
@@ -296,14 +297,6 @@ public class NoteServiceImpl implements NoteService {
     note.setContent(note.getContent());
     updateNote(note);
     invalidateCache(note);
-
-    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
-      try {
-        listenerService.broadcast("exo.wiki.edit", wikiService, note);
-      } catch (Exception e) {
-        log.error("Error while broadcasting wiki edition event", e);
-      }
-    }
 
     Page updatedPage = getNoteById(note.getId());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);

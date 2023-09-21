@@ -10,16 +10,12 @@
             "permissions": [@permissions@]
           }
         }
-      ],
-      "must":{
-        "query_string":{
-          "fields": ["name","title^5","content","comment","attachment.content"],
-          "query": "@term_query@"
-        }
-      },
+      ]
+      @term_query@,
       "must_not": {
         "exists" : { "field" : "sites" }
       }
+      @tags_query@
     }
   },
   "highlight" : {
