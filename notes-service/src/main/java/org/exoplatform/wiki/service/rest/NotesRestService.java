@@ -1236,7 +1236,7 @@ public class NotesRestService implements ResourceContainer {
                                      int limit, @QueryParam("wikiType")
                                      String wikiType, @QueryParam("wikiOwner")
                                      String wikiOwner, @QueryParam("favorites")
-                                     boolean favorites) throws Exception {
+                                     boolean favorites, @QueryParam("tags") List<String> tagNames) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
 
@@ -1245,6 +1245,7 @@ public class NotesRestService implements ResourceContainer {
       WikiSearchData data = new WikiSearchData(keyword, currentIdentity.getUserId());
       data.setLimit(limit);
       data.setFavorites(favorites);
+      data.setTagNames(tagNames);
       List<SearchResult> results = noteService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {

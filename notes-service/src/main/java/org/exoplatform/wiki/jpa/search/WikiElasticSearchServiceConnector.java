@@ -70,6 +70,15 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   private String                     searchQueryFilePath;
 
+  public static final String           SEARCH_QUERY_TERM            = ",\"must\":{" +
+          "  \"query_string\":{" +
+          "    \"fields\": [\"name\",\"title\",\"content\",\"comment\",\"attachment.content\"]," +
+          "    \"default_operator\": \"AND\"," +
+          "    \"query\": \"@term@\"" +
+          "  }" +
+          "}";
+
+
   public WikiElasticSearchServiceConnector(ConfigurationManager configurationManager,
                                            InitParams initParams,
                                            ElasticSearchingClient client,
@@ -111,33 +120,67 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, boolean isFavorites, int offset, int limit) {
-    List<SearchResult> searchResults = filteredWikiSearch(searchedText, userId, isFavorites, offset, limit);
-    return searchResults;
+  public List<SearchResult> searchWiki(String searchedText, String userId, List<String> tagNames, boolean isFavorites, int offset, int limit) {
+      return filteredWikiSearch(searchedText, userId, tagNames, isFavorites, offset, limit);
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, boolean isFavorites, int offset, int limit) {
+  protected List<SearchResult> filteredWikiSearch(String query, String userId, List<String> tagNames, boolean isFavorites, int offset, int limit) {
     Set<String> ids = getUserSpaceIds(userId);
-    String esQuery = buildQueryStatement(ids, userId, query, isFavorites, offset, limit);
+    String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, offset, limit);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
 
+  private String buildTagsQueryStatement(List<String> values) {
+    if (values == null || values.isEmpty()) {
+      return "";
+    }
+    List<String> tagsQueryParts = values.stream()
+            .map(value -> "{\"term\": {\n" +
+                    "            \"metadatas.tags.metadataName.keyword\": {\n" +
+                    "              \"value\": \"" +
+                    value +
+                    "\",\n" +
+                    "              \"case_insensitive\":true\n" +
+                    "            }\n" +
+                    "          }}")
+            .toList();
+    return ",\"should\": [\n" +
+            StringUtils.join(tagsQueryParts, ",") +
+            "      ],\n" +
+            "      \"minimum_should_match\": 1";
+  }
+
+  private String buildTermQuery(String termQuery) {
+    if (StringUtils.isBlank(termQuery)) {
+      return "";
+    }
+    termQuery = removeSpecialCharacters(termQuery);
+    List<String> termsQuery = Arrays.stream(termQuery.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
+      word = word.trim();
+      if (word.length() > 5) {
+        word = word + "~1";
+      }
+      return word;
+    }).toList();
+    return SEARCH_QUERY_TERM.replace("@term@", StringUtils.join(termsQuery, " "));
+  }
+  
   private String buildQueryStatement(Set<String> calendarOwnersOfUser,
                                      String userId,
+                                     List<String> tagNames,
                                      String term,
                                      boolean isFavorites,
                                      long offset,
                                      long limit) {
     term = removeSpecialCharacters(term);
-    term = StringUtils.isBlank(term) ? "*:*" : term;
-    List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> "*" + word + "*").collect(Collectors.toList());
     Map<String, List<String>> metadataFilters = buildMetadataFilter(isFavorites, userId);
     String metadataQuery = buildMetadataQueryStatement(metadataFilters);
-    String termQuery = StringUtils.join(termsQuery, " AND ");
-    return retrieveSearchQuery().replace("@term@", term)
-                                .replace("@term_query@", termQuery)
+    String tagsQuery = buildTagsQueryStatement(tagNames);
+    String termsQuery = buildTermQuery(term);
+    return retrieveSearchQuery().replace("@term_query@", termsQuery)
                                 .replace("@metadatas_query@", metadataQuery)
+                                .replace("@tags_query@", tagsQuery)
                                 .replace("@permissions@", StringUtils.join(calendarOwnersOfUser, ","))
                                 .replace("@offset@", String.valueOf(offset))
                                 .replace("@limit@", String.valueOf(limit));

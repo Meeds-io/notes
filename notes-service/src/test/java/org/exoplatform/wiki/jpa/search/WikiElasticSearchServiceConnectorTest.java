@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.After;
@@ -118,11 +119,8 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
         + "  \"query\":{\n" + "    \"bool\":{\n" + "      \"filter\":{\n" + "        \"terms\":{\n"
         + "          \"permissions\": [@permissions@]\n" + "        }\n" + "      },\n" + "      \"should\": {\n"
         + "        \"match_phrase\": {\n" + "          \"summary\": {\n" + "            \"query\": \"@term@\",\n"
-        + "            \"boost\": 3\n" + "          }\n" + "        }\n" + "      },\n" + "      \"must\":{\n"
-        + "        \"query_string\":{\n"
-        + "          \"fields\": [\"name\",\"title^5\",\"content\",\"comment\",\"attachment.content\"],\n"
-        + "          \"query\": \"@term_query@\"\n" + "        }\n" + "      },\n" + "      \"must_not\": {\n"
-        + "        \"exists\" : { \"field\" : \"sites\" }\n" + "      }\n" + "    }\n" + "  },\n" + "  \"highlight\" : {\n"
+        + "            \"boost\": 3\n" + "          }\n" + "        }\n" + "      }\n" + " @term_query@,\n" + "      \"must_not\": {\n"
+        + "        \"exists\" : { \"field\" : \"sites\" }\n" + "      }\n" + "    }\n" + " @tags_query@  },\n " + "  \"highlight\" : {\n"
         + "    \"number_of_fragments\" : 2,\n" + "    \"fragment_size\" : 150,\n" + "    \"no_match_size\" : 0,\n"
         + "    \"order\": \"score\",\n" + "    \"fields\" : {\n" + "      \"description\" : {\n"
         + "        \"pre_tags\" : [\"<span class='searchMatchExcerpt'>\"],\n" + "        \"post_tags\" : [\"</span>\"]\n"
@@ -137,7 +135,9 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
 
     // when
-    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", false, 0, 20);
+    List<String> tagNames = new ArrayList<>();
+    tagNames.add("testNoteTag");
+    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", tagNames, false, 0, 20);
 
     // Then
     assertNotNull(searchResults);
