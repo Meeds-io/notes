@@ -600,7 +600,7 @@ export default {
         {
           name: 'basicstyles',
           groups: ['basicstyles', 'cleanup'],
-          items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat', 'TextColor', 'CopyFormatting']
+          items: ['Bold', 'Italic', 'Underline', 'Strike', 'TextColor','RemoveFormat', 'CopyFormatting']
         },
         {
           name: 'paragraph',
