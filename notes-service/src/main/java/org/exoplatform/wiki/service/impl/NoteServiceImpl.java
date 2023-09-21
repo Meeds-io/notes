@@ -108,6 +108,7 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
+
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
@@ -129,7 +130,7 @@ public class NoteServiceImpl implements NoteService {
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = null;
   }
-  
+
   public NoteServiceImpl(DataStorage dataStorage,
                          CacheService cacheService,
                          WikiService wikiService,
