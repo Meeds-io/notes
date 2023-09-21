@@ -124,7 +124,9 @@ public class TestWikiRestService extends AbstractKernelTest { // NOSONAR
                                      new NotesRestService(noteService, wikiService, null, new MockResourceBundleService(), null);
 
     // When
-    Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua", false);
+    List<String> tagNames = new ArrayList<>();
+    tagNames.add("testTag");
+    Response response = wikiRestService.searchData(uriInfo, "wiki", 10, "page", "alioua", false, tagNames);
 
     // Then
     assertEquals(200, response.getStatus());
