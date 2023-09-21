@@ -16,8 +16,12 @@
  */
 package org.exoplatform.wiki.service.search;
 
+import lombok.Data;
 import org.exoplatform.wiki.utils.Utils;
 
+import java.util.List;
+
+@Data
 public class SearchData {
   public String title;
 
@@ -41,6 +45,8 @@ public class SearchData {
   
   public int limit = Integer.MAX_VALUE;
 
+  private List<String> tagNames;
+
   public SearchData(String title, String content, String wikiType, String wikiOwner, String pageId, String userId) {
     this.title = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(title);
     this.content = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(content);
@@ -48,93 +54,5 @@ public class SearchData {
     this.wikiOwner = Utils.validateWikiOwner(wikiType, wikiOwner);
     this.pageId = pageId;
     this.userId = userId;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(title);
-  }
-
-  public String getContent() {
-    return content;
-  }
-
-  public void setContent(String content) {
-    this.content = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(content);
-  }
-
-  public String getWikiType() {
-    return wikiType;
-  }
-
-  public void setWikiType(String wikiType) {
-    this.wikiType = wikiType;
-  }
-
-  public String getWikiOwner() {
-    return wikiOwner;
-  }
-
-  public void setWikiOwner(String wikiOwner) {
-    this.wikiOwner = wikiOwner;
-  }
-
-  public String getPageId() {
-    return pageId;
-  }
-
-  public void setPageId(String pageId) {
-    this.pageId = pageId;
-  }
-  
-  public int getLimit() {
-    return limit;
-  }
-
-  public void setLimit(int limit) {
-    this.limit = limit;
-  }
-  
-  public long getOffset() {
-    return offset;
-  }
-
-  public void setOffset(long offset) {
-    this.offset = offset;
-  }
-
-  public String getSort() {
-    return sort;
-  }
-
-  public void setSort(String sort) {
-    this.sort = sort;
-  }
-
-  public String getOrder() {
-    return order;
-  }
-
-  public void setOrder(String order) {
-    this.order = order;
-  }
-
-  public String getUserId() {
-    return userId;
-  }
-
-  public void setUserId(String userId) {
-    this.userId = userId;
-  }
-
-  public boolean isFavorites() {
-    return isFavorites;
-  }
-
-  public void setFavorites(boolean favorites) {
-    isFavorites = favorites;
   }
 }
