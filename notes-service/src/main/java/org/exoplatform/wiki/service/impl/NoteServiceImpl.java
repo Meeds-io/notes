@@ -117,11 +117,14 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
+  private final ListenerService                           listenerService;
+
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
                           IdentityManager identityManager,
-                          SpaceService spaceService) {
+                          SpaceService spaceService,
+                          ListenerService listenerService) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
@@ -129,13 +132,15 @@ public class NoteServiceImpl implements NoteService {
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
     this.htmlUploadImageProcessor = null;
+    this.listenerService = listenerService;
   }
-  
+
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
                           IdentityManager identityManager,
                           SpaceService spaceService,
+                          ListenerService listenerService,
                           HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
@@ -144,8 +149,8 @@ public class NoteServiceImpl implements NoteService {
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
+    this.listenerService = listenerService;
   }
-
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
 
     String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
@@ -211,13 +216,13 @@ public class NoteServiceImpl implements NoteService {
 
       // call listeners
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
-
+      Utils.broadcast(listenerService, "note.posted", userIdentity.getUserId(), createdPage);
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not foond");
     }
   }
-
+  
   @Override
   public Page createNote(Wiki noteBook, Page parentPage, Page note) throws WikiException {
 
@@ -244,7 +249,6 @@ public class NoteServiceImpl implements NoteService {
       }
     }
     WikiService wikiService = (WikiService) PortalContainer.getComponent(WikiService.class);
-    ListenerService listenerService = (ListenerService) PortalContainer.getComponent(ListenerService.class);
     // update updated date if the page content has been updated
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
@@ -252,14 +256,6 @@ public class NoteServiceImpl implements NoteService {
     note.setContent(note.getContent());
     updateNote(note);
     invalidateCache(note);
-
-    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
-      try {
-        listenerService.broadcast("exo.wiki.edit", wikiService, note);
-      } catch (Exception e) {
-        log.error("Error while broadcasting wiki edition event", e);
-      }
-    }
 
     Page updatedPage = getNoteById(note.getId());
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
@@ -272,6 +268,7 @@ public class NoteServiceImpl implements NoteService {
     updatedPage.setMetadatas(metadata);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
+    Utils.broadcast(listenerService, "note.updated", userIdentity.getUserId(), updatedPage);
     return updatedPage;
   }
 
