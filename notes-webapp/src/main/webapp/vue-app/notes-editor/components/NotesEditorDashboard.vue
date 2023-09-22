@@ -999,6 +999,7 @@ export default {
         this.translations =  data || [];
         if (this.translations.length>0) {
           this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.translations.sort((a, b) => a.text.localeCompare(b.text));
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
         if (this.isMobile) {
@@ -1009,6 +1010,7 @@ export default {
     getAvailableLanguages(){
       return this.$notesService.getAvailableLanguages().then(data => {
         this.languages = data || [];
+        this.languages.sort((a, b) => a.text.localeCompare(b.text));
         this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
         if (this.translations){
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
