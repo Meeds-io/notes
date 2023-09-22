@@ -180,7 +180,7 @@ export default {
       return !this.note.draftPage?this.note.id:this.note.targetPageId;
     },
     isMobile() {
-      return this.$vuetify.breakpoint.name === 'xs';
+      return this.$vuetify.breakpoint.width < 960;
     },
     limitTranslationsToShow() {
       return this.isMobile?1:3;
