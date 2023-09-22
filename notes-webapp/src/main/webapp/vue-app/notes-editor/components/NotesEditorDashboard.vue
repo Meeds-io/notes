@@ -300,9 +300,13 @@ export default {
     });
     this.$root.$on('lang-translation-changed', lang => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      this.slectedLanguage=lang;
+      this.slectedLanguage=lang.value;
+      if (lang.value!=='') {
+        this.translations=this.translations.filter(item => item.value !== lang.value);
+        this.translations.unshift(lang);
+      }
       this.getNote(noteId);
-      this.note.lang=lang;
+      this.note.lang=lang.value;
       this.initCKEditor();
     });
     this.$root.$on('include-page', (note) => {
@@ -993,6 +997,7 @@ export default {
         this.translations =  data || [];
         if (this.translations.length>0) {
           this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.translations.sort((a, b) => a.text.localeCompare(b.text));
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
         if (this.isMobile) {
@@ -1003,6 +1008,7 @@ export default {
     getAvailableLanguages(){
       return this.$notesService.getAvailableLanguages().then(data => {
         this.languages = data || [];
+        this.languages.sort((a, b) => a.text.localeCompare(b.text));
         this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
         if (this.translations){
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
