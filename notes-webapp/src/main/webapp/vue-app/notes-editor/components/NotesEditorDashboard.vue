@@ -23,14 +23,21 @@
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
-              <v-icon
-                v-if="notesMultilingualActive && noteId"
-                size="22"
-                class="clickable pa-2"
-                :class="langBottonColor"
-                @click="showTranslations">
-                fa-language
-              </v-icon>
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-icon
+                    v-if="notesMultilingualActive && noteId"
+                    size="22"
+                    class="clickable pa-2"
+                    :class="langBottonColor"
+                    v-on="on"
+                    v-bind="attrs"
+                    @click="showTranslations">
+                    fa-language
+                  </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.button.translations.options') }}</span>
+              </v-tooltip>
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
