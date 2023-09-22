@@ -329,8 +329,12 @@ export function cancelExportNotes(exportId) {
   });
 }
 
-export function getNoteVersionsByNoteId(noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/versions/${noteId}`, {
+export function getNoteVersionsByNoteId(noteId,lang) {
+  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/versions/${noteId}`;
+  if (lang){
+    url=`${url}${getSeparator(url)}lang=${lang}`;
+  }
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
