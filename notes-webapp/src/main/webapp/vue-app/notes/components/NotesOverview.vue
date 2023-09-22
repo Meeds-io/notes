@@ -108,6 +108,39 @@
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
+            <v-menu
+              v-if="notesMultilingualActive && translations?.length>1"
+              v-model="translationsMenu"
+              offset-y
+              class=" ma-1"
+              bottom>
+              <template #activator="{ on, attrs }">
+                <v-icon
+                  size="30"
+                  :class="langBottonColor"
+                  class="remove-focus pa-0 pe-3"
+                  v-bind="attrs"
+                  v-on="on">
+                  fa-language
+                </v-icon>
+              </template>
+              <v-list class="px-2" dense>
+                <v-list-item
+                  v-for="(item, i) in translations"
+                  :key="i"
+                  class="pa-0 translation-chips">
+                  <v-chip
+                    small
+                    :outlined="item.value!==selectedTranslation.value"
+                    color="primary"
+                    close-label="translation remove button"
+                    @click="changeTranslation(item)"
+                    class="my-auto mx-1">
+                    {{ item.text }}
+                  </v-chip>
+                </v-list-item>
+              </v-list>
+            </v-menu>
             <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
@@ -317,7 +350,12 @@ export default {
       childNodes: [],
       exportStatus: '',
       exportId: 0,
-      popStateChange: false
+      popStateChange: false,
+      selectedTranslation: {value: eXo.env.portal.language},
+      translations: null,
+      languages: [],
+      translationsMenu: false,
+      slectedLanguage: null,
     };
   },
   watch: {
@@ -332,9 +370,6 @@ export default {
       this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
-      if (!this.note.parentPageId && this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)) {
-        this.updateNote(this.note);
-      }
     },
     actualVersion() {
       if (!this.isDraft) {
@@ -390,8 +425,9 @@ export default {
               },
               methods: {
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
-                  return this.$notesService.getNoteById(noteId,'', source, noteBookType, noteBookOwner).then(data => {
+                  return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
+                    this.getNoteLanguages(noteId);
                     this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
@@ -428,11 +464,12 @@ export default {
       return !this.note.parentPageId && (this.noteContent.includes(`Welcome to Space ${this.spaceDisplayName} Notes Home`)|| this.noteContent === '');
     },
     lastNoteVersion() {
-      if ( this.displayLastVersion ) {
-        return this.noteVersions && this.noteVersions[0] && this.noteVersions[0].versionNumber;
-      } else {
-        return this.actualVersion.versionNumber;
-      }
+      return this.noteVersions && this.noteVersions[0] && this.noteVersions[0].versionNumber;
+
+    },
+    NoteTranslations() {
+      return this.translations && this.noteVersions[0] && this.noteVersions[0].versionNumber;
+
     },
     lastNoteUpdatedBy() {
       if (this.isDraft) {
@@ -512,9 +549,16 @@ export default {
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
-    }
+    },
+    langBottonColor(){
+      return this.selectedTranslation.value===this.lang ? 'primary--text':'';
+    },
+    notesMultilingualActive() {
+      return eXo?.env?.portal?.notesMultilingual;
+    },
   },
   created() {
+    this.getAvailableLanguages();
     if (this.currentPath.endsWith('draft')) {
       this.isDraft = true;
     }
@@ -555,6 +599,9 @@ export default {
   },
   mounted() {
     this.handleChangePages();
+    $(document).on('click', () => {
+      this.translationsMenu = false;
+    });
   },
   methods: {
     getNoteLink(noteId) {
@@ -668,11 +715,15 @@ export default {
       clearInterval(this.intervalId);
     },
     getNoteById(noteId, source) {
-      return this.$notesService.getNoteById(noteId,'', source, this.noteBookType, this.noteBookOwner).then(data => {
+      return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
+        this.getNoteLanguages(noteId);
+        if (!this.note.lang || this.note.lang === ''){
+          this.selectedTranslation={value: '',text: this.$t('notes.label.translation.originalVersion')};
+        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -700,6 +751,7 @@ export default {
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
+        this.getNoteLanguages(this.note.id);
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -806,7 +858,7 @@ export default {
     getNoteVersionByNoteId(noteId) {
       this.noteVersionsArray = [];
       this.noteVersions = [];
-      return this.$notesService.getNoteVersionsByNoteId(noteId).then(data => {
+      return this.$notesService.getNoteVersionsByNoteId(noteId,this.selectedTranslation.value).then(data => {
         this.noteVersions = data && data.reverse() || [];
         this.displayVersion(this.noteVersions[0]);
         this.$root.$emit('version-restored', this.noteVersions[0]);
@@ -933,7 +985,40 @@ export default {
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
       }
       this.popStateChange = false;
-    }
+    },
+    getNoteLanguages(noteId){
+      this.translations = [];
+      return this.$notesService.getNoteLanguages(noteId).then(data => {
+        this.translations =  data || [];
+        if (this.translations.length>0) {
+          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+        }
+        this.translations.sort((a, b) => a.text.localeCompare(b.text));
+        this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+
+      });
+    },
+    getAvailableLanguages(){
+      return this.$notesService.getAvailableLanguages().then(data => {
+        this.languages = data || [];
+      });
+    },
+    changeTranslation(translation){
+      this.selectedTranslation=translation;
+      return this.$notesService.getNoteById(this.note.id,this.selectedTranslation.value).then(data => {
+        const note = data || {};
+        if (note) {
+          this.note.content = note.content;
+          this.noteContent = note.content;
+          this.note.title = note.title;
+        }
+        this.getNoteVersionByNoteId(this.note.id);
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+      });
+    },
+    
   }
 };
 </script>
