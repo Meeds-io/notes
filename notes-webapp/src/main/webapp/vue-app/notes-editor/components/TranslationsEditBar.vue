@@ -208,12 +208,8 @@ export default {
       
     },
     changeTranslation(translation){
-      if (translation.value!=='') {
-        this.translations=this.translations.filter(item => item.value !== translation.value);
-        this.translations.unshift(translation);  
-      }
       this.selectedTranslation=translation;
-      this.$root.$emit('lang-translation-changed', this.selectedTranslation.value);
+      this.$root.$emit('lang-translation-changed', this.selectedTranslation);
     },
     removeTranslation(translation){
       return this.$notesService.deleteNoteTranslation(this.noteId,translation.value).then(() => {
