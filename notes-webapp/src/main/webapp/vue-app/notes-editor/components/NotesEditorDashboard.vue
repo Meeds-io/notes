@@ -11,14 +11,22 @@
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
-              <v-icon
-                v-if="notesMultilingualActive && noteId"
-                size="22"
-                class="clickable pa-2"
-                :class="langBottonColor"
-                @click="showTranslations">
-                fa-language
-              </v-icon>
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-icon
+                    v-if="notesMultilingualActive && noteId"
+                    :aria-label="$t('notes.label.button.translations.options')"
+                    size="22"
+                    class="clickable pa-2"
+                    :class="langBottonColor"
+                    v-on="on"
+                    v-bind="attrs"
+                    @click="showTranslations">
+                    fa-language
+                  </v-icon>
+                </template>
+                <span class="caption">{{ $t('notes.label.button.translations.options') }}</span>
+              </v-tooltip>
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
@@ -64,7 +72,8 @@
           ref="translationsEditBar"
           :note="note"
           :languages="languages"
-          :translations="translations" />
+          :translations="translations"
+          :is-mobile="isMobile" />
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -190,7 +199,10 @@ export default {
       return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
-      return this.translations?.length>0 ? 'primary--text':'';
+      return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
+    },
+    isMobile() {
+      return this.$vuetify.breakpoint.width < 960;
     }
 
   },
@@ -225,8 +237,8 @@ export default {
     if (urlParams.has('appName')) {
       this.appName = urlParams.get('appName');
     }
-    if (urlParams.has('lang')) {
-      this.slectedLanguage = urlParams.get('lang');
+    if (urlParams.has('translation')) {
+      this.slectedLanguage = urlParams.get('translation');
     }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
@@ -286,13 +298,20 @@ export default {
     this.$root.$on('lang-translation-changed', lang => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       this.slectedLanguage=lang.value;
-      if (lang.value!=='') {
+      if (lang.value!=='' || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);
       }
       this.getNote(noteId);
       this.note.lang=lang.value;
       this.initCKEditor();
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      params.delete('translation'); 
+      if (this.slectedLanguage!=='') {
+        params.append('translation', this.slectedLanguage);
+      }
+      window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
     });
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
@@ -372,6 +391,13 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
+            if (this.slectedLanguage !=='' && (!data.lang || data.lang === '')){
+              this.slectedLanguage='';
+              const url = new URL(window.location.href);
+              const params = new URLSearchParams(url.search);
+              params.delete('translation'); 
+              window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
+            }
             this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
@@ -462,7 +488,11 @@ export default {
             }
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.draftSavingStatus = '';
-            window.location.href = notePath;
+            let translation = '';
+            if (this.slectedLanguage!==''){
+              translation = `?translation=${this.slectedLanguage}`;
+            }
+            window.location.href = `${notePath}${translation}`;
           }).catch(e => {
             console.error('Error when update note page', e);
             this.enableClickOnce();
@@ -927,7 +957,7 @@ export default {
     },
     showTranslations() {
       this.showTranslationBar=true;
-      this.$refs.translationsEditBar.show();
+      this.$refs.translationsEditBar.show(this.slectedLanguage);
     },
     hideTranslations() {
       this.showTranslationBar=false;
@@ -990,6 +1020,13 @@ export default {
         }
         if (this.isMobile) {
           this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+        }
+        if (!this.slectedLanguage || this.slectedLanguage!==''){
+          const lang = this.translations.find(item => item.value === this.slectedLanguage);
+          if (lang){
+            this.translations=this.translations.filter(item => item.value !== lang.value);
+            this.translations.unshift(lang);
+          }
         }
       });
     },
