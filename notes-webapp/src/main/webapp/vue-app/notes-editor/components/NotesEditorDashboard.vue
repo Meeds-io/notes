@@ -297,9 +297,13 @@ export default {
     });
     this.$root.$on('lang-translation-changed', lang => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      this.slectedLanguage=lang;
+      this.slectedLanguage=lang.value;
+      if (lang.value!=='') {
+        this.translations=this.translations.filter(item => item.value !== lang.value);
+        this.translations.unshift(lang);
+      }
       this.getNote(noteId);
-      this.note.lang=lang;
+      this.note.lang=lang.value;
       this.initCKEditor();
     });
     this.$root.$on('include-page', (note) => {
