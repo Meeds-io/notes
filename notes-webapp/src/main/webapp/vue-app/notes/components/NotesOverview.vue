@@ -559,6 +559,11 @@ export default {
   },
   created() {
     this.getAvailableLanguages();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('translation')) {
+      this.selectedTranslation =  {value: urlParams.get('translation')};
+    } 
     if (this.currentPath.endsWith('draft')) {
       this.isDraft = true;
     }
@@ -627,7 +632,11 @@ export default {
       }
     },
     editNote() {
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true`, '_blank');
+      let translation = '';
+      if (this.selectedTranslation.value!==''){
+        translation = `&translation=${this.selectedTranslation.value}`;
+      }
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true${translation}`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
@@ -719,6 +728,7 @@ export default {
         this.getNoteLanguages(noteId);
         if (!this.note.lang || this.note.lang === ''){
           this.selectedTranslation={value: '',text: this.$t('notes.label.translation.originalVersion')};
+          this.updateURL();
         }
         return this.$nextTick();
       }).catch(e => {
@@ -975,7 +985,12 @@ export default {
     },
     updateURL(){
       const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
-      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}`;
+      let translation = '';
+      if (this.selectedTranslation.value!==''){
+        translation = `?translation=${this.selectedTranslation.value}`;
+      }
+      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}`;
+      
       if (!this.popStateChange) {
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
       }
@@ -1007,6 +1022,7 @@ export default {
           this.noteContent = note.content;
           this.note.title = note.title;
         }
+        this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
         return this.$nextTick();
       }).catch(e => {
