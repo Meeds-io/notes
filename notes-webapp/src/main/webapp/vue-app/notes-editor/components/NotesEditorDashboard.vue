@@ -245,8 +245,8 @@ export default {
     if (urlParams.has('appName')) {
       this.appName = urlParams.get('appName');
     }
-    if (urlParams.has('lang')) {
-      this.slectedLanguage = urlParams.get('lang');
+    if (urlParams.has('translation')) {
+      this.slectedLanguage = urlParams.get('translation');
     }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
@@ -492,7 +492,11 @@ export default {
             }
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.draftSavingStatus = '';
-            window.location.href = notePath;
+            let translation = '';
+            if (this.slectedLanguage!==''){
+              translation = `?translation=${this.slectedLanguage}`;
+            }
+            window.location.href = `${notePath}${translation}`;
           }).catch(e => {
             console.error('Error when update note page', e);
             this.enableClickOnce();
@@ -946,7 +950,7 @@ export default {
     },
     showTranslations() {
       this.showTranslationBar=true;
-      this.$refs.translationsEditBar.show();
+      this.$refs.translationsEditBar.show(this.slectedLanguage);
     },
     hideTranslations() {
       this.showTranslationBar=false;

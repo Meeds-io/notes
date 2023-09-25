@@ -189,7 +189,8 @@ export default {
   },
 
   methods: {
-    show() {
+    show(lang) {
+      this.selectedTranslation={value: lang};
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
       if (!this.translations && this.note && this.noteId){
         this.getNoteLanguages(this.noteId);
