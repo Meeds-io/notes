@@ -108,6 +108,7 @@
                 <compress>false</compress>
                 <includes>
                   <include>notes/notes.less</include>
+                  <include>notes/editorContent.less</include>
                 </includes>
               </configuration>
               <goals>

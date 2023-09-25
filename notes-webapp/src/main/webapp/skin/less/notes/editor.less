@@ -7,7 +7,6 @@
       display: block;
       padding: 0.5em;
       background: @primaryBackgroundDefault;
-      font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
     }
 
     blockquote {
@@ -112,17 +111,36 @@
       font-size: 16px !important;
     }
 
+    table, table tr, table tr td {
+      border: 1px solid !important;
+      border-collapse: collapse !important;
+    }
+
+    table[align="center"] {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    table[align="left"] {
+      margin-right: auto;
+    }
+
+    table[align="right"] {
+      margin-left: auto;
+    }
+
     table {
       margin-top: 0 !important;
       margin-bottom: 10px !important;
 
-      td {
+      td, th {
         line-height: 1.4 !important;
         font-size: 16px !important;
-      }
+        padding: 5px;
 
-      td:not(:has(p)) {
-        padding-bottom: 10px;
+        p:last-child{
+          margin-bottom: 0 !important;
+        }
       }
     }
 

@@ -690,27 +690,14 @@ export default {
         });
       }
 
-      CKEDITOR.addCss('h1 { font-size: 28px;margin-top:45px; }');
-      CKEDITOR.addCss('h2 { font-size: 23px;margin-top:35px; }');
-      CKEDITOR.addCss('h3 { font-size: 18px;margin-top:25px; }');
-      CKEDITOR.addCss('h1, h2, h3 { font-weight: 500; line-height:1.2; }');
-      CKEDITOR.addCss('p,li, table td { line-height:1.4}');
-      CKEDITOR.addCss('p, li, table td, blockquote { font-size: 16px;}');
-      CKEDITOR.addCss('ol, ul, dl {margin: 0 0 10px 0px;padding: 0 40px;}');
-      CKEDITOR.addCss('ul li {list-style: revert; list-style-type: inherit !important;}');
-      CKEDITOR.addCss('table td:not(:has(p)) {padding-bottom: 10px;}');
-      CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
-      CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
-      CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
-      CKEDITOR.addCss('img {margin: 0 10px 10px 0 !important;}');
-      CKEDITOR.addCss('blockquote p { margin-bottom: 0 !important; line-height: 1.4 !important; font-size: 16px !important;;}');
-      CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
-      CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
-      CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
-      CKEDITOR.addCss('ol ol li {list-style-type: lower-latin !important;}');
-      CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
-      CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
-      CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
+      CKEDITOR.on('dialogDefinition', function (e) {
+        if (e.data.name === 'link') {
+          const informationTab = e.data.definition.getContents('target');
+          const targetField = informationTab.get('linkTargetType');
+          targetField['default'] = '_self';
+          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
+        }
+      });
 
       // this line is mandatory when a custom skin is defined
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
@@ -723,11 +710,7 @@ export default {
         spaceGroupId: `/spaces/${this.spaceGroupId}`,
         imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',
-<<<<<<< HEAD
         extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
-=======
-        extraAllowedContent: 'table[!summary];img[style,class,src,referrerpolicy,alt,width,height];code span;span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
->>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
@@ -752,11 +735,10 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
+            this.document.appendStyleSheet('/notes/skin/css/notes/editorContent.css');
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-<<<<<<< HEAD
-=======
             CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
               if ( element.getAscendant( 'table', true ) ) {
                 return {
@@ -764,7 +746,6 @@ export default {
                 };
               }
             });
->>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
@@ -1051,17 +1032,6 @@ export default {
       const oEmbeds = docElement.querySelectorAll('oembed');
       oEmbeds.forEach((oembed, index) => {
         oembed.innerHTML = decodeURIComponent(oembed.innerHTML);
-<<<<<<< HEAD
-        oembed.dataset.iframe = iframes[index]?.parentNode?.innerHTML?.toString();
-        const width = iframes[index]?.parentNode?.offsetWidth;
-        const height = iframes[index]?.parentNode?.offsetHeight;
-        const aspectRatio = width / height;
-        const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
-        const style = `
-          min-height: ${minHeight}px;
-          min-width: ${this.oembedMinWidth}px;
-          width: 100%;
-=======
         oembed.dataset.htmlSource = iframes[index]?.parentNode?.innerHTML?.toString();
         const width = iframes[index]?.parentNode?.offsetWidth;
         const height = iframes[index]?.parentNode?.offsetHeight;
@@ -1075,12 +1045,10 @@ export default {
           min-width: ${this.oembedMinWidth}px;
           width: ${width}px;
           height:${height}px;
->>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
           margin-bottom: 10px;
           aspect-ratio: ${aspectRatio};
         `;
         oembed.setAttribute('style', style);
-<<<<<<< HEAD
         oembed.setAttribute('class', 'd-flex position-relative ml-auto mr-auto');
       });
       return docElement?.children[1].innerHTML;
@@ -1166,10 +1134,6 @@ export default {
         params.append('translation', this.slectedLanguage);
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
-=======
-      });
-      return docElement?.children[1].innerHTML;
->>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
     }
   }
 };
