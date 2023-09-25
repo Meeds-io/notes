@@ -693,7 +693,7 @@ export default {
         spaceGroupId: `/spaces/${this.spaceGroupId}`,
         imagesDownloadFolder: 'notes/images',
         toolbarLocation: 'top',
-        extraAllowedContent: 'table[!summary];img[style,class,src,referrerpolicy,alt,width,height];code span;span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
+        extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
