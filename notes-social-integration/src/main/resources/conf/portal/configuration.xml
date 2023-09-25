@@ -80,59 +80,47 @@
   </external-component-plugins>
 
   <external-component-plugins profiles="gamification">
-    <target-component>io.meeds.gamification.service.RuleRegistry</target-component>
+    <target-component>io.meeds.gamification.service.EventRegistry</target-component>
     <component-plugin>
-      <name>rule.AddWikiPage</name>
+      <name>AddWikiPage</name>
       <set-method>addPlugin</set-method>
-      <type>io.meeds.gamification.plugin.RuleConfigPlugin</type>
+      <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
       <init-params>
-        <value-param>
-          <name>rule-title</name>
-          <value>addWikiPage</value>
-        </value-param>
-        <value-param>
-          <name>rule-description</name>
-          <value>You created a wiki page</value>
-        </value-param>
-        <value-param>
-          <name>rule-event</name>
-          <value>addWikiPage</value>
-        </value-param>
-        <value-param>
-          <name>rule-score</name>
-          <value>5</value>
-        </value-param>
-        <value-param>
-          <name>rule-enable</name>
-          <value>false</value>
-        </value-param>
+        <object-param>
+          <name>event</name>
+          <object type="io.meeds.gamification.model.EventDTO">
+            <field name="title">
+              <string>addWikiPage</string>
+            </field>
+            <field name="type">
+              <string>meeds</string>
+            </field>
+            <field name="trigger">
+              <string>addWikiPage</string>
+            </field>
+          </object>
+        </object-param>
       </init-params>
     </component-plugin>
     <component-plugin>
-      <name>rule.UpdateWikiPage</name>
+      <name>UpdateWikiPage</name>
       <set-method>addPlugin</set-method>
-      <type>io.meeds.gamification.plugin.RuleConfigPlugin</type>
+      <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
       <init-params>
-        <value-param>
-          <name>rule-title</name>
-          <value>updateWikiPage</value>
-        </value-param>
-        <value-param>
-          <name>rule-description</name>
-          <value>You Updated a wiki Page</value>
-        </value-param>
-        <value-param>
-          <name>rule-event</name>
-          <value>updateWikiPage</value>
-        </value-param>
-        <value-param>
-          <name>rule-score</name>
-          <value>2</value>
-        </value-param>
-        <value-param>
-          <name>rule-enable</name>
-          <value>false</value>
-        </value-param>
+        <object-param>
+          <name>event</name>
+          <object type="io.meeds.gamification.model.EventDTO">
+            <field name="title">
+              <string>updateWikiPage</string>
+            </field>
+            <field name="type">
+              <string>meeds</string>
+            </field>
+            <field name="trigger">
+              <string>updateWikiPage</string>
+            </field>
+          </object>
+        </object-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>
