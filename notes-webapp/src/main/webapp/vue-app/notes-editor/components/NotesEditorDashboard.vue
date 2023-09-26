@@ -590,10 +590,11 @@ export default {
       CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
       CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
       CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
-      CKEDITOR.addCss('img {margin: 0 10px 10px 0 !important;}');
-      CKEDITOR.addCss('blockquote p { margin-bottom: 0 !important; line-height: 1.4 !important; font-size: 16px !important;;}');
+      CKEDITOR.addCss('img:not(.cke_widget_mask, .cke_widget_drag_handler) { margin: 0 10px 10px 0 !important;}');
+      CKEDITOR.addCss('blockquote p { margin-bottom: 0 !important; line-height: 1.4 !important; font-size: 16px !important;}');
       CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
+      CKEDITOR.addCss('div[data-widget="embedSemantic"] div {margin-bottom:10px;}');
       CKEDITOR.addCss('ol li {list-style-type: decimal !important;}');
       CKEDITOR.addCss('ol ol li {list-style-type: lower-latin !important;}');
       CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
@@ -649,7 +650,6 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            //self.note.content = evt.editor.getData();
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
