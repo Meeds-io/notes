@@ -600,7 +600,7 @@ export default {
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,' +
+      let extraPlugins = 'indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,' +
           'tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
       let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
       const windowWidth = $(window).width();
