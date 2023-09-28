@@ -7,7 +7,6 @@
       display: block;
       padding: 0.5em;
       background: @primaryBackgroundDefault;
-      font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
     }
 
     blockquote {
@@ -137,10 +136,11 @@
       td, th {
         line-height: 1.4 !important;
         font-size: 16px !important;
-      }
+        padding: 5px;
 
-      td:not(:has(p)) {
-        padding-bottom: 10px;
+        p:last-child{
+          margin-bottom: 0 !important;
+        }
       }
     }
 

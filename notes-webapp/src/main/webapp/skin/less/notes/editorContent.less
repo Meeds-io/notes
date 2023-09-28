@@ -1,0 +1,114 @@
+@import "../variables.less";
+
+h1 {
+    font-size: 28px;
+    margin-top: 45px;
+}
+
+h2 {
+    font-size: 23px;
+    margin-top: 35px;
+}
+
+h3 {
+    font-size: 18px;
+    margin-top: 25px;
+}
+
+h1, h2, h3 {
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+p, li {
+    line-height: 1.4
+}
+
+p, li, blockquote {
+    font-size: 16px;
+}
+
+ol, ul, dl {
+    margin: 0 0 10px 0;
+    padding: 0 40px;
+}
+
+ul li {
+    list-style: revert;
+    list-style-type: inherit !important;
+}
+
+blockquote {
+    font-weight: 400;
+    font-style: normal !important;
+    padding: 10px !important;
+    margin: 0 0 10px 0 !important;
+}
+
+table {
+    margin-bottom: 10px !important;
+    margin-top: 0 !important;
+
+    td, th {
+        margin-bottom: 10px !important;
+        margin-top: 0 !important;
+        padding: 5px;
+        font-size: 16px;
+        line-height: 1.4;
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+img:not(.cke_widget_mask, .cke_widget_drag_handler) {
+    margin: 0 10px 10px 0 !important;
+}
+
+blockquote p {
+    margin-bottom: 0 !important;
+    line-height: 1.4 !important;
+    font-size: 16px !important;
+}
+
+.cke_editable {
+    font-size: 14px;
+    line-height: 1.4 !important;
+}
+
+.placeholder {
+    color: @mediumGrey !important;
+}
+
+div[data-widget="embedSemantic"] div {
+    margin-bottom: 10px;
+}
+
+ol li {
+    list-style-type: decimal !important;
+}
+
+ol ol li {
+    list-style-type: lower-latin !important;
+}
+
+ol ol ol li {
+    list-style-type: lower-roman !important;
+}
+
+ol ol ol ol li {
+    list-style-type: upper-latin !important;
+}
+
+ol ol ol ol ol li {
+    list-style-type: upper-roman !important;
+}
+
+span[data-cke-display-name="image"] {
+    margin: auto !important;
+
+    span.cke_image_resizer {
+        bottom: 0 !important;
+    }
+}
