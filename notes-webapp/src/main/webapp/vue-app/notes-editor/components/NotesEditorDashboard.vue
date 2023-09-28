@@ -674,6 +674,8 @@ export default {
       CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
       CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
       CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
+      CKEDITOR.addCss('span[data-cke-display-name="image"] { margin: auto;}');
+      CKEDITOR.addCss('span[data-cke-display-name="image"] span.cke_image_resizer { bottom: 0 !important;}');
 
       CKEDITOR.on('dialogDefinition', function (e) {
         if (e.data.name === 'link') {
