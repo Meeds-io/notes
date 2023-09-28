@@ -664,7 +664,7 @@ export default {
       CKEDITOR.addCss('blockquote {font-weight: 400; font-style:normal !important; padding: 10px !important; margin: 0 0 10px 0 !important;}');
       CKEDITOR.addCss('table {margin-bottom: 10px !important; margin-top: 0 !important;}');
       CKEDITOR.addCss('td {margin-bottom: 10px !important; margin-top: 0 !important;}');
-      CKEDITOR.addCss('img:not(.cke_widget_mask, .cke_widget_drag_handler) { margin: 0 10px 10px 0 !important;}');
+      CKEDITOR.addCss('img:not(.cke_widget_mask, .cke_widget_drag_handler) { margin: 10px !important;}');
       CKEDITOR.addCss('blockquote p { margin-bottom: 0 !important; line-height: 1.4 !important; font-size: 16px !important;}');
       CKEDITOR.addCss('.cke_editable { font-size: 14px; line-height: 1.4 !important;}');
       CKEDITOR.addCss('.placeholder { color: #5f708a!important;}');
@@ -674,6 +674,8 @@ export default {
       CKEDITOR.addCss('ol ol ol li {list-style-type: lower-roman !important;}');
       CKEDITOR.addCss('ol ol ol ol li {list-style-type: upper-latin !important;}');
       CKEDITOR.addCss('ol ol ol ol ol li {list-style-type: upper-roman !important;}');
+      CKEDITOR.addCss('span[data-cke-display-name="image"] { margin: auto;}');
+      CKEDITOR.addCss('span[data-cke-display-name="image"] span.cke_image_resizer { bottom: 0 !important;}');
 
       CKEDITOR.on('dialogDefinition', function (e) {
         if (e.data.name === 'link') {
