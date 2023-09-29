@@ -553,7 +553,7 @@ export default {
         allowedContent: true,
         spaceURL: self.spaceURL,
         spaceGroupId: `/spaces/${this.spaceGroupId}`,
-        imagesDownloadFolder: 'notes/images',
+        imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',
         extraAllowedContent: 'table[!summary]; img[style,class,src,referrerpolicy,alt,width,height]; span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
