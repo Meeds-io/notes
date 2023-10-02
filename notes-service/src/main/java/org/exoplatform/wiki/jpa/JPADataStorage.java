@@ -1519,7 +1519,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity pageEntity = pageDAO.find(noteId);
 
     if (pageEntity == null) {
-      throw new WikiException("Cannot delete versions of page: " + pageEntity.getName() + "for language:" + lang
+      throw new WikiException("Cannot delete versions of page with: " + noteId  + "for language:" + lang
           + " because page does not exist.");
     }
     List<PageVersionEntity> history = pageVersionDAO.findPageVersionsByPageIdAndLang(noteId, lang);
