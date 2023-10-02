@@ -19,7 +19,14 @@
 
 package org.exoplatform.wiki.jpa;
 
+import static org.exoplatform.wiki.jpa.EntityConverter.*;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.*;
+
 import org.apache.commons.lang.StringUtils;
+
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.ObjectPageList;
@@ -43,15 +50,9 @@ import org.exoplatform.wiki.service.DataStorage;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.search.*;
+import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.VersionNameComparatorDesc;
-import org.exoplatform.wiki.utils.NoteConstants;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.*;
-
-import static org.exoplatform.wiki.jpa.EntityConverter.*;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -1504,5 +1505,28 @@ public class JPADataStorage implements DataStorage {
       throw new IllegalArgumentException("draftNoteId argument is null");
     }
     return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findDraftNoteByIdAndLang(draftNoteId, lang));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @ExoTransactional
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException {
+    if (noteId == null) {
+      throw new IllegalArgumentException("noteId argument is null");
+    }
+    PageEntity pageEntity = pageDAO.find(noteId);
+
+    if (pageEntity == null) {
+      throw new WikiException("Cannot delete versions of page: " + pageEntity.getName() + "for language:" + lang
+          + " because page does not exist.");
+    }
+    List<PageVersionEntity> history = pageVersionDAO.findPageVersionsByPageIdAndLang(noteId, lang);
+    pageVersionDAO.deleteAll(history);
+    history = pageEntity.getVersions();
+    history.removeIf(version -> (StringUtils.isNotEmpty(version.getLang()) && version.getLang().equals(lang)));
+    pageEntity.setVersions(history);
+    pageDAO.update(pageEntity);
   }
 }

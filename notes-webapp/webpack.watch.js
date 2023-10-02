@@ -5,7 +5,7 @@ const webpackCommonConfig = require('./webpack.prod.js');
 // the display name of the war
 const app = 'notes';
 
-const exoServerPath = "/exo-server";
+const exoServerPath = "D:\\\eXo\\servers\\platform-6.5.x-experience-SNAPSHOT";
 
 let config = merge(webpackCommonConfig, {
   output: {
