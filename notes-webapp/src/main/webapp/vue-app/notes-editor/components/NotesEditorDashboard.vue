@@ -600,8 +600,8 @@ export default {
       CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,' +
-          'tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
+      let extraPlugins = 'a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
+          'autolink,colordialog,tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
       let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
       const windowWidth = $(window).width();
       const windowHeight = $(window).height();
@@ -610,6 +610,7 @@ export default {
         extraPlugins = 'simpleLink';
       }
       const toolbar = [
+        { name: 'accessibility', items: ['A11ychecker'] },
         { name: 'format', items: ['Format'] },
         { name: 'fontsize', items: ['FontSize'] },
         {
