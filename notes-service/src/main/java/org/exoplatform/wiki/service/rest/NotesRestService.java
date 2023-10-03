@@ -27,46 +27,39 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.social.rest.entity.IdentityEntity;
-import org.exoplatform.social.rest.api.RestUtils;
-import org.exoplatform.wiki.model.Attachment;
-import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.SearchResultType;
-import org.exoplatform.wiki.service.search.TitleSearchResult;
-import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.gatein.api.EntityNotFoundException;
+
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.utils.HTMLSanitizer;
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.ResourceBundleService;
+import org.exoplatform.services.rest.http.PATCH;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.wiki.service.search.TitleSearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
@@ -74,8 +67,13 @@ import org.exoplatform.wiki.tree.WikiTreeNode;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
-import org.exoplatform.portal.localization.LocaleContextInfoUtils;
-import org.exoplatform.services.rest.http.PATCH;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/notes")
 @Tag(name = "/notes", description = "Managing notes")
@@ -244,7 +242,7 @@ public class NotesRestService implements ResourceContainer {
   }
 
   @GET
-  @Path("/note/langs/{noteId}")
+  @Path("/note/translation/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
   @Operation(summary = "Get available translation languages by page id",
@@ -265,6 +263,30 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception e) {
      log.error("Error while getting available translation languages of the page with id : {}", noteId, e);
      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+  }
+
+  @DELETE
+  @Path("/note/translation/{noteId}/{lang}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @Operation(summary = "Delete translation by page id and language", method = "GET", description = "This deletes translation by page id and language")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "500", description = "Server internal error") })
+  public Response deleteTranslations(@Parameter(description = "Note id", required = true)
+  @PathParam("noteId")
+  Long noteId, @PathParam("lang")
+  String lang) {
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
+    }
+    try {
+      noteService.deleteVersionsByNoteIdAndLang(noteId, lang);
+      return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
+    } catch (Exception e) {
+      log.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
   }
 

@@ -36,7 +36,7 @@
           <v-chip
             v-for="(translation, i) in translationToShow"
             :key="i"
-            close
+            :close="translation.value!==selectedTranslation.value"
             small
             :outlined="translation.value!==selectedTranslation.value"
             color="primary"
@@ -87,7 +87,7 @@
               :key="i"
               class="pa-0 translation-chips">
               <v-chip
-                close
+                :close="item.value!==selectedTranslation.value"
                 small
                 :outlined="item.value!==selectedTranslation.value"
                 color="primary"
@@ -213,9 +213,7 @@ export default {
       this.$root.$emit('lang-translation-changed', this.selectedTranslation);
     },
     removeTranslation(translation){
-      return this.$notesService.deleteNoteTranslation(this.noteId,translation.value).then(() => {
-        this.translations=this.translations.filter(item => item.value !== translation.value);
-      });
+      this.$root.$emit('delete-lang-translation', translation);
     },
   }
 };
