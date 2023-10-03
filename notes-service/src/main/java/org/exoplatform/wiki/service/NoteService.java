@@ -502,7 +502,6 @@ public interface NoteService {
    *
    * @param noteId Id of the note.
    * @param lang language.
-   * @return "True" if deleting the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
