@@ -2,11 +2,25 @@
 
   .notes-application-content {
 
-    code {
-      white-space: pre-wrap !important;
-      display: block;
-      padding: 0.5em;
+    pre {
       background: @primaryBackgroundDefault;
+      padding: 9.5px;
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+
+      code {
+        white-space: pre-wrap !important;
+        display: block;
+        padding: 0.5em !important;
+
+        * {
+          font-family: Monaco, Menlo, Consolas, monospace;
+          font-size: 14px !important;
+          font-weight: normal;
+        }
+      }
     }
 
     blockquote {
