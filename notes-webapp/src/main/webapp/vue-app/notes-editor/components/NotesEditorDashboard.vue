@@ -976,12 +976,12 @@ export default {
         const width = iframes[index]?.parentNode?.offsetWidth;
         const height = iframes[index]?.parentNode?.offsetHeight;
         const aspectRatio = width / height;
-        const minWidth = parseInt(this.oembedMinWidth) / aspectRatio;
+        const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
         const style = `
           position: relative;
           display: flex;
           margin: auto;
-          min-height: ${minWidth}px;
+          min-height: ${minHeight}px;
           min-width: ${this.oembedMinWidth}px;
           width: ${width}px;
           height:${height}px;
