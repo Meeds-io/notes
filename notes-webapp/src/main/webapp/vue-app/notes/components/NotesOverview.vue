@@ -810,6 +810,7 @@ export default {
       const links = docElement.getElementsByTagName('a');
       const tables = docElement.getElementsByTagName('table');
       const oEmbeds = docElement.getElementsByTagName('oembed');
+      docElement.querySelectorAll('pre > code').forEach((e) => codeHighlighter.highlightBlock(e));
       for (const oembed of oEmbeds) {
         oembed.innerHTML = oembed.dataset.htmlSource;
         delete oembed.dataset.htmlSource;
