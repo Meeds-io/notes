@@ -109,7 +109,7 @@
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <v-menu
-              v-if="notesMultilingualActive && translations?.length>1"
+              v-if="notesMultilingualActive && translations.length>1"
               v-model="translationsMenu"
               offset-y
               bottom>
