@@ -209,7 +209,7 @@ export default {
       return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
-      return this.translations?.length>0 ? 'primary--text':'';
+      return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
@@ -317,6 +317,13 @@ export default {
       this.getNote(noteId);
       this.note.lang=lang.value;
       this.initCKEditor();
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      params.delete('translation'); 
+      if (this.slectedLanguage!=='') {
+        params.append('translation', this.slectedLanguage);
+      }
+      window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
     });
     this.$root.$on('delete-lang-translation', translation => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
