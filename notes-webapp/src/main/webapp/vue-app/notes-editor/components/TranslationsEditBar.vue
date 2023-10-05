@@ -7,7 +7,7 @@
       <template #activator="{ on, attrs }">
         <v-btn
           id="translationBarBackButton"
-          aria-label="translation back button"
+          :aria-label="$t('notes.label.button.back')"
           class="mx-4  my-auto "
           small
           icon
@@ -108,7 +108,7 @@
       <select
         id="translationBarFilterSelect"
         v-model="selectedLang"
-        aria-label="List of traductions"
+        :aria-label="$t('notes.label.languageList')"
         class="ignore-vuetify-classes py-2 height-auto width-auto text-truncate my-auto mx-2">
         <option
           v-for="item in languages"
@@ -120,7 +120,7 @@
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <v-btn
-            aria-label="translation add button"
+            :aria-label="$t('notes.label.addTheTranslation')"
             class="my-auto "
             small
             icon

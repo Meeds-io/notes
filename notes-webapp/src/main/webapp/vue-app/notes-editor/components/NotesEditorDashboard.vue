@@ -27,7 +27,7 @@
                 <template #activator="{ on, attrs }">
                   <v-icon
                     v-if="notesMultilingualActive && noteId"
-                    aria-label="translation options button"
+                    :aria-label="$t('notes.label.button.translations.options')"
                     size="22"
                     class="clickable pa-2"
                     :class="langBottonColor"
