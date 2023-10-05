@@ -7,7 +7,7 @@
       <template #activator="{ on, attrs }">
         <v-btn
           id="translationBarBackButton"
-          aria-label="translation back button"
+          :aria-label="$t('notes.label.button.back')"
           class="mx-4  my-auto "
           small
           icon
@@ -108,6 +108,7 @@
       <select
         id="translationBarFilterSelect"
         v-model="selectedLang"
+        :aria-label="$t('notes.label.languageList')"
         class="ignore-vuetify-classes py-2 height-auto width-auto text-truncate my-auto mx-2">
         <option
           v-for="item in languages"
@@ -119,7 +120,7 @@
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <v-btn
-            aria-label="translation add button"
+            :aria-label="$t('notes.label.addTheTranslation')"
             class="my-auto "
             small
             icon
@@ -150,6 +151,10 @@ export default {
       type: Object,
       default: () => null,
     },
+    isMobile: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data: () => ({
@@ -179,9 +184,6 @@ export default {
     noteId(){
       return !this.note.draftPage?this.note.id:this.note.targetPageId;
     },
-    isMobile() {
-      return this.$vuetify.breakpoint.width < 960;
-    },
     limitTranslationsToShow() {
       return this.isMobile?1:3;
     }
@@ -191,6 +193,10 @@ export default {
   methods: {
     show(lang) {
       this.selectedTranslation={value: lang};
+      const translation = this.translations.find(item => item.value === lang);
+      if (translation){
+        this.selectedTranslation=translation;
+      }
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
       if (!this.translations && this.note && this.noteId){
         this.getNoteLanguages(this.noteId);
