@@ -112,13 +112,12 @@
               v-if="notesMultilingualActive && translations?.length>1"
               v-model="translationsMenu"
               offset-y
-              class=" ma-1"
               bottom>
               <template #activator="{ on, attrs }">
                 <v-icon
-                  size="30"
+                  size="22"
                   :class="langBottonColor"
-                  class="remove-focus pa-0 pe-3"
+                  class="remove-focus my-auto pa-0  pe-1"
                   v-bind="attrs"
                   v-on="on">
                   fa-language
@@ -128,7 +127,7 @@
                 <v-list-item
                   v-for="(item, i) in translations"
                   :key="i"
-                  class="pa-0 translation-chips">
+                  class=" translation-chips">
                   <v-chip
                     small
                     :outlined="item.value!==selectedTranslation.value"
@@ -141,7 +140,7 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
+            <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -355,7 +354,7 @@ export default {
         this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
         this.currentNoteBreadcrumb = this.note.breadcrumb;
       }
-      this.noteTitle = !this.note.parentPageId ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
+      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
       this.noteContent = this.note.content;
       this.retrieveNoteTreeById();
     },
@@ -533,7 +532,7 @@ export default {
       return uris[uris.length - 1];
     },
     langBottonColor(){
-      return this.selectedTranslation.value===this.lang ? 'primary--text':'';
+      return this.selectedTranslation.value!=='' ? 'primary--text':'';
     },
     notesMultilingualActive() {
       return eXo?.env?.portal?.notesMultilingual;
@@ -998,6 +997,7 @@ export default {
           this.note.content = note.content;
           this.noteContent = note.content;
           this.note.title = note.title;
+          this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
         }
         this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
