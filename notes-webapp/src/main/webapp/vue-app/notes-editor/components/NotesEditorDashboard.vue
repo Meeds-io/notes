@@ -27,6 +27,7 @@
                 <template #activator="{ on, attrs }">
                   <v-icon
                     v-if="notesMultilingualActive && noteId"
+                    :aria-label="$t('notes.label.button.translations.options')"
                     size="22"
                     class="clickable pa-2"
                     :class="langBottonColor"
@@ -81,7 +82,8 @@
           ref="translationsEditBar"
           :note="note"
           :languages="languages"
-          :translations="translations" />
+          :translations="translations"
+          :is-mobile="isMobile" />
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -207,7 +209,10 @@ export default {
       return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
-      return this.translations?.length>0 ? 'primary--text':'';
+      return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
+    },
+    isMobile() {
+      return this.$vuetify.breakpoint.width < 960;
     }
 
   },
@@ -305,13 +310,20 @@ export default {
     this.$root.$on('lang-translation-changed', lang => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       this.slectedLanguage=lang.value;
-      if (lang.value!=='') {
+      if (lang.value!=='' || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);
       }
       this.getNote(noteId);
       this.note.lang=lang.value;
       this.initCKEditor();
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      params.delete('translation'); 
+      if (this.slectedLanguage!=='') {
+        params.append('translation', this.slectedLanguage);
+      }
+      window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
     });
     this.$root.$on('delete-lang-translation', translation => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
@@ -399,6 +411,13 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
+            if (this.slectedLanguage !=='' && (!data.lang || data.lang === '')){
+              this.slectedLanguage='';
+              const url = new URL(window.location.href);
+              const params = new URLSearchParams(url.search);
+              params.delete('translation'); 
+              window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
+            }
             this.$nextTick(()=> this.fillNote(data));
             this.initActualNoteDone = true;
           });
@@ -1002,6 +1021,13 @@ export default {
         }
         if (this.isMobile) {
           this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+        }
+        if (!this.slectedLanguage || this.slectedLanguage!==''){
+          const lang = this.translations.find(item => item.value === this.slectedLanguage);
+          if (lang){
+            this.translations=this.translations.filter(item => item.value !== lang.value);
+            this.translations.unshift(lang);
+          }
         }
       });
     },
