@@ -199,8 +199,8 @@
             :items="noteAllChildren"
             item-key="noteId">
             <template #label="{ item }">
-              <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text">
-                <span>{{ item.name }}</span>
+              <v-list-item-title class="body-2 content-link clickable primary--text">
+                <a :href="getNoteLink(item.noteId)"><span>{{ item.name }}</span></a>
               </v-list-item-title>
             </template>
           </v-treeview>
@@ -366,7 +366,7 @@ export default {
               :items="noteChildItems" \
               item-key="noteId"> \
               <template #label="{ item }"> \
-                <v-list-item-title @click="openNoteChild(item)" class="body-2 content-link clickable primary--text"> \
+                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text"> \
                 <span>{{ item.name }}</span> \
               </v-list-item-title> \
               </template> \
@@ -557,6 +557,10 @@ export default {
     this.handleChangePages();
   },
   methods: {
+    getNoteLink(noteId) {
+      const baseUrl = window.location.href;
+      return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
+    },
     loadMoreVersions(){
       this.versionsPageSize += this.versionsPageSize;
     },
