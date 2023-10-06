@@ -1546,4 +1546,12 @@ public class NoteServiceImpl implements NoteService {
   public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
     return dataStorage.getLatestDraftPageByUserAndTargetPageAndLang(targetPageId, username, lang);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException{
+    dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
+  }
 }
