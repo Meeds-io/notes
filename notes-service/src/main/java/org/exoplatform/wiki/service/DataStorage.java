@@ -19,6 +19,8 @@
 
 package org.exoplatform.wiki.service;
 
+import java.util.List;
+
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ValuesParam;
@@ -29,8 +31,6 @@ import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-
-import java.util.List;
 
 public interface DataStorage {
 
@@ -252,5 +252,14 @@ public interface DataStorage {
    * @return {@link DraftPage}
    */
   DraftPage getDraftPageByIdAndLang(Long draftNoteId, String lang);
+
+  /**
+   * Deletes a list of versions of note by language.
+   *
+   * @param noteId Id of the note.
+   * @param lang language.
+   * @throws WikiException if an error occured
+   */
+  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
 
 }
