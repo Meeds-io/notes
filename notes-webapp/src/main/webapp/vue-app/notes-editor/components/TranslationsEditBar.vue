@@ -193,9 +193,11 @@ export default {
   methods: {
     show(lang) {
       this.selectedTranslation={value: lang};
-      const translation = this.translations.find(item => item.value === lang);
-      if (translation){
-        this.selectedTranslation=translation;
+      if (this.translations){
+        const translation = this.translations.find(item => item.value === lang);
+        if (translation){
+          this.selectedTranslation=translation;
+        }
       }
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
       if (!this.translations && this.note && this.noteId){
