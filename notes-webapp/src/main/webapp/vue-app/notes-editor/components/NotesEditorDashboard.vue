@@ -725,7 +725,7 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            this.document.appendStyleSheet('/notes/skin/css/notes/editorContent.css');
+            this.document.appendStyleSheet(`/notes/skin/css/notes/editorContent.css?v=${eXo.env.client.assetsVersion}`);
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
