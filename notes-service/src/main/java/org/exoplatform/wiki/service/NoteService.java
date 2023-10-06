@@ -496,4 +496,13 @@ public interface NoteService {
    * @return {@link DraftPage}
    */
   DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
+
+  /**
+   * Deletes a list of versions of note by language.
+   *
+   * @param noteId Id of the note.
+   * @param lang language.
+   * @throws WikiException if an error occured
+   */
+  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
 }
