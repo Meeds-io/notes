@@ -258,4 +258,13 @@ public interface DataStorage {
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
 
+  /**
+   * Deletes a list of versions of note by language.
+   *
+   * @param noteId Id of the note.
+   * @param lang language.
+   * @throws WikiException if an error occured
+   */
+  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
+
 }

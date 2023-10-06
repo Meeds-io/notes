@@ -361,8 +361,11 @@ export default {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       this.deleteTranslation(translation, noteId);
     });
+<<<<<<< HEAD
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
+=======
+>>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
@@ -1116,10 +1119,13 @@ export default {
         }
       });
 <<<<<<< HEAD
+<<<<<<< HEAD
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);
       return language?language.text:lang;
+=======
+>>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
     },
     deleteTranslation(translation,noteId){
       return this.$notesService.deleteNoteTranslation(noteId,translation.value).then(() => {
@@ -1130,6 +1136,7 @@ export default {
         };
         this.displayMessage(messageObject);
       });
+<<<<<<< HEAD
 
     },
     addTranslation(lang){
@@ -1184,6 +1191,8 @@ export default {
       this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
     },
 =======
+=======
+>>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
     }
 >>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
   }

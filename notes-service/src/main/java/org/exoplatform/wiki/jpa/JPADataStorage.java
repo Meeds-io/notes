@@ -1541,4 +1541,27 @@ public class JPADataStorage implements DataStorage {
     pageEntity.setVersions(history);
     pageDAO.update(pageEntity);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @ExoTransactional
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException {
+    if (noteId == null) {
+      throw new IllegalArgumentException("noteId argument is null");
+    }
+    PageEntity pageEntity = pageDAO.find(noteId);
+
+    if (pageEntity == null) {
+      throw new WikiException("Cannot delete versions of page with: " + noteId  + "for language:" + lang
+          + " because page does not exist.");
+    }
+    List<PageVersionEntity> history = pageVersionDAO.findPageVersionsByPageIdAndLang(noteId, lang);
+    pageVersionDAO.deleteAll(history);
+    history = pageEntity.getVersions();
+    history.removeIf(version -> (StringUtils.isNotEmpty(version.getLang()) && version.getLang().equals(lang)));
+    pageEntity.setVersions(history);
+    pageDAO.update(pageEntity);
+  }
 }
