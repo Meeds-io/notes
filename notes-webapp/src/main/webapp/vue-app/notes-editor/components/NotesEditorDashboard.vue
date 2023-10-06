@@ -313,6 +313,10 @@ export default {
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
     });
+    this.$root.$on('delete-lang-translation', translation => {
+      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
+      this.deleteTranslation(translation, noteId);
+    });
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
@@ -1039,6 +1043,17 @@ export default {
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
       });
+    },
+    deleteTranslation(translation,noteId){
+      return this.$notesService.deleteNoteTranslation(noteId,translation.value).then(() => {
+        this.translations=this.translations.filter(item => item.value !== translation.value);
+        const messageObject = {
+          type: 'success',
+          message: this.$t('notes.alert.success.label.translation.deleted')
+        };
+        this.displayMessage(messageObject);
+      });
+
     },
   }
 };
