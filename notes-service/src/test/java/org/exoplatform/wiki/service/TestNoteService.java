@@ -21,10 +21,19 @@
 package org.exoplatform.wiki.service;
 
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.commons.io.FileUtils;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.container.PortalContainer;
+
+
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -549,6 +558,34 @@ public class TestNoteService extends BaseTest {
     noteService.deleteNote(PortalConfig.PORTAL_TYPE, "testPortal2", "note1",user);
 
     assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", "note1")) ;
+  }
+
+  public void testDeleteVersionsByNoteIdAndLang() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("testPage1", "testPage1"), root);
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "testPage1"));
+    note1 = noteService.getNoteById(note1.getId());
+    note1.setLang("en");
+    note1.setTitle("englishTitle");
+    noteService.createVersionOfNote(note1, "root");
+    note1.setLang("fr");
+    note1.setTitle("frenchTitle");
+    noteService.createVersionOfNote(note1, "root");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en");
+    Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
+    assertEquals(note.getTitle(), "testPage1");
+    note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
+    assertNotNull(note);
+    assertEquals(note.getTitle(), "frenchTitle");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
+    note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
+    assertEquals(note.getTitle(), "testPage1");
+    noteService.deleteNote(note1.getWikiType(), note1.getWikiOwner(), note1.getName());
+    Page deletedNote = noteService.getNoteById(note1.getId(), root, "");
+
+    assertNotNull(deletedNote);
+    assertTrue(deletedNote.isDeleted());
   }
 
   public void testGetChildrenNoteOf() throws WikiException, IllegalAccessException {

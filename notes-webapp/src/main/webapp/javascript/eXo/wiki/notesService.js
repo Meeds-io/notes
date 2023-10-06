@@ -360,7 +360,7 @@ export function getAvailableLanguages() {
   });
 }
 export function getNoteLanguages(noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/langs/${noteId}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translation/${noteId}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
@@ -372,8 +372,8 @@ export function getNoteLanguages(noteId) {
   });
 }
 
-export function deleteNoteTranslation(noteId, lang) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translations/${noteId}/${lang}`, {
+export function deleteNoteTranslation(noteId, translation) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translation/${noteId}/${translation}`, {
     credentials: 'include',
     method: 'DELETE',
   }).then((resp) => {
