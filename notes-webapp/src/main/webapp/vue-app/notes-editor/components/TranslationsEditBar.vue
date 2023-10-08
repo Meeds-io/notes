@@ -36,7 +36,7 @@
           <v-chip
             v-for="(translation, i) in translationToShow"
             :key="i"
-            :close="translation.value!==selectedTranslation.value"
+            :close="translation.value!==selectedTranslation.value && translation.value !==''"
             small
             :outlined="translation.value!==selectedTranslation.value"
             color="primary"
@@ -54,7 +54,7 @@
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-show="!isMobile"
+              v-if="!isMobile"
               height="32"
               width="32"
               fab
@@ -71,7 +71,7 @@
               </v-avatar>
             </v-btn>
             <v-chip
-              v-show="isMobile"
+              v-else
               color="primary"
               class="my-auto mx-1"
               small
@@ -87,7 +87,7 @@
               :key="i"
               class="pa-0 translation-chips">
               <v-chip
-                :close="item.value!==selectedTranslation.value"
+                :close="item.value!==selectedTranslation.value && item.value !==''"
                 small
                 :outlined="item.value!==selectedTranslation.value"
                 color="primary"
@@ -100,6 +100,15 @@
             </v-list-item>
           </v-list>
         </v-menu>
+        <v-chip
+          v-else-if="isMobile"
+          color="primary"
+          class="my-auto mx-1"
+          small
+          v-bind="attrs"
+          v-on="on">
+          {{ !!selectedTranslation.value ? selectedTranslation.text : $t('notes.label.translation.originalVersion') }}
+        </v-chip>
       </div>
     </div>
     <div class="bar-separator my-auto"></div>
