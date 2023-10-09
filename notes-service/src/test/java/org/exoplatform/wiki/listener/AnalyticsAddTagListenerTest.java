@@ -8,6 +8,7 @@ import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.metadata.tag.model.TagName;
 import org.exoplatform.social.metadata.tag.model.TagObject;
 import org.exoplatform.wiki.model.Page;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,5 +65,11 @@ public class AnalyticsAddTagListenerTest {
                                                        tagSet);
     analyticsAddTagListener.onEvent(event);
     ANALYTICS_UTILS.verify(times(1), () -> AnalyticsUtils.addStatisticData(any()));
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    CONVERSATION_STATE.close();
+    ANALYTICS_UTILS.close();
   }
 }
