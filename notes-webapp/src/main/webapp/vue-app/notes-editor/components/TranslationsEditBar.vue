@@ -221,9 +221,7 @@ export default {
     add(){
       this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
-      this.languages = this.languages.filter(item => item.value !== this.selectedLang.value);
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
-      
     },
     changeTranslation(translation){
       this.selectedTranslation=translation;
