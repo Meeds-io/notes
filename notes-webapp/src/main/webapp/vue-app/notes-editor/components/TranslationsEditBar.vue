@@ -36,7 +36,7 @@
           <v-chip
             v-for="(translation, i) in translationToShow"
             :key="i"
-            :close="translation.value!==selectedTranslation.value"
+            :close="translation.value!==selectedTranslation.value && translation.value !==''"
             small
             :outlined="translation.value!==selectedTranslation.value"
             color="primary"
@@ -50,11 +50,12 @@
         <v-menu
           v-if="moreTranslations.length>0"
           v-model="moreTranslationsMenu"
-          class=" ma-1"
+          class="ma-1"
+          offset-x
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-show="!isMobile"
+              v-if="!isMobile"
               height="32"
               width="32"
               fab
@@ -71,7 +72,7 @@
               </v-avatar>
             </v-btn>
             <v-chip
-              v-show="isMobile"
+              v-else
               color="primary"
               class="my-auto mx-1"
               small
@@ -87,7 +88,7 @@
               :key="i"
               class="pa-0 translation-chips">
               <v-chip
-                :close="item.value!==selectedTranslation.value"
+                :close="item.value!==selectedTranslation.value && item.value !==''"
                 small
                 :outlined="item.value!==selectedTranslation.value"
                 color="primary"
@@ -100,6 +101,15 @@
             </v-list-item>
           </v-list>
         </v-menu>
+        <v-chip
+          v-else-if="isMobile"
+          color="primary"
+          class="my-auto mx-1"
+          small
+          v-bind="attrs"
+          v-on="on">
+          {{ !!selectedTranslation.value ? selectedTranslation.text : $t('notes.label.translation.originalVersion') }}
+        </v-chip>
       </div>
     </div>
     <div class="bar-separator my-auto"></div>
@@ -193,9 +203,11 @@ export default {
   methods: {
     show(lang) {
       this.selectedTranslation={value: lang};
-      const translation = this.translations.find(item => item.value === lang);
-      if (translation){
-        this.selectedTranslation=translation;
+      if (this.translations){
+        const translation = this.translations.find(item => item.value === lang);
+        if (translation){
+          this.selectedTranslation=translation;
+        }
       }
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
       if (!this.translations && this.note && this.noteId){
@@ -210,9 +222,7 @@ export default {
     add(){
       this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
-      this.languages = this.languages.filter(item => item.value !== this.selectedLang.value);
       this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
-      
     },
     changeTranslation(translation){
       this.selectedTranslation=translation;
