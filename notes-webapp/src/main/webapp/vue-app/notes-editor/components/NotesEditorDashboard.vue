@@ -14,7 +14,7 @@
               <v-tooltip bottom>
                 <template #activator="{ on, attrs }">
                   <v-icon
-                    v-if="notesMultilingualActive && noteId"
+                    v-if="notesMultilingualActive"
                     :aria-label="$t('notes.label.button.translations.options')"
                     size="22"
                     class="clickable pa-2"
@@ -25,7 +25,7 @@
                     fa-language
                   </v-icon>
                 </template>
-                <span class="caption">{{ $t('notes.label.button.translations.options') }}</span>
+                <span class="caption">{{ langBottonTooltipText }}</span>
               </v-tooltip>
             </div>
             <div class="notesFormRightActions pr-7">
@@ -199,11 +199,21 @@ export default {
       return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
+      if (!this.noteId){
+        return 'disabled--text not-clickable remove-focus';
+      }
       return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
     },
     isMobile() {
-      return this.$vuetify.breakpoint.width < 960;
-    }
+      return this.$vuetify.breakpoint.width < 1280;
+    },
+    langBottonTooltipText() {
+      if (this.noteId) {
+        return this.$t('notes.label.button.translations.options');
+      } else {
+        return this.$t('notes.message.firstVersionShouldBeCreated');
+      }
+    },
 
   },
   watch: {
@@ -288,6 +298,7 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
+      this.languages = this.languages.filter(item => item.value !== lang.value);
       this.slectedLanguage=lang.value;
       this.translations.unshift(lang);
       this.note.content='';
@@ -960,8 +971,10 @@ export default {
       this.postKey++;
     },
     showTranslations() {
-      this.showTranslationBar=true;
-      this.$refs.translationsEditBar.show(this.slectedLanguage);
+      if (this.noteId){
+        this.showTranslationBar=true;
+        this.$refs.translationsEditBar.show(this.slectedLanguage);
+      }
     },
     hideTranslations() {
       this.showTranslationBar=false;
