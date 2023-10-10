@@ -633,7 +633,7 @@ public class NotesRestService implements ResourceContainer {
       note_.setToBePublished(note.isToBePublished());
       String newNoteName = note_.getName();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
-        if (StringUtils.isEmpty(note.getLang())) {
+        if (StringUtils.isBlank(note.getLang())) {
           newNoteName = TitleResolver.getId(note.getTitle(), false);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
@@ -654,7 +654,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
-        if (StringUtils.isEmpty(note.getLang())) {
+        if (StringUtils.isBlank(note.getLang())) {
           newNoteName = TitleResolver.getId(note.getTitle(), false);
           if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
             noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
@@ -673,7 +673,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams);
         }
       } else if (!note_.getContent().equals(note.getContent())) {
-        if (StringUtils.isNotEmpty(note.getLang())) {
+        if (StringUtils.isBlank(note.getLang())) {
           note_.setContent(note.getContent());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         } else {
