@@ -212,7 +212,7 @@ export function getPathByNoteOwner(note, noteAppName) {
   if (!noteAppName) {
     noteAppName = 'notes';
   }
-  if (note.wikiType === 'group') {
+  if (note.wikiType === 'group' && note?.url) {
     const spaceName = note.wikiOwner.split('/spaces/')[1];
     const spaceDisplayName = note.url.split(`/portal/g/:spaces:${spaceName}/`)[1].split('/')[0];
     return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceDisplayName}/${noteAppName}/${note.id}`;
