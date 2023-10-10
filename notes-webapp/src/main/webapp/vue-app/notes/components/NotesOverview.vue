@@ -252,15 +252,6 @@
       @ok="deleteNote()"
       @dialog-opened="$emit('confirmDialogOpened')"
       @dialog-closed="$emit('confirmDialogClosed')" />
-    <v-alert
-      v-model="alert"
-      :class="alertMessageClass"
-      :type="type"
-      :icon="type === 'warning' ? 'mdi-alert-circle' : ''"
-      @input="onclose"
-      dismissible>
-      {{ message }}
-    </v-alert>
   </v-app>
 </template>
 <script>
@@ -300,9 +291,6 @@ export default {
       existingNote: true,
       currentPath: window.location.pathname,
       currentNoteBreadcrumb: [],
-      alert: false,
-      type: '',
-      message: '',
       loadData: false,
       openTreeView: false,
       hideElementsForSavingPDF: false,
@@ -507,12 +495,6 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
-    alertWarningDisplayed(){
-      return (localStorage.getItem(`displayAlertSpaceId-${this.spaceId}`) === 'already_display');
-    },
-    alertMessageClass(){
-      return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
-    }
   },
   created() {
     if (this.currentPath.endsWith('draft')) {
@@ -529,9 +511,7 @@ export default {
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
     });
-    this.$root.$on('show-alert', message => {
-      this.displayMessage(message);
-    });
+    this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('delete-note', () => {
       this.confirmDeleteNote();
     });
@@ -783,25 +763,16 @@ export default {
           const filename = `${note.title}.pdf`;
           pdf.save(filename);
         }).catch(e => {
-          const messageObject = {
+          this.displayMessage({
             type: 'error',
             message: this.$t('notes.message.export.error')
-          };
-          this.displayMessage(messageObject);
+          });
           console.error('Error when exporting note: ', e);
         });
       });
     },
-    displayMessage(message, keepAlert) {
-      this.message=message.message;
-      this.type=message.type;
-      this.alert = true;
-      if (!keepAlert) {
-        window.setTimeout(() => this.alert = false, 5000);
-      }
-    },
-    onclose() {
-      localStorage.setItem(`displayAlertSpaceId-${this.spaceId}`, 'already_display');
+    displayMessage(message) {
+      this.$root.$emit('alert-message', message?.message, message?.type || 'success');
     },
     getNoteVersionByNoteId(noteId) {
       this.noteVersionsArray = [];

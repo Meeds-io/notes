@@ -1,17 +1,5 @@
 <template>
   <v-app class="notesEditor">
-    <v-alert
-      v-model="alert"
-      :class="alertMessageClass"
-      :type="alertType"
-      :icon="alertType === 'warning' ? 'mdi-alert-circle' : ''"
-      dismissible>
-      {{ message }}
-      <a 
-        v-if="alertType === 'warning' && note.draftPage" 
-        class="dropDraftLink"
-        @click="dropDraft">{{ $t('notes.label.drop.draft') }}</a>
-    </v-alert>
     <div
       id="notesEditor"
       class="notesEditor width-full">
@@ -239,9 +227,7 @@ export default {
     this.$root.$on('updateData', data => {
       this.note.content= data;
     });
-    this.$root.$on('show-alert', message => {
-      this.displayMessage(message);
-    });
+    this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.note, 'includePages', null, filter);
@@ -326,11 +312,7 @@ export default {
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
           this.fillNote(latestDraft);
-          const messageObject = {
-            type: 'warning',
-            message: `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`
-          };
-          this.displayMessage(messageObject, true);
+          this.displayDraftMessage();
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id).then(data => {
@@ -345,11 +327,7 @@ export default {
         this.init();
         this.fillNote(data);
       }).finally(() => {
-        const messageObject = {
-          type: 'warning',
-          message: `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},  `
-        };
-        this.displayMessage(messageObject, true);
+        this.displayDraftMessage();
         this.initActualNoteDone = true;
       });
     },
@@ -778,13 +756,24 @@ export default {
         return true;
       }
     },
-    displayMessage(message, keepAlert) {
-      this.message = message.message;
-      this.alertType = message.type;
-      this.alert = true;
-      if (!keepAlert) {
-        window.setTimeout(() => this.alert = false, 5000);
-      }
+    displayDraftMessage() {
+      this.displayMessage({
+        type: 'warning',
+        message: `
+          <span class="pe-1">${this.$t('notes.alert.warning.label.draft.drop')}</span>
+          <span>${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)}</span>
+        `,
+        linkText: this.$t('notes.label.drop.draft'),
+        linkCallback: () => this.dropDraft(),
+      });
+    },
+    displayMessage(message) {
+      document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
+        alertMessage: message?.message,
+        alertType: message?.type,
+        alertLinkText: message?.linkText,
+        alertLinkCallback: message?.linkCallback,
+      }}));
     },
     displayFormTitle() {
       const urlParams = new URLSearchParams(window.location.search);
