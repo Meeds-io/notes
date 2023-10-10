@@ -310,7 +310,7 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
-      this.languages = this.languages.filter(item => item.value !== this.lang.value);
+      this.languages = this.languages.filter(item => item.value !== lang.value);
       this.slectedLanguage=lang.value;
       this.translations.unshift(lang);
       this.note.content='';
