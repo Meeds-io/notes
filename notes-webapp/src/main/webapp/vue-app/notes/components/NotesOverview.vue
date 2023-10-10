@@ -345,7 +345,7 @@ export default {
   computed: {
     notesContentProcessor() {
       return {
-        template: `<div class='reset-style-box rich-editor-content'>${this.formatContent(this.noteContent)}</div>`,
+        template: `<div class='reset-style-box rich-editor-content custom-notes-editor'>${this.formatContent(this.noteContent)}</div>`,
         data() {
           return {
             vTreeComponent: {
@@ -838,6 +838,7 @@ export default {
             table.removeAttribute('summary');
           }
         }
+        table.style.border = `${table.getAttribute('border')}px solid`;
       }
       if (contentChildren) {
         for (let i = 0; i < contentChildren.length; i++) { // NOSONAR not iterable
