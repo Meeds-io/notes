@@ -19,14 +19,6 @@
         <div class="notesActions white">
           <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
-              <v-btn 
-                v-if="isMobile"
-                icon
-                fab
-                class="my-auto"
-                @click="close()">
-                <v-icon> mdi-arrow-left </v-icon>
-              </v-btn>
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
             </div>
@@ -182,9 +174,6 @@ export default {
     },
     alertMessageClass(){
       return  this.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > 45 ? 'lengthyAlertMessage' : '';
-    },
-    isMobile() {
-      return this.$vuetify.breakpoint.name === 'xs' || this.$vuetify.breakpoint.name === 'sm';
     },
   },
   watch: {
@@ -914,9 +903,6 @@ export default {
         oembed.setAttribute('style', style);
       });
       return docElement?.children[1].innerHTML;
-    },
-    close() {
-      window.close();
     }
   }
 };
