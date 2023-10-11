@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
@@ -64,7 +65,9 @@ public class JsonNodeData {
   private String parentPageId;
   
   private Boolean hasDraftDescendant;
-    
+
+  private String             lang;
+
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
                       boolean isSelectable,
@@ -96,6 +99,7 @@ public class JsonNodeData {
       Page page = ((PageTreeNode) treeNode).getPage();
       this.isDraftPage = page.isDraftPage();
       this.parentPageId = page.getParentPageId();
+      this.lang = page.getLang();
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
       if (withDrafts) {
         this.disabled = !this.isDraftPage;
@@ -238,4 +242,13 @@ public class JsonNodeData {
   public void setHasDraftDescendant(Boolean hasDraftDescendant) {
     this.hasDraftDescendant = hasDraftDescendant;
   }
+
+  public String getLang() {
+    return lang;
+  }
+
+  public void setLang(String lang) {
+    this.lang = lang;
+  }
+
 }
