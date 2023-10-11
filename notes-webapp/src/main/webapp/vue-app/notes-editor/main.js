@@ -1,5 +1,6 @@
 import './initComponents.js';
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
+import * as notePageViewService from '../note-page-view/js/NotePageViewService.js';
 
 // get overrided components if exists
 if (extensionRegistry) {
@@ -25,6 +26,12 @@ const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale
 if (!Vue.prototype.$notesService) {
   window.Object.defineProperty(Vue.prototype, '$notesService', {
     value: notesService,
+  });
+}
+
+if (!Vue.prototype.$notePageViewService) {
+  window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
+    value: notePageViewService,
   });
 }
 
