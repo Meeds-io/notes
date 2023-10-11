@@ -140,7 +140,7 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-            <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
+            <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion?lastNoteVersion:0 }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -263,7 +263,8 @@
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
-      ref="notesBreadcrumb" />
+      ref="notesBreadcrumb" 
+      :selected-translation="selectedTranslation.value" />
     <version-history-drawer
       :versions="noteVersionsArray"
       :can-manage="this.note.canManage"
@@ -427,7 +428,7 @@ export default {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.getNoteLanguages(noteId);
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
+                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
                         this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
@@ -571,7 +572,7 @@ export default {
         this.noteId = noteName;
         this.getNoteByName(noteName,'tree');
       } else {
-        this.getDraftNote(noteName);
+        this.getDraftNote(noteName,this.selectedTranslation.value);
       }
     });
     this.$root.$on('confirmDeleteNote', () => {
@@ -618,7 +619,7 @@ export default {
     handleChangePages() {
       if (this.noteId) {
         if (this.isDraft) {
-          this.getDraftNote(this.noteId);
+          this.getDraftNote(this.noteId,this.selectedTranslation.value);
         } else {
           this.getNoteById(this.noteId);
         }
@@ -771,7 +772,7 @@ export default {
       });
     },
     getDraftNote(noteId) {
-      return this.$notesService.getDraftNoteById(noteId).then(data => {
+      return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
         this.note = {};
         this.note = data || {};
         this.isDraft = true;
@@ -960,7 +961,7 @@ export default {
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       if (!this.note.draftPage) {
-        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
+        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false,this.selectedTranslation.value).then(data => {
           if (data && data.jsonList.length) {
             const allnotesTreeview = data.jsonList;
             this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
