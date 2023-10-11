@@ -39,10 +39,19 @@ export function init(appId, name, canEdit) {
         data: {
           name,
           canEdit,
-          notePage: null,
+          page: null,
           language: lang,
           defaultLanguage: 'en',
+          loading: false,
           initialized: false,
+        },
+        computed: {
+          pageContent() {
+            return this.page?.content;
+          },
+          pageId() {
+            return this.page?.id;
+          },
         },
         created() {
           this.init().finally(() => this.initialized = true);
@@ -50,8 +59,10 @@ export function init(appId, name, canEdit) {
         },
         methods: {
           init() {
+            this.loading = true;
             return this.$notePageViewService.getNotePage(this.name, this.language)
-              .then(settings => this.settings = settings);
+              .then(page => this.page = page)
+              .finally(() => this.loading = false);
           },
         },
         template: `<note-page-view-app id="${appId}"></note-page-view-app>`,

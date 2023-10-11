@@ -242,39 +242,35 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
                               Page page,
                               PageUpdateType activityType) throws WikiException {
     // Not raise the activity in case of user space
-    if (PortalConfig.USER_TYPE.equals(wikiType)) {
+    if (!PortalConfig.GROUP_TYPE.equals(wikiType)) {
       return;
     }
 
     String username = ConversationState.getCurrent().getIdentity().getUserId();
     Identity userIdentity = identityManager.getOrCreateUserIdentity(username);
 
-    Identity ownerStream = null, authorActivity = userIdentity;
+    Identity ownerStream = null;
     ExoSocialActivity activity = null;
     String spaceUrl = null;
     String spaceName = null;
-    if (PortalConfig.GROUP_TYPE.equals(wikiType)) {
-      /* checking whether the page is in a space */
-      Space space;
-      try {
-        space = spaceService.getSpaceByGroupId(wikiOwner);
-        if (space != null) {
-          if (!page.isCanView())
-            return;
-          ownerStream = identityManager.getOrCreateSpaceIdentity(space.getPrettyName());
-          spaceUrl = space.getUrl();
-          spaceName = space.getDisplayName();
-        }
-      } catch (SpaceStorageException e) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug(String.format("Space %s not existed", wikiOwner), e);
-        }
+    try {
+      Space space = spaceService.getSpaceByGroupId(wikiOwner);
+      if (space != null) {
+        if (!page.isCanView())
+          return;
+        ownerStream = identityManager.getOrCreateSpaceIdentity(space.getPrettyName());
+        spaceUrl = space.getUrl();
+        spaceName = space.getDisplayName();
+      }
+    } catch (SpaceStorageException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(String.format("Space %s not existed", wikiOwner), e);
       }
     }
 
     if (ownerStream != null) {
       activity = generateActivity(ownerStream,
-                                  authorActivity,
+                                  userIdentity,
                                   wikiType,
                                   wikiOwner,
                                   pageId,

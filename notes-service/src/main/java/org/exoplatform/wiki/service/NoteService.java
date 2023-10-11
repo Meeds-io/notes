@@ -215,6 +215,8 @@ public interface NoteService {
 
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
 
+  void removeDraftOfNote(Page page, String username) throws WikiException;
+
   /**
    * Removes a draft page by its name.
    *
@@ -280,6 +282,19 @@ public interface NoteService {
   Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
                                                                          IllegalAccessException,
                                                                          EntityNotFoundException;
+
+  /**
+   * Update the given note. This does not automatically create a new version. If a
+   * new version must be created it should be explicitly done by calling
+   * createVersionOfNote(). The second parameter is the type of update done (title
+   * only, content only, both, move, ...).
+   * 
+   * @param note Updated note
+   * @param type Type of update
+   * @return The updated note
+   * @throws WikiException
+   */
+  Page updateNote(Page note, PageUpdateType type) throws WikiException;
 
   /**
    * Get previous names of a note
@@ -444,4 +459,5 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
+
 }

@@ -38,18 +38,22 @@ export function getNotePage(name, lang) {
   });
 }
 
-export function saveSettings(pageNote) {
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/view/${pageNote.name}`, {
+export function saveNotePage(name, content, lang) {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  formData.append('content', content || '');
+  const params = new URLSearchParams(formData).toString();
+  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/view/${name}`, {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
     method: 'PUT',
     credentials: 'include',
-    body: JSON.stringify(pageNote),
+    body: params,
   }).then((resp) => {
-    if (resp?.ok) {
-      return resp.json();
-    } else {
+    if (!resp?.ok) {
       throw new Error('Error saving note page setting');
     }
   });

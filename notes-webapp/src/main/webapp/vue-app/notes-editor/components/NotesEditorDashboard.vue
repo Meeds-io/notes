@@ -20,6 +20,7 @@
                 @click.once="postNote(false)">
                 {{ publishButtonText }}
                 <v-icon
+                  v-if="!webPageNote"
                   id="notesPublichAndPost"
                   dark
                   @click="openPublishAndPost">
@@ -27,6 +28,7 @@
                 </v-icon>
               </button>
               <v-menu
+                v-if="!webPageNote"
                 v-model="publishAndPost"
                 :attach="'#notesUpdateAndPost'"
                 transition="scroll-y-transition"
@@ -52,7 +54,7 @@
 
       <form class="notes-content">
         <div class="notes-content-form px-4">
-          <div class="formInputGroup notesTitle mx-3">
+          <div v-if="!webPageNote" class="formInputGroup notesTitle mx-3">
             <input
               id="notesTitle"
               ref="noteTitle"
@@ -158,6 +160,10 @@ export default {
     },
     initCompleted() {
       return this.initDone && ((this.initActualNoteDone || this.noteId) || (this.initActualNoteDone || !this.noteId)) ;
+    },
+    webPageNote() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('webPageNote') === 'true';
     },
   },
   watch: {
@@ -384,8 +390,14 @@ export default {
         }
         let notePath = '';
         if (note.id) {
-          this.$notesService.updateNoteById(note).then(data => {
+          const updateNotePromise = this.webPageNote
+            && this.$notePageViewService.saveNotePage(note.title, note.content)
+            || this.$notesService.updateNoteById(note);
+          updateNotePromise.then(data => {
             this.removeLocalStorageCurrentDraft();
+            if (!data) {
+              data = note;
+            }
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.draftSavingStatus = '';
             window.location.href = notePath;
@@ -738,7 +750,13 @@ export default {
       }}));
     },
     displayFormTitle() {
-      if (this.noteId) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const webPageName = urlParams.get('pageName');
+      if (webPageName) {
+        this.noteFormTitle = this.$t('notes.edit.editTextFor', {
+          0: webPageName,
+        });
+      } else if (this.noteId) {
         this.noteFormTitle = this.$t('notes.edit.editNotes');
       } else {
         return this.$spaceService.getSpaceById(this.spaceId).then(space => {

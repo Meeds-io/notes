@@ -33,7 +33,7 @@
   </component>
 
   <component>
-    <type>org.exoplatform.wiki.service.rest.NotePageViewRest</type>
+    <type>io.meeds.notes.rest.NotePageViewRest</type>
   </component>
 
   <component>

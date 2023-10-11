@@ -22,21 +22,27 @@
   <v-app v-if="canView">
     <v-hover v-slot="{ hover }">
       <v-card
+        :class="!edit && 'pa-4'"
         min-width="100%"
         max-width="100%"
         min-height="72"
-        class="d-flex flex-column align-center border-box-sizing justify-center pa-4 overflow-hidden position-relative"
+        class="d-flex flex-column border-box-sizing position-relative"
         color="white"
         flat>
-        <note-page-view-header
-          v-if="$root.initialized"
-          :has-page="!!$root.notePage"
-          :can-edit="$root.canEdit"
-          :hover="hover"
+        <note-page-edit
+          v-if="edit"
           class="full-width"
-          @edit="editNote()"
-          @add="editNote()" />
-
+          @saved="edit = false"
+          @cancel="edit = false" />
+        <template v-else>
+          <note-page-header
+            v-if="$root.initialized && canEdit"
+            :hover="hover"
+            @edit="edit = true" />
+          <note-page-view
+            v-if="hasNote"
+            class="full-width overflow-hidden" />
+        </template>
       </v-card>
     </v-hover>
   </v-app>
@@ -44,20 +50,24 @@
 <script>
 export default {
   data: () => ({
-    loading: true,
     edit: false,
   }),
   computed: {
+    hasNote() {
+      return !!this.$root.pageContent;
+    },
+    canEdit() {
+      return this.$root.canEdit;
+    },
     canView() {
-      return this.$root.canEdit || (this.$root.initialized && this.$root.notePage);
+      return this.$root.canEdit || (this.$root.initialized && this.hasNote);
     },
   },
-  methods: {
-    editNote() {
-      this.edit = false;
-      this.$nextTick().then(() => {
-        this.edit = true;
-      });
+  watch: {
+    edit() {
+      if (this.edit) {
+        this.$root.$emit('close-alert-message');
+      }
     },
   },
 };

@@ -56,6 +56,7 @@ import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -115,34 +116,40 @@ public class NoteServiceImpl implements NoteService {
 
   private final SpaceService                              spaceService;
 
+  private final ListenerService                           listenerService;
+
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
                           IdentityManager identityManager,
-                          SpaceService spaceService) {
+                          SpaceService spaceService,
+                          ListenerService listenerService) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
+    this.listenerService = listenerService;
     this.htmlUploadImageProcessor = null;
   }
   
-  public NoteServiceImpl( DataStorage dataStorage,
-                          CacheService cacheService,
-                          WikiService wikiService,
-                          IdentityManager identityManager,
-                          SpaceService spaceService,
-                          HTMLUploadImageProcessor htmlUploadImageProcessor) {
+  public NoteServiceImpl(DataStorage dataStorage,
+                         CacheService cacheService,
+                         WikiService wikiService,
+                         IdentityManager identityManager,
+                         SpaceService spaceService,
+                         ListenerService listenerService,
+                         HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
     this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
     this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
+    this.listenerService = listenerService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
 
@@ -243,9 +250,22 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have edit the note.");
       }
     }
-    WikiService wikiService = (WikiService) PortalContainer.getComponent(WikiService.class);
-    ListenerService listenerService = (ListenerService) PortalContainer.getComponent(ListenerService.class);
-    // update updated date if the page content has been updated
+    Page updatedPage = updateNote(note, type);
+
+    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
+    updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setCanManage(note.isCanManage());
+    updatedPage.setCanImport(note.isCanImport());
+    updatedPage.setCanView(note.isCanView());
+    updatedPage.setAppName(note.getAppName());
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
+    updatedPage.setMetadatas(metadata);
+
+    return updatedPage;
+  }
+
+  @Override
+  public Page updateNote(Page note, PageUpdateType type) throws WikiException {
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
@@ -262,16 +282,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     Page updatedPage = getNoteById(note.getId());
-    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
-    updatedPage.setToBePublished(note.isToBePublished());
-    updatedPage.setCanManage(note.isCanManage());
-    updatedPage.setCanImport(note.isCanImport());
-    updatedPage.setCanView(note.isCanView());
-    updatedPage.setAppName(note.getAppName());
-    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
-    updatedPage.setMetadatas(metadata);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
-
     return updatedPage;
   }
 
@@ -675,7 +686,12 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void removeDraftOfNote(WikiPageParams param) throws WikiException {
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
-    dataStorage.deleteDraftOfPage(page, Utils.getCurrentUser());
+    removeDraftOfNote(page, Utils.getCurrentUser());
+  }
+
+  @Override
+  public void removeDraftOfNote(Page page, String username) throws WikiException {
+    dataStorage.deleteDraftOfPage(page, username);
   }
 
   @Override
@@ -1026,31 +1042,32 @@ public class NoteServiceImpl implements NoteService {
       return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
           || spaceService.isRedactor(space, authenticatedUser)
           || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
-    } else
-      return page.getOwner().equals(authenticatedUser);
-
+    } else {
+      return StringUtils.equals(page.getOwner(), authenticatedUser);
+    }
   }
 
   private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
       return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
               || spaceService.isRedactor(space, authenticatedUser));
-    } else
-      return page.getOwner().equals(authenticatedUser);
-
+    } else {
+      return StringUtils.equals(page.getOwner(), authenticatedUser);
+    }
   }
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
-      return space != null && spaceService.isMember(space, authenticatedUser);
+      return spaceService.isMember(space, authenticatedUser);
     } else
       return spaceService.isSuperManager(authenticatedUser) || page.getOwner().equals(authenticatedUser);
   }
 
-
   @Override
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
-    if (page.isDraftPage()) {
+    if (StringUtils.equals(IdentityConstants.SYSTEM, page.getOwner())) {
+      return false;
+    } else if (page.isDraftPage()) {
       return page.getAuthor().equals(user.getUserId());
     }
     return dataStorage.hasPermissionOnPage(page, permissionType, user);

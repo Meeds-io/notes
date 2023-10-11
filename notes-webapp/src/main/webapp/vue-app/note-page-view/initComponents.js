@@ -18,11 +18,15 @@
  */
 
 import NotePageViewApp from './components/NotePageViewApp.vue';
-import NotePageViewHeader from './components/NotePageViewHeader.vue';
+import NotePageHeader from './components/NotePageHeader.vue';
+import NotePageEdit from './components/NotePageEdit.vue';
+import NotePageView from './components/NotePageView.vue';
 
 const components = {
   'note-page-view-app': NotePageViewApp,
-  'note-page-view-header': NotePageViewHeader,
+  'note-page-header': NotePageHeader,
+  'note-page-edit': NotePageEdit,
+  'note-page-view': NotePageView,
 };
 
 for (const key in components) {

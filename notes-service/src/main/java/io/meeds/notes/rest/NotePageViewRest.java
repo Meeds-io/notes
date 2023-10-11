@@ -16,11 +16,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package org.exoplatform.wiki.service.rest;
+package io.meeds.notes.rest;
 
 import java.util.Date;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -81,14 +82,14 @@ public class NotePageViewRest implements ResourceContainer {
       description = "Retrieves a note page switch Application setting name",
       method = "GET")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200",
-                              description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "304",
-                              description = "Not modified"),
-                          @ApiResponse(responseCode = "401",
-                              description = "Unauthorized"),
-                          @ApiResponse(responseCode = "404",
-                              description = "Resource not found"),
+    @ApiResponse(responseCode = "200",
+        description = "Request fulfilled"),
+    @ApiResponse(responseCode = "304",
+        description = "Not modified"),
+    @ApiResponse(responseCode = "401",
+        description = "Unauthorized"),
+    @ApiResponse(responseCode = "404",
+        description = "Resource not found"),
   })
   public Response getNotePage(
                               @Context
@@ -110,7 +111,7 @@ public class NotePageViewRest implements ResourceContainer {
       EntityTag eTag = new EntityTag(String.valueOf(Objects.hashCode(name, lang, String.valueOf(updatedDate.getTime()))));
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
       if (builder == null) {
-        builder = Response.ok(note.getContent());
+        builder = Response.ok(note);
       }
       builder.lastModified(updatedDate);
       builder.tag(eTag);
@@ -125,15 +126,15 @@ public class NotePageViewRest implements ResourceContainer {
   @PUT
   @Path("{name}")
   @RolesAllowed("users")
-  @Produces(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_FORM_URLENCODED)
   @Operation(summary = "Saves a note page content to the associated application setting",
       description = "Saves a note page content to the associated application setting",
       method = "PUT")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200",
-                              description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "401",
-                              description = "Unauthorized"),
+    @ApiResponse(responseCode = "200",
+        description = "Request fulfilled"),
+    @ApiResponse(responseCode = "401",
+        description = "Unauthorized"),
   })
   public Response saveNotePage(
                                @Context
@@ -144,11 +145,11 @@ public class NotePageViewRest implements ResourceContainer {
                                String name,
                                @Parameter(description = "Note Content",
                                    required = true)
-                               @QueryParam("content")
+                               @FormParam("content")
                                String content,
                                @Parameter(description = "User language",
                                    required = false)
-                               @QueryParam("lang")
+                               @FormParam("lang")
                                String lang) {
     try {
       notePageViewService.saveNotePage(name, content, lang, RestUtils.getCurrentUserAclIdentity());

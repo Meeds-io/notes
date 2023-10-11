@@ -28,6 +28,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiService;
 
 import io.meeds.social.cms.model.CMSSetting;
@@ -89,8 +90,13 @@ public class NotePageViewService {
           page.setOwner(IdentityConstants.SYSTEM);
           noteService.createNote(noteBook, noteBook.getWikiHome(), page);
         } else {
+          page.setContent(content);
           page.setUpdatedDate(new Date());
-          noteService.updateNote(page);
+          page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
+
+          String username = currentUserAclIdentity.getUserId();
+          noteService.createVersionOfNote(page, username);
+          noteService.removeDraftOfNote(page, username);
         }
       } catch (WikiException e) {
         throw new IllegalStateException(String.format("Error retrieving note with name %s referenced in page %s",
