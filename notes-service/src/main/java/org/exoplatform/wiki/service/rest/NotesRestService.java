@@ -1033,7 +1033,8 @@ public class NotesRestService implements ResourceContainer {
   String path, @QueryParam(TreeNode.CURRENT_PATH)
   String currentPath, @QueryParam(TreeNode.CAN_EDIT)
   Boolean canEdit, @QueryParam(TreeNode.SHOW_EXCERPT)
-  Boolean showExcerpt, @QueryParam(TreeNode.DEPTH)
+  Boolean showExcerpt, @QueryParam("lang")
+  String lang, @QueryParam(TreeNode.DEPTH)
   String depth) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -1091,7 +1092,7 @@ public class NotesRestService implements ResourceContainer {
         responseData = getJsonDescendants(noteParam, context);
       }
 
-      encodeWikiTree(responseData, request.getLocale());
+      encodeWikiTree(responseData, request.getLocale(), identity, lang);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1117,7 +1118,9 @@ public class NotesRestService implements ResourceContainer {
   String path,
                                   @Parameter(description = "With draft notes", required = true)
                                   @QueryParam("withDrafts")
-                                  Boolean withDrafts) {
+                                  Boolean withDrafts,
+                                  @QueryParam("lang")
+                                  String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData;
@@ -1197,7 +1200,9 @@ public class NotesRestService implements ResourceContainer {
       // from the bottom children nodes
       List<JsonNodeData> bottomChildren =
                                         Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
-                                                                                   .filter(JsonNodeData::isDraftPage)
+                                                                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
+                                                                                       && StringUtils.equals(jsonNodeData.getLang(),
+                                                                                                             lang))
                                                                                    .collect(Collectors.toList())
                                                                         : finalTree.stream()
                                                                                    .filter(jsonNodeData -> !jsonNodeData.isHasChild())
@@ -1212,7 +1217,8 @@ public class NotesRestService implements ResourceContainer {
             String parentId = child.getParentPageId();
             Optional<JsonNodeData> parentOptional = finalTree.stream()
                                                              .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
-                                                                                                        parentId))
+                                                                                                        parentId)
+                                                                 && StringUtils.equals(jsonNodeData.getLang(), lang))
                                                              .findFirst();
             if (parentOptional.isPresent()) {
               parent = parentOptional.get();
@@ -1243,7 +1249,8 @@ public class NotesRestService implements ResourceContainer {
               children = parent.getChildren();
               if (Boolean.TRUE.equals(withDrafts)) {
                 children = children.stream()
-                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
+                                   .filter(jsonNodeData -> (jsonNodeData.isDraftPage()
+                                       && StringUtils.equals(jsonNodeData.getLang(), lang))
                                        || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                                    .collect(Collectors.toList());
               }
@@ -1278,7 +1285,7 @@ public class NotesRestService implements ResourceContainer {
         parents.clear();
       }
 
-      encodeWikiTree(bottomChildren, request.getLocale());
+      encodeWikiTree(bottomChildren, request.getLocale(), identity, lang);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1424,7 +1431,7 @@ public class NotesRestService implements ResourceContainer {
     return TreeUtils.tranformToJson(treeNode, context);
   }
 
-  private void encodeWikiTree(List<JsonNodeData> responseData, Locale locale) throws Exception {
+  private void encodeWikiTree(List<JsonNodeData> responseData, Locale locale, Identity identity, String lang) throws Exception {
     ResourceBundle resourceBundle = resourceBundleService.getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
     String untitledLabel = "";
     if (resourceBundle == null) {
@@ -1437,9 +1444,14 @@ public class NotesRestService implements ResourceContainer {
     for (JsonNodeData data : responseData) {
       if (StringUtils.isBlank(data.getName())) {
         data.setName(untitledLabel);
+      } else if (StringUtils.isNotBlank(lang)) {
+        Page page = noteService.getNoteByIdAndLang(Long.valueOf(data.getNoteId()), identity, "", lang);
+        if (page != null) {
+          data.setName(page.getTitle());
+        }
       }
       if (CollectionUtils.isNotEmpty(data.getChildren())) {
-        encodeWikiTree(data.getChildren(), locale);
+        encodeWikiTree(data.getChildren(), locale, identity, lang);
       }
     }
   }
