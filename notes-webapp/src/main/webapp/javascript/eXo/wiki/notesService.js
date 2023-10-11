@@ -96,11 +96,15 @@ export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
   });
 }
 
-export function getFullNoteTree(noteBookType, noteBookOwner, noteId, withDrafts) {
+export function getFullNoteTree(noteBookType, noteBookOwner, noteId, withDrafts, lang) {
   if (noteBookOwner.indexOf('/') !== 0) {
     noteBookOwner = `/${noteBookOwner}`;
   }
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`, {
+  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`;
+  if (lang){
+    url=`${url}${getSeparator(url)}lang=${lang}`;
+  }
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {

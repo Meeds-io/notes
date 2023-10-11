@@ -292,7 +292,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    Response response3 = notesRestService.getFullTreeData("path", false);
+    Response response3 = notesRestService.getFullTreeData("path", false, "");
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
     assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
     List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
@@ -309,7 +309,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                   pageParams.getOwner(),
                                                                   pageParams.getPageName(),
                                                                   identity);
-    Response response1 = notesRestService.getFullTreeData("path", true);
+    Response response1 = notesRestService.getFullTreeData("path", true, "");
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response1.getStatus());
 
     doThrow(new RuntimeException()).when(noteService)
@@ -317,12 +317,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                             pageParams.getOwner(),
                                                             pageParams.getPageName(),
                                                             identity);
-    Response response2 = notesRestService.getFullTreeData("path", true);
+    Response response2 = notesRestService.getFullTreeData("path", true, "");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
   }
 
   @Test
-<<<<<<< HEAD
   public void testGetPageAvailableTranslationLanguages() throws WikiException {
    List<String> langs = new ArrayList<>();
    langs.add("ar");
@@ -379,21 +378,4 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>());
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
-=======
-  public void testGetPageAvailableTranslationLanguages() {
-   List<String> langs = new ArrayList<>();
-   langs.add("ar");
-   langs.add("en");
-   Response response = notesRestService.getPageAvailableTranslationLanguages(null);
-   assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-   when(noteService.getPageAvailableTranslationLanguages(1L)).thenReturn(langs);
-   response = notesRestService.getPageAvailableTranslationLanguages(1L);
-   assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-
-   doThrow(new RuntimeException()).when(noteService).getPageAvailableTranslationLanguages(2L);
-   response = notesRestService.getPageAvailableTranslationLanguages(2L);
-    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
-
-  }
->>>>>>> 73d4db09f (feat: Add multilangue backend services - EXO-65935 - Meeds-io/MIPs#70 (#711))
 }

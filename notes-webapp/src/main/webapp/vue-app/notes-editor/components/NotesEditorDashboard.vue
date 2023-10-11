@@ -195,12 +195,16 @@ export default {
       translations: null,
       languages: [],
 <<<<<<< HEAD
+<<<<<<< HEAD
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
       noteEditorExtensions: null
 =======
 >>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
+=======
+      allLanguages: [],
+>>>>>>> 35de91d5c (feat: Draft with translation - EXO-66042 - Meeds-io/MIPs#70 (#776))
     };
   },
   computed: {
@@ -1074,7 +1078,6 @@ export default {
       return documentElement?.children[1].innerHTML;
     },
     getNoteLanguages(){
-<<<<<<< HEAD
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       return this.$notesService.getNoteLanguages(noteId,true).then(data => {
         this.translations =  data || [];
@@ -1092,40 +1095,27 @@ export default {
             this.translations=this.translations.filter(item => item.value !== lang.value);
             this.translations.unshift(lang);
           }
-=======
-      return this.$notesService.getNoteLanguages(this.noteId).then(data => {
-        this.translations =  data || [];
-        if (this.translations.length>0) {
-          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
-        }
-        if (this.isMobile) {
-          this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         }
       });
     },
     getAvailableLanguages(){
       return this.$notesService.getAvailableLanguages().then(data => {
         this.languages = data || [];
-<<<<<<< HEAD
         this.languages.sort((a, b) => a.text.localeCompare(b.text));
         this.allLanguages=this.languages;
-=======
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
         if (this.translations){
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
       });
-<<<<<<< HEAD
-<<<<<<< HEAD
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);
       return language?language.text:lang;
-=======
->>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
+    },
+    getLanguageName(lang){
+      const language = this.allLanguages.find(item => item.value === lang);
+      return language?language.text:lang;
     },
     deleteTranslation(translation,noteId){
       return this.$notesService.deleteNoteTranslation(noteId,translation.value).then(() => {
@@ -1136,7 +1126,6 @@ export default {
         };
         this.displayMessage(messageObject);
       });
-<<<<<<< HEAD
 
     },
     addTranslation(lang){
@@ -1190,11 +1179,6 @@ export default {
     refreshTranslationExtensions() {
       this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
     },
-=======
-=======
->>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
-    }
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
   }
 };
 </script>

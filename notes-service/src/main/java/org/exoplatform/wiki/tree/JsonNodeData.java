@@ -31,7 +31,7 @@ import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
 @Data
-public class JsonNodeData {  
+public class JsonNodeData {
 
   protected String           name;
 
@@ -71,10 +71,13 @@ public class JsonNodeData {
 
   private Boolean hasDraftDescendant;
 
+
   private String             lang;
   
   private String             url;
-    
+
+  private String             lang;
+
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
                       boolean isSelectable,
@@ -108,6 +111,7 @@ public class JsonNodeData {
       this.parentPageId = page.getParentPageId();
       this.lang = page.getLang();
       this.url = page.getUrl();
+      this.lang = page.getLang();
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
       if (withDrafts) {
         this.disabled = !this.isDraftPage;

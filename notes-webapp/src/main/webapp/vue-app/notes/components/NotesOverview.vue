@@ -108,7 +108,6 @@
               @open-note="getNoteByName($event, 'breadCrumb', true)" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
-<<<<<<< HEAD
             <notes-translation-menu
               :note="note"
               :translations="translations"
@@ -118,42 +117,6 @@
               v-show="lastNoteVersion"
               class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable"
               @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
-=======
-            <v-menu
-              v-if="notesMultilingualActive && translations?.length>1"
-              v-model="translationsMenu"
-              offset-y
-              class=" ma-1"
-              bottom>
-              <template #activator="{ on, attrs }">
-                <v-icon
-                  size="30"
-                  :class="langBottonColor"
-                  class="remove-focus pa-0 pe-3"
-                  v-bind="attrs"
-                  v-on="on">
-                  fa-language
-                </v-icon>
-              </template>
-              <v-list class="px-2" dense>
-                <v-list-item
-                  v-for="(item, i) in translations"
-                  :key="i"
-                  class="pa-0 translation-chips">
-                  <v-chip
-                    small
-                    :outlined="item.value!==selectedTranslation.value"
-                    color="primary"
-                    close-label="translation remove button"
-                    @click="changeTranslation(item)"
-                    class="my-auto mx-1">
-                    {{ item.text }}
-                  </v-chip>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -275,7 +238,8 @@
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
-      ref="notesBreadcrumb" />
+      ref="notesBreadcrumb" 
+      :selected-translation="selectedTranslation.value" />
     <version-history-drawer
       :versions="noteVersionsArray"
       :can-manage="this.note.canManage"
@@ -434,7 +398,7 @@ export default {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.getNoteLanguages(noteId);
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
+                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
                         this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
@@ -737,11 +701,7 @@ export default {
     stopGetStatus(){
       clearInterval(this.intervalId);
     },
-<<<<<<< HEAD
     getNoteById(noteId, source, viewNote) {
-=======
-    getNoteById(noteId, source) {
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
       return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
         this.isDraft = data.draftPage;
@@ -750,15 +710,11 @@ export default {
         this.updateURL();
         this.getNoteLanguages(noteId);
         if (!this.note.lang || this.note.lang === ''){
-<<<<<<< HEAD
           this.updateSelectedTranslation(this.originalVersion);
           this.updateURL();
         }
         if (viewNote){
           this.viewNoteStatistics(this.note);
-=======
-          this.selectedTranslation={value: '',text: this.$t('notes.label.translation.originalVersion')};
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
         }
         return this.$nextTick();
       }).catch(e => {
@@ -789,7 +745,6 @@ export default {
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
         this.getNoteLanguages(this.note.id);
-<<<<<<< HEAD
         if (!this.note.lang || this.note.lang === ''){
           this.updateSelectedTranslation(this.originalVersion);
           this.updateURL();
@@ -797,8 +752,6 @@ export default {
         if (viewNote){
           this.viewNoteStatistics(this.note);
         }
-=======
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -987,7 +940,7 @@ export default {
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       if (!this.note.draftPage) {
-        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
+        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false,this.selectedTranslation.value).then(data => {
           if (data && data.jsonList.length) {
             const allnotesTreeview = data.jsonList;
             this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
@@ -1034,16 +987,9 @@ export default {
         this.translations =  data || [];
         if (this.translations.length>0) {
           this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
-<<<<<<< HEAD
           this.translations.sort((a, b) => a.text.localeCompare(b.text));
         }
         this.translations.unshift(this.originalVersion);
-=======
-        }
-        this.translations.sort((a, b) => a.text.localeCompare(b.text));
-        this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
-
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
       });
     },
     getAvailableLanguages(){
@@ -1052,16 +998,11 @@ export default {
       });
     },
     changeTranslation(translation){
-<<<<<<< HEAD
       this.selectedTranslation = translation;
-=======
-      this.selectedTranslation=translation;
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
       return this.$notesService.getNoteById(this.note.id,this.selectedTranslation.value).then(data => {
         const note = data || {};
         if (note) {
           this.note.content = note.content;
-<<<<<<< HEAD
           this.note.metadatas = note.metadatas;
           this.note.lang = note.lang;
           this.noteContent = note.content;
@@ -1071,18 +1012,11 @@ export default {
         this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
         this.viewNoteStatistics(this.note);
-=======
-          this.noteContent = note.content;
-          this.note.title = note.title;
-        }
-        this.getNoteVersionByNoteId(this.note.id);
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
       });
     },
-<<<<<<< HEAD
     viewNoteStatistics(note) {
       document.dispatchEvent(new CustomEvent('exo-statistic-message', {
         detail: {
@@ -1102,8 +1036,6 @@ export default {
         }
       }));
     },
-=======
->>>>>>> 7ef795f4d (feat: Consult a note with translations - EXO-65427- Meeds-io/MIPs#70)
 
   }
 };
