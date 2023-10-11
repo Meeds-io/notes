@@ -19,9 +19,6 @@
 
 package org.exoplatform.wiki.service.rest;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.*;
 
 import java.util.*;
@@ -29,11 +26,6 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 
-import org.exoplatform.services.resources.ResourceBundleService;
-import org.exoplatform.services.rest.impl.ResponseImpl;
-import org.exoplatform.wiki.service.impl.BeanToJsons;
-import org.exoplatform.wiki.tree.JsonNodeData;
-import org.exoplatform.wiki.tree.TreeNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,20 +37,18 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.mock.MockResourceBundleService;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.service.NotesExportService;
-import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
@@ -283,10 +273,10 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
 
-    Response response = notesRestService.getFullTreeData("path", true);
+    Response response = notesRestService.getFullTreeData("path", true, "");
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    Response response3 = notesRestService.getFullTreeData("path", false);
+    Response response3 = notesRestService.getFullTreeData("path", false, "");
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
     assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
     List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
@@ -303,7 +293,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                   pageParams.getOwner(),
                                                                   pageParams.getPageName(),
                                                                   identity);
-    Response response1 = notesRestService.getFullTreeData("path", true);
+    Response response1 = notesRestService.getFullTreeData("path", true, "");
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response1.getStatus());
 
     doThrow(new RuntimeException()).when(noteService)
@@ -311,7 +301,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                             pageParams.getOwner(),
                                                             pageParams.getPageName(),
                                                             identity);
-    Response response2 = notesRestService.getFullTreeData("path", true);
+    Response response2 = notesRestService.getFullTreeData("path", true, "");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
   }
 
