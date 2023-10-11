@@ -22,11 +22,15 @@ package org.exoplatform.wiki.service;
 
 
 import org.apache.commons.io.FileUtils;
+
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
+import org.exoplatform.wiki.jpa.JPADataStorage;
 import org.exoplatform.wiki.model.*;
 import org.junit.Assert;
 
@@ -201,6 +205,41 @@ public class TestNoteService extends BaseTest {
     }
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage_")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage2_")) ;
+  }
+  
+  public void testHasPermisionOnSystemPage() throws WikiException {
+    JPADataStorage storage = getContainer().getComponentInstanceOfType(JPADataStorage.class);
+
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("testHasPermisionOnSystemPage");
+    wiki = storage.createWiki(wiki);
+
+    Identity adminIdentity = new Identity("admin", Arrays.asList(
+                                                                 new MembershipEntry("/platform/users", "*"),
+                                                                 new MembershipEntry("/platform/administrators", "*")));
+
+    Page noPermissionPage = new Page();
+    noPermissionPage.setWikiId(wiki.getId());
+    noPermissionPage.setWikiType(wiki.getType());
+    noPermissionPage.setWikiOwner(wiki.getOwner());
+    noPermissionPage.setName("page1");
+    noPermissionPage.setTitle("Page 1");
+    noPermissionPage.setPermissions(new ArrayList<PermissionEntry>());
+    noPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), noPermissionPage);
+
+    Page systemPermissionPage = new Page();
+    systemPermissionPage.setWikiId(wiki.getId());
+    systemPermissionPage.setWikiType(wiki.getType());
+    systemPermissionPage.setWikiOwner(wiki.getOwner());
+    systemPermissionPage.setName("page1");
+    systemPermissionPage.setTitle("Page 1");
+    systemPermissionPage.setOwner(IdentityConstants.SYSTEM);
+    systemPermissionPage.setPermissions(new ArrayList<>());
+    systemPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), systemPermissionPage);
+
+    assertTrue(noteService.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, adminIdentity));
+    assertFalse(noteService.hasPermissionOnPage(systemPermissionPage, PermissionType.VIEWPAGE, adminIdentity));
   }
 
   public void testUpdateNote() throws WikiException, IllegalAccessException {

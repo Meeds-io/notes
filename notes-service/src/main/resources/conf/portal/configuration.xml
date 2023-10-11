@@ -29,6 +29,14 @@
   </component>
 
   <component>
+    <type>io.meeds.notes.service.NotePageViewService</type>
+  </component>
+
+  <component>
+    <type>io.meeds.notes.rest.NotePageViewRest</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.wiki.service.WikiService</key>
     <type>org.exoplatform.wiki.service.impl.WikiServiceImpl</type>
     <init-params>
