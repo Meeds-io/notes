@@ -184,6 +184,7 @@ export default {
       slectedLanguage: null,
       translations: null,
       languages: [],
+      allLanguages: [],
     };
   },
   computed: {
@@ -411,7 +412,7 @@ export default {
       }, this.autoSaveDelay);
     },
     getNote(id) {
-      return this.$notesService.getLatestDraftOfPage(id).then(latestDraft => {
+      return this.$notesService.getLatestDraftOfPage(id,this.slectedLanguage).then(latestDraft => {
         this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
@@ -419,7 +420,7 @@ export default {
           this.fillNote(latestDraft);
           const messageObject = {
             type: 'warning',
-            message: `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`
+            message: (`${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`).replace('{0}', this.getLanguageName(this.note.lang))
           };
           this.displayMessage(messageObject, true);
           this.initActualNoteDone = true;
@@ -439,13 +440,13 @@ export default {
       });
     },
     getDraftNote(id) {
-      return this.$notesService.getDraftNoteById(id).then(data => {
+      return this.$notesService.getDraftNoteById(id,this.slectedLanguage).then(data => {
         this.init();
         this.fillNote(data);
       }).finally(() => {
         const messageObject = {
           type: 'warning',
-          message: `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},  `
+          message: (`${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},  `).replace('{0}', this.getLanguageName(this.note.lang))
         };
         this.displayMessage(messageObject, true);
         this.initActualNoteDone = true;
@@ -1063,11 +1064,16 @@ export default {
       return this.$notesService.getAvailableLanguages().then(data => {
         this.languages = data || [];
         this.languages.sort((a, b) => a.text.localeCompare(b.text));
+        this.allLanguages=this.languages;
         this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
         if (this.translations){
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
       });
+    },
+    getLanguageName(lang){
+      const language = this.allLanguages.find(item => item.value === lang);
+      return language?language.text:lang;
     },
     deleteTranslation(translation,noteId){
       return this.$notesService.deleteNoteTranslation(noteId,translation.value).then(() => {
