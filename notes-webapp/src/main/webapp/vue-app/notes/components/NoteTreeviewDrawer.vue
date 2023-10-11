@@ -265,8 +265,8 @@
             <v-list-item @click.prevent="openNote(event,home)" class="ma-0 border-box-sizing">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
-                  <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name }}</span>
-                  <a v-else :href="home.noteId">{{ home.name }}</a>
+                  <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name==='Home'?$t('notes.label.noteHome'):home.name }}</span>
+                  <a v-else :href="home.noteId">{{ home.name==='Home'?$t('notes.label.noteHome'):home.name }}</a>
                 </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
@@ -411,6 +411,12 @@ export default {
     tempCleaned: false,
     dataCreated: false,
   }),
+  props: {
+    selectedTranslation: {
+      type: String,
+      default: () => null,
+    }
+  },
   computed: {
     confirmCloseLabels() {
       return {
@@ -609,7 +615,7 @@ export default {
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
       const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
-      this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts).then(data => {
+      this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts, this.selectedTranslation).then(data => {
         if (data && data.jsonList.length) {
           this.home = [];
           this.items = [];
