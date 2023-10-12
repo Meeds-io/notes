@@ -22,11 +22,11 @@
   <v-app v-if="canView" class="overflow-hidden">
     <v-hover v-slot="{ hover }">
       <v-card
-        :class="viewMode && 'pa-4'"
+        :class="viewMode && 'pa-5'"
         min-width="100%"
         max-width="100%"
         min-height="72"
-        class="d-flex flex-column border-box-sizing position-relative"
+        class="d-flex flex-column border-box-sizing position-relative card-border-radius"
         color="white"
         flat>
         <note-page-edit
@@ -80,7 +80,10 @@ export default {
   watch: {
     edit() {
       if (this.edit) {
+        window.editNoteInProgress = true;
         this.$root.$emit('close-alert-message');
+      } else {
+        window.editNoteInProgress = false;
       }
     },
   },
@@ -90,8 +93,12 @@ export default {
   },
   methods: {
     openEditor() {
-      this.editorReady = false;
-      this.$nextTick().then(() => this.edit = true);
+      if (window.editNoteInProgress) {
+        this.$root.$emit('alert-message', this.$t('notePageView.label.warningCannotEditTwoNotes'), 'warning');
+      } else {
+        this.editorReady = false;
+        this.$nextTick().then(() => this.edit = true);
+      }
     },
     closeEditor() {
       this.editorReady = false;
