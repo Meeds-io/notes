@@ -29,6 +29,6 @@
     <div
       v-else
       v-sanitized-html="$root.pageContent"
-      class="rich-editor-content"></div>
+      class="rich-editor-content overflow-hidden"></div>
   </v-card>
 </template>
