@@ -351,7 +351,7 @@ public class TestNoteService extends BaseTest {
     note.setLang("fr");
     noteService.createVersionOfNote(note, "root");
 
-    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()));
+    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), "root", false);
 
     assertNotNull(langs);
     assertEquals(3, langs.size());
@@ -505,13 +505,13 @@ public class TestNoteService extends BaseTest {
     note1.setLang("fr");
     note1.setTitle("frenchTitle");
     noteService.createVersionOfNote(note1, "root");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "root", "en");
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
     assertEquals(note.getTitle(), "testPage1");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertNotNull(note);
     assertEquals(note.getTitle(), "frenchTitle");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "root", "fr");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertEquals(note.getTitle(), "testPage1");
     noteService.deleteNote(note1.getWikiType(), note1.getWikiOwner(), note1.getName());
