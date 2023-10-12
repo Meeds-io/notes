@@ -36,6 +36,8 @@
       attach>
       <template #activator="{ on, attrs }">
         <v-btn
+          :loading="loading"
+          :elevation="loading && 2 || 0"
           small
           icon
           class="ma-1"
@@ -67,7 +69,7 @@
       </v-list>
     </v-menu>
   </div>
-  <div v-else-if="!hasNote" class="d-flex full-width align-center justify-center">
+  <div v-else-if="!hasNote && !loading" class="d-flex full-width align-center justify-center">
     <v-btn
       class="primary"
       elevation="0"
@@ -82,6 +84,10 @@
 export default {
   props: {
     hover: {
+      type: Boolean,
+      default: false,
+    },
+    loading: {
       type: Boolean,
       default: false,
     },

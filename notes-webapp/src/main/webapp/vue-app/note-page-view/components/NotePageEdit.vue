@@ -22,7 +22,7 @@
   <div>
     <rich-editor
       v-if="initialized"
-      ref="notePageInlineEditor"
+      ref="richEditor"
       v-model="pageContent"
       :placeholder="$t('notePageView.placeholder.editText')"
       :tag-enabled="false"
@@ -30,10 +30,14 @@
       :toolbar-position="isMobile && 'bottom' || 'top'"
       :large-toolbar="!isMobile"
       ck-editor-type="notePageInline"
+      focus-position="start"
       autofocus
       hide-chars-count
-      disable-auto-grow />
+      disable-auto-grow
+      @ready="$root.$emit('notes-editor-ready')"
+      @unloaded="$root.$emit('notes-editor-unloaded')" />
     <div
+      ref="extraButtons"
       :class="{
         'r-0': !$vuetify.rtl,
         'l-0': $vuetify.rtl,
@@ -113,6 +117,9 @@ export default {
         return this.save()
           .finally(() => this.initialized = true);
       }
+    },
+    focus() {
+      this.$refs.richEditor?.setFocus?.(true);
     },
     save(emitEvent) {
       this.saving = true;
