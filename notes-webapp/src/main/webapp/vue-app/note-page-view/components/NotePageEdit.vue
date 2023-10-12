@@ -28,9 +28,11 @@
       :tag-enabled="false"
       :ck-editor-id="ckEditorId"
       :toolbar-position="isMobile && 'bottom' || 'top'"
+      :large-toolbar="!isMobile"
       ck-editor-type="notePageInline"
       autofocus
-      hide-chars-count />
+      hide-chars-count
+      disable-auto-grow />
     <div
       :class="{
         'r-0': !$vuetify.rtl,

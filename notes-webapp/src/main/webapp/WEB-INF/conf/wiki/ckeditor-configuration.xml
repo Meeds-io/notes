@@ -37,7 +37,7 @@
               <string>notePageInline</string>
             </field>
             <field name="filePath">
-              <string>war:/conf/wiki/ckeditor/config.js</string>
+              <string>war:/conf/wiki/ckeditor/inline-config.js</string>
             </field>
           </object>
         </object-param>
