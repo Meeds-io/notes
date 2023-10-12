@@ -18,7 +18,16 @@
  */
 
 import * as notePageViewService from './js/NotePageViewService.js';
+import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 
-window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
-  value: notePageViewService,
-});
+if (!Vue.prototype.$notePageViewService) {
+  window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
+    value: notePageViewService,
+  });
+}
+
+if (!Vue.prototype.$notesService) {
+  window.Object.defineProperty(Vue.prototype, '$notesService', {
+    value: notesService,
+  });
+}
