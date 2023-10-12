@@ -54,7 +54,7 @@
             class="me-3"
             target="_blank"
             icon
-            @click="save">
+            @mousedown="persistDraftNote">
             <v-icon size="20">fa-external-link-alt</v-icon>
           </v-btn>
         </template>
@@ -86,10 +86,16 @@ export default {
     initialized: false,
   }),
   computed: {
+    note() {
+      return this.$root.page;
+    },
+    parentPageId() {
+      return this.note?.parentPageId;
+    },
     fullPageEditorLink() {
       const formData = new FormData();
       formData.append('noteId', this.$root.page?.id);
-      formData.append('parentNoteId', this.$root.page?.parentPageId);
+      formData.append('parentNoteId', this.parentPageId);
       if (eXo.env.portal?.spaceGroup) {
         formData.append('spaceGroupId', eXo.env.portal?.spaceGroup);
       }
@@ -133,6 +139,20 @@ export default {
         })
         .catch(() => this.$root.$emit('alert-message', this.$t('notePageView.label.errorSavingText') , 'error'))
         .finally(() => this.saving = false);
+    },
+    persistDraftNote() {
+      return this.$notesService.saveDraftNote({
+        id: this.note.id,
+        name: this.note.name,
+        title: this.note.title,
+        content: this.pageContent,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        parentPageId: this.note.parentPageId,
+        targetPageId: this.note.id,
+      }, this.note.parentPageId).then(savedDraftNote => {
+        localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
+      });
     },
   }
 };
