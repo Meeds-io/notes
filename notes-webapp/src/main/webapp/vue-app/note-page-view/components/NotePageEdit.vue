@@ -20,13 +20,17 @@
 -->
 <template>
   <div>
+    <v-card
+      v-if="fixedToolbar"
+      :min-height="richEditorToolbarHeight"
+      flat />
     <rich-editor
       v-if="initialized"
       ref="richEditor"
       v-model="pageContent"
       :placeholder="$t('notePageView.placeholder.editText')"
       :tag-enabled="false"
-      :ck-editor-id="ckEditorId"
+      :ck-editor-id="richEditorId"
       :toolbar-position="isMobile && 'bottom' || 'top'"
       :large-toolbar="!isMobile"
       ck-editor-type="notePageInline"
@@ -34,14 +38,16 @@
       autofocus
       hide-chars-count
       disable-auto-grow
+      oembed
       @ready="$root.$emit('notes-editor-ready')"
       @unloaded="$root.$emit('notes-editor-unloaded')" />
     <div
       ref="extraButtons"
       :class="{
-        'r-0': !$vuetify.rtl,
-        'l-0': $vuetify.rtl,
-        'position-absolute z-index-two t-0': !isMobile,
+        'r-0': !$vuetify.rtl && !displayFixedToolbar,
+        'l-0': $vuetify.rtl && !displayFixedToolbar,
+        'position-absolute z-index-two t-0': !isMobile && !displayFixedToolbar,
+        'z-index-two': displayFixedToolbar,
       }"
       class="ms-auto me-2 my-2 d-flex align-center justify-end">
       <v-tooltip v-if="!isMobile" bottom>
@@ -54,7 +60,8 @@
             class="me-3"
             target="_blank"
             icon
-            @mousedown="persistDraftNote">
+            @mousedown="openFullPageEditor"
+            @click="cancelEditing">
             <v-icon size="20">fa-external-link-alt</v-icon>
           </v-btn>
         </template>
@@ -81,9 +88,17 @@
 export default {
   data: () => ({
     pageContent: null,
-    ckEditorId: `notePageInline${parseInt(Math.random() * 10000)}`,
+    richEditorId: `notePageInline${parseInt(Math.random() * 10000)}`,
     saving: false,
     initialized: false,
+    siteBody: document.querySelector('#UISiteBody') || document.querySelector('#UIPageBody'),
+    topbarHeight: document.querySelector('#UITopBarContainer')?.offsetHeight || 0,
+    checkToolbarPosition: false,
+    editorTop: 0,
+    editorWidth: 0,
+    editorX: 0,
+    timeout: null,
+    fixedToolbar: false,
   }),
   computed: {
     note() {
@@ -110,9 +125,66 @@ export default {
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
     },
+    ckEditorId() {
+      return `cke_${this.richEditorId}`;
+    },
+    richEditorElement() {
+      return this.$refs?.richEditor?.$el;
+    },
+    richEditorToolbarElement() {
+      return this.richEditorElement?.querySelector?.('.cke_top');
+    },
+    richEditorToolbarExtraButtonsElement() {
+      return this.$refs?.extraButtons;
+    },
+    richEditorToolbarHeight() {
+      return this.richEditorToolbarExtraButtonsElement?.offsetHeight;
+    },
+    displayFixedToolbar() {
+      return !this.isMobile && this.editorTop <= this.topbarHeight && (this.editorTop + this.editorHeight) > (this.topbarHeight * 2);
+    },
+  },
+  watch: {
+    displayFixedToolbar(newVal, oldVal) {
+      if (this.richEditorToolbarElement && !this.isMobile && !!newVal === !oldVal) {
+        this.setFixedPosition(this.richEditorToolbarElement, newVal);
+        this.setFixedPosition(this.richEditorToolbarExtraButtonsElement, newVal, true);
+        this.fixedToolbar = this.displayFixedToolbar;
+      }
+    },
+    editorWidth() {
+      if (this.displayFixedToolbar) {
+        this.setFixedPosition(this.richEditorToolbarElement, true);
+        this.setFixedPosition(this.richEditorToolbarExtraButtonsElement, true, true);
+        this.fixedToolbar = this.displayFixedToolbar;
+      }
+    },
+    checkToolbarPosition() {
+      if (this.checkToolbarPosition) {
+        if (this.timeout) {
+          window.clearTimeout(this.timeout);
+        }
+        this.timeout = window.setTimeout(() => {
+          this.checkToolbarPosition = false;
+          this.computeTopbarPosition();
+        }, 50);
+      }
+    },
   },
   created() {
     this.init();
+  },
+  mounted() {
+    if (!this.isMobile) {
+      this.siteBody.addEventListener('scroll', this.controlBodyScrollClass, false);
+      window.addEventListener('resize', this.controlBodyScrollClass, false);
+      this.$root.$on('notes-editor-ready', this.controlBodyScrollClass);
+    }
+  },
+  beforeDestroy() {
+    this.siteBody.removeEventListener('scroll', this.controlBodyScrollClass, false);
+    window.removeEventListener('resize', this.controlBodyScrollClass, false);
+    this.$root.$off('notes-editor-ready', this.controlBodyScrollClass);
   },
   methods: {
     init() {
@@ -140,6 +212,14 @@ export default {
         .catch(() => this.$root.$emit('alert-message', this.$t('notePageView.label.errorSavingText') , 'error'))
         .finally(() => this.saving = false);
     },
+    openFullPageEditor() {
+      this.persistDraftNote();
+    },
+    cancelEditing() {
+      window.setTimeout(() => {
+        this.$emit('cancel');
+      }, 50);
+    },
     persistDraftNote() {
       return this.$notesService.saveDraftNote({
         id: this.note.id,
@@ -153,6 +233,53 @@ export default {
       }, this.note.parentPageId).then(savedDraftNote => {
         localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
       });
+    },
+    controlBodyScrollClass() {
+      this.checkToolbarPosition = true;
+    },
+    computeTopbarPosition() {
+      if (this.richEditorElement) {
+        const clientRect = this.richEditorElement.getClientRects()[0];
+        if (clientRect.top !== this.editorTop) {
+          this.editorTop = clientRect.top;
+        }
+        this.editorWidth = clientRect.width;
+        this.editorHeight = clientRect.height;
+        this.editorX = clientRect.x;
+        this.editorY = clientRect.y;
+      }
+    },
+    setFixedPosition(element, fixed, right) {
+      if (element) {
+        if (fixed) {
+          element.style.top = `${this.topbarHeight}px`;
+          element.classList.add('white');
+          element.classList.add('no-border-radius');
+          element.style.position = 'fixed';
+          if (right) {
+            if (this.$vuetify.rtl) {
+              element.style.right = `${(this.editorX + this.editorWidth - 1)}px`;
+            } else {
+              element.style.left = `${(this.editorX + this.editorWidth - 1)}px`;
+            }
+            element.style.transform = 'translateX(-100%)';
+          } else {
+            element.classList.add('elevation-1');
+            element.style.width = `${this.editorWidth}px`;
+            element.style.transform = 'translateX(-1px)';
+          }
+        } else {
+          element.style.position = '';
+          element.style.right = '';
+          element.style.left = '';
+          element.classList.remove('elevation-1');
+          element.classList.remove('no-border-radius');
+          element.classList.remove('white');
+          element.style.transform = 'initial';
+          element.style.top = 'initial';
+          element.style.width = 'initial';
+        }
+      }
     },
   }
 };
