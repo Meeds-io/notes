@@ -306,19 +306,19 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
-  public void testGetPageAvailableTranslationLanguages() {
+  public void testGetPageAvailableTranslationLanguages() throws WikiException {
    List<String> langs = new ArrayList<>();
    langs.add("ar");
    langs.add("en");
-   Response response = notesRestService.getPageAvailableTranslationLanguages(null);
+   Response response = notesRestService.getPageAvailableTranslationLanguages(null, false);
    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-   when(noteService.getPageAvailableTranslationLanguages(1L)).thenReturn(langs);
-   response = notesRestService.getPageAvailableTranslationLanguages(1L);
+   when(identity.getUserId()).thenReturn("1");
+   when(noteService.getPageAvailableTranslationLanguages(1L, "1", false)).thenReturn(langs);
+   response = notesRestService.getPageAvailableTranslationLanguages(1L, false);
    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-
-   doThrow(new RuntimeException()).when(noteService).getPageAvailableTranslationLanguages(2L);
-   response = notesRestService.getPageAvailableTranslationLanguages(2L);
-    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+   doThrow(new WikiException()).when(noteService).getPageAvailableTranslationLanguages(2L, "1", false);
+   response = notesRestService.getPageAvailableTranslationLanguages(2L, false);
+   assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
 
   }
 }

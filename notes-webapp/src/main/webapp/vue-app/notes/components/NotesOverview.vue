@@ -341,7 +341,7 @@ export default {
       exportId: 0,
       popStateChange: false,
       selectedTranslation: {value: eXo.env.portal.language},
-      translations: null,
+      translations: [],
       languages: [],
       slectedLanguage: null,
       translationsMenu: false,
