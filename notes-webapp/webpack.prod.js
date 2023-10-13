@@ -16,7 +16,8 @@ const config = {
     notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js',
     notesActivityStreamExtension: './src/main/webapp/vue-app/notes-activity-stream-extension/main.js',
     notesFavoriteDrawerExtension: './src/main/webapp/vue-app/notes-favorite-drawer-extension/main.js',
-    engagementCenterExtensions: './src/main/webapp/vue-app/engagementCenterExtensions/extensions.js'
+    engagementCenterExtensions: './src/main/webapp/vue-app/engagementCenterExtensions/extensions.js',
+    notePageView: './src/main/webapp/vue-app/note-page-view/main.js'
   },
   output: {
     publicPath: '',
