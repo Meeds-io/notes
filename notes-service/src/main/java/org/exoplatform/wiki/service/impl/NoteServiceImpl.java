@@ -17,31 +17,18 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -70,16 +57,12 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.DataStorage;
-import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.service.PageUpdateType;
-import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
@@ -1522,8 +1505,19 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public List<String> getPageAvailableTranslationLanguages(Long pageId) {
-    return dataStorage.getPageAvailableTranslationLanguages(pageId);
+  public List<String> getPageAvailableTranslationLanguages(Long pageId,
+                                                           String userName,
+                                                           boolean withDrafts) throws WikiException {
+    Set<String> langs = new HashSet<>(dataStorage.getPageAvailableTranslationLanguages(pageId));
+    if (withDrafts) {
+      Page note = getNoteById(String.valueOf(pageId));
+      List<Page> drafts = dataStorage.getChildrenPageOf(note, userName, true);
+      drafts = drafts.stream()
+                     .filter(jsonNodeData -> jsonNodeData.isDraftPage() && StringUtils.isNotBlank(jsonNodeData.getLang()))
+                     .toList();
+      langs.addAll(drafts.stream().map(Page::getLang).toList());
+    }
+    return langs.stream().toList();
   }
 
   /**
@@ -1551,7 +1545,11 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException{
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws WikiException {
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
+    DraftPage draft = dataStorage.getLatestDraftPageByUserAndTargetPageAndLang(noteId, userName, lang);
+    if (draft != null) {
+      removeDraft(draft.getName());
+    }
   }
 }

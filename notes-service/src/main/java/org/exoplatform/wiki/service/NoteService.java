@@ -497,9 +497,11 @@ public interface NoteService {
    * Retrieves list of available translations languages of a page
    *
    * @param pageId page id
+   * @param userId owner username
+   * @param withDrafts if set to true returns languages draft notes
    * @return {@link List} of {@link String}
    */
-  List<String> getPageAvailableTranslationLanguages(Long pageId);
+  List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException;
 
   /**
    * Retrieves latest draft of a specific page by target page id and content language
@@ -517,7 +519,8 @@ public interface NoteService {
    *
    * @param noteId Id of the note.
    * @param lang language.
+   * @param username owner username
    * @throws WikiException if an error occured
    */
-  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
+  void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws WikiException;
 }

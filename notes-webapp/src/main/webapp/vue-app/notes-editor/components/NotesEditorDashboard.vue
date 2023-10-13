@@ -244,14 +244,7 @@ export default {
   created() {
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
-      if (!this.postingNote && this.note.draftPage && this.note.id) {
-        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
-        if (currentDraft) {
-          this.removeLocalStorageCurrentDraft();
-          const draftToPersist = JSON.parse(currentDraft);
-          this.persistDraftNote(draftToPersist);
-        }
-      }
+      this.persistDraftFromLocalStorage(this.note.id); 
     });
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
@@ -311,6 +304,7 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
+      this.persistDraftFromLocalStorage(this.note.id); 
       this.languages = this.languages.filter(item => item.value !== lang.value);
       this.slectedLanguage=lang.value;
       this.translations.unshift(lang);
@@ -321,6 +315,7 @@ export default {
     });
     this.$root.$on('lang-translation-changed', lang => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
+      this.persistDraftFromLocalStorage(noteId); 
       this.slectedLanguage=lang.value;
       if (lang.value!=='' || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
@@ -415,9 +410,14 @@ export default {
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
           this.fillNote(latestDraft);
+          let message = `${this.$t('notes.alert.warning.label.original.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`;
+          if (this.slectedLanguage ) {
+            message = `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`;
+            message = message.replace('{0}', this.getLanguageName(this.note.lang));
+          }
           const messageObject = {
             type: 'warning',
-            message: (`${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`).replace('{0}', this.getLanguageName(this.note.lang))
+            message: message
           };
           this.displayMessage(messageObject, true);
           this.initActualNoteDone = true;
@@ -441,9 +441,14 @@ export default {
         this.init();
         this.fillNote(data);
       }).finally(() => {
+        let message = `${this.$t('notes.alert.warning.label.original.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`;
+        if (this.slectedLanguage ) {
+          message = `${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`;
+          message = message.replace('{0}', this.getLanguageName(this.note.lang));
+        }
         const messageObject = {
           type: 'warning',
-          message: (`${this.$t('notes.alert.warning.label.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},  `).replace('{0}', this.getLanguageName(this.note.lang))
+          message: message
         };
         this.displayMessage(messageObject, true);
         this.initActualNoteDone = true;
@@ -541,7 +546,7 @@ export default {
           this.$notesService.createNote(note).then(data => {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             // delete draft note
-            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
+            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
             this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
@@ -583,7 +588,7 @@ export default {
         // if draft page not created persist it only the first time else update it in browser's localStorage
         if (this.note.draftPage && this.note.id) {
           this.note.parentPageId = this.parentPageId;
-          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(draftNote));
+          localStorage.setItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`, JSON.stringify(draftNote));
           this.actualNote = {
             name: draftNote.name,
             title: draftNote.title,
@@ -602,7 +607,18 @@ export default {
         this.deleteDraftNote();
       }
     },
+    persistDraftFromLocalStorage(noteId) {
+      if (!this.postingNote && this.note.draftPage && noteId) {
+        const currentDraft = localStorage.getItem(`draftNoteId-${noteId}-${this.slectedLanguage}`);
+        if (currentDraft) {
+          this.removeLocalStorageCurrentDraft();
+          const draftToPersist = JSON.parse(currentDraft);
+          this.persistDraftNote(draftToPersist);
+        }
+      }
+    },
     persistDraftNote(draftNote) {
+      draftNote.lang=this.slectedLanguage;
       if (this.note.title || this.note.content) {
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
           this.actualNote = {
@@ -615,7 +631,7 @@ export default {
           };
           savedDraftNote.parentPageId = this.parentPageId;
           this.note = savedDraftNote;
-          localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
+          localStorage.setItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`, JSON.stringify(savedDraftNote));
         }).then(() => {
           this.savingDraft = false;
           setTimeout(() => {
@@ -914,6 +930,7 @@ export default {
         const targetPageId = this.note.targetPageId;
         this.removeLocalStorageCurrentDraft();
         this.$notesService.deleteDraftNote(this.note).then(() => {
+          this.getNoteLanguages();
           this.draftSavingStatus = '';
           //re-initialize data
           if (targetPageId) {
@@ -971,9 +988,9 @@ export default {
       }
     },
     removeLocalStorageCurrentDraft() {
-      const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+      const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`);
       if (currentDraft) {
-        localStorage.removeItem(`draftNoteId-${this.note.id}`);
+        localStorage.removeItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`);
       }
     },
     enableClickOnce() {
@@ -1038,12 +1055,12 @@ export default {
       return docElement?.children[1].innerHTML;
     },
     getNoteLanguages(){
-      return this.$notesService.getNoteLanguages(this.noteId).then(data => {
+      return this.$notesService.getNoteLanguages(this.noteId,true).then(data => {
         this.translations =  data || [];
         if (this.translations.length>0) {
-          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.translations = this.allLanguages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
           this.translations.sort((a, b) => a.text.localeCompare(b.text));
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+          this.languages = this.allLanguages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
         if (this.isMobile) {
           this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});

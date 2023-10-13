@@ -253,12 +253,17 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
           @ApiResponse(responseCode = "500", description = "Server internal error") })
   public Response getPageAvailableTranslationLanguages(@Parameter(description = "Note id", required = true)
-                                                       @PathParam("noteId") Long noteId) {
+  @PathParam("noteId")
+  Long noteId, @QueryParam("withDrafts")
+  Boolean withDrafts) {
     if (noteId == null) {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      List<String> languages = noteService.getPageAvailableTranslationLanguages(noteId);
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      List<String> languages = noteService.getPageAvailableTranslationLanguages(noteId,
+                                                                                identity.getUserId(),
+                                                                                Boolean.TRUE.equals(withDrafts));
       return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
      log.error("Error while getting available translation languages of the page with id : {}", noteId, e);
@@ -282,7 +287,8 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      noteService.deleteVersionsByNoteIdAndLang(noteId, lang);
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      noteService.deleteVersionsByNoteIdAndLang(noteId, identity.getUserId(), lang);
       return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
       log.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
@@ -1232,6 +1238,7 @@ public class NotesRestService implements ResourceContainer {
         }
         finalTree = finalTree.stream()
                              .filter(jsonNodeData -> jsonNodeData.isDraftPage()
+                                 && StringUtils.equals(jsonNodeData.getLang(), lang)
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
