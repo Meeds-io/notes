@@ -19,7 +19,9 @@
 
 -->
 <template>
-  <v-app v-if="canView" class="overflow-hidden">
+  <v-app
+    v-if="canView"
+    :class="edit && 'overflow-hidden'">
     <v-hover v-slot="{ hover }">
       <v-card
         :class="viewMode && 'pa-5'"
