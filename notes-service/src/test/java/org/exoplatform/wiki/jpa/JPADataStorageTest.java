@@ -747,6 +747,61 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
+  public void testGetDraftsOfPage() throws WikiException {
+    // Given
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = storage.createWiki(wiki);
+
+    Page page = new Page();
+    page.setWikiId(wiki.getId());
+    page.setWikiType(wiki.getType());
+    page.setWikiOwner(wiki.getOwner());
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    page.setName("page1");
+    page.setTitle("Page 1");
+    page.setContent("Content Page 1");
+    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+
+    Calendar calendar = Calendar.getInstance();
+    Date now = calendar.getTime();
+    calendar.add(Calendar.YEAR, -1);
+    Date oneYearAgo = calendar.getTime();
+
+    DraftPage draftPage1 = new DraftPage();
+    draftPage1.setAuthor("user1");
+    draftPage1.setName("DraftPage1");
+    draftPage1.setTitle("DraftPage 1");
+    draftPage1.setContent("Content Page 1 Updated");
+    draftPage1.setTargetPageId(createdPage.getId());
+    draftPage1.setTargetPageRevision("1");
+    draftPage1.setUpdatedDate(oneYearAgo);
+    draftPage1.setCreatedDate(oneYearAgo);
+
+    DraftPage draftPage2 = new DraftPage();
+    draftPage2.setAuthor("user1");
+    draftPage2.setName("DraftPage1");
+    draftPage2.setTitle("DraftPage 1");
+    draftPage2.setContent("Content Page 1 Updated Again");
+    draftPage2.setTargetPageId(createdPage.getId());
+    draftPage2.setTargetPageRevision("2");
+    draftPage2.setUpdatedDate(now);
+    draftPage2.setCreatedDate(now);
+
+    // When
+    storage.createDraftPageForUser(draftPage1, "user1");
+    storage.createDraftPageForUser(draftPage2, "user1");
+    List<DraftPage> fetchedDrafts = storage.getDraftsOfPage(Long.valueOf(createdPage.getId()),"user1");
+
+    // Then
+    assertNotNull(fetchedDrafts);
+    assertEquals( 2, fetchedDrafts.size());
+
+  }
+
+  @Test
   public void testDraftPageOfUserByNameAndTargetPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();

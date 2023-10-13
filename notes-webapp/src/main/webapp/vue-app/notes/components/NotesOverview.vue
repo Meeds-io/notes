@@ -329,7 +329,7 @@ export default {
       popStateChange: false,
       iframelyOriginRegex: /^https?:\/\/if-cdn.com/
       selectedTranslation: {value: eXo.env.portal.language},
-      translations: null,
+      translations: [],
       languages: [],
       slectedLanguage: null,
       translationsMenu: false,
