@@ -210,10 +210,13 @@ export default {
       return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
-      return this.noteId && this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
+      if (!this.noteId){
+        return 'disabled--text not-clickable remove-focus';
+      }
+      return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
     },
     isMobile() {
-      return this.$vuetify.breakpoint.width < 960;
+      return this.$vuetify.breakpoint.width < 1280;
     },
     langBottonTooltipText() {
       if (this.noteId) {
