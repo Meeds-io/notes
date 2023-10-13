@@ -11,7 +11,6 @@
             <div class="notesFormLeftActions d-inline-flex align-center me-10">
               <img :src="srcImageNote">
               <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
-<<<<<<< HEAD
               <v-tooltip bottom>
                 <template #activator="{ on, attrs }">
                   <v-icon
@@ -27,16 +26,6 @@
                 </template>
                 <span class="caption">{{ langBottonTooltipText }}</span>
               </v-tooltip>
-=======
-              <v-icon
-                v-if="notesMultilingualActive && noteId"
-                size="22"
-                class="clickable pa-2"
-                :class="langBottonColor"
-                @click="showTranslations">
-                fa-language
-              </v-icon>
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
             </div>
             <div class="notesFormRightActions pr-7">
               <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
@@ -81,12 +70,8 @@
           ref="translationsEditBar"
           :note="note"
           :languages="languages"
-<<<<<<< HEAD
           :translations="translations"
           :is-mobile="isMobile" />
-=======
-          :translations="translations" />
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
         <div id="notesTop" class="width-full darkComposerEffect"></div>
       </div>
 
@@ -194,17 +179,10 @@ export default {
       slectedLanguage: null,
       translations: null,
       languages: [],
-<<<<<<< HEAD
-<<<<<<< HEAD
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
       noteEditorExtensions: null
-=======
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
-=======
-      allLanguages: [],
->>>>>>> 35de91d5c (feat: Draft with translation - EXO-66042 - Meeds-io/MIPs#70 (#776))
     };
   },
   computed: {
@@ -229,7 +207,6 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('webPageNote') === 'true';
     },
-<<<<<<< HEAD
     langBottonColor(){
       if (!this.noteId){
         return 'disabled--text not-clickable remove-focus';
@@ -246,14 +223,6 @@ export default {
         return this.$t('notes.message.firstVersionShouldBeCreated');
       }
     },
-=======
-    notesMultilingualActive() {
-      return eXo?.env?.portal?.notesMultilingual;
-    },
-    langBottonColor(){
-      return this.translations?.length>0 ? 'primary--text':'';
-    }
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
 
   },
   watch: {
@@ -271,13 +240,10 @@ export default {
     }
   },
   created() {
-<<<<<<< HEAD
     this.refreshTranslationExtensions();
     document.addEventListener('automatic-translation-extensions-updated', () => {
       this.refreshTranslationExtensions();
     });
-=======
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
@@ -300,12 +266,8 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
-<<<<<<< HEAD
     } else {
       this.initActualNoteDone=true;
-=======
-      this.getNoteLanguages();
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -347,16 +309,7 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
-<<<<<<< HEAD
       this.addTranslation(lang);
-=======
-      this.slectedLanguage=lang.value;
-      this.translations.unshift(lang);
-      this.note.content='';
-      this.note.title='';
-      this.note.lang=lang.value;
-      this.initCKEditor();
->>>>>>> ab936845d (feat: Add a language - EXO-65423- Meeds-io/MIPs#70)
     });
     this.$root.$on('lang-translation-changed', lang => {
       this.changeTranslation(lang);
@@ -365,11 +318,8 @@ export default {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       this.deleteTranslation(translation, noteId);
     });
-<<<<<<< HEAD
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
-=======
->>>>>>> 41c3abbe5 (feat: Manage language version - EXO-65424 - Meeds-io/MIPs#70)
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
@@ -539,6 +489,25 @@ export default {
       }
       return draftNote;
     },
+    fillDraftNote() {
+      const draftNote = {
+        id: this.note.draftPage ? this.note.id : '',
+        title: this.note.title,
+        content: this.getBody() || this.note.content,
+        name: this.note.name,
+        lang: this.note.lang,
+        appName: this.appName,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        parentPageId: this.parentPageId,
+      };
+      if (this.note.draftPage && this.note.id) {
+        draftNote.targetPageId = this.note.targetPageId;
+      } else {
+        draftNote.targetPageId = this.note.id ? this.note.id : '';
+      }
+      return draftNote;
+    },
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
@@ -602,7 +571,7 @@ export default {
           this.$notesService.createNote(note).then(data => {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             // delete draft note
-            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
+            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
             this.deleteDraftNote(draftNote, notePath);
             // show the created note
             window.location.href = notePath;
@@ -917,6 +886,7 @@ export default {
         const targetPageId = this.note.targetPageId;
         this.removeLocalStorageCurrentDraft();
         this.$notesService.deleteDraftNote(this.note).then(() => {
+          this.getNoteLanguages();
           this.draftSavingStatus = '';
           this.getNoteLanguages().then(() => {
             let lang = this.translations.find(item => item.value ===this.slectedLanguage);

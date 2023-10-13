@@ -30,7 +30,6 @@ import java.util.zip.ZipOutputStream;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -59,9 +58,13 @@ import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import org.exoplatform.wiki.model.*;
 =======
 >>>>>>> 73d4db09f (feat: Add multilangue backend services - EXO-65935 - Meeds-io/MIPs#70 (#711))
+=======
+import org.exoplatform.wiki.model.*;
+>>>>>>> de7f03fe5 (feat: Draft of a new  translation never saved - EXO-66050 - Meeds-io/MIPs#70)
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;

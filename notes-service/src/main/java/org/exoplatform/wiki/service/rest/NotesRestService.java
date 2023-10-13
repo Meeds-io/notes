@@ -1273,6 +1273,7 @@ public class NotesRestService implements ResourceContainer {
         }
         finalTree = finalTree.stream()
                              .filter(jsonNodeData -> jsonNodeData.isDraftPage()
+                                 && StringUtils.equals(jsonNodeData.getLang(), lang)
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
