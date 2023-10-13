@@ -95,6 +95,7 @@ export default {
   data: () => ({
     menu: false,
     saving: false,
+    pageContent: null,
   }),
   computed: {
     hasNote() {
@@ -114,13 +115,27 @@ export default {
   methods: {
     remove() {
       this.saving = true;
+      this.pageContent = this.$root.pageContent;
       return this.$notePageViewService.saveNotePage(this.$root.name, '', this.$root.language)
         .then(() => {
           this.$root.$emit('notes-refresh');
           this.$emit('removed');
-          this.$root.$emit('alert-message', this.$t('notePageView.label.removedSuccessfully') , 'success');
+          document.dispatchEvent(new CustomEvent('alert-message', {detail: {
+            alertMessage: this.$t('notePageView.label.removedSuccessfully'),
+            alertType: 'success',
+            alertLinkText: this.$t('notePageView.label.undo'),
+            alertLinkCallback: () => this.undo(),
+          }}));
         })
         .catch(() => this.$root.$emit('alert-message', this.$t('notePageView.label.errorRemovingText') , 'error'))
+        .finally(() => this.saving = false);
+    },
+    undo() {
+      this.$root.$emit('close-alert-message');
+      this.saving = true;
+      return this.$notePageViewService.saveNotePage(this.$root.name, this.pageContent, this.$root.language)
+        .then(() => this.$root.$emit('notes-refresh'))
+        .catch(() => this.$root.$emit('alert-message', this.$t('notePageView.label.errorUndoRemovingText') , 'error'))
         .finally(() => this.saving = false);
     },
   }
