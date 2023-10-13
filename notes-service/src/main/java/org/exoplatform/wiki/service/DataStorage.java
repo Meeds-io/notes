@@ -83,6 +83,8 @@ public interface DataStorage {
 
   public void deleteDraftOfPage(Page page, String username) throws WikiException;
 
+  public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException;
+
   public void deleteDraftByName(String newDraftPageName, String username) throws WikiException;
 
   public void renamePage(String wikiType, String wikiOwner, String pageName, String newName, String newTitle) throws WikiException;
@@ -102,6 +104,8 @@ public interface DataStorage {
   public void removeRelatedPage(Page page, Page relatedPage) throws WikiException;
 
   public Page getExsitedOrNewDraftPageById(String wikiType, String wikiOwner, String pageId, String username) throws WikiException;
+
+  List<DraftPage> getDraftsOfPage(Long pageId, String username) throws WikiException;
 
   public DraftPage getDraft(WikiPageParams param, String username) throws WikiException;
 

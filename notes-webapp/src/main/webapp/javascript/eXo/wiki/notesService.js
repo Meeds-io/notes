@@ -371,8 +371,12 @@ export function getAvailableLanguages() {
     }
   });
 }
-export function getNoteLanguages(noteId) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translation/${noteId}`, {
+export function getNoteLanguages(noteId,withDrafts) {
+  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translation/${noteId}`;
+  if (withDrafts){
+    url=`${url}${getSeparator(url)}withDrafts=${withDrafts}`;
+  }
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
