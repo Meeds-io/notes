@@ -22,13 +22,25 @@ package org.exoplatform.wiki.service;
 
 
 import org.apache.commons.io.FileUtils;
+
+import org.exoplatform.commons.ObjectAlreadyExistsException;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
+import org.exoplatform.wiki.jpa.JPADataStorage;
 import org.exoplatform.wiki.model.*;
+
+import io.meeds.notes.service.NotePageViewService;
+import io.meeds.social.cms.service.CMSService;
+
 import org.junit.Assert;
+
+import static org.junit.Assert.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
@@ -201,6 +213,54 @@ public class TestNoteService extends BaseTest {
     }
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage_")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage2_")) ;
+  }
+  
+  public void testHasPermisionOnSystemPage() throws WikiException, IllegalAccessException, ObjectAlreadyExistsException {
+    JPADataStorage storage = getContainer().getComponentInstanceOfType(JPADataStorage.class);
+
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("testHasPermisionOnSystemPage");
+    wiki = storage.createWiki(wiki);
+
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+
+    Identity adminAclIdentity = new Identity("admin",
+                                             Arrays.asList(
+                                                           new MembershipEntry("/platform/users", "*"),
+                                                           new MembershipEntry("/platform/administrators", "*")));
+    identityRegistry.register(adminAclIdentity);
+
+    Identity userAclIdentity = new Identity("user",
+                                            Arrays.asList(
+                                                          new MembershipEntry("/platform/users", "*")));
+    identityRegistry.register(userAclIdentity);
+
+    Page noPermissionPage = new Page();
+    noPermissionPage.setWikiId(wiki.getId());
+    noPermissionPage.setWikiType(wiki.getType());
+    noPermissionPage.setWikiOwner(wiki.getOwner());
+    noPermissionPage.setName("page1");
+    noPermissionPage.setTitle("Page 1");
+    noPermissionPage.setPermissions(new ArrayList<>());
+    noPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), noPermissionPage);
+
+    Page systemPermissionPage = new Page();
+    systemPermissionPage.setWikiId(wiki.getId());
+    systemPermissionPage.setWikiType(wiki.getType());
+    systemPermissionPage.setWikiOwner(wiki.getOwner());
+    systemPermissionPage.setName("page1");
+    systemPermissionPage.setTitle("Page 1");
+    systemPermissionPage.setOwner(IdentityConstants.SYSTEM);
+    systemPermissionPage.setPermissions(new ArrayList<>());
+    Page storedSystemPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), systemPermissionPage);
+
+    assertTrue(noteService.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, adminAclIdentity));
+    assertFalse(noteService.hasPermissionOnPage(storedSystemPermissionPage, PermissionType.VIEWPAGE, adminAclIdentity));
+
+    assertNotNull(noteService.getNoteById(storedSystemPermissionPage.getId(), adminAclIdentity));
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.getNoteById(storedSystemPermissionPage.getId(), userAclIdentity));
   }
 
   public void testUpdateNote() throws WikiException, IllegalAccessException {

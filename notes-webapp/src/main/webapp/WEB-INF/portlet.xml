@@ -53,4 +53,27 @@
     </portlet-info>
   </portlet>
 
+   <portlet>
+    <portlet-name>NotePageView</portlet-name>
+    <display-name xml:lang="EN">Single Note View</display-name>
+    <portlet-class>io.meeds.social.portlet.CMSPortlet</portlet-class>
+    <init-param>
+      <name>content-type</name>
+      <value>notePage</value>
+    </init-param>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/WEB-INF/jsp/notePageView.jsp</value>
+    </init-param>
+    <supports>
+    <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.NotePageView</resource-bundle>
+    <portlet-info>
+      <title>Single Note View</title>
+      <keywords>Single Note View</keywords>
+    </portlet-info>
+  </portlet>
+
 </portlet-app>
