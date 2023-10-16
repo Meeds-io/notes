@@ -657,7 +657,7 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteService.removeDraftOfNote(noteParams);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         if (StringUtils.isBlank(note.getLang())) {
@@ -676,7 +676,7 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteService.removeDraftOfNote(noteParams);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
         }
       } else if (!note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
@@ -690,7 +690,7 @@ public class NotesRestService implements ResourceContainer {
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
-          noteService.removeDraftOfNote(noteParams);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
         }
       } else if (note_.isToBePublished()){
         note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);        

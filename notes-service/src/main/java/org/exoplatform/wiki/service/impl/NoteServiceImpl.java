@@ -702,6 +702,12 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
+  public void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException {
+    Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
+    dataStorage.deleteDraftOfPage(page, Utils.getCurrentUser(), lang);
+  }
+
+  @Override
   public void removeDraft(String draftName) throws WikiException {
     dataStorage.deleteDraftByName(draftName, Utils.getCurrentUser());
   }
@@ -1510,12 +1516,11 @@ public class NoteServiceImpl implements NoteService {
                                                            boolean withDrafts) throws WikiException {
     Set<String> langs = new HashSet<>(dataStorage.getPageAvailableTranslationLanguages(pageId));
     if (withDrafts) {
-      Page note = getNoteById(String.valueOf(pageId));
-      List<Page> drafts = dataStorage.getChildrenPageOf(note, userName, true);
+      List<DraftPage> drafts = dataStorage.getDraftsOfPage(pageId, userName);
       drafts = drafts.stream()
-                     .filter(jsonNodeData -> jsonNodeData.isDraftPage() && StringUtils.isNotBlank(jsonNodeData.getLang()))
+                     .filter(jsonNodeData -> StringUtils.isNotBlank(jsonNodeData.getLang()))
                      .toList();
-      langs.addAll(drafts.stream().map(Page::getLang).toList());
+      langs.addAll(drafts.stream().map(DraftPage::getLang).toList());
     }
     return langs.stream().toList();
   }
@@ -1547,9 +1552,11 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws WikiException {
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
-    DraftPage draft = dataStorage.getLatestDraftPageByUserAndTargetPageAndLang(noteId, userName, lang);
-    if (draft != null) {
-      removeDraft(draft.getName());
+    List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId, userName);
+    for (DraftPage draftPage : drafts) {
+      if (draftPage.getLang().equals(lang)) {
+        removeDraft(draftPage.getName());
+      }
     }
   }
 }
