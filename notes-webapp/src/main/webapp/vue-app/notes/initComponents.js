@@ -9,6 +9,7 @@ import AttachmentsNotesItem from './components/importNotes/AttachmentsNotesItem.
 import NoteFavoriteAction from './components/NoteFavoriteAction.vue';
 import NotesTranslationMenu from './components/NotesTranslationMenu.vue';
 import NoteContentTableItem from './components/NoteContentTableItem.vue';
+import NotesTranslationMenu from './components/NotesTranslationMenu.vue';
 
 const components = {
   'notes-overview': NotesOverview,

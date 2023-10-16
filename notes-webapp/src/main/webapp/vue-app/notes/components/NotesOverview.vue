@@ -323,8 +323,9 @@ export default {
       selectedTranslation: {value: eXo.env.portal.language},
       translations: null,
       languages: [],
-      translationsMenu: false,
       slectedLanguage: null,
+      translationsMenu: false,
+      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
     };
   },
   watch: {
@@ -519,7 +520,7 @@ export default {
     },
     notesMultilingualActive() {
       return eXo?.env?.portal?.notesMultilingual;
-    },
+    }
   },
   created() {
     this.getAvailableLanguages();
@@ -574,6 +575,10 @@ export default {
         }
       }
     });
+    this.$root.$on('update-note-title', this.updateNoteTitle);
+    this.$root.$on('update-note-content', this.updateNoteContent);
+    this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
+
   },
   mounted() {
     this.handleChangePages();
@@ -590,6 +595,10 @@ export default {
     },
     updateSelectedTranslation(translation) {
       this.selectedTranslation = translation;
+    },
+    getNoteLink(noteId) {
+      const baseUrl = window.location.href;
+      return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
     },
     loadMoreVersions(){
       this.versionsPageSize += this.versionsPageSize;
