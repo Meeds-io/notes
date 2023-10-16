@@ -132,8 +132,6 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
-  private final ListenerService                           listenerService;
-
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
@@ -154,7 +152,6 @@ public class NoteServiceImpl implements NoteService {
     this.identityRegistry = identityRegistry;
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = null;
-    this.listenerService = listenerService;
   }
   
   public NoteServiceImpl(DataStorage dataStorage,
@@ -178,7 +175,6 @@ public class NoteServiceImpl implements NoteService {
     this.identityRegistry = identityRegistry;
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
-    this.listenerService = listenerService;
   }
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
 
@@ -279,6 +275,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     Page updatedPage = updateNote(note, type);
+    Utils.broadcast(listenerService, "note.updated", userIdentity.getUserId(), updatedPage);
 
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
@@ -303,9 +300,6 @@ public class NoteServiceImpl implements NoteService {
 
     Page updatedPage = getNoteById(note.getId());
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
-
-    Utils.broadcast(listenerService, "note.updated", userIdentity.getUserId(), updatedPage);
-
     return updatedPage;
   }
 
