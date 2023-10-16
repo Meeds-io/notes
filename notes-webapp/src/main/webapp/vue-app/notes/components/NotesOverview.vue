@@ -109,36 +109,25 @@
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <v-menu
-              v-if="notesMultilingualActive && translations?.length>1"
+              v-if="notesMultilingualActive && translations.length"
               v-model="translationsMenu"
               offset-y
               bottom>
               <template #activator="{ on, attrs }">
                 <v-icon
                   size="22"
-                  :class="langBottonColor"
+                  :class="langButtonColor"
                   class="remove-focus my-auto pa-0  pe-1"
                   v-bind="attrs"
                   v-on="on">
                   fa-language
                 </v-icon>
               </template>
-              <v-list class="px-2" dense>
-                <v-list-item
-                  v-for="(item, i) in translations"
-                  :key="i"
-                  class=" translation-chips">
-                  <v-chip
-                    small
-                    :outlined="item.value!==selectedTranslation.value"
-                    color="primary"
-                    close-label="translation remove button"
-                    @click="changeTranslation(item)"
-                    class="my-auto mx-1">
-                    {{ item.text }}
-                  </v-chip>
-                </v-list-item>
-              </v-list>
+              <notes-translation-menu
+                :note="note"
+                :translations="translations"
+                :selected-translation="selectedTranslation"
+                @change-translation="changeTranslation" />
             </v-menu>
             <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion?lastNoteVersion:0 }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
@@ -342,8 +331,9 @@ export default {
       selectedTranslation: {value: eXo.env.portal.language},
       translations: null,
       languages: [],
-      translationsMenu: false,
       slectedLanguage: null,
+      translationsMenu: false,
+      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
     };
   },
   watch: {
@@ -537,14 +527,14 @@ export default {
     },
     notesMultilingualActive() {
       return eXo?.env?.portal?.notesMultilingual;
-    },
+    }
   },
   created() {
     this.getAvailableLanguages();
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('translation')) {
-      this.selectedTranslation =  {value: urlParams.get('translation')};
+      this.updateSelectedTranslation({value: urlParams.get('translation')});
     } 
     if (this.currentPath.endsWith('draft')) {
       this.isDraft = true;
@@ -581,6 +571,10 @@ export default {
       this.popStateChange = true;
       this.handleChangePages();
     });
+    this.$root.$on('update-note-title', this.updateNoteTitle);
+    this.$root.$on('update-note-content', this.updateNoteContent);
+    this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
+
   },
   mounted() {
     this.handleChangePages();
@@ -589,6 +583,15 @@ export default {
     });
   },
   methods: {
+    updateNoteTitle(title) {
+      this.noteTitle = title;
+    },
+    updateNoteContent(content) {
+      this.noteContent = content;
+    },
+    updateSelectedTranslation(translation) {
+      this.selectedTranslation = translation;
+    },
     getNoteLink(noteId) {
       const baseUrl = window.location.href;
       return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
@@ -711,7 +714,7 @@ export default {
         this.updateURL();
         this.getNoteLanguages(noteId);
         if (!this.note.lang || this.note.lang === ''){
-          this.selectedTranslation={value: '',text: this.$t('notes.label.translation.originalVersion')};
+          this.updateSelectedTranslation(this.originalVersion);
           this.updateURL();
         }
         return this.$nextTick();
@@ -991,7 +994,7 @@ export default {
       });
     },
     changeTranslation(translation){
-      this.selectedTranslation=translation;
+      this.selectedTranslation = translation;
       return this.$notesService.getNoteById(this.note.id,this.selectedTranslation.value).then(data => {
         const note = data || {};
         if (note) {
