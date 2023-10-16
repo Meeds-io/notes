@@ -108,7 +108,28 @@
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
-            <span class="note-version border-radius primary px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
+            <v-menu
+              v-if="notesMultilingualActive && translations.length"
+              v-model="translationsMenu"
+              offset-y
+              bottom>
+              <template #activator="{ on, attrs }">
+                <v-icon
+                  size="22"
+                  :class="langBottonColor"
+                  class="remove-focus my-auto pa-0  pe-1"
+                  v-bind="attrs"
+                  v-on="on">
+                  fa-language
+                </v-icon>
+              </template>
+              <notes-translation-menu
+                :note="note"
+                :translations="translations"
+                :selected-translation="selectedTranslation"
+                @change-translation="changeTranslation" />
+            </v-menu>
+            <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion?lastNoteVersion:0 }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -305,7 +326,13 @@ export default {
       childNodes: [],
       exportStatus: '',
       exportId: 0,
-      popStateChange: false
+      popStateChange: false,
+      selectedTranslation: {value: eXo.env.portal.language},
+      translations: null,
+      languages: [],
+      slectedLanguage: null,
+      translationsMenu: false,
+      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
     };
   },
   watch: {
@@ -495,8 +522,20 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
+    langBottonColor(){
+      return this.selectedTranslation.value!=='' ? 'primary--text':'';
+    },
+    notesMultilingualActive() {
+      return eXo?.env?.portal?.notesMultilingual;
+    }
   },
   created() {
+    this.getAvailableLanguages();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('translation')) {
+      this.updateSelectedTranslation({value: urlParams.get('translation')});
+    } 
     if (this.currentPath.endsWith('draft')) {
       this.isDraft = true;
     }
@@ -532,11 +571,24 @@ export default {
       this.popStateChange = true;
       this.handleChangePages();
     });
+    this.$root.$on('update-note-title', this.updateNoteTitle);
+    this.$root.$on('update-note-content', this.updateNoteContent);
+    this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
+
   },
   mounted() {
     this.handleChangePages();
   },
   methods: {
+    updateNoteTitle(title) {
+      this.noteTitle = title;
+    },
+    updateNoteContent(content) {
+      this.noteContent = content;
+    },
+    updateSelectedTranslation(translation) {
+      this.selectedTranslation = translation;
+    },
     getNoteLink(noteId) {
       const baseUrl = window.location.href;
       return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
@@ -653,6 +705,11 @@ export default {
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
+        this.getNoteLanguages(noteId);
+        if (!this.note.lang || this.note.lang === ''){
+          this.updateSelectedTranslation(this.originalVersion);
+          this.updateURL();
+        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -905,7 +962,41 @@ export default {
         window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
       }
       this.popStateChange = false;
-    }
+    },
+    getNoteLanguages(noteId){
+      this.translations = [];
+      return this.$notesService.getNoteLanguages(noteId).then(data => {
+        this.translations =  data || [];
+        if (this.translations.length>0) {
+          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+        }
+        this.translations.sort((a, b) => a.text.localeCompare(b.text));
+        this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+
+      });
+    },
+    getAvailableLanguages(){
+      return this.$notesService.getAvailableLanguages().then(data => {
+        this.languages = data || [];
+      });
+    },
+    changeTranslation(translation){
+      this.selectedTranslation = translation;
+      return this.$notesService.getNoteById(this.note.id,this.selectedTranslation.value).then(data => {
+        const note = data || {};
+        if (note) {
+          this.note.content = note.content;
+          this.noteContent = note.content;
+          this.note.title = note.title;
+          this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
+        }
+        this.updateURL();
+        this.getNoteVersionByNoteId(this.note.id);
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+      });
+    },
   }
 };
 </script>
