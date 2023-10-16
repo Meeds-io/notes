@@ -31,17 +31,24 @@
         class="d-flex flex-column border-box-sizing position-relative card-border-radius"
         color="white"
         flat>
-        <note-page-edit
-          v-if="edit"
-          ref="editor"
-          :class="editorBackgroundLoading && 'position-absolute l-0 r-0'"
-          :style="editorBackgroundLoading && 'z-index: -1;'"
-          class="full-width"
-          @saved="closeEditor"
-          @cancel="closeEditor" />
-        <template v-if="!editorReady || !edit">
+        <template v-if="edit">
+          <note-page-edit-drawer
+            v-if="$root.isMobile"
+            ref="drawer"
+            @saved="closeEditor"
+            @cancel="closeEditor" />
+          <note-page-edit
+            v-else
+            ref="editor"
+            :class="editorBackgroundLoading && 'position-absolute l-0 r-0'"
+            :style="editorBackgroundLoading && 'z-index: -1;'"
+            class="full-width"
+            @saved="closeEditor"
+            @cancel="closeEditor" />
+        </template>
+        <template v-if="!hideViewMode">
           <note-page-header
-            v-if="$root.initialized && canEdit"
+            v-if="displayEditMode"
             :hover="hover || editorLoading"
             :loading="editorLoading"
             @edit="openEditor" />
@@ -63,17 +70,20 @@ export default {
     hasNote() {
       return !!this.$root.pageContent;
     },
-    canEdit() {
-      return this.$root.canEdit;
+    displayEditMode() {
+      return this.$root.initialized && this.$root.canEdit;
     },
     canView() {
       return this.$root.canEdit || (this.$root.initialized && this.hasNote);
     },
     viewMode() {
-      return !this.edit || this.editorBackgroundLoading;
+      return this.$root.isMobile || (!this.edit || this.editorBackgroundLoading);
+    },
+    hideViewMode() {
+      return !this.$root.isMobile && this.editorReady && this.edit;
     },
     editorBackgroundLoading() {
-      return this.editorLoading && this.hasNote;
+      return !this.$root.isMobile && this.editorLoading && this.hasNote;
     },
     editorLoading() {
       return this.edit && !this.editorReady;
