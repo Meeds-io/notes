@@ -26,6 +26,7 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -116,7 +117,10 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
     // Get the Page object from BD
     PageEntity page = dao.find(Long.parseLong(id));
     if (page == null) {
-      LOGGER.info("The page entity with id {} doesn't exist.", id);
+      LOGGER.warn("The page entity with id {} wasn't found, thus it can't be indexed", id);
+      return null;
+    } else if (StringUtils.equalsIgnoreCase(page.getOwner(), IdentityConstants.SYSTEM)) {
+      LOGGER.debug("The page entity with id {} is a system note pge, thus will not be searchable as a note", id);
       return null;
     }
 
@@ -135,7 +139,7 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
       fields.put("wikiType", page.getWiki().getType());
       String wikiOwner = page.getWiki().getOwner();
       // We need to add the first "/" on the wiki owner if it's wiki group
-      if (page.getWiki().getType().toUpperCase().equals(WikiType.GROUP.name())) {
+      if (StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), page.getWiki().getType())) {
         wikiOwner = dao.validateGroupWikiOwner(wikiOwner);
       }
       fields.put("wikiOwner", wikiOwner);

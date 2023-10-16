@@ -677,6 +677,9 @@ public class Utils {
   }
 
   public static String html2text(String html) {
+    if (StringUtils.isBlank(html)) {
+      return html;
+    }
     Document doc = Jsoup.parse(html);
     return doc.text();
   }
