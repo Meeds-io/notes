@@ -341,6 +341,17 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
+  public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException {
+    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.parseLong(page.getId()));
+    for (DraftPageEntity draftPage : draftPages) {
+      if (draftPage != null && draftPage.getLang().equals(lang)) {
+        deleteAttachmentsOfDraftPage(draftPage);
+        draftPageDAO.delete(draftPage);
+      }
+    }
+  }
+
+  @Override
   public void deleteDraftByName(String draftPageName, String username) throws WikiException {
     DraftPageEntity draftPage = draftPageDAO.findLatestDraftPageByUserAndName(username, draftPageName);
     if(draftPage != null){
@@ -602,6 +613,16 @@ public class JPADataStorage implements DataStorage {
     return draftPage;
   }
 
+  @Override
+  public List<DraftPage> getDraftsOfPage(Long pageId, String username) {
+    List<DraftPage> draftPages = new ArrayList<DraftPage>();
+    List<DraftPageEntity> draftPagesOfUser = draftPageDAO.findDraftPagesByUserAndTargetPage(username, pageId);
+    for (DraftPageEntity draft : draftPagesOfUser) {
+      draftPages.add(convertDraftPageEntityToDraftPage(draft));
+    }
+
+    return draftPages;
+  }
   @Override
   public DraftPage getDraft(WikiPageParams wikiPageParams, String username) throws WikiException {
     DraftPage latestDraft = null;

@@ -223,7 +223,21 @@ public interface NoteService {
 
   List<Page> getDuplicateNotes(Page parentNote, Wiki targetNoteBook, List<Page> resultList ,String userId) throws WikiException;
 
+  /**
+   * Remove the all Drafts of a note
+   *
+   * @param param Note location params.
+   * @throws WikiException if an error occured
+   */
   void removeDraftOfNote(WikiPageParams param) throws WikiException;
+  /**
+   * Remove the Drafts of a note by language
+   *
+   * @param param Note location params.
+   * @param lang draft lang.
+   * @throws WikiException if an error occured
+   */
+  void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException;
 
   /**
    * Removes a draft page by its name.
