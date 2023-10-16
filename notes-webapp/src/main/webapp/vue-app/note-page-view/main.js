@@ -52,6 +52,12 @@ export function init(appId, name, canEdit) {
           pageId() {
             return this.page?.id;
           },
+          isMobile() {
+            return this.$vuetify?.breakpoint?.smAndDown;
+          },
+          isSmall() {
+            return this.$el?.offsetWidth < 600;
+          },
         },
         created() {
           this.init().finally(() => this.initialized = true);
