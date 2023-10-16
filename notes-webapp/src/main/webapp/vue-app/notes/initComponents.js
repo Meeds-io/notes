@@ -8,6 +8,7 @@ import AttachmentsUploadedNotes from './components/importNotes/AttachmentsNotesU
 import AttachmentsNotesItem from './components/importNotes/AttachmentsNotesItem.vue';
 import NoteFavoriteAction from './components/NoteFavoriteAction.vue';
 import NoteContentTableItem from './components/NoteContentTableItem.vue';
+import NotesTranslationMenu from './components/NotesTranslationMenu.vue';
 
 const components = {
   'notes-overview': NotesOverview,
@@ -19,7 +20,8 @@ const components = {
   'attachments-uploaded-notes': AttachmentsUploadedNotes,
   'attachments-notes-item': AttachmentsNotesItem,
   'note-favorite-action': NoteFavoriteAction,
-  'note-content-table-item': NoteContentTableItem
+  'note-content-table-item': NoteContentTableItem,
+  'notes-translation-menu': NotesTranslationMenu
 };
 
 for (const key in components) {
