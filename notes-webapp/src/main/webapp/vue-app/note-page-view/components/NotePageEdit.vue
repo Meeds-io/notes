@@ -31,8 +31,8 @@
       :placeholder="$t('notePageView.placeholder.editText')"
       :tag-enabled="false"
       :ck-editor-id="richEditorId"
-      :toolbar-position="isMobile && 'bottom' || 'top'"
-      :large-toolbar="!isMobile"
+      :toolbar-position="isSmall && 'bottom' || 'top'"
+      :large-toolbar="!isSmall"
       ck-editor-type="notePageInline"
       focus-position="start"
       autofocus
@@ -46,11 +46,11 @@
       :class="{
         'r-0': !$vuetify.rtl && !displayFixedToolbar,
         'l-0': $vuetify.rtl && !displayFixedToolbar,
-        'position-absolute z-index-two t-0': !isMobile && !displayFixedToolbar,
+        'position-absolute z-index-two t-0': !isSmall && !displayFixedToolbar,
         'z-index-two': displayFixedToolbar,
       }"
       class="ms-auto me-2 my-2 d-flex align-center justify-end">
-      <v-tooltip v-if="!isMobile" bottom>
+      <v-tooltip bottom>
         <template #activator="{on, bind}">
           <v-btn
             v-on="on"
@@ -122,8 +122,8 @@ export default {
       const urlParams = new URLSearchParams(formData).toString();
       return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?${urlParams}`;
     },
-    isMobile() {
-      return this.$vuetify?.breakpoint?.smAndDown;
+    isSmall() {
+      return this.$root.isSmall;
     },
     ckEditorId() {
       return `cke_${this.richEditorId}`;
@@ -141,12 +141,12 @@ export default {
       return this.richEditorToolbarExtraButtonsElement?.offsetHeight;
     },
     displayFixedToolbar() {
-      return !this.isMobile && this.editorTop <= this.topbarHeight && (this.editorTop + this.editorHeight) > (this.topbarHeight * 2);
+      return !this.isSmall && this.editorTop <= this.topbarHeight && (this.editorTop + this.editorHeight) > (this.topbarHeight * 2);
     },
   },
   watch: {
     displayFixedToolbar(newVal, oldVal) {
-      if (this.richEditorToolbarElement && !this.isMobile && !!newVal === !oldVal) {
+      if (this.richEditorToolbarElement && !this.isSmall && !!newVal === !oldVal) {
         this.setFixedPosition(this.richEditorToolbarElement, newVal);
         this.setFixedPosition(this.richEditorToolbarExtraButtonsElement, newVal, true);
         this.fixedToolbar = this.displayFixedToolbar;
@@ -175,7 +175,7 @@ export default {
     this.init();
   },
   mounted() {
-    if (!this.isMobile) {
+    if (!this.isSmall) {
       this.siteBody.addEventListener('scroll', this.controlBodyScrollClass, false);
       window.addEventListener('resize', this.controlBodyScrollClass, false);
       this.$root.$on('notes-editor-ready', this.controlBodyScrollClass);
@@ -209,7 +209,11 @@ export default {
             this.$root.$emit('alert-message', this.$t('notePageView.label.savedSuccessfully') , 'success');
           }
         })
-        .catch(() => this.$root.$emit('alert-message', this.$t('notePageView.label.errorSavingText') , 'error'))
+        .catch(() => {
+          if (emitEvent) {
+            this.$root.$emit('alert-message', this.$t('notePageView.label.errorSavingText') , 'error')
+          }
+        })
         .finally(() => this.saving = false);
     },
     openFullPageEditor() {
