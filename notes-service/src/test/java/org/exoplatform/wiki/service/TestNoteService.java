@@ -606,17 +606,42 @@ public class TestNoteService extends BaseTest {
     assertEquals(eXportCildren,childern);
   }
 
-/*
-  public void testProcessNotesLinkForExport() throws WikiException, IllegalAccessException {
-    Identity user = new Identity("user");
-    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "importPortal");
-    Page note = noteService.createNote(portalWiki, "Home", new Page("note1", "note1"),user) ;
-    Page linkedNote = noteService.createNote(portalWiki, "Home", new Page("linkedNote", "linkedNote"),user) ;
-    String content = "";
-    String newContent = noteService.processNotesLinkForExport(String content)
-    assertEquals(eXportCildren,childern);
-  }*/
+  public void testRemoveDraftOfNote() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    startSessionAs("root");
+    long now = new Date().getTime();
+    // Create a wiki page for test
+    String pageName = "new page 10";
+    Page targetPage = new Page(pageName, pageName);
+    targetPage.setContent("Page content");
+    Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
+    targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage1", "TestPage1"), root);
+    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
+    DraftPage draftPageTosave = new DraftPage();
+    String draftTitle = targetPage.getTitle() + "_draft";
+    String draftContent = targetPage.getContent() + "_draft";
+    draftPageTosave.setTitle(draftTitle);
+    draftPageTosave.setContent(draftContent);
+    draftPageTosave.setLang("fr");
+    String draftName = targetPage.getName() + "_" + getDraftNameSuffix(now);
+    DraftPage draftOfExistingPage = noteService.createDraftForExistPage(draftPageTosave, targetPage, null, now, root.getUserId());
+    assertNotNull(draftOfExistingPage);
+    assertFalse(draftOfExistingPage.isNewPage());
+    assertEquals(draftOfExistingPage.getName(), draftName);
+    assertEquals(targetPage.getId(), draftOfExistingPage.getTargetPageId());
+    assertEquals("1", draftOfExistingPage.getTargetPageRevision());
 
+    DraftPage draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    assertEquals(draft.getId(), draftOfExistingPage.getId());
+    WikiPageParams noteParams = new WikiPageParams(targetPage.getWikiType(), targetPage.getWikiOwner(), targetPage.getName());
+    noteService.removeDraftOfNote(noteParams,"en");
 
+    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    assertEquals(draft.getId(), draftOfExistingPage.getId());
+
+    noteService.removeDraftOfNote(noteParams,"fr");
+    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    assertNull(draft);
+  }
 
 }
