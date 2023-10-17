@@ -273,6 +273,7 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
+      this.getNoteLanguages();
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -445,7 +446,6 @@ export default {
               window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
             }
             this.$nextTick(()=> this.fillNote(data));
-            this.getNoteLanguages();
             this.initActualNoteDone = true;
           });
         }
@@ -455,7 +455,6 @@ export default {
       return this.$notesService.getDraftNoteById(id,this.slectedLanguage).then(data => {
         this.init();
         this.fillNote(data);
-        this.getNoteLanguages();
       }).finally(() => {
         let message = `${this.$t('notes.alert.warning.label.original.draft.drop')} ${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)},`;
         if (this.slectedLanguage ) {
