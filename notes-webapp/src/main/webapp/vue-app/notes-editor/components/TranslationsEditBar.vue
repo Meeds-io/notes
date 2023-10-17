@@ -50,7 +50,8 @@
         <v-menu
           v-if="moreTranslations.length>0"
           v-model="moreTranslationsMenu"
-          class=" ma-1"
+          class="ma-1"
+          offset-x
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
