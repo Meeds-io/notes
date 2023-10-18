@@ -108,27 +108,12 @@
               @open-note="getNoteByName($event, 'breadCrumb')" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
-            <v-menu
-              v-if="notesMultilingualActive && translations.length"
-              v-model="translationsMenu"
-              offset-y
-              bottom>
-              <template #activator="{ on, attrs }">
-                <v-icon
-                  size="22"
-                  :class="langBottonColor"
-                  class="remove-focus my-auto pa-0  pe-1"
-                  v-bind="attrs"
-                  v-on="on">
-                  fa-language
-                </v-icon>
-              </template>
-              <notes-translation-menu
-                :note="note"
-                :translations="translations"
-                :selected-translation="selectedTranslation"
-                @change-translation="changeTranslation" />
-            </v-menu>
+            <notes-translation-menu
+              v-if="notesMultilingualActive"
+              :note="note"
+              :translations="translations"
+              :selected-translation="selectedTranslation"
+              @change-translation="changeTranslation" />
             <span class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion?lastNoteVersion:0 }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
@@ -331,8 +316,7 @@ export default {
       translations: null,
       languages: [],
       slectedLanguage: null,
-      translationsMenu: false,
-      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
+      originalVersion: { value: null, text: this.$t('notes.label.translation.originalVersion') },
     };
   },
   watch: {
