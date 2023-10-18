@@ -344,7 +344,7 @@ public class JPADataStorage implements DataStorage {
   public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException {
     List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.parseLong(page.getId()));
     for (DraftPageEntity draftPage : draftPages) {
-      if (draftPage != null && draftPage.getLang().equals(lang)) {
+      if (draftPage != null && StringUtils.equals(draftPage.getLang(), lang)) {
         deleteAttachmentsOfDraftPage(draftPage);
         draftPageDAO.delete(draftPage);
       }
