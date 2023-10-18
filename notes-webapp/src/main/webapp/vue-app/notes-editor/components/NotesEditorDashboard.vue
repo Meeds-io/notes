@@ -1055,7 +1055,7 @@ export default {
           this.languages = this.allLanguages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
         if (this.isMobile) {
-          this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
+          this.translations.unshift({value: null,text: this.$t('notes.label.translation.originalVersion')});
         }
         if (!this.slectedLanguage){
           const lang = this.translations.find(item => item.value === this.slectedLanguage);
