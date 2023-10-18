@@ -51,7 +51,7 @@
           v-if="moreTranslations.length>0"
           v-model="moreTranslationsMenu"
           class="ma-1"
-          offset-x
+          offset-y
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -195,9 +195,8 @@ export default {
       return !this.note.draftPage?this.note.id:this.note.targetPageId;
     },
     limitTranslationsToShow() {
-      return this.isMobile?1:3;
+      return this.isMobile?0:3;
     }
-
   },
 
   methods: {
