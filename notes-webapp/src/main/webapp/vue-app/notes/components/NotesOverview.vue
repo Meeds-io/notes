@@ -109,7 +109,7 @@
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <v-menu
-              v-if="notesMultilingualActive && translations.length"
+              v-if="notesMultilingualActive && translations.length>1"
               v-model="translationsMenu"
               offset-y
               bottom>
@@ -984,8 +984,8 @@ export default {
         if (this.translations.length>0) {
           this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
           this.translations.sort((a, b) => a.text.localeCompare(b.text));
-          this.translations.unshift(this.originalVersion);
         }
+        this.translations.unshift(this.originalVersion);
       });
     },
     getAvailableLanguages(){
