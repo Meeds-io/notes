@@ -1206,7 +1206,7 @@ public class NotesRestService implements ResourceContainer {
       // from the bottom children nodes
       List<JsonNodeData> bottomChildren =
                                         Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
-                                                                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage())
+                                                                                   .filter(JsonNodeData::isDraftPage)
                                                                                    .collect(Collectors.toList())
                                                                         : finalTree.stream()
                                                                                    .filter(jsonNodeData -> !jsonNodeData.isHasChild())
