@@ -28,7 +28,7 @@
             class="my-auto mx-1"
             small
             :outlined="!!selectedTranslation.value"
-            @click="changeTranslation({value: ''})">
+            @click="changeTranslation({value: null})">
             {{ $t('notes.label.translation.originalVersion') }}
           </v-chip>
           <div v-if="!isMobile" class="ps-2 my-auto mx-1">{{ $t('notes.label.translations') }}</div>
@@ -36,7 +36,7 @@
           <v-chip
             v-for="(translation, i) in translationToShow"
             :key="i"
-            :close="translation.value!==selectedTranslation.value && translation.value !==''"
+            :close="translation.value!==selectedTranslation.value && translation.value !==null"
             small
             :outlined="translation.value!==selectedTranslation.value"
             color="primary"
@@ -88,7 +88,7 @@
               :key="i"
               class="pa-0 translation-chips">
               <v-chip
-                :close="item.value!==selectedTranslation.value && item.value !==''"
+                :close="item.value!==selectedTranslation.value && item.value"
                 small
                 :outlined="item.value!==selectedTranslation.value"
                 color="primary"
@@ -136,7 +136,7 @@
             icon
             v-on="on"
             v-bind="attrs"
-            :disabled="selectedLang.value===''"
+            :disabled="!selectedLang.value"
             @click="add()">
             <v-icon size="18" class="icon-default-color py-3">fa-plus</v-icon>
           </v-btn>
