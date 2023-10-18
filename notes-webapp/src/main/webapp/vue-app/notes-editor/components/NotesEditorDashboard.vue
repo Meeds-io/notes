@@ -206,7 +206,7 @@ export default {
       if (!this.noteId){
         return 'disabled--text not-clickable remove-focus';
       }
-      return this.slectedLanguage && this.slectedLanguage!=='' ? 'primary--text':'';
+      return this.slectedLanguage ? 'primary--text':'';
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 1280;
@@ -238,7 +238,7 @@ export default {
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
-        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`);
+        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
         if (currentDraft) {
           this.removeLocalStorageCurrentDraft();
           const draftToPersist = JSON.parse(currentDraft);
@@ -319,7 +319,7 @@ export default {
       this.persistDraftNote(draftNote,false);
       this.slectedLanguage=lang.value;
       this.newDraft=false;
-      if (lang.value!=='' || this.isMobile) {
+      if (lang.value || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);
       }
@@ -329,7 +329,7 @@ export default {
       const url = new URL(window.location.href);
       const params = new URLSearchParams(url.search);
       params.delete('translation'); 
-      if (this.slectedLanguage!=='') {
+      if (this.slectedLanguage) {
         params.append('translation', this.slectedLanguage);
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
@@ -391,11 +391,7 @@ export default {
         return;
       }
 
-      // close draft dropping related alert
-      if (this.alertType === 'warning' && this.note.draftPage && this.alert) {
-        this.alert = false;
-      }
-      
+     
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
         this.savingDraft = true;
@@ -416,8 +412,8 @@ export default {
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
-            if (this.slectedLanguage !=='' && (!data.lang || data.lang === '')){
-              this.slectedLanguage='';
+            if (this.slectedLanguage && !data.lang){
+              this.slectedLanguage=null;
               const url = new URL(window.location.href);
               const params = new URLSearchParams(url.search);
               params.delete('translation'); 
@@ -535,7 +531,7 @@ export default {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.draftSavingStatus = '';
             let translation = '';
-            if (this.slectedLanguage!==''){
+            if (this.slectedLanguage){
               translation = `?translation=${this.slectedLanguage}`;
             }
             window.location.href = `${notePath}${translation}`;
@@ -551,7 +547,7 @@ export default {
           this.$notesService.createNote(note).then(data => {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             // delete draft note
-            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
+            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}`));
             this.deleteDraftNote(draftNote, notePath);
           }).catch(e => {
             console.error('Error when creating note page', e);
@@ -599,7 +595,6 @@ export default {
     persistDraftNote(draftNote,update) {
       draftNote.lang=this.slectedLanguage;
       if (this.note.title || this.note.content) {
-        clearTimeout(this.saveDraft);
         if (this.newDraft){
           draftNote.id=null;
         }
@@ -1024,7 +1019,7 @@ export default {
         if (this.isMobile) {
           this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
         }
-        if (!this.slectedLanguage || this.slectedLanguage!==''){
+        if (!this.slectedLanguage){
           const lang = this.translations.find(item => item.value === this.slectedLanguage);
           if (lang){
             this.translations=this.translations.filter(item => item.value !== lang.value);

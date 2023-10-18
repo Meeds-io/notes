@@ -333,7 +333,7 @@ export default {
       languages: [],
       slectedLanguage: null,
       translationsMenu: false,
-      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
+      originalVersion: { value: null, text: this.$t('notes.label.translation.originalVersion') },
     };
   },
   watch: {
@@ -628,7 +628,7 @@ export default {
     },
     editNote() {
       let translation = '';
-      if (this.selectedTranslation.value!==''){
+      if (this.selectedTranslation.value){
         translation = `&translation=${this.selectedTranslation.value}`;
       }
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true${translation}`, '_blank');
@@ -967,7 +967,7 @@ export default {
     updateURL(){
       const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
       let translation = '';
-      if (this.selectedTranslation.value!==''){
+      if (this.selectedTranslation.value){
         translation = `?translation=${this.selectedTranslation.value}`;
       }
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}`;
@@ -983,10 +983,9 @@ export default {
         this.translations =  data || [];
         if (this.translations.length>0) {
           this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.translations.sort((a, b) => a.text.localeCompare(b.text));
+          this.translations.unshift(this.originalVersion);
         }
-        this.translations.sort((a, b) => a.text.localeCompare(b.text));
-        this.translations.unshift({value: '',text: this.$t('notes.label.translation.originalVersion')});
-
       });
     },
     getAvailableLanguages(){
