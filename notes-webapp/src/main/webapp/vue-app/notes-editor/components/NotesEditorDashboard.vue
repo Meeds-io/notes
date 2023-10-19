@@ -249,12 +249,7 @@ export default {
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
-        const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
-        if (currentDraft) {
-          this.removeLocalStorageCurrentDraft();
-          const draftToPersist = JSON.parse(currentDraft);
-          this.persistDraftNote(draftToPersist, false);
-        }
+        this.saveDraftFromLocalStorage();
       }
     });
     const queryPath = window.location.search;
@@ -316,8 +311,9 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
-      const draftNote = this.fillDraftNote();
-      this.persistDraftNote(draftNote,false);
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        this.saveDraftFromLocalStorage();
+      }
       this.languages = this.languages.filter(item => item.value !== lang.value);
       this.slectedLanguage=lang.value;
       this.translations.unshift(lang);
@@ -328,8 +324,9 @@ export default {
       this.initCKEditor();
     });
     this.$root.$on('lang-translation-changed', lang => {
-      const draftNote = this.fillDraftNote();
-      this.persistDraftNote(draftNote,false);
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        this.saveDraftFromLocalStorage();
+      }
       this.slectedLanguage=lang.value;
       this.newDraft=false;
       if (lang.value || this.isMobile) {
@@ -404,6 +401,11 @@ export default {
         return;
       }
 
+      // if the Note is not updated, no need to autosave anymore
+      if ((this.note.title && this.note.title === this.actualNote.title) && (this.note.content && this.note.content === this.actualNote.content)) {
+        return;
+      }
+
      
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
@@ -413,6 +415,14 @@ export default {
           this.saveNoteDraft(true);
         });
       }, this.autoSaveDelay);
+    },
+    saveDraftFromLocalStorage(){
+      const currentDraft = localStorage.getItem(`draftNoteId-${this.note.id}`);
+      if (currentDraft) {
+        this.removeLocalStorageCurrentDraft();
+        const draftToPersist = JSON.parse(currentDraft);
+        this.persistDraftNote(draftToPersist, false);
+      }
     },
     getNote(id) {
       return this.$notesService.getLatestDraftOfPage(id,this.slectedLanguage).then(latestDraft => {
