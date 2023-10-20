@@ -132,7 +132,10 @@ public class NotesRestService implements ResourceContainer {
                           String noteId,
                           @Parameter(description = "source", required = true)
                           @QueryParam("source")
-                          String source) {
+                          String source,
+                          @Parameter(description = "note content language")
+                          @QueryParam("lang")
+                          String lang) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
@@ -154,6 +157,9 @@ public class NotesRestService implements ResourceContainer {
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
+      if (StringUtils.isNotBlank(lang)) {
+        note = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), identity, source, lang);
+      }
       String content = note.getContent();
       if (content.contains(Utils.NOTE_LINK)) {
         while (content.contains(Utils.NOTE_LINK)) {
@@ -174,7 +180,7 @@ public class NotesRestService implements ResourceContainer {
         }
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType, noteBookOwner, note.getName(), false));
+      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType, noteBookOwner, note.getName(), lang, identity, false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
@@ -230,7 +236,12 @@ public class NotesRestService implements ResourceContainer {
         note = updateChildrenContainer(note);
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(), note.getWikiOwner(), note.getName(), false));
+      note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(),
+                                                   note.getWikiOwner(),
+                                                   note.getName(),
+                                                   lang,
+                                                   identity,
+                                                   false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
@@ -324,6 +335,8 @@ public class NotesRestService implements ResourceContainer {
       draftNote.setBreadcrumb(noteService.getBreadCrumb(parentPage.getWikiType(),
                                                         parentPage.getWikiOwner(),
                                                         draftNote.getId(),
+                                                        lang,
+                                                        identity,
                                                         true));
 
       return Response.ok(draftNote).build();
