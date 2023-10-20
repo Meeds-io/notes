@@ -127,9 +127,9 @@ public class TestNoteService extends BaseTest {
   public void testGetBreadcumbWithLanguage() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    Page note1 = noteService.createNote(portalWiki, "Home", new Page("Breadcumb1_", "Breadcumb1_"),root) ;
-    Page note2 = noteService.createNote(portalWiki, "Breadcumb1_", new Page("Breadcumb2_", "Breadcumb2_"),root) ;
-    Page note3 = noteService.createNote(portalWiki, "Breadcumb2_", new Page("Breadcumb3_", "Breadcumb3_"),root) ;
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("Breadcumb1", "Breadcumb1"),root) ;
+    Page note2 = noteService.createNote(portalWiki, "Breadcumb1", new Page("Breadcumb2", "Breadcumb2"),root) ;
+    Page note3 = noteService.createNote(portalWiki, "Breadcumb2", new Page("Breadcumb3", "Breadcumb3"),root) ;
 
     note1.setLang("fr");
     note1.setTitle("Breadcumb1_fr");
@@ -140,13 +140,13 @@ public class TestNoteService extends BaseTest {
     note3.setLang("fr");
     note3.setTitle("Breadcumb3_fr");
     noteService.createVersionOfNote(note3, "root");
-    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", false);
+    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3", false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
-    assertEquals("Breadcumb1_", breadCumbs.get(1).getTitle());
-    assertEquals("Breadcumb2_", breadCumbs.get(2).getTitle());
-    assertEquals("Breadcumb3_", breadCumbs.get(3).getTitle());
-    breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", "fr", root, false);
+    assertEquals("Breadcumb1", breadCumbs.get(1).getTitle());
+    assertEquals("Breadcumb2", breadCumbs.get(2).getTitle());
+    assertEquals("Breadcumb3", breadCumbs.get(3).getTitle());
+    breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3", "fr", root, false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
     assertEquals("Breadcumb1_fr", breadCumbs.get(1).getTitle());
