@@ -207,7 +207,28 @@ public interface NoteService {
    * @return The list of data.
    * @throws WikiException if an error occured
    */
-  List<BreadcrumbData> getBreadCrumb(String noteType, String noteOwner, String noteId, boolean isDraftNote) throws WikiException;
+  List<BreadcrumbData> getBreadCrumb(String noteType,
+                                     String noteOwner,
+                                     String noteId,
+                                     boolean isDraftNote) throws WikiException, IllegalAccessException;
+
+  /**
+   * Gets a list of data which is used for composing the breadcrumb.
+   *
+   * @param noteType It can be Portal, Group, or User.
+   * @param noteOwner The owner.
+   * @param lang lang to be used to get translated titles.
+   * @param userIdentity Current user identity.
+   * @param isDraftNote
+   * @return The list of data.
+   * @throws WikiException if an error occured
+   */
+  List<BreadcrumbData> getBreadCrumb(String noteType,
+                                     String noteOwner,
+                                     String noteName,
+                                     String lang,
+                                     Identity userIdentity,
+                                     boolean isDraftNote) throws WikiException, IllegalAccessException;
 
   /**
    * Checks if a note and its children are duplicated with ones in the target
