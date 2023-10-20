@@ -124,6 +124,35 @@ public class TestNoteService extends BaseTest {
     assertEquals("Breadcumb2_", breadCumbs.get(2).getId());
     assertEquals("Breadcumb3_", breadCumbs.get(3).getId());
   }
+  public void testGetBreadcumbWithLanguage() throws WikiException, IllegalAccessException {
+    Identity root = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("Breadcumb1_", "Breadcumb1_"),root) ;
+    Page note2 = noteService.createNote(portalWiki, "Breadcumb1_", new Page("Breadcumb2_", "Breadcumb2_"),root) ;
+    Page note3 = noteService.createNote(portalWiki, "Breadcumb2_", new Page("Breadcumb3_", "Breadcumb3_"),root) ;
+
+    note1.setLang("fr");
+    note1.setTitle("Breadcumb1_fr");
+    noteService.createVersionOfNote(note1, "root");
+    note2.setLang("fr");
+    note2.setTitle("Breadcumb2_fr");
+    noteService.createVersionOfNote(note2, "root");
+    note3.setLang("fr");
+    note3.setTitle("Breadcumb3_fr");
+    noteService.createVersionOfNote(note3, "root");
+    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", false);
+    assertEquals(4, breadCumbs.size());
+    assertEquals("Home", breadCumbs.get(0).getId());
+    assertEquals("Breadcumb1_", breadCumbs.get(1).getTitle());
+    assertEquals("Breadcumb2_", breadCumbs.get(2).getTitle());
+    assertEquals("Breadcumb3_", breadCumbs.get(3).getTitle());
+    breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", "fr", root, false);
+    assertEquals(4, breadCumbs.size());
+    assertEquals("Home", breadCumbs.get(0).getId());
+    assertEquals("Breadcumb1_fr", breadCumbs.get(1).getTitle());
+    assertEquals("Breadcumb2_fr", breadCumbs.get(2).getTitle());
+    assertEquals("Breadcumb3_fr", breadCumbs.get(3).getTitle());
+  }
 
   public void testMoveNote() throws WikiException, IllegalAccessException {
     //moving page in same space
