@@ -296,38 +296,10 @@ export default {
       }
     });
     this.$root.$on('add-translation', lang => {
-      if (!this.postingNote && this.note.draftPage && this.note.id) {
-        this.saveDraftFromLocalStorage();
-      }
-      this.languages = this.languages.filter(item => item.value !== lang.value);
-      this.slectedLanguage=lang.value;
-      this.translations.unshift(lang);
-      this.note.content='';
-      this.note.title='';
-      this.note.lang=lang.value;
-      this.newDraft=true;
-      this.initCKEditor();
+      this.addTranslation(lang);
     });
     this.$root.$on('lang-translation-changed', lang => {
-      if (!this.postingNote && this.note.draftPage && this.note.id) {
-        this.saveDraftFromLocalStorage();
-      }
-      this.slectedLanguage=lang.value;
-      this.newDraft=false;
-      if (lang.value || this.isMobile) {
-        this.translations=this.translations.filter(item => item.value !== lang.value);
-        this.translations.unshift(lang);
-      }
-      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      this.getNote(noteId);
-      this.note.lang=lang.value;
-      const url = new URL(window.location.href);
-      const params = new URLSearchParams(url.search);
-      params.delete('translation'); 
-      if (this.slectedLanguage) {
-        params.append('translation', this.slectedLanguage);
-      }
-      window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
+      this.changeTranslation(lang);
     });
     this.$root.$on('delete-lang-translation', translation => {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
@@ -416,7 +388,9 @@ export default {
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
           this.fillNote(latestDraft);
-          this.displayDraftMessage();
+          setTimeout(() => {
+            this.displayDraftMessage();
+          }, this.autoSaveDelay/2);         
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
@@ -540,6 +514,8 @@ export default {
             let translation = '';
             if (this.slectedLanguage){
               translation = `?translation=${this.slectedLanguage}`;
+            } else {
+              translation = '?translation=original';
             }
             window.location.href = `${notePath}${translation}`;
           }).catch(e => {
@@ -893,10 +869,15 @@ export default {
       }
     },
     displayDraftMessage() {
+      let draftMessage = `${this.$t('notes.alert.warning.label.original.draft.drop')}, `;
+      if (this.slectedLanguage ) {
+        draftMessage = `${this.$t('notes.alert.warning.label.draft.drop')}, `;
+        draftMessage = draftMessage.replace('{0}', this.getLanguageName(this.note.lang));
+      }
       this.displayMessage({
         type: 'warning',
         message: `
-          <span class="pe-1">${this.$t('notes.alert.warning.label.draft.drop')}</span>
+          <span class="pe-1">${draftMessage}</span>
           <span>${this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang)}</span>
         `,
         linkText: this.$t('notes.label.drop.draft'),
@@ -910,6 +891,9 @@ export default {
         alertLinkText: message?.linkText,
         alertLinkCallback: message?.linkCallback,
       }}));
+    },
+    closeAlertMessage() {
+      document.dispatchEvent(new CustomEvent('close-alert-message'));
     },
     displayFormTitle() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -935,9 +919,7 @@ export default {
           this.draftSavingStatus = '';
           //re-initialize data
           if (targetPageId) {
-            if (this.alertType === 'warning') {
-              this.alert = false;
-            }
+            this.closeAlertMessage();
             this.getNote(targetPageId);
           } else {
             const parentNote = {
@@ -1102,6 +1084,40 @@ export default {
       });
 
     },
+    addTranslation(lang){
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        this.saveDraftFromLocalStorage();
+      }
+      this.languages = this.languages.filter(item => item.value !== lang.value);
+      this.slectedLanguage=lang.value;
+      this.translations.unshift(lang);
+      this.note.content='';
+      this.note.title='';
+      this.note.lang=lang.value;
+      this.newDraft=true;
+      this.initCKEditor();
+    },
+    changeTranslation(lang){
+      if (!this.postingNote && this.note.draftPage && this.note.id) {
+        this.saveDraftFromLocalStorage();
+      }
+      this.slectedLanguage=lang.value;
+      this.newDraft=false;
+      if (lang.value || this.isMobile) {
+        this.translations=this.translations.filter(item => item.value !== lang.value);
+        this.translations.unshift(lang);
+      }
+      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
+      this.getNote(noteId);
+      this.note.lang=lang.value;
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      params.delete('translation'); 
+      if (this.slectedLanguage) {
+        params.append('translation', this.slectedLanguage);
+      }
+      window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
+    }
   }
 };
 </script>
