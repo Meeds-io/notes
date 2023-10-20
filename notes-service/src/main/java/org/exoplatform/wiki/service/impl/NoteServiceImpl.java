@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
-import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.listener.ListenerService;
@@ -659,8 +658,18 @@ public class NoteServiceImpl implements NoteService {
   public List<BreadcrumbData> getBreadCrumb(String noteType,
                                             String noteOwner,
                                             String noteName,
-                                            boolean isDraftNote) throws WikiException {
-    return getBreadCrumb(null, noteType, noteOwner, noteName, isDraftNote);
+                                            boolean isDraftNote) throws WikiException, IllegalAccessException {
+    return getBreadCrumb(null, noteType, noteOwner, noteName, null, null, isDraftNote);
+  }
+
+  @Override
+  public List<BreadcrumbData> getBreadCrumb(String noteType,
+                                            String noteOwner,
+                                            String noteName,
+                                            String lang,
+                                            Identity userIdentity,
+                                            boolean isDraftNote) throws WikiException, IllegalAccessException {
+    return getBreadCrumb(null, noteType, noteOwner, noteName, lang, userIdentity, isDraftNote);
   }
 
   @Override
@@ -1114,7 +1123,9 @@ public class NoteServiceImpl implements NoteService {
                                              String noteType,
                                              String noteOwner,
                                              String noteName,
-                                             boolean isDraftNote) throws WikiException {
+                                             String lang,
+                                             Identity userIdentity,
+                                             boolean isDraftNote) throws WikiException, IllegalAccessException {
     if (list == null) {
       list = new ArrayList<>(5);
     }
@@ -1125,15 +1136,31 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       return list;
     }
-    list.add(0, new BreadcrumbData(note.getName(), note.getId(), note.getTitle(), noteType, noteOwner));
+    list.add(0,
+             new BreadcrumbData(note.getName(),
+                                note.getId(),
+                                getNoteTitleWithTraduction(note, userIdentity, "", lang),
+                                noteType,
+                                noteOwner));
     Page parentNote = isDraftNote ? getNoteById(note.getParentPageId()) : getParentNoteOf(note);
     if (parentNote != null) {
-      getBreadCrumb(list, noteType, noteOwner, parentNote.getName(), false);
+      getBreadCrumb(list, noteType, noteOwner, parentNote.getName(), lang, userIdentity, false);
     }
 
     return list;
   }
 
+  String getNoteTitleWithTraduction(Page note, Identity userIdentity, String source, String lang) throws WikiException,
+                                                                                                  IllegalAccessException {
+    if (userIdentity == null || StringUtils.isEmpty(lang)) {
+      return note.getTitle();
+    }
+    Page page = getNoteByIdAndLang(Long.valueOf(note.getId()), userIdentity, source, lang);
+    if (page != null) {
+      return page.getTitle();
+    }
+    return note.getTitle();
+  }
   private LinkedList<String> getNoteAncestorsIds(String noteId) throws WikiException {
     return getNoteAncestorsIds(null, noteId);
   }
