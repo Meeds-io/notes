@@ -585,7 +585,7 @@ export default {
         if (this.isDraft) {
           this.getDraftNote(this.noteId,this.selectedTranslation.value);
         } else {
-          this.getNoteById(this.noteId);
+          this.getNoteById(this.noteId,this.selectedTranslation.value);
         }
       } else {
         this.getNoteByName(this.notesPageName);
@@ -720,7 +720,7 @@ export default {
       });
     },
     getNoteByName(noteName, source) {
-      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source).then(data => {
+      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.selectedTranslation.value).then(data => {
         this.note = data || {};
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;

@@ -1,9 +1,12 @@
 import { notesConstants } from './notesConstants.js';
 
-export function getNote(noteBookType, noteBookOwner, noteId,source) {
+export function getNote(noteBookType, noteBookOwner, noteId,source,lang) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`;
   if (source){
     url=`${url}?source=${source}`;
+  }
+  if (lang){
+    url=`${url}${getSeparator(url)}lang=${lang}`;
   }
   return fetch(url, {
     method: 'GET',
