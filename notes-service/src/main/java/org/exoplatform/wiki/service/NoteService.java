@@ -128,6 +128,21 @@ public interface NoteService {
   Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
                                                                                                           IllegalAccessException;
 
+  /**
+   * Retrieves a note by note type, owner and name.
+   *
+   * @param noteType note type
+   * @param noteOwner note owner
+   * @param noteName note name
+   * @param lang note version language
+   * @param userIdentity user identity id
+   * @return {@link Page}
+   * @throws WikiException
+   * @throws IllegalAccessException
+   */
+  Page getNoteOfNoteBookByName(String noteType, String noteOwner, String noteName, String lang, Identity userIdentity) throws WikiException,
+          IllegalAccessException;
+
   Page getNoteOfNoteBookByName(String noteType,
                                String noteOwner,
                                String noteName,
@@ -529,6 +544,15 @@ public interface NoteService {
   Page getNoteByIdAndLang(Long pageId, Identity userIdentity, String source, String lang) throws WikiException, IllegalAccessException;
 
   /**
+   * Retrieves published note version page by its page id and content lang
+   *
+   * @param pageId page id
+   * @param lang content language
+   * @return {@link PageVersion}
+   */
+  PageVersion getPublishedVersionByPageIdAndLang(Long pageId, String lang);
+
+  /**
    * Retrieves list of available translations languages of a page
    *
    * @param pageId page id
@@ -558,4 +582,5 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws WikiException;
+
 }

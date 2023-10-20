@@ -1356,11 +1356,12 @@ public class NotesRestService implements ResourceContainer {
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
         Page page = noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
-                searchResult.getWikiOwner(),
-                searchResult.getPageName(),
-                currentIdentity);
+                                                        searchResult.getWikiOwner(),
+                                                        searchResult.getPageName(),
+                                                        searchResult.getLang(),
+                                                        currentIdentity);
         if (page != null) {
-          page.setUrl(Utils.getPageUrl(page));
+          page.setUrl(searchResult.getUrl());
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
             Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
                             page);
@@ -1371,6 +1372,7 @@ public class NotesRestService implements ResourceContainer {
             titleSearchResult.setType(searchResult.getType());
             titleSearchResult.setUrl(attachment.getDownloadURL());
             titleSearchResult.setMetadatas(page.getMetadatas());
+            titleSearchResult.setLang(searchResult.getLang());
             titleSearchResults.add(titleSearchResult);
           } else if (searchResult.getPoster() != null) {
             IdentityEntity posterIdentity = EntityBuilder.buildEntityIdentity(searchResult.getPoster(), uriInfo.getPath(), "all");
@@ -1389,6 +1391,7 @@ public class NotesRestService implements ResourceContainer {
             titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
             titleSearchResult.setType(searchResult.getType());
             titleSearchResult.setUrl(page.getUrl());
+            titleSearchResult.setLang(searchResult.getLang());
             titleSearchResult.setMetadatas(page.getMetadatas());
             titleSearchResults.add(titleSearchResult);
           }
