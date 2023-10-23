@@ -406,11 +406,7 @@ export default {
           this.fillNote(latestDraft);
           setTimeout(() => {
             this.displayDraftMessage();
-<<<<<<< HEAD
-          }, this.autoSaveDelay/2);         
-=======
-          }, this.autoSaveDelay/2);
->>>>>>> 4a51221d7 (feat: Draft with translation - EXO-66042 - Meeds-io/MIPs#70 (#808))
+          }, this.autoSaveDelay/2);    
           this.initActualNoteDone = true;
         } else {
           this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
@@ -890,9 +886,7 @@ export default {
         const targetPageId = this.note.targetPageId;
         this.removeLocalStorageCurrentDraft();
         this.$notesService.deleteDraftNote(this.note).then(() => {
-          this.getNoteLanguages();
           this.draftSavingStatus = '';
-<<<<<<< HEAD
           this.getNoteLanguages().then(() => {
             let lang = this.translations.find(item => item.value ===this.slectedLanguage);
             if (!lang){
@@ -912,21 +906,6 @@ export default {
             this.closeAlertMessage(); 
           });
       
-=======
-          //re-initialize data
-          if (targetPageId) {
-            this.closeAlertMessage();
-            this.getNote(targetPageId);
-          } else {
-            const parentNote = {
-              id: this.note.parentPageId,
-              wikiId: this.note.wikiId,
-              wikiOwner: this.note.wikiOwner,
-              wikiType: this.note.wikiType,
-            };
-            window.location.href = this.$notesService.getPathByNoteOwner(parentNote, this.appName).replace(/ /g, '_');
-          }
->>>>>>> 4a51221d7 (feat: Draft with translation - EXO-66042 - Meeds-io/MIPs#70 (#808))
         }).catch(e => {
           console.error('Error when deleting draft note', e);
         });
