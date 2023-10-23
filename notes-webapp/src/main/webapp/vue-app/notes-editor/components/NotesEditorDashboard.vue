@@ -352,7 +352,7 @@ export default {
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
-      if (!this.initCompleted) {
+      if (!this.initCompleted || !this.initActualNoteDone) {
         return;
       }
       // if the Note is being posted, no need to autosave anymore
@@ -389,6 +389,7 @@ export default {
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
         if (latestDraft) {
+          this.newDraft=false;
           this.fillNote(latestDraft);
           setTimeout(() => {
             this.displayDraftMessage();
@@ -404,6 +405,7 @@ export default {
               window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
             }
             this.$nextTick(()=> this.fillNote(data));
+            this.newDraft=true;
             this.initActualNoteDone = true;
           });
         }
@@ -450,6 +452,7 @@ export default {
           });
         } 
       }
+      this.initActualNoteDone = true;
     },
     fillDraftNote() {
       const draftNote = {
@@ -579,6 +582,7 @@ export default {
       }
     },
     persistDraftNote(draftNote,update) {
+      clearTimeout(this.saveDraft);
       draftNote.lang=this.slectedLanguage;
       if (this.note.title || this.note.content) {
         if (this.newDraft){
@@ -594,7 +598,7 @@ export default {
               author: savedDraftNote.author,
               owner: savedDraftNote.owner,
             };
-
+            this.newDraft=false;
             savedDraftNote.parentPageId = this.parentPageId;
             this.note = savedDraftNote;
             localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
@@ -844,21 +848,26 @@ export default {
         const targetPageId = this.note.targetPageId;
         this.removeLocalStorageCurrentDraft();
         this.$notesService.deleteDraftNote(this.note).then(() => {
-          this.getNoteLanguages();
           this.draftSavingStatus = '';
-          //re-initialize data
-          if (targetPageId) {
-            this.closeAlertMessage();
-            this.getNote(targetPageId);
-          } else {
-            const parentNote = {
-              id: this.note.parentPageId,
-              wikiId: this.note.wikiId,
-              wikiOwner: this.note.wikiOwner,
-              wikiType: this.note.wikiType,
-            };
-            window.location.href = this.$notesService.getPathByNoteOwner(parentNote, this.appName).replace(/ /g, '_');
-          }
+          this.getNoteLanguages().then(() => {
+            let lang = this.translations.find(item => item.value ===this.slectedLanguage);
+            if (!lang){
+              lang = this.allLanguages.find(item => item.value === this.slectedLanguage);
+              this.addTranslation(lang);
+            } else if (targetPageId) {
+              this.getNote(targetPageId);
+            } else {
+              const parentNote = {
+                id: this.note.parentPageId,
+                wikiId: this.note.wikiId,
+                wikiOwner: this.note.wikiOwner,
+                wikiType: this.note.wikiType,
+              };
+              window.location.href = this.$notesService.getPathByNoteOwner(parentNote, this.appName).replace(/ /g, '_');
+            }  
+            this.closeAlertMessage(); 
+          });
+      
         }).catch(e => {
           console.error('Error when deleting draft note', e);
         });
@@ -1046,6 +1055,7 @@ export default {
       });
     },
     addTranslation(lang){
+      this.closeAlertMessage();
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         this.saveDraftFromLocalStorage();
       }
@@ -1059,11 +1069,11 @@ export default {
       this.initCKEditor();
     },
     changeTranslation(lang){
+      this.closeAlertMessage();
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         this.saveDraftFromLocalStorage();
       }
       this.slectedLanguage=lang.value;
-      this.newDraft=false;
       if (lang.value || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);

@@ -1584,7 +1584,7 @@ public class NoteServiceImpl implements NoteService {
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
     List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId, userName);
     for (DraftPage draftPage : drafts) {
-      if (draftPage.getLang().equals(lang)) {
+      if (StringUtils.equals(draftPage.getLang(),lang)) {
         removeDraft(draftPage.getName());
       }
     }
