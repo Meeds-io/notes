@@ -514,6 +514,16 @@ public class NotesRestService implements ResourceContainer {
       draftNoteToSave.setAuthor(currentUser);
       draftNoteToSave.setSyntax(syntaxId);
 
+      if (targetNote != null) {
+        DraftPage draftPage =
+                            noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(draftNoteToSave.getTargetPageId()),
+                                                                                     currentUser,
+                                                                                     draftNoteToSave.getLang());
+        if (draftPage != null) {
+          draftNoteToSave.setId(draftPage.getId());
+        }
+      }
+
       if (StringUtils.isNoneEmpty(draftNoteToSave.getId())) {
         draftNoteToSave = targetNote != null
                                              ? noteService.updateDraftForExistPage(draftNoteToSave,
