@@ -24,10 +24,10 @@
     :class="edit && 'overflow-hidden'">
     <v-hover v-slot="{ hover }">
       <v-card
-        :class="viewMode && 'pa-4'"
+        :class="viewMode && 'pa-5'"
         min-width="100%"
         max-width="100%"
-        min-height="72"
+        min-height="60"
         class="d-flex flex-column border-box-sizing position-relative card-border-radius"
         color="white"
         flat>
@@ -65,16 +65,20 @@ export default {
   data: () => ({
     edit: false,
     editorReady: false,
+    previewMode: false,
   }),
   computed: {
     hasNote() {
       return !!this.$root.pageContent;
     },
     displayEditMode() {
-      return this.$root.initialized && this.$root.canEdit;
+      return this.$root.initialized && this.canEdit;
     },
     canView() {
-      return this.$root.canEdit || (this.$root.initialized && this.hasNote);
+      return this.canEdit || (this.$root.initialized && this.hasNote);
+    },
+    canEdit() {
+      return !this.previewMode && this.$root.canEdit;
     },
     viewMode() {
       return this.$root.isMobile || (!this.edit || this.editorBackgroundLoading);
@@ -100,8 +104,16 @@ export default {
     },
   },
   created() {
+    document.addEventListener('cms-preview-mode', this.switchToPreview);
+    document.addEventListener('cms-edit-mode', this.switchToEdit);
     this.$root.$on('notes-editor-ready', this.setEditorReady);
     this.$root.$on('notes-editor-unloaded', this.setEditorNotReady);
+  },
+  beforeDestroy() {
+    document.removeEventListener('cms-edit-mode', this.switchToEdit);
+    document.removeEventListener('cms-preview-mode', this.switchToPreview);
+    this.$root.$off('notes-editor-ready', this.setEditorReady);
+    this.$root.$off('notes-editor-unloaded', this.setEditorNotReady);
   },
   methods: {
     openEditor() {
@@ -125,6 +137,12 @@ export default {
       window.setTimeout(() => {
         this.editorReady = false;
       }, 50);
+    },
+    switchToPreview() {
+      this.previewMode = true;
+    },
+    switchToEdit() {
+      this.previewMode = false;
     },
   },
 };
