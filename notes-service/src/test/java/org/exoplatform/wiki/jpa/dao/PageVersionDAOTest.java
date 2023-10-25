@@ -27,6 +27,7 @@ import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.junit.Test;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -126,6 +127,59 @@ public class PageVersionDAOTest extends BaseWikiJPAIntegrationTest {
     assertEquals("Content Version 1", fetchedPageVersion1.getContent());
     assertNotNull(fetchedPageVersion2);
     assertEquals("Content Version 2", fetchedPageVersion2.getContent());
+  }
+
+  @Test
+  public void testFindPageVersionsByPageIdAndLang() {
+    WikiEntity wiki = new WikiEntity();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = wikiDAO.create(wiki);
+
+    PageEntity parentPage = new PageEntity();
+    parentPage.setWiki(wiki);
+    parentPage.setName("parentPage1");
+    parentPage.setCreatedDate(new Date());
+    parentPage.setUpdatedDate(new Date());
+
+    PageEntity page = new PageEntity();
+    page.setWiki(wiki);
+    page.setParentPage(parentPage);
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    page.setName("page1");
+    page.setTitle("Page 1");
+
+    pageDAO.create(parentPage);
+    pageDAO.create(page);
+
+    PageVersionEntity pageVersion1 = new PageVersionEntity();
+    pageVersion1.setPage(page);
+    pageVersion1.setName("1");
+    pageVersion1.setCreatedDate(new Date());
+    pageVersion1.setUpdatedDate(new Date());
+    pageVersion1.setVersionNumber(1);
+    pageVersion1.setContent("Content Version 1");
+    pageVersion1.setLang("fr");
+    pageVersionDAO.create(pageVersion1);
+
+    PageVersionEntity pageVersion2 = new PageVersionEntity();
+    pageVersion2.setPage(page);
+    pageVersion2.setName("2");
+    pageVersion2.setCreatedDate(new Date());
+    pageVersion2.setUpdatedDate(new Date());
+    pageVersion2.setVersionNumber(2);
+    pageVersion2.setContent("Content Version 2");
+    pageVersion2.setLang("fr");
+    pageVersionDAO.create(pageVersion2);
+
+    List<PageVersionEntity> fetchedPagesVersionsFr = pageVersionDAO.findPageVersionsByPageIdAndLang(page.getId(), "fr");
+    List<PageVersionEntity> fetchedPagesVersionsEn = pageVersionDAO.findPageVersionsByPageIdAndLang(page.getId(), "en");
+
+    assertNotNull(fetchedPagesVersionsFr);
+    assertEquals(2, fetchedPagesVersionsFr.size());
+    assertNotNull(fetchedPagesVersionsEn);
+    assertTrue(fetchedPagesVersionsEn.isEmpty());
   }
 
 }

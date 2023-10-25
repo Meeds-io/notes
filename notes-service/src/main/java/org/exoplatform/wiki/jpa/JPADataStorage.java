@@ -1517,16 +1517,6 @@ public class JPADataStorage implements DataStorage {
     return pageVersionDAO.findPageAvailableTranslationLanguages(pageId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public DraftPage getDraftPageByIdAndLang(Long draftNoteId, String lang) {
-    if (draftNoteId == null) {
-      throw new IllegalArgumentException("draftNoteId argument is null");
-    }
-    return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findDraftNoteByIdAndLang(draftNoteId, lang));
-  }
 
   /**
    * {@inheritDoc}

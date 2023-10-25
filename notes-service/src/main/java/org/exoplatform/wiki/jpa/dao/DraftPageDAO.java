@@ -116,17 +116,4 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     }
   }
 
-  public DraftPageEntity findDraftNoteByIdAndLang(Long draftNoteId, String lang) {
-    TypedQuery<DraftPageEntity> query = getEntityManager()
-                                                          .createNamedQuery("wikiDraftPage.findDraftByIdAndLang",
-                                                                            DraftPageEntity.class)
-                                                          .setParameter("id", draftNoteId)
-                                                          .setParameter("lang", lang);
-
-    try {
-      return query.getSingleResult();
-    } catch (NoResultException e) {
-      return null;
-    }
-  }
 }
