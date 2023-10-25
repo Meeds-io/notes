@@ -514,14 +514,6 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public DraftPage getDraftNoteByIdAndLang(Long draftNoteId, String userId, String lang) throws WikiException, IllegalAccessException {
-    DraftPage draftPage = dataStorage.getDraftPageByIdAndLang(draftNoteId, lang);
-    computeDraftProps(draftPage, userId);
-
-    return draftPage;
-  }
-
-  @Override
   public DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException {
     if (targetPage == null || StringUtils.isEmpty(username)) {
       return null;

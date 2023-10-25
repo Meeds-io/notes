@@ -248,14 +248,6 @@ public interface DataStorage {
    */
   List<String> getPageAvailableTranslationLanguages(Long pageId);
 
-  /**
-   * Retrieves a draft note by its id and content language
-   *
-   * @param draftNoteId draft note id
-   * @param lang content language
-   * @return {@link DraftPage}
-   */
-  DraftPage getDraftPageByIdAndLang(Long draftNoteId, String lang);
 
   /**
    * Deletes a list of versions of note by language.

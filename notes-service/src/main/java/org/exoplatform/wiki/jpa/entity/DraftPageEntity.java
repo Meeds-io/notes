@@ -37,8 +37,7 @@ import java.util.List;
         @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId"),
         @NamedQuery(name = "wikiDraftPage.findDraftPagesByUserAndParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.parentPage.id = :parentPageId"),
         @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId AND " +
-                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findDraftByIdAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.id = :id AND ((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang))") })
+                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"), })
 public class DraftPageEntity extends BasePageEntity {
 
   @Id
