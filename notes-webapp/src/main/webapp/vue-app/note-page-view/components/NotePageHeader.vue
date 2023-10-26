@@ -76,6 +76,7 @@
       outlined
       border
       @click="$emit('edit')">
+      <v-icon size="18" class="me-2">far fa-file-alt</v-icon>
       {{ $t('notePageView.label.addTextButton') }}
     </v-btn>
   </div>
