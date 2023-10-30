@@ -1121,7 +1121,7 @@ public class NotesRestService implements ResourceContainer {
         responseData = getJsonDescendants(noteParam, context);
       }
 
-      encodeWikiTree(responseData, request.getLocale(), identity, lang);
+      encodeWikiTree(responseData, request.getLocale(), identity, lang, false);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1275,7 +1275,7 @@ public class NotesRestService implements ResourceContainer {
               children = parent.getChildren();
               if (Boolean.TRUE.equals(withDrafts)) {
                 children = children.stream()
-                                   .filter(jsonNodeData -> (jsonNodeData.isDraftPage())
+                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
                                        || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                                    .collect(Collectors.toList());
               }
@@ -1310,7 +1310,7 @@ public class NotesRestService implements ResourceContainer {
         parents.clear();
       }
 
-      encodeWikiTree(bottomChildren, request.getLocale(), identity, lang);
+      encodeWikiTree(bottomChildren, request.getLocale(), identity, lang, withDrafts);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1456,7 +1456,11 @@ public class NotesRestService implements ResourceContainer {
     return TreeUtils.tranformToJson(treeNode, context);
   }
 
-  private void encodeWikiTree(List<JsonNodeData> responseData, Locale locale, Identity identity, String lang) throws Exception {
+  private void encodeWikiTree(List<JsonNodeData> responseData,
+                              Locale locale,
+                              Identity identity,
+                              String lang,
+                              boolean withDrafts) throws Exception {
     ResourceBundle resourceBundle = resourceBundleService.getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
     String untitledLabel = "";
     if (resourceBundle == null) {
@@ -1474,9 +1478,17 @@ public class NotesRestService implements ResourceContainer {
         if (page != null) {
           data.setName(page.getTitle());
         }
+        if (withDrafts) {
+          DraftPage draftPage = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(data.getNoteId()),
+                                                                                         identity.getUserId(),
+                                                                                         lang);
+          if (draftPage != null) {
+            data.setName(draftPage.getTitle());
+          }
+        }
       }
       if (CollectionUtils.isNotEmpty(data.getChildren())) {
-        encodeWikiTree(data.getChildren(), locale, identity, lang);
+        encodeWikiTree(data.getChildren(), locale, identity, lang, withDrafts);
       }
     }
   }
