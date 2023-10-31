@@ -57,6 +57,9 @@
                     <field name="uri">
                       <string>notes</string>
                     </field>
+                    <field name="icon">
+                      <string>fas fa-clipboard</string>
+                    </field>
                   </object>
                 </value>
               </collection>
@@ -96,6 +99,9 @@
                     </field>
                     <field name="uri">
                       <string>notes</string>
+                    </field>
+                    <field name="icon">
+                      <string>fas fa-clipboard</string>
                     </field>
                   </object>
                 </value>
