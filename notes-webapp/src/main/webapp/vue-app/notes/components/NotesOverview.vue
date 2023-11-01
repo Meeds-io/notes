@@ -377,6 +377,7 @@ export default {
               data: function () {
                 return {
                   noteChildItems: [],
+                  selectedTranslation: {value: eXo.env.portal.language},
                   note: null
                 };
               },
@@ -389,8 +390,7 @@ export default {
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
-                    this.getNoteLanguages(noteId);
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
+                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.note.lang).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
                         this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
