@@ -25,7 +25,13 @@ import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
+import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.social.rest.entity.IdentityEntity;
+import org.exoplatform.wiki.service.search.SearchResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +89,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   private MockedStatic<Utils>               utilsStatic;
 
+  private MockedStatic<RestUtils> REST_UTILS;
+
+  private MockedStatic<EntityBuilder> ENTITY_BUILDER;
+
+
   private MockedStatic<ExoContainerContext> containerContextStatic;
 
   @Override
@@ -93,6 +104,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     environmentContextStatic = mockStatic(EnvironmentContext.class);
     treeUtilsStatic = mockStatic(TreeUtils.class);
     utilsStatic = mockStatic(Utils.class);
+    REST_UTILS = mockStatic(RestUtils.class);
+    ENTITY_BUILDER = mockStatic(EntityBuilder.class);
     containerContextStatic = mockStatic(ExoContainerContext.class);
 
     this.resourceBundleService = mock(ResourceBundleService.class);
@@ -133,6 +146,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     environmentContextStatic.close();
     treeUtilsStatic.close();
     utilsStatic.close();
+    REST_UTILS.close();
+    ENTITY_BUILDER.close();
     containerContextStatic.close();
     super.tearDown();
   }
@@ -320,5 +335,46 @@ public class NotesRestServiceTest extends AbstractKernelTest {
    response = notesRestService.getPageAvailableTranslationLanguages(2L, false);
    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
 
+  }
+  
+  @Test
+  public void testSearchData() throws Exception {
+    UriInfo uriInfo = mock(UriInfo.class);
+    when(uriInfo.getPath()).thenReturn("uriPath");
+    REST_UTILS.when(() -> RestUtils.getLimit(uriInfo)).thenReturn(10);
+    when(identity.getUserId()).thenReturn("1");
+    SearchResult searchResult = new SearchResult();
+    List<SearchResult> results = new ArrayList<>();
+    searchResult.setTitle("title");
+    searchResult.setCreatedDate(Calendar.getInstance());
+    searchResult.setUpdatedDate(Calendar.getInstance());
+    searchResult.setWikiType("wikiType");
+    searchResult.setWikiOwner("wikiOwner");
+    searchResult.setPageName("test");
+    searchResult.setLang("en");
+    org.exoplatform.social.core.identity.model.Identity socialIdentity =
+                                                                       mock(org.exoplatform.social.core.identity.model.Identity.class);
+    searchResult.setPoster(socialIdentity);
+    results.add(searchResult);
+    PageList<SearchResult> pageList = mock(PageList.class);
+    when(pageList.getAll()).thenReturn(results);
+    when(noteService.search(any())).thenReturn(pageList);
+    Page page = new Page();
+    page.setId("100");
+    page.setActivityId("12");
+    page.setLang("en");
+    when(noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
+                                             searchResult.getWikiOwner(),
+                                             searchResult.getPageName(),
+                                             "en",
+                                             identity)).thenReturn(page);
+    IdentityEntity identityEntity = mock(IdentityEntity.class);
+    ENTITY_BUILDER.when(() -> EntityBuilder.buildEntityIdentity(any(org.exoplatform.social.core.identity.model.Identity.class),
+                                                                anyString(),
+                                                                anyString()))
+                  .thenReturn(identityEntity);
+
+    Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>());
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 }
