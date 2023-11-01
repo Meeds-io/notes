@@ -24,6 +24,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.Date;
 
+import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.NoteService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +50,7 @@ public class WikiPageIndexingServiceConnectorTest {
   private MetadataService     metadataService;
 
   @Mock
-  private PageDAO             dao;
+  private NoteService         noteService;
 
   @Mock
   private InitParams          initParams;
@@ -56,30 +59,28 @@ public class WikiPageIndexingServiceConnectorTest {
   private PropertiesParam     propertiesParam;
 
   @Mock
-  private PageEntity          page;
-
-  @Mock
-  private WikiEntity          wiki;
+  private Page page;
 
   @Before
   public void setUp() {
     when(initParams.getPropertiesParam("constructor.params")).thenReturn(propertiesParam);
     when(propertiesParam.getProperty("index_current")).thenReturn("currentIndex");
     when(propertiesParam.getProperty("index_alias")).thenReturn("currentAlias");
-    when(page.getWiki()).thenReturn(wiki);
+    when(page.getWikiType()).thenReturn("group");
+    when(page.getWikiOwner()).thenReturn("owner");
     when(page.getCreatedDate()).thenReturn(new Date());
     when(page.getUpdatedDate()).thenReturn(new Date());
   }
 
   @Test
-  public void testCreateNoteIndex() {
+  public void testCreateNoteIndex() throws WikiException {
     WikiPageIndexingServiceConnector indexingServiceConnector = new WikiPageIndexingServiceConnector(initParams,
-                                                                                                     dao,
+                                                                                                     noteService,
                                                                                                      metadataService);
 
     assertNull(indexingServiceConnector.create(PAGE_ID));
 
-    when(dao.find(Long.parseLong(PAGE_ID))).thenReturn(page);
+    when(noteService.getNoteById(PAGE_ID)).thenReturn(page);
     assertNotNull(indexingServiceConnector.create(PAGE_ID));
 
     when(page.getOwner()).thenReturn(IdentityConstants.SYSTEM);
@@ -87,14 +88,14 @@ public class WikiPageIndexingServiceConnectorTest {
   }
 
   @Test
-  public void testUpdateNoteIndex() {
+  public void testUpdateNoteIndex() throws WikiException {
     WikiPageIndexingServiceConnector indexingServiceConnector = new WikiPageIndexingServiceConnector(initParams,
-                                                                                                     dao,
+                                                                                                     noteService,
                                                                                                      metadataService);
 
     assertNull(indexingServiceConnector.update(PAGE_ID));
 
-    when(dao.find(Long.parseLong(PAGE_ID))).thenReturn(page);
+    when(noteService.getNoteById(PAGE_ID)).thenReturn(page);
     assertNotNull(indexingServiceConnector.update(PAGE_ID));
 
     when(page.getOwner()).thenReturn(IdentityConstants.SYSTEM);

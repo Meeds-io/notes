@@ -979,6 +979,8 @@ export default {
         const note = data || {};
         if (note) {
           this.note.content = note.content;
+          this.note.metadatas = note.metadatas;
+          this.note.lang = note.lang;
           this.noteContent = note.content;
           this.note.title = note.title;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('note.label.home')} ${this.spaceDisplayName}` : this.note.title;
