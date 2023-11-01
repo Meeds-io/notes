@@ -37,4 +37,13 @@ public abstract class PageWikiListener extends BaseComponentPlugin {
   public abstract void postgetPagefromTree(final String wikiType, final String wikiOwner, final String pageId, Page page) throws WikiException;
 
   public abstract void postgetPagefromBreadCrumb(final String wikiType, final String wikiOwner, final String pageId, Page page) throws WikiException;
+
+  public void postUpdatePageVersion(String pageVersionId) {
+    // Nothing
+  }
+
+  public void postDeletePageVersion(String pageVersionId) {
+    // Nothing
+  }
+
 }
