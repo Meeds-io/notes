@@ -180,6 +180,19 @@
         </properties-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>NoteVersionLanguageIndexingConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.wiki.jpa.search.NoteVersionLanguageIndexingServiceConnector</type>
+      <description>Note page version language ElasticSearch Indexing Connector</description>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index_alias" value="notes_alias"/>
+          <property name="index_current" value="notes_v1"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
   <external-component-plugins>

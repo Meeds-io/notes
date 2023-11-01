@@ -10,6 +10,7 @@ import org.exoplatform.commons.search.index.IndexingService;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
 import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.wiki.jpa.search.NoteVersionLanguageIndexingServiceConnector;
 import org.exoplatform.wiki.jpa.search.WikiPageIndexingServiceConnector;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
@@ -47,7 +48,7 @@ public class MetadataItemModifiedTest {
   }
 
   @Test
-  public void testReindexNewsWhenNewsSetAsFavorite() throws Exception {
+  public void testReindexNoteWhenNoteSetAsFavorite() throws Exception {
     MetadataItemModified metadataItemModified = new MetadataItemModified(noteService, indexingService, activityStorage);
     String pageId = "100";
 
@@ -65,6 +66,24 @@ public class MetadataItemModifiedTest {
     metadataItemModified.onEvent(event);
     verify(noteService, times(1)).getNoteById(pageId);
     verify(indexingService, times(1)).reindex(WikiPageIndexingServiceConnector.TYPE, pageId);
+  }
+
+  @Test
+  public void testReindexNoteVersionLangWhenSetAsFavorite() throws Exception {
+    MetadataItemModified metadataItemModified = new MetadataItemModified(noteService, indexingService, activityStorage);
+    String pageId = "100-en";
+
+    MetadataItem metadataItem = mock(MetadataItem.class);
+    when(metadataItem.getObjectType()).thenReturn(Utils.NOTES_METADATA_OBJECT_TYPE);
+    when(metadataItem.getObjectId()).thenReturn(pageId);
+
+    Event<Long, MetadataItem> event = mock(Event.class);
+    when(event.getData()).thenReturn(metadataItem);
+
+
+    metadataItemModified.onEvent(event);
+    verify(noteService, times(0)).getNoteById(pageId);
+    verify(indexingService, times(1)).reindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageId);
   }
 
   @Test

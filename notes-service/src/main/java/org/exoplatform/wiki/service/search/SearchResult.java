@@ -1,40 +1,49 @@
 package org.exoplatform.wiki.service.search;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
+import lombok.Data;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.metadata.model.MetadataItem;
 
+@Data
 public class SearchResult {
-  private static Log         log = ExoLogger.getLogger(SearchResult.class);
+  private static Log log = ExoLogger.getLogger(SearchResult.class);
 
-  protected String           wikiType;
+  protected String wikiType;
 
-  protected String           wikiOwner;
+  protected String wikiOwner;
 
-  protected Identity         wikiOwnerIdentity;
+  protected Identity wikiOwnerIdentity;
 
-  protected Identity         poster;
+  protected Identity poster;
 
-  protected String           pageName;
+  protected String pageName;
 
-  protected String           attachmentName;
+  protected String attachmentName;
 
-  protected String           excerpt;
+  protected String excerpt;
 
-  protected String           title;
+  protected String title;
 
   protected SearchResultType type;
 
-  protected String           url;
+  protected String url;
 
-  protected long             score;
+  protected long score;
 
-  protected Calendar         updatedDate;
+  protected Calendar updatedDate;
 
-  protected Calendar         createdDate;
+  protected Calendar createdDate;
+
+  protected Map<String, List<MetadataItem>> metadata;
+
+  protected String lang;
 
   public SearchResult() {
   }
@@ -81,46 +90,6 @@ public class SearchResult {
     this.createdDate = createdDate;
   }
 
-  public String getWikiType() {
-    return wikiType;
-  }
-
-  public void setWikiType(String wikiType) {
-    this.wikiType = wikiType;
-  }
-
-  public String getWikiOwner() {
-    return wikiOwner;
-  }
-
-  public void setWikiOwner(String wikiOwner) {
-    this.wikiOwner = wikiOwner;
-  }
-
-  public String getPageName() {
-    return pageName;
-  }
-
-  public void setPageName(String pageName) {
-    this.pageName = pageName;
-  }
-
-  public String getAttachmentName() {
-    return attachmentName;
-  }
-
-  public void setAttachmentName(String attachmentName) {
-    this.attachmentName = attachmentName;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
   public String getExcerpt() {
     try {
       return HTMLSanitizer.sanitize(excerpt);
@@ -130,71 +99,5 @@ public class SearchResult {
 
     }
     return "";
-  }
-
-  public void setExcerpt(String text) {
-    this.excerpt = text;
-  }
-
-  public SearchResultType getType() {
-    return type;
-  }
-
-  public void setType(SearchResultType type) {
-    this.type = type;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public void setUrl(String url) {
-    this.url = url;
-  }
-
-  public long getScore() {
-    return score;
-  }
-
-  public void setScore(long score) {
-    this.score = score;
-  }
-
-  public Calendar getUpdatedDate() {
-    return updatedDate;
-  }
-
-  public void setUpdatedDate(Calendar updatedDate) {
-    this.updatedDate = updatedDate;
-  }
-
-  /**
-   * @return the createdDate
-   */
-  public Calendar getCreatedDate() {
-    return createdDate;
-  }
-
-  /**
-   * @param createdDate the createdDate to set
-   */
-  public void setCreatedDate(Calendar createdDate) {
-    this.createdDate = createdDate;
-  }
-
-  public Identity getWikiOwnerIdentity() {
-    return wikiOwnerIdentity;
-  }
-
-  public void setWikiOwnerIdentity(Identity wikiOwnerIdentity) {
-    this.wikiOwnerIdentity = wikiOwnerIdentity;
-  }
-
-  public Identity getPoster() {
-    return poster;
-  }
-
-  public void setPoster(Identity poster) {
-    this.poster = poster;
   }
 }
