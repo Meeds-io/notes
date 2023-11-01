@@ -673,5 +673,22 @@ public class TestNoteService extends BaseTest {
     assertNull(draft);
   }
 
+  public void testGetNoteOfNoteBookByNameWithLangMetadata() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testNoteLangMetadata", "testNoteLangMetadata"), user);
+    assertNotNull(noteService.getNoteOfNoteBookByName(note.getWikiType(), note.getWikiOwner(), note.getName(), "en", user));
+  }
 
+  public void testGetPublishedVersionByPageIdAndLang() throws WikiException, IllegalAccessException {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testNotee", "testNotee"), user);
+    assertNull(noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), "en"));
+    note.setLang("en");
+    note.setTitle("english title");
+    note.setContent("english content");
+    noteService.createVersionOfNote(note, user.getUserId());
+    assertNotNull(noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), "en"));
+  }
 }

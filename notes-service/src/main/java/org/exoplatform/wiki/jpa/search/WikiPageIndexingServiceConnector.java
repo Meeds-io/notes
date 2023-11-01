@@ -36,12 +36,12 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
-import org.exoplatform.wiki.jpa.dao.PageDAO;
-import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,13 +58,13 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
 
   private static final Log      LOGGER = ExoLogger.getExoLogger(WikiPageIndexingServiceConnector.class);
 
-  private final PageDAO         dao;
+  private final NoteService noteService;
 
   private final MetadataService metadataService;
 
-  public WikiPageIndexingServiceConnector(InitParams initParams, PageDAO dao, MetadataService metadataService) {
+  public WikiPageIndexingServiceConnector(InitParams initParams, NoteService noteService, MetadataService metadataService) {
     super(initParams);
-    this.dao = dao;
+    this.noteService = noteService;
     this.metadataService = metadataService;
   }
 
@@ -115,12 +115,18 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
       throw new IllegalArgumentException("Id is null");
     }
     // Get the Page object from BD
-    PageEntity page = dao.find(Long.parseLong(id));
+    Page page = null;
+    try {
+      page = noteService.getNoteById(id);
+    } catch (WikiException e) {
+      LOGGER.error("Error while getting note with id {}", id, e);
+    }
+    
     if (page == null) {
-      LOGGER.warn("The page entity with id {} wasn't found, thus it can't be indexed", id);
+      LOGGER.warn("The page with id {} wasn't found, thus it can't be indexed", id);
       return null;
     } else if (StringUtils.equalsIgnoreCase(page.getOwner(), IdentityConstants.SYSTEM)) {
-      LOGGER.debug("The page entity with id {} is a system note pge, thus will not be searchable as a note", id);
+      LOGGER.debug("The page with id {} is a system note pge, thus will not be searchable as a note", id);
       return null;
     }
 
@@ -130,26 +136,20 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
       fields.put("name", page.getName());
       fields.put("id", String.valueOf(page.getId()));
       // Remove HTML tag when indexing wiki page
-      String content = Utils.html2text(page.getContent());
-      fields.put("content", content);
+      fields.put("content", Utils.html2text(page.getContent()));
       fields.put("title", page.getTitle());
       fields.put("createdDate", String.valueOf(page.getCreatedDate().getTime()));
       fields.put("updatedDate", String.valueOf(page.getUpdatedDate().getTime()));
       fields.put("comment", page.getComment());
-      fields.put("wikiType", page.getWiki().getType());
-      String wikiOwner = page.getWiki().getOwner();
-      // We need to add the first "/" on the wiki owner if it's wiki group
-      if (StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), page.getWiki().getType())) {
-        wikiOwner = dao.validateGroupWikiOwner(wikiOwner);
-      }
-      fields.put("wikiOwner", wikiOwner);
+      fields.put("wikiType", page.getWikiType());
+      fields.put("wikiOwner", Utils.validateWikiOwner(page.getWikiType(), page.getWikiOwner()));
       DocumentWithMetadata document = new DocumentWithMetadata();
       document.setId(id);
-      document.setUrl(page.getUrl());
+      document.setUrl(Utils.getPageUrl(page));
       document.setLastUpdatedDate(page.getUpdatedDate());
       document.setPermissions(computePermissions(page));
       document.setFields(fields);
-      addDocumentMetadata(document, Long.toString(page.getId()));
+      addDocumentMetadata(document, page.getId());
 
       return document;
     } catch (Exception e) {
@@ -169,18 +169,18 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
     return TYPE;
   }
 
-  private Set<String> computePermissions(PageEntity page) {
+  protected Set<String> computePermissions(Page page) {
     IdentityManager identityManager    = CommonsUtils.getService(IdentityManager.class);
     Set<String> permissions = new HashSet<>();
     try {
-      if (page.getWiki().getType().toUpperCase().equals(WikiType.GROUP.name())) {
+      if (page.getWikiType().toUpperCase().equals(WikiType.GROUP.name())) {
         SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-        Space space = spaceService.getSpaceByGroupId(page.getWiki().getOwner());
-        if(space!=null){
+        Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
+        if (space != null) {
           permissions.add(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName()).getId());
         }
-      }else if (page.getWiki().getType().toUpperCase().equals(WikiType.USER.name())) {
-          permissions.add(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, page.getWiki().getOwner()).getId());
+      } else if (page.getWikiType().toUpperCase().equals(WikiType.USER.name())) {
+        permissions.add(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, page.getWikiOwner()).getId());
       }
     } catch (Exception e) {
       LOGGER.warn("Cannot get Identity of the wiki Owner", e.getMessage());
@@ -190,21 +190,10 @@ public class WikiPageIndexingServiceConnector extends ElasticIndexingServiceConn
 
   @Override
   public List<String> getAllIds(int offset, int limit) {
-    List<String> result;
-
-    List<Long> ids = this.dao.findAllIds(offset, limit);
-    if (ids == null) {
-      result = new ArrayList<>(0);
-    } else {
-      result = new ArrayList<>(ids.size());
-      for (Long id : ids) {
-        result.add(String.valueOf(id));
-      }
-    }
-    return result;
+    throw new UnsupportedOperationException();
   }
 
-  private void addDocumentMetadata(DocumentWithMetadata document, String documentId) {
+  protected void addDocumentMetadata(DocumentWithMetadata document, String documentId) {
     MetadataObject metadataObject = new MetadataObject(Utils.NOTES_METADATA_OBJECT_TYPE, documentId);
     List<MetadataItem> metadataItems = metadataService.getMetadataItemsByObject(metadataObject);
     document.setMetadataItems(metadataItems);
