@@ -1,7 +1,7 @@
 <template>
   <favorite-button
-    :key="note.id"
-    :id="note.id"
+    :key="noteId"
+    :id="noteId"
     :favorite="isFavorite"
     :absolute="absolute"
     :top="top"
@@ -45,6 +45,9 @@ export default {
     isFavorite() {
       return this.note.metadatas && this.note.metadatas.favorites && this.note.metadatas.favorites.length;
     },
+    noteId() {
+      return this.note.lang && `${this.note.id}-${this.note.lang}` || this.note.id;
+    }
   },
   watch: {
     note() {

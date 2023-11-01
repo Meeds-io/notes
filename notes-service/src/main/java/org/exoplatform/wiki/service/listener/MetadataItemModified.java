@@ -7,6 +7,7 @@ import org.exoplatform.services.listener.Listener;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
 import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.wiki.jpa.search.NoteVersionLanguageIndexingServiceConnector;
 import org.exoplatform.wiki.jpa.search.WikiPageIndexingServiceConnector;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
@@ -36,11 +37,15 @@ public class MetadataItemModified extends Listener<Long, MetadataItem> {
     if (isNotesEvent(objectType)) {
       // Ensure to re-execute all ActivityProcessors to compute & cache
       // metadatas of the activity again
-      Page page = noteService.getNoteById(objectId);
-      if (page != null && StringUtils.isNotBlank(page.getActivityId())) {
-        clearCache(page.getActivityId());
+      if (!objectId.contains("-")) {
+        Page page = noteService.getNoteById(objectId);
+        if (page != null && StringUtils.isNotBlank(page.getActivityId())) {
+          clearCache(page.getActivityId());
+        }
+        reindexNotes(objectId);
+      } else {
+        reindexLanguageVersion(objectId);
       }
-      reindexNotes(objectId);
     }
   }
 
@@ -56,6 +61,9 @@ public class MetadataItemModified extends Listener<Long, MetadataItem> {
 
   private void reindexNotes(String pageId) {
     indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, pageId);
+  }
+  private void reindexLanguageVersion(String versionLangId) {
+    indexingService.reindex(NoteVersionLanguageIndexingServiceConnector.TYPE, versionLangId);
   }
 
 }
