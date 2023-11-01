@@ -19,7 +19,6 @@ package org.exoplatform.wiki.jpa.search;
 import java.io.InputStream;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.social.metadata.favorite.FavoriteService;
@@ -230,6 +229,8 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       String title = (String) hitSource.get("title");
       String url = (String) hitSource.get("url");
 
+      String lang = (String) hitSource.get("lang");
+
       String wikiType = (String) hitSource.get("wikiType");
       String wikiOwner = (String) hitSource.get("wikiOwner");
       String owner = (String) hitSource.get("owner");
@@ -259,6 +260,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
       // Create the wiki search result
       SearchResult wikiSearchResult = new SearchResult();
+      wikiSearchResult.setLang(lang);
       wikiSearchResult.setWikiType(wikiType);
       wikiSearchResult.setWikiOwner(wikiOwner);
       wikiSearchResult.setPageName(pageName);

@@ -458,6 +458,19 @@ public class NoteServiceImpl implements NoteService {
 
   @Override
   public Page getNoteOfNoteBookByName(String noteType,
+                                             String noteOwner,
+                                             String noteName,
+                                             String lang,
+                                             Identity userIdentity) throws WikiException, IllegalAccessException {
+    Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName, userIdentity);
+    if (lang != null) {
+      page.setMetadatas(retrieveMetadataItems(page.getId() + "-" + lang, userIdentity.getUserId()));
+    }
+    return page;
+  }
+
+  @Override
+  public Page getNoteOfNoteBookByName(String noteType,
                                       String noteOwner,
                                       String noteName,
                                       Identity userIdentity) throws IllegalAccessException, WikiException {
@@ -737,6 +750,10 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void createVersionOfNote(Page note, String userName) throws WikiException {
     dataStorage.addPageVersion(note, userName);
+    if (note.getLang() != null) {
+      String versionLandId =  note.getId() + "-" + note.getLang();
+      postUpdatePageVersionLanguage(versionLandId);
+    }
   }
 
   @Override
@@ -969,6 +986,20 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
+  public void postUpdatePageVersionLanguage(String versionPageId) {
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
+      l.postUpdatePageVersion(versionPageId);
+    }
+  }
+
+  public void postDeletePageVersionLanguage(String versionPageId) {
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
+      l.postDeletePageVersion(versionPageId);
+    }
+  }
+  
   public void postUpdatePage(final String wikiType,
                              final String wikiOwner,
                              final String pageId,
@@ -1525,8 +1556,18 @@ public class NoteServiceImpl implements NoteService {
       page.setTitle(publishedVersion.getTitle());
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
+      if (lang != null) {
+        page.setMetadatas(retrieveMetadataItems(pageId + "-" + lang, userIdentity.getUserId()));
+      }
     }
     return page;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public PageVersion getPublishedVersionByPageIdAndLang(Long pageId, String lang) {
+    return dataStorage.getPublishedVersionByPageIdAndLang(pageId, lang);
   }
 
   /**
@@ -1580,5 +1621,7 @@ public class NoteServiceImpl implements NoteService {
         removeDraft(draftPage.getName());
       }
     }
+    postDeletePageVersionLanguage(noteId + "-" + lang);
   }
+
 }
