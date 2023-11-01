@@ -442,12 +442,16 @@ public class EntityConverter {
     PageVersion pageVersion = null;
     if (pageVersionEntity != null) {
       pageVersion = new PageVersion();
+      pageVersion.setId(String.valueOf(pageVersionEntity.getId()));
       pageVersion.setName(String.valueOf(pageVersionEntity.getVersionNumber()));
       pageVersion.setTitle(pageVersionEntity.getTitle());
       pageVersion.setAuthor(pageVersionEntity.getAuthor());
+      pageVersion.setComment(pageVersionEntity.getComment());
       pageVersion.setContent(pageVersionEntity.getContent());
       pageVersion.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageVersion.setUpdatedDate(pageVersionEntity.getUpdatedDate());
+      pageVersion.setOwner(pageVersionEntity.getAuthor());
+      pageVersion.setParent(convertPageEntityToPage(pageVersionEntity.getPage()));
       pageVersion.setLang(pageVersionEntity.getLang());
     }
     return pageVersion;

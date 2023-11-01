@@ -31,7 +31,6 @@ public class PageIndexingListener extends PageWikiListener {
 
   private IndexingService indexingService;
 
-
   public PageIndexingListener(IndexingService indexingService) {
     this.indexingService = indexingService;
   }
@@ -42,7 +41,11 @@ public class PageIndexingListener extends PageWikiListener {
   }
 
   @Override
-  public void postUpdatePage(String wikiType, String wikiOwner, String pageId, Page page, PageUpdateType wikiUpdateType) throws WikiException {
+  public void postUpdatePage(String wikiType,
+                             String wikiOwner,
+                             String pageId,
+                             Page page,
+                             PageUpdateType wikiUpdateType) throws WikiException {
     if (!page.isDraftPage()) {
       indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, page.getId());
     }
@@ -63,4 +66,13 @@ public class PageIndexingListener extends PageWikiListener {
 
   }
 
+  @Override
+  public void postUpdatePageVersion(String pageVersionId) {
+    indexingService.reindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageVersionId);
+  }
+
+  @Override
+  public void postDeletePageVersion(String pageVersionId) {
+    indexingService.unindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageVersionId);
+  }
 }
