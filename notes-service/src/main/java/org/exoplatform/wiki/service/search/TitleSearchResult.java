@@ -16,113 +16,37 @@
  */
 package org.exoplatform.wiki.service.search;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.rest.entity.IdentityEntity;
 
 import java.util.List;
 import java.util.Map;
 
+@Data
+@NoArgsConstructor
 public class TitleSearchResult {
-  private String title;
+  private String                          title;
 
-  private String id;
+  private String                          id;
 
-  private String activityId;
+  private String                          activityId;
 
-  private IdentityEntity poster;
+  private IdentityEntity                  poster;
 
-  private IdentityEntity wikiOwner;
+  private IdentityEntity                  wikiOwner;
 
-  private String excerpt;
+  private String                          excerpt;
 
-  private long createdDate;
+  private long                            createdDate;
 
-  private SearchResultType type;
+  private SearchResultType                type;
 
-  private String url;
+  private String                          url;
 
   private Map<String, List<MetadataItem>> metadatas;
 
-  public TitleSearchResult() {
-  }
+  private String                          lang;
 
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getActivityId() {
-    return activityId;
-  }
-
-  public void setActivityId(String activityId) {
-    this.activityId = activityId;
-  }
-
-  public SearchResultType getType() {
-    return type;
-  }
-
-  public void setType(SearchResultType type) {
-    this.type = type;
-  }
-  
-  public void setTitle(String title) {
-    this.title = title;
-  }
-  
-  public String getTitle() {
-    return title;
-  }
-  
-  public void setUrl(String url) {
-    this.url = url;
-  }
-  
-  public String getUrl() {
-    return url;
-  }
-
-  public String getExcerpt() {
-    return excerpt;
-  }
-
-  public void setExcerpt(String excerpt) {
-    this.excerpt = excerpt;
-  }
-
-  public IdentityEntity getWikiOwner() {
-    return wikiOwner;
-  }
-
-  public void setWikiOwner(IdentityEntity wikiOwner) {
-    this.wikiOwner = wikiOwner;
-  }
-
-  public IdentityEntity getPoster() {
-    return poster;
-  }
-
-  public void setPoster(IdentityEntity poster) {
-    this.poster = poster;
-  }
-
-  public long getCreatedDate() {
-    return createdDate;
-  }
-
-  public void setCreatedDate(long createdDate) {
-    this.createdDate = createdDate;
-  }
-
-  public Map<String, List<MetadataItem>> getMetadatas() {
-    return metadatas;
-  }
-
-  public void setMetadatas(Map<String, List<MetadataItem>> metadatas) {
-    this.metadatas = metadatas;
-  }
 }
