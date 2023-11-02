@@ -114,7 +114,10 @@
               :translations="translations"
               :selected-translation="selectedTranslation"
               @change-translation="changeTranslation" />
-            <span v-show="lastNoteVersion" class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion}}</span>
+            <span
+              v-show="lastNoteVersion"
+              class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable"
+              @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -237,8 +240,7 @@
       @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
       @open-import-drawer="$refs.noteImportDrawer.open()" />
     <note-treeview-drawer
-      ref="notesBreadcrumb" 
-      :selected-translation="selectedTranslation.value" />
+      ref="notesBreadcrumb" />
     <version-history-drawer
       :versions="noteVersionsArray"
       :can-manage="this.note.canManage"
@@ -390,7 +392,7 @@ export default {
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.note.lang).then(data => {
+                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
                         this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
@@ -916,7 +918,7 @@ export default {
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       if (!this.note.draftPage) {
-        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false,this.selectedTranslation.value).then(data => {
+        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false).then(data => {
           if (data && data.jsonList.length) {
             const allnotesTreeview = data.jsonList;
             this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
