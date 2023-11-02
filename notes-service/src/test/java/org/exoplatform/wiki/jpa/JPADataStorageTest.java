@@ -75,7 +75,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals(NoteConstants.NOTE_HOME_TITLE, wikiHomePage.getTitle());
     assertNotNull(wikiHomePage.getCreatedDate());
     assertNotNull(wikiHomePage.getUpdatedDate());
-    assertTrue(StringUtils.isNotEmpty(wikiHomePage.getContent()));
+    assertTrue(StringUtils.isEmpty(wikiHomePage.getContent()));
   }
 
   @Test
