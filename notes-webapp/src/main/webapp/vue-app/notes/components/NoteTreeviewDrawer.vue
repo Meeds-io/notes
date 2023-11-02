@@ -411,12 +411,6 @@ export default {
     tempCleaned: false,
     dataCreated: false,
   }),
-  props: {
-    selectedTranslation: {
-      type: String,
-      default: () => null,
-    }
-  },
   computed: {
     confirmCloseLabels() {
       return {
