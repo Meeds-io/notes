@@ -114,7 +114,10 @@
               :translations="translations"
               :selected-translation="selectedTranslation"
               @change-translation="changeTranslation" />
-            <span v-show="lastNoteVersion" class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable" @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion}}</span>
+            <span
+              v-show="lastNoteVersion"
+              class="note-version border-radius primary my-auto px-2 font-weight-bold me-2 caption clickable"
+              @click="openNoteVersionsHistoryDrawer(noteVersions, isManager)">V{{ lastNoteVersion }}</span>
             <span class="caption text-sub-title font-italic">{{ $t('notes.label.LastModifiedBy', {0: lastNoteUpdatedBy, 1: displayedDate}) }}</span>
           </div>
         </div>
@@ -354,7 +357,7 @@ export default {
   computed: {
     notesContentProcessor() {
       return {
-        template: `<div class='reset-style-box rich-editor-content custom-notes-editor'>${this.formatContent(this.noteContent)}</div>`,
+        template: `<div class='reset-style-box rich-editor-content extended-rich-content'>${this.formatContent(this.noteContent)}</div>`,
         data() {
           return {
             vTreeComponent: {
