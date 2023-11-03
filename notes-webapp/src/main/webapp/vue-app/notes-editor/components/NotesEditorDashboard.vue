@@ -182,7 +182,6 @@ export default {
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
-      noteEditorExtensions: null
     };
   },
   computed: {
@@ -438,6 +437,7 @@ export default {
       if (data) {
         data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
         data.content = this.getContentToEdit(data.content);
+        data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
         this.note = data;
         this.slectedLanguage = data.lang;
         this.getNoteLanguages();
