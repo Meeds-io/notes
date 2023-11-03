@@ -42,11 +42,18 @@ export default {
       return this.note?.title || '';
     },
     noteUrl() {
-      return this.note?.url || '#';
+      return this.note.lang && `${this.note?.url}?translation=${this.note.lang}` || `${this.note?.url}?translation=original`;
     }
   },
   created() {
-    this.$notesService.getNoteById(this.id).then(note => {
+    let noteId = this.id;
+    let lang = null;
+    if (this.id.includes('-')) {
+      const parts = this.id.split('-');
+      noteId = parts[0];
+      lang = parts[1];
+    }
+    this.$notesService.getNoteById(noteId, lang).then(note => {
       this.note = note;
     });
   },
