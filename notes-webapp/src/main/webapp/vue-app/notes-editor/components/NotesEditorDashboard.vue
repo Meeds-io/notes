@@ -173,6 +173,7 @@ export default {
       languages: [],
       allLanguages: [],
       newDraft: false,
+      spaceDisplayName: null,
     };
   },
   computed: {
@@ -261,6 +262,7 @@ export default {
       this.parentPageId = urlParams.get('parentNoteId');
       this.spaceId = urlParams.get('spaceId');
       this.spaceGroupId  = urlParams.get('spaceGroupId');
+      this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
     this.displayFormTitle();
@@ -421,6 +423,7 @@ export default {
     fillNote(data) {
       this.initActualNoteDone = false;
       if (data) {
+        data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
         this.note = data;
         this.actualNote = {
           id: this.note.id,
