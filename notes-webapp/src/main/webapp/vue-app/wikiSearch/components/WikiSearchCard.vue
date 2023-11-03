@@ -66,7 +66,7 @@ export default {
   }),
   computed: {
     wikiUrl() {
-      return this.result && this.result.url;
+      return this.result?.lang && this.result?.url || `${this.result?.url}?translation=original`;
     },
     excerpts() {
       return this.result && this.result.excerpt;
