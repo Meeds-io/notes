@@ -78,7 +78,7 @@ export default {
       };
     },
     langButtonColor(){
-      return this.selectedTranslation.value!=='' ? 'primary--text':'';
+      return this.selectedTranslation.value ? 'primary--text':'';
     },
   },
   created() {
