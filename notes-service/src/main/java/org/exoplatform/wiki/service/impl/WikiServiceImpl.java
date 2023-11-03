@@ -266,19 +266,7 @@ public class WikiServiceImpl implements WikiService {
     wikiPreferencesSyntax.setDefaultSyntax(getDefaultWikiSyntaxId());
     wikiPreferences.setWikiPreferencesSyntax(wikiPreferencesSyntax);
     wiki.setPreferences(wikiPreferences);
-
     Wiki createdWiki = dataStorage.createWiki(wiki);
-    StringBuilder sb = new StringBuilder("<h1> Welcome to ");
-    String wikiLabel = owner;
-    if (wikiType.equals(PortalConfig.GROUP_TYPE)) {
-      sb.append("Space ");
-      wikiLabel = getSpaceNameByGroupId(owner);
-    } else if (wikiType.equals(PortalConfig.USER_TYPE)) {
-      wikiLabel = this.getUserDisplayName(wiki.getOwner());
-    }
-    sb.append(wikiLabel).append(" Notes Home </h1>");
-    createdWiki.getWikiHome().setContent(sb.toString());
-    dataStorage.updatePage(createdWiki.getWikiHome());
     return createdWiki;
   }
 
