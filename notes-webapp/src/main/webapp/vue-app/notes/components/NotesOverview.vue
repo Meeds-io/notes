@@ -508,9 +508,6 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
-    langBottonColor(){
-      return this.selectedTranslation.value!=='' ? 'primary--text':'';
-    },
     notesMultilingualActive() {
       return eXo?.env?.portal?.notesMultilingual;
     }
