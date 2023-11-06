@@ -16,6 +16,12 @@
       <classifier>sources</classifier>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.exoplatform.commons</groupId>
+      <artifactId>commons-extension-webapp</artifactId>
+      <classifier>sources</classifier>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <build>
     <finalName>notes</finalName>
@@ -53,6 +59,22 @@
               <overwrite>true</overwrite>
             </configuration>
           </execution>
+          <execution>
+            <id>b-copy-resources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/src/main/webapp/ckeditor</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/webapp/ckeditor</directory>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -60,14 +82,15 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <id>platform-ui-src</id>
+            <id>dependencies-less-src</id>
             <phase>initialize</phase>
             <goals>
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>platform-ui-skin</includeArtifactIds>
+              <includeArtifactIds>platform-ui-skin,commons-extension-webapp</includeArtifactIds>
               <outputDirectory>${project.build.directory}/src/main/webapp</outputDirectory>
+              <excludes>**/custom-variables.less</excludes>
             </configuration>
           </execution>
         </executions>
@@ -85,7 +108,20 @@
                 <compress>false</compress>
                 <includes>
                   <include>notes/notes.less</include>
-                  <include>notes/editorContent.less</include>
+                </includes>
+              </configuration>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>editor</id>
+              <configuration>
+                <sourceDirectory>${project.build.directory}/src/main/webapp/ckeditorCustom/</sourceDirectory>
+                <outputDirectory>${project.build.directory}/${project.build.finalName}/ckeditorCustom</outputDirectory>
+                <compress>true</compress>
+                <includes>
+                  <include>*.less</include>
                 </includes>
               </configuration>
               <goals>
