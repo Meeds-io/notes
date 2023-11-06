@@ -100,7 +100,7 @@ export function getFullNoteTree(noteBookType, noteBookOwner, noteId, withDrafts)
   if (noteBookOwner.indexOf('/') !== 0) {
     noteBookOwner = `/${noteBookOwner}`;
   }
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}&lang=${eXo.env.portal.language}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
