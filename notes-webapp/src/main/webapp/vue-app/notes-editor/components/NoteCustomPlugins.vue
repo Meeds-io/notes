@@ -59,7 +59,8 @@ export default {
     defaultImagePlugin: '/notes/images/defaultPlugin.png',
     drawer: false,
     noteChildren: [],
-    treeviewInserted: false
+    treeviewInserted: false,
+    isDraft: false
   }),
   computed: {
     plugins() {
@@ -83,6 +84,9 @@ export default {
   created() {
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('isDraft')) {
+      this.isDraft=urlParams.get('isDraft')==='true';
+    }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
       this.hideNavigation = false;
@@ -97,9 +101,17 @@ export default {
       this.$refs.customPluginsDrawer.close();
     },
     retrieveNoteChildren(noteId) {
-      this.$notesService.getNoteById(noteId,'', '','','',true).then(data => {
-        this.noteChildren = data && data.children || [];
-      });
+      if (this.isDraft){
+        this.$notesService.getDraftNoteById(noteId).then(data => {
+          this.$notesService.getNoteById(data.targetPageId,'', '','','',true).then(data => {
+            this.noteChildren = data && data.children || [];
+          });
+        });
+      } else {
+        this.$notesService.getNoteById(noteId,'', '','','',true).then(data => {
+          this.noteChildren = data && data.children || [];
+        });
+      }
     },
     openPlugin(id){
       if (id==='table'){
