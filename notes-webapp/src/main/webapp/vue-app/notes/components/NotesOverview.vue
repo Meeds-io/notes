@@ -689,6 +689,7 @@ export default {
     getNoteById(noteId, source) {
       return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
+        this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
@@ -721,6 +722,7 @@ export default {
     getNoteByName(noteName, source) {
       return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.selectedTranslation.value).then(data => {
         this.note = data || {};
+        this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();

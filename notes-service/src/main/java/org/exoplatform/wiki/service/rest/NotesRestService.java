@@ -137,6 +137,8 @@ public class NotesRestService implements ResourceContainer {
                           @QueryParam("lang")
                           String lang) {
     try {
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
         noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
@@ -180,7 +182,12 @@ public class NotesRestService implements ResourceContainer {
         }
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType, noteBookOwner, note.getName(), lang, identity, false));
+      note.setBreadcrumb(noteService.getBreadCrumb(noteBookType,
+                                                   noteBookOwner,
+                                                   note.getName(),
+                                                   request.getLocale().getLanguage(),
+                                                   identity,
+                                                   false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
@@ -217,6 +224,8 @@ public class NotesRestService implements ResourceContainer {
                               @Parameter(description = "note content language")
                               @QueryParam("lang") String lang) {
     try {
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, source, lang);
       if (note == null || note.isDeleted()) {
@@ -239,7 +248,7 @@ public class NotesRestService implements ResourceContainer {
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(),
                                                    note.getWikiOwner(),
                                                    note.getName(),
-                                                   lang,
+                                                   request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
       return Response.ok(note).build();
@@ -321,6 +330,8 @@ public class NotesRestService implements ResourceContainer {
                                    @Parameter(description = "draft content language")
                                    @QueryParam("lang") String lang) {
     try {
+      EnvironmentContext env = EnvironmentContext.getCurrent();
+      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
       DraftPage draftNote = noteService.getDraftNoteById(String.valueOf(noteId), currentUserId);
@@ -335,7 +346,7 @@ public class NotesRestService implements ResourceContainer {
       draftNote.setBreadcrumb(noteService.getBreadCrumb(parentPage.getWikiType(),
                                                         parentPage.getWikiOwner(),
                                                         draftNote.getId(),
-                                                        lang,
+                                                        request.getLocale().getLanguage(),
                                                         identity,
                                                         true));
 
@@ -1121,7 +1132,7 @@ public class NotesRestService implements ResourceContainer {
         responseData = getJsonDescendants(noteParam, context);
       }
 
-      encodeWikiTree(responseData, request.getLocale(), identity, lang, false);
+      encodeWikiTree(responseData, request.getLocale(), identity, false);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1147,9 +1158,7 @@ public class NotesRestService implements ResourceContainer {
   String path,
                                   @Parameter(description = "With draft notes", required = true)
                                   @QueryParam("withDrafts")
-                                  Boolean withDrafts,
-                                  @QueryParam("lang")
-                                  String lang) {
+                                  Boolean withDrafts) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData;
@@ -1237,6 +1246,7 @@ public class NotesRestService implements ResourceContainer {
 
       // prepare draft note nodes tree
       if (Boolean.TRUE.equals(withDrafts)) {
+        bottomChildren = TreeUtils.cleanDraftChildren(bottomChildren,request.getLocale());
         for (JsonNodeData child : bottomChildren) {
           JsonNodeData parent;
           do {
@@ -1274,6 +1284,7 @@ public class NotesRestService implements ResourceContainer {
             if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
               children = parent.getChildren();
               if (Boolean.TRUE.equals(withDrafts)) {
+                children = TreeUtils.cleanDraftChildren(children, request.getLocale());
                 children = children.stream()
                                    .filter(jsonNodeData -> jsonNodeData.isDraftPage()
                                        || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
@@ -1310,7 +1321,7 @@ public class NotesRestService implements ResourceContainer {
         parents.clear();
       }
 
-      encodeWikiTree(bottomChildren, request.getLocale(), identity, lang, withDrafts);
+      encodeWikiTree(bottomChildren, request.getLocale(), identity, withDrafts);
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1462,7 +1473,6 @@ public class NotesRestService implements ResourceContainer {
   private void encodeWikiTree(List<JsonNodeData> responseData,
                               Locale locale,
                               Identity identity,
-                              String lang,
                               boolean withDrafts) throws Exception {
     ResourceBundle resourceBundle = resourceBundleService.getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
     String untitledLabel = "";
@@ -1476,22 +1486,16 @@ public class NotesRestService implements ResourceContainer {
     for (JsonNodeData data : responseData) {
       if (StringUtils.isBlank(data.getName())) {
         data.setName(untitledLabel);
-      } else if (StringUtils.isNotBlank(lang)) {
-        Page page = noteService.getNoteByIdAndLang(Long.valueOf(data.getNoteId()), identity, "", lang);
-        if (page != null) {
-          data.setName(page.getTitle());
-        }
-        if (withDrafts) {
-          DraftPage draftPage = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(data.getNoteId()),
-                                                                                         identity.getUserId(),
-                                                                                         lang);
-          if (draftPage != null) {
-            data.setName(draftPage.getTitle());
+      } else {
+        if (!data.isDraftPage()) {
+          Page page = noteService.getNoteByIdAndLang(Long.valueOf(data.getNoteId()), identity, "", locale.getLanguage());
+          if (page != null) {
+            data.setName(page.getTitle());
           }
         }
       }
       if (CollectionUtils.isNotEmpty(data.getChildren())) {
-        encodeWikiTree(data.getChildren(), locale, identity, lang, withDrafts);
+        encodeWikiTree(data.getChildren(), locale, identity, withDrafts);
       }
     }
   }
