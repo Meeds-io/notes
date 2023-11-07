@@ -258,7 +258,8 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
-      this.getNoteLanguages();
+    } else {
+      this.initActualNoteDone=true;
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');
@@ -428,6 +429,8 @@ export default {
         data.content = this.getContentToEdit(data.content);
         data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
         this.note = data;
+        this.slectedLanguage = data.lang;
+        this.getNoteLanguages();
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -1012,7 +1015,7 @@ export default {
       return documentElement?.children[1].innerHTML;
     },
     getNoteLanguages(){
-      const noteId= !this.note.draftPage?this.noteId:this.note.targetPageId;
+      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       return this.$notesService.getNoteLanguages(noteId,true).then(data => {
         this.translations =  data || [];
         if (this.translations.length>0) {
