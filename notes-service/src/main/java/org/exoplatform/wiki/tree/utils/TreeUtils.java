@@ -19,25 +19,26 @@
 
 package org.exoplatform.wiki.tree.utils;
 
-import org.apache.commons.lang.BooleanUtils;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.tree.*;
-import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.NoteConstants;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import org.exoplatform.wiki.utils.Utils;
 
 public class TreeUtils {
   
@@ -206,5 +207,47 @@ public class TreeUtils {
       sb.append("/").append(param.getPageName());
     }
     return sb.toString();
+  }
+
+  public static List<JsonNodeData> cleanDraftChildren(List<JsonNodeData> children, String lang) {
+    List<String> targetList = children.stream().map(JsonNodeData::getTargetPageId).distinct().collect(Collectors.toList());
+    List<JsonNodeData> cleanedChildren = children.stream()
+                                                 .filter(jsonNodeData -> !jsonNodeData.isDraftPage())
+            .collect(Collectors.toList());
+    for (String target : targetList) {
+      if (StringUtils.isNotEmpty(target)) {
+        List<JsonNodeData> subJsonNodeDataList =
+                                               children.stream()
+                                                       .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getTargetPageId(),
+                                                                                                  target))
+                                                       .collect(Collectors.toList());
+        if (subJsonNodeDataList.size() > 1) {
+          JsonNodeData currentLangDraft = null;
+          JsonNodeData originalLangDraft = null;
+          JsonNodeData anyLangDraft = null;
+          List<JsonNodeData> subCleanedChildren = new ArrayList<>();
+          for (JsonNodeData nodeData : subJsonNodeDataList) {
+            if (StringUtils.isEmpty(nodeData.getLang())) {
+              originalLangDraft = nodeData;
+            } else if (nodeData.getLang().equals(lang)) {
+              currentLangDraft = nodeData;
+            } else if (anyLangDraft == null) {
+              anyLangDraft = nodeData;
+            }
+          }
+          if (currentLangDraft != null) {
+            subCleanedChildren.add(currentLangDraft);
+          } else if (originalLangDraft != null) {
+            subCleanedChildren.add(originalLangDraft);
+          } else {
+            subCleanedChildren.add(anyLangDraft);
+          }
+          cleanedChildren.addAll(subCleanedChildren);
+        } else {
+          cleanedChildren.addAll(subJsonNodeDataList);
+        }
+      }
+    }
+    return cleanedChildren;
   }
 }
