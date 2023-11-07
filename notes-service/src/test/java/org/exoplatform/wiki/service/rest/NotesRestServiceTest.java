@@ -292,7 +292,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    Response response3 = notesRestService.getFullTreeData("path", false, "");
+    Response response3 = notesRestService.getFullTreeData("path", false);
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
     assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
     List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
@@ -309,7 +309,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                   pageParams.getOwner(),
                                                                   pageParams.getPageName(),
                                                                   identity);
-    Response response1 = notesRestService.getFullTreeData("path", true, "");
+    Response response1 = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response1.getStatus());
 
     doThrow(new RuntimeException()).when(noteService)
@@ -317,7 +317,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                             pageParams.getOwner(),
                                                             pageParams.getPageName(),
                                                             identity);
-    Response response2 = notesRestService.getFullTreeData("path", true, "");
+    Response response2 = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
   }
 

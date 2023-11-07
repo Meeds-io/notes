@@ -1158,9 +1158,7 @@ public class NotesRestService implements ResourceContainer {
   String path,
                                   @Parameter(description = "With draft notes", required = true)
                                   @QueryParam("withDrafts")
-                                  Boolean withDrafts,
-                                  @QueryParam("lang")
-                                  String lang) {
+                                  Boolean withDrafts) {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       List<JsonNodeData> responseData;
