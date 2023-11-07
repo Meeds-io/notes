@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
+import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
@@ -63,7 +64,9 @@ public class JsonNodeData {
   private List<JsonNodeData>  children;
   
   private String parentPageId;
-  
+
+  private String             targetPageId;
+
   private Boolean hasDraftDescendant;
 
   private String             lang;
@@ -103,6 +106,9 @@ public class JsonNodeData {
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
       if (withDrafts) {
         this.disabled = !this.isDraftPage;
+      }
+      if (this.isDraftPage) {
+        this.targetPageId = ((DraftPage) page).getTargetPageId();
       }
     }
   }
@@ -251,4 +257,11 @@ public class JsonNodeData {
     this.lang = lang;
   }
 
+  public String getTargetPageId() {
+    return targetPageId;
+  }
+
+  public void setTargetPageId(String targetPageId) {
+    this.targetPageId = targetPageId;
+  }
 }
