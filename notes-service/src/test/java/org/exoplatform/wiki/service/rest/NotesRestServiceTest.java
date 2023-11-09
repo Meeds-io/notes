@@ -288,7 +288,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page10)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
-    treeUtilsStatic.when(() -> TreeUtils.cleanDraftChildren(anyList(), anyString())).then(returnsFirstArg());
+    treeUtilsStatic.when(() -> TreeUtils.cleanDraftChildren(anyList(), any())).then(returnsFirstArg());
     Response response = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 

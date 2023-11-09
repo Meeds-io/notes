@@ -19,9 +19,7 @@
 
 package org.exoplatform.wiki.tree.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -29,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.wiki.model.Page;
@@ -209,7 +208,8 @@ public class TreeUtils {
     return sb.toString();
   }
 
-  public static List<JsonNodeData> cleanDraftChildren(List<JsonNodeData> children, String lang) {
+  public static List<JsonNodeData> cleanDraftChildren(List<JsonNodeData> children, Locale locale) {
+    List<Locale> localesList = new ArrayList<>(LocaleContextInfoUtils.getSupportedLocales());
     List<String> targetList = children.stream().map(JsonNodeData::getTargetPageId).distinct().collect(Collectors.toList());
     List<JsonNodeData> cleanedChildren = children.stream()
                                                  .filter(jsonNodeData -> !jsonNodeData.isDraftPage())
@@ -229,9 +229,9 @@ public class TreeUtils {
           for (JsonNodeData nodeData : subJsonNodeDataList) {
             if (StringUtils.isEmpty(nodeData.getLang())) {
               originalLangDraft = nodeData;
-            } else if (nodeData.getLang().equals(lang)) {
+            } else if (nodeData.getLang().equals(locale.getLanguage())) {
               currentLangDraft = nodeData;
-            } else if (anyLangDraft == null) {
+            } else if (anyLangDraft == null || getLocatedLangDisplayName(localesList, locale, nodeData.getLang()).compareToIgnoreCase(getLocatedLangDisplayName(localesList, locale, anyLangDraft.getLang())) < 0) {
               anyLangDraft = nodeData;
             }
           }
@@ -249,5 +249,13 @@ public class TreeUtils {
       }
     }
     return cleanedChildren;
+  }
+
+  public static String getLocatedLangDisplayName(List<Locale> localesList, Locale currentLocale, String lang) {
+    Optional<Locale> opLocal = localesList.stream().filter(local -> local.getLanguage().equals(lang)).findAny();
+    if (opLocal.isPresent()) {
+      return opLocal.get().getDisplayName(currentLocale);
+    }
+    return lang;
   }
 }

@@ -1246,7 +1246,7 @@ public class NotesRestService implements ResourceContainer {
 
       // prepare draft note nodes tree
       if (Boolean.TRUE.equals(withDrafts)) {
-        bottomChildren = TreeUtils.cleanDraftChildren(bottomChildren,request.getLocale().getLanguage());
+        bottomChildren = TreeUtils.cleanDraftChildren(bottomChildren,request.getLocale());
         for (JsonNodeData child : bottomChildren) {
           JsonNodeData parent;
           do {
@@ -1284,7 +1284,7 @@ public class NotesRestService implements ResourceContainer {
             if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
               children = parent.getChildren();
               if (Boolean.TRUE.equals(withDrafts)) {
-                children = TreeUtils.cleanDraftChildren(children, request.getLocale().getLanguage());
+                children = TreeUtils.cleanDraftChildren(children, request.getLocale());
                 children = children.stream()
                                    .filter(jsonNodeData -> jsonNodeData.isDraftPage()
                                        || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
