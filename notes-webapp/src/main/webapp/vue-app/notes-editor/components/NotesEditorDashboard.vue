@@ -256,6 +256,8 @@ export default {
       } else {
         this.getNote(this.noteId);
       }
+    } else {
+      this.initActualNoteDone=true;
     }
     if (urlParams.has('parentNoteId')) {
       this.parentPageId = urlParams.get('parentNoteId');

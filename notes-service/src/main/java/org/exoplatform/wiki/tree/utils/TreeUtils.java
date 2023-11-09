@@ -212,7 +212,7 @@ public class TreeUtils {
     List<Locale> localesList = new ArrayList<>(LocaleContextInfoUtils.getSupportedLocales());
     List<String> targetList = children.stream().map(JsonNodeData::getTargetPageId).distinct().collect(Collectors.toList());
     List<JsonNodeData> cleanedChildren = children.stream()
-                                                 .filter(jsonNodeData -> !jsonNodeData.isDraftPage())
+            .filter(jsonNodeData -> (!jsonNodeData.isDraftPage() || StringUtils.isEmpty(jsonNodeData.getTargetPageId())))
             .collect(Collectors.toList());
     for (String target : targetList) {
       if (StringUtils.isNotEmpty(target)) {
