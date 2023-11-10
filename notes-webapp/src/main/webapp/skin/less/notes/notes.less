@@ -7,7 +7,8 @@
 @import "Notifications/Style.less";
 @import "Sprites/Style.less";
 @import "UIWikiRichTextEditor/Stylesheet.less";
-@import "editor.less";
+@import "../../../ckeditor/skins/common/extendedRichContent.less";
+
 /************ New css feature notes ****************/
 .customPluginsDrawer {
   z-index: 99999 !important;
@@ -288,6 +289,12 @@
         max-width: 50%;
         min-width: 60px;
       }
+    }
+  }
+
+  .content-link {
+    a {
+      font-size: 16px !important;
     }
   }
 }

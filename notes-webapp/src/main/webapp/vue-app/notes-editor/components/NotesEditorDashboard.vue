@@ -511,62 +511,8 @@ export default {
       if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
         CKEDITOR.instances['notesContent'].destroy(true);
       }
-      CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
-      CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-          'autolink,colordialog,tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
-      let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
-      const windowWidth = $(window).width();
-      const windowHeight = $(window).height();
-      if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
-        // Disable suggester on smart-phone landscape
-        extraPlugins = 'simpleLink';
-      }
-      const toolbar = [
-        { name: 'accessibility', items: ['A11ychecker'] },
-        { name: 'format', items: ['Format'] },
-        { name: 'fontsize', items: ['FontSize'] },
-        {
-          name: 'basicstyles',
-          groups: ['basicstyles', 'cleanup'],
-          items: ['Bold', 'Italic', 'Underline', 'Strike', 'TextColor','RemoveFormat', 'CopyFormatting']
-        },
-        {
-          name: 'paragraph',
-          groups: ['align','list','indent'],
-          items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'NumberedList', 'BulletedList', 'Outdent', 'Indent'],
-        },
-        { name: 'links', items: [ 'Link', 'Anchor' ] },
-        { name: 'blocks', items: ['Blockquote', 'tagSuggester', 'emoji', 'selectImage', 'Table', 'EmbedSemantic', 'CodeSnippet', 'InsertOptions'] },
-      ];
-
-      const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
-      if (ckEditorExtensions && ckEditorExtensions.length) {
-        const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
-        const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
-        if (ckEditorExtraPlugins) {
-          extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
-        }
-        if (ckEditorRemovePlugins) {
-          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
-        }
-      }
-      const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
-      if (notesEditorExtensions?.length && this.useExtraPlugins) {
-        notesEditorExtensions.forEach(notesEditorExtension => {
-          if (notesEditorExtension.extraPlugin) {
-            extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
-          }
-          if (notesEditorExtension.removePlugin) {
-            removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
-          }
-          if (notesEditorExtension.extraToolbarItem) {
-            toolbar[0].push(notesEditorExtension.extraToolbarItem);
-          }
-        });
-      }
 
       CKEDITOR.on('dialogDefinition', function (e) {
         if (e.data.name === 'link') {
@@ -576,15 +522,12 @@ export default {
           targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
         }
       });
-
       // this line is mandatory when a custom skin is defined
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
       const self = this;
 
       $('textarea#notesContent').ckeditor({
         customConfig: `${eXo.env.portal.context}/${eXo.env.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
-        extraPlugins: extraPlugins,
-        removePlugins: removePlugins,
         allowedContent: true,
         spaceURL: self.spaceURL,
         spaceGroupId: `/spaces/${this.spaceGroupId}`,
@@ -594,21 +537,12 @@ export default {
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
-        toolbar: toolbar,
-        toolbarGroups: [
-          { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-          { name: 'paragraph', groups: ['align', 'list', 'indent', ] },
-          { name: 'links'},
-          { name: 'blocks'},
-        ],
         copyFormatting_allowedContexts: true,
         indentBlock: {
           offset: 40,
           unit: 'px'
         },
         format_tags: 'p;h1;h2;h3',
-        autoGrow_minHeight: self.noteFormContentHeight,
-        height: self.noteFormContentHeight,
         bodyClass: 'notesContent',
         dialog_noConfirmCancel: true,
         colorButton_enableMore: true,
@@ -617,17 +551,9 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            this.document.appendStyleSheet(`/notes/skin/css/notes/editorContent.css?v=${eXo.env.client.assetsVersion}`);
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-            CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
-              if ( element.getAscendant( 'table', true ) ) {
-                return {
-                  tableProperties: CKEDITOR.TRISTATE_ON
-                };
-              }
-            });
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
