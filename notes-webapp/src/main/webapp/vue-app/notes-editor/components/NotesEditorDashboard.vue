@@ -816,23 +816,20 @@ export default {
       const oEmbeds = docElement.querySelectorAll('oembed');
       oEmbeds.forEach((oembed, index) => {
         oembed.innerHTML = decodeURIComponent(oembed.innerHTML);
-        oembed.dataset.htmlSource = iframes[index]?.parentNode?.innerHTML?.toString();
+        oembed.dataset.iframe = iframes[index]?.parentNode?.innerHTML?.toString();
         const width = iframes[index]?.parentNode?.offsetWidth;
         const height = iframes[index]?.parentNode?.offsetHeight;
         const aspectRatio = width / height;
         const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
         const style = `
-          position: relative;
-          display: flex;
-          margin: auto;
           min-height: ${minHeight}px;
           min-width: ${this.oembedMinWidth}px;
-          width: ${width}px;
-          height:${height}px;
+          width: 100%;
           margin-bottom: 10px;
           aspect-ratio: ${aspectRatio};
         `;
         oembed.setAttribute('style', style);
+        oembed.setAttribute('class', 'd-flex position-relative ml-auto mr-auto');
       });
       return docElement?.children[1].innerHTML;
     }
