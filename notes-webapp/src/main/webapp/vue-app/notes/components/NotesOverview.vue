@@ -860,11 +860,11 @@ export default {
       const contentChildren = docElement.getElementsByTagName('body')[0].children;
       const links = docElement.getElementsByTagName('a');
       const tables = docElement.getElementsByTagName('table');
-      const oEmbeds = docElement.getElementsByTagName('oembed');
-      for (const oembed of oEmbeds) {
-        oembed.innerHTML = oembed.dataset.htmlSource;
-        delete oembed.dataset.htmlSource;
-      }
+      docElement.querySelectorAll('pre > code').forEach((e) => codeHighlighter.highlightBlock(e));
+      docElement.querySelectorAll('oembed').forEach((oembed) => {
+        oembed.innerHTML = oembed.dataset.iframe;
+        delete oembed.dataset.iframe;
+      });
       for (const link of links) {
         let href = link.href.replace(/(^\w+:|^)\/\//, '');
         if (href.endsWith('/')) {

@@ -169,7 +169,6 @@ export default {
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       oembedMinWidth: 300,
-<<<<<<< HEAD
       showTranslationBar: false,
       slectedLanguage: null,
       translations: null,
@@ -177,8 +176,6 @@ export default {
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
-=======
->>>>>>> d19a56829 (feat: Notes editor toolbar options improvments - EXO-65695 - Meeds-io/MIPs#71 (#725))
     };
   },
   computed: {
@@ -1032,19 +1029,15 @@ export default {
       const oEmbeds = docElement.querySelectorAll('oembed');
       oEmbeds.forEach((oembed, index) => {
         oembed.innerHTML = decodeURIComponent(oembed.innerHTML);
-        oembed.dataset.htmlSource = iframes[index]?.parentNode?.innerHTML?.toString();
+        oembed.dataset.iframe = iframes[index]?.parentNode?.innerHTML?.toString();
         const width = iframes[index]?.parentNode?.offsetWidth;
         const height = iframes[index]?.parentNode?.offsetHeight;
         const aspectRatio = width / height;
         const minWidth = parseInt(this.oembedMinWidth) / aspectRatio;
         const style = `
-          position: relative;
-          display: flex;
-          margin: auto;
-          min-height: ${minWidth}px;
+          min-height: ${minHeight}px;
           min-width: ${this.oembedMinWidth}px;
-          width: ${width}px;
-          height:${height}px;
+          width: 100%;
           margin-bottom: 10px;
           aspect-ratio: ${aspectRatio};
         `;
