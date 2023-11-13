@@ -108,6 +108,14 @@
     <note-treeview-drawer 
       ref="noteTreeview"
       @closed="closePluginsDrawer()" />
+
+    <div
+      v-for="(extension, i) in noteEditorExtensions"
+      :key="i">
+      <extension-registry-component
+        :component="extension"
+        element="div" />
+    </div>
   </v-app>
 </template>
 
@@ -174,6 +182,7 @@ export default {
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
+      noteEditorExtensions: null
     };
   },
   computed: {
@@ -234,6 +243,10 @@ export default {
     }
   },
   created() {
+    this.refreshTranslationExtensions();
+    document.addEventListener('automatic-translation-extensions-updated', () => {
+      this.refreshTranslationExtensions();
+    });
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
@@ -308,6 +321,8 @@ export default {
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       this.deleteTranslation(translation, noteId);
     });
+    this.$root.$on('update-note-title', this.updateNoteTitle);
+    this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('include-page', (note) => {
       const editor = $('textarea#notesContent').ckeditor().editor;
       const editorSelectedElement = editor.getSelection().getStartElement();
@@ -1029,13 +1044,26 @@ export default {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         this.saveDraftFromLocalStorage();
       }
-      this.languages = this.languages.filter(item => item.value !== lang.value);
-      this.slectedLanguage=lang.value;
+      const originNoteContent = {
+        title: this.note.title,
+        content: this.note.content,
+        lang: lang?.value
+      };
+      this.languages = this.languages.filter(item => item.value !== lang?.value);
+      this.slectedLanguage=lang?.value;
       this.translations.unshift(lang);
       this.note.content='';
       this.note.title='';
       this.note.lang=lang.value;
       this.newDraft=true;
+      this.initCKEditor();
+      document.dispatchEvent(new CustomEvent('translation-added',{ detail: originNoteContent }));
+    },
+    updateNoteTitle(title) {
+      this.note.title=title;
+    },
+    updateNoteContent(content) {
+      this.note.content = content;
       this.initCKEditor();
     },
     changeTranslation(lang){
@@ -1058,7 +1086,10 @@ export default {
         params.append('translation', this.slectedLanguage);
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
-    }
+    },
+    refreshTranslationExtensions() {
+      this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
+    },
   }
 };
 </script>
