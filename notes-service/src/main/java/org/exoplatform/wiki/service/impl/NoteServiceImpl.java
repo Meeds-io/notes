@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import lombok.SneakyThrows;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.gatein.api.EntityNotFoundException;
@@ -132,7 +133,6 @@ public class NoteServiceImpl implements NoteService {
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
-
   public NoteServiceImpl( DataStorage dataStorage,
                           CacheService cacheService,
                           WikiService wikiService,
@@ -177,6 +177,7 @@ public class NoteServiceImpl implements NoteService {
     this.organizationService = organizationService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
+
   public static File zipFiles(String zipFileName, List<File> addToZip) throws IOException {
 
     String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
@@ -228,6 +229,7 @@ public class NoteServiceImpl implements NoteService {
     Page parentPage = getNoteOfNoteBookByName(noteBook.getType(), noteBook.getOwner(), parentNoteName);
     if (parentPage != null) {
       note.setOwner(userIdentity.getUserId());
+      note.setAuthor(userIdentity.getUserId());
       note.setContent(note.getContent());
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
@@ -240,24 +242,25 @@ public class NoteServiceImpl implements NoteService {
       invalidateCache(parentPage);
       invalidateCache(note);
 
-      // call listeners
-      postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
-      Utils.broadcast(listenerService, "note.posted", userIdentity.getUserId(), createdPage);
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not foond");
     }
   }
-  
+
   @Override
   public Page createNote(Wiki noteBook, Page parentPage, Page note) throws WikiException {
-
-    return dataStorage.createPage(noteBook, parentPage, note);
+    Page createdPage = dataStorage.createPage(noteBook, parentPage, note);
+    Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
+    // call listeners
+    postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
+    return createdPage;
   }
 
+  @SneakyThrows
   @Override
   public Page updateNote(Page note) throws WikiException {
-    return dataStorage.updatePage(note);
+    return updateNote(note, null);
   }
 
   @Override
@@ -268,39 +271,38 @@ public class NoteServiceImpl implements NoteService {
     if (note_ == null) {
       throw new EntityNotFoundException("Note to update not found");
     }
-    if (note_ != null) {
-      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-      if (!canManageNotes(userIdentity.getUserId(), space, note_)) {
-        throw new IllegalAccessException("User does not have edit the note.");
-      }
+    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
+    if (userIdentity != null && !canManageNotes(userIdentity.getUserId(), space, note_)) {
+      throw new IllegalAccessException("User does not have edit the note.");
     }
-    Page updatedPage = updateNote(note, type);
-    Utils.broadcast(listenerService, "note.updated", userIdentity.getUserId(), updatedPage);
-
+    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
+      note.setUpdatedDate(Calendar.getInstance().getTime());
+    }
+    note.setContent(note.getContent());
+    Page updatedPage = dataStorage.updatePage(note);
+    invalidateCache(note);
+    
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
     updatedPage.setCanManage(note.isCanManage());
     updatedPage.setCanImport(note.isCanImport());
     updatedPage.setCanView(note.isCanView());
     updatedPage.setAppName(note.getAppName());
-    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
-    updatedPage.setMetadatas(metadata);
+    if (userIdentity != null) {
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
+      updatedPage.setMetadatas(metadata);
+      note.setAuthor(userIdentity.getUserId());
+    }
+    Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
+    postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
 
     return updatedPage;
   }
 
+  @SneakyThrows
   @Override
   public Page updateNote(Page note, PageUpdateType type) throws WikiException {
-    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
-      note.setUpdatedDate(Calendar.getInstance().getTime());
-    }
-    note.setContent(note.getContent());
-    updateNote(note);
-    invalidateCache(note);
-
-    Page updatedPage = getNoteById(note.getId());
-    postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
-    return updatedPage;
+    return updateNote(note, type, null);
   }
 
   @Override

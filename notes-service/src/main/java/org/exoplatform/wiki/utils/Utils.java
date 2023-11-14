@@ -696,7 +696,7 @@ public class Utils {
     try {
       listenerService.broadcast(eventName, source, data);
     } catch (Exception e) {
-      LOG.error("Error while broadcasting event: {}", eventName, e);
+      LOG.warn("Error while broadcasting event: {}. Wheres, the operation will continue to proceed", eventName, e);
     }
   }
 }

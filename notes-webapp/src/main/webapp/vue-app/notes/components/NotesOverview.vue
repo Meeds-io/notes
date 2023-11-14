@@ -199,9 +199,7 @@
             :items="noteAllChildren"
             item-key="noteId">
             <template #label="{ item }">
-              <v-list-item-title class="body-2 content-link clickable primary--text">
-                <a :href="getNoteLink(item.noteId)"><span>{{ item.name }}</span></a>
-              </v-list-item-title>
+              <note-content-table-item :note="item" />
             </template>
           </v-treeview>
         </div>
@@ -354,9 +352,7 @@ export default {
               :items="noteChildItems" \
               item-key="noteId"> \
               <template #label="{ item }"> \
-                <v-list-item-title @click="openNoteChild(item)" class="body-2 clickable primary--text"> \
-                <span>{{ item.name }}</span> \
-              </v-list-item-title> \
+                <note-content-table-item :note="item" />\
               </template> \
               </v-treeview >',
               props: {
@@ -537,10 +533,6 @@ export default {
     this.handleChangePages();
   },
   methods: {
-    getNoteLink(noteId) {
-      const baseUrl = window.location.href;
-      return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
-    },
     loadMoreVersions(){
       this.versionsPageSize += this.versionsPageSize;
     },
@@ -813,11 +805,6 @@ export default {
       const contentChildren = docElement.getElementsByTagName('body')[0].children;
       const links = docElement.getElementsByTagName('a');
       const tables = docElement.getElementsByTagName('table');
-      docElement.querySelectorAll('pre > code').forEach((e) => codeHighlighter.highlightBlock(e));
-      docElement.querySelectorAll('oembed').forEach((oembed) => {
-        oembed.innerHTML = oembed.dataset.iframe;
-        delete oembed.dataset.iframe;
-      });
       for (const link of links) {
         let href = link.href.replace(/(^\w+:|^)\/\//, '');
         if (href.endsWith('/')) {

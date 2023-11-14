@@ -8,7 +8,7 @@
 @import "Sprites/Style.less";
 @import "UIWikiRichTextEditor/Stylesheet.less";
 @import "../../../ckeditor/skins/common/extendedRichContent.less";
-
+@import (less) "../../../ckeditor/plugins/codesnippet/lib/highlight/styles/monokai_sublime.css";
 /************ New css feature notes ****************/
 .customPluginsDrawer {
   z-index: 99999 !important;
@@ -62,18 +62,17 @@
     background: #eeeeee;
 
     .notes-content-wrapper {
-      min-height: calc(~"100vh - 210px");
+      min-height: ~"calc(var(--100vh, 100vh) - 210px)";
     }
 
     .notes-content {
-      height: calc(~"100vh - 100px");
+      height: ~"calc(var(--100vh, 100vh) - 100px)";
       overflow: auto;
       z-index: 5;
       background-color: #eeeeee;
       margin-top: 102px;
 
       .notes-content-form {
-        margin: 20px auto !important;
         min-height: calc(~"100vh - 140px");
         #cke_notesContent {
           border-color: transparent;
@@ -289,12 +288,6 @@
         max-width: 50%;
         min-width: 60px;
       }
-    }
-  }
-
-  .content-link {
-    a {
-      font-size: 16px !important;
     }
   }
 }

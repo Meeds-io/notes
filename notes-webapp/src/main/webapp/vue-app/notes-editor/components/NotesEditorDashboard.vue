@@ -53,7 +53,7 @@
       </div>
 
       <form class="notes-content">
-        <div class="notes-content-form singlePageApplication py-1 px-5">
+        <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
           <div
             v-if="!webPageNote"
             class="formInputGroup notesTitle white px-5">
@@ -336,6 +336,7 @@ export default {
     fillNote(data) {
       this.initActualNoteDone = false;
       if (data) {
+        data.content = this.getContentToEdit(data.content);
         this.note = data;
         this.actualNote = {
           id: this.note.id,
@@ -807,31 +808,67 @@ export default {
         return false;
       }
     },
+    getContentToEdit(content) {
+      const domParser = new DOMParser();
+      const docElement = domParser.parseFromString(content, 'text/html').documentElement;
+      this.restoreOembed(docElement);
+      this.restoreUnHighlightedCode(docElement);
+      return docElement?.children[1].innerHTML;
+    },
+    restoreUnHighlightedCode(documentElement) {
+      documentElement.querySelectorAll('code.hljs').forEach(code => {
+        code.innerHTML = code.innerText;
+        code.classList.remove('hljs');
+      });
+    },
+    restoreOembed(documentElement) {
+      documentElement.querySelectorAll('div.embed-wrapper').forEach(wrapper => {
+        const oembed = document.createElement('oembed');
+        oembed.innerHTML = wrapper.dataset.url;
+        wrapper.replaceWith(oembed);
+      });
+    },
+    preserveEmbedded(body, documentElement) {
+      const iframes = body.querySelectorAll('[data-widget="embedSemantic"] div iframe');
+      if (iframes.length) {
+        documentElement.querySelectorAll('oembed').forEach((oembed, index) => {
+          const wrapper = document.createElement('div');
+          wrapper.dataset.url = decodeURIComponent(oembed.innerHTML);
+          wrapper.innerHTML = iframes[index]?.parentNode?.innerHTML;
+          const width = iframes[index]?.parentNode?.offsetWidth;
+          const height = iframes[index]?.parentNode?.offsetHeight;
+          const aspectRatio = width / height;
+          const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
+          const style = `
+            min-height: ${minHeight}px;
+            min-width: ${this.oembedMinWidth}px;
+            width: 100%;
+            margin-bottom: 10px;
+            aspect-ratio: ${aspectRatio};
+          `;
+          wrapper.setAttribute('style', style);
+          wrapper.setAttribute('class', 'embed-wrapper d-flex position-relative ml-auto mr-auto');
+          oembed.replaceWith(wrapper);
+        });
+      }
+    },
+    preserveHighlightedCode(body, documentElement) {
+      const codes = body.querySelectorAll('pre[data-widget="codeSnippet"] code');
+      if (codes.length) {
+        documentElement.querySelectorAll('code').forEach((code, index) => {
+          code.innerHTML = codes[index]?.innerHTML;
+          code.setAttribute('class', codes[index]?.getAttribute('class'));
+        });
+      }
+    },
     getBody: function() {
       const domParser = new DOMParser();
       const newData = CKEDITOR.instances['notesContent'].getData();
       const body = CKEDITOR.instances['notesContent'].document.getBody().$;
-      const docElement = domParser.parseFromString(newData, 'text/html').documentElement;
-      const iframes = body.querySelectorAll('[data-widget="embedSemantic"] div iframe');
-      const oEmbeds = docElement.querySelectorAll('oembed');
-      oEmbeds.forEach((oembed, index) => {
-        oembed.innerHTML = decodeURIComponent(oembed.innerHTML);
-        oembed.dataset.iframe = iframes[index]?.parentNode?.innerHTML?.toString();
-        const width = iframes[index]?.parentNode?.offsetWidth;
-        const height = iframes[index]?.parentNode?.offsetHeight;
-        const aspectRatio = width / height;
-        const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
-        const style = `
-          min-height: ${minHeight}px;
-          min-width: ${this.oembedMinWidth}px;
-          width: 100%;
-          margin-bottom: 10px;
-          aspect-ratio: ${aspectRatio};
-        `;
-        oembed.setAttribute('style', style);
-        oembed.setAttribute('class', 'd-flex position-relative ml-auto mr-auto');
-      });
-      return docElement?.children[1].innerHTML;
+      const documentElement = domParser.parseFromString(newData, 'text/html').documentElement;
+      this.preserveEmbedded(body, documentElement);
+      this.preserveHighlightedCode(body, documentElement);
+      return documentElement?.children[1].innerHTML;
     }
   }
 };

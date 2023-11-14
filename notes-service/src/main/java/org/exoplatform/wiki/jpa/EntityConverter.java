@@ -32,6 +32,7 @@ import org.exoplatform.wiki.jpa.dao.WikiDAO;
 import org.exoplatform.wiki.jpa.entity.*;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.IDType;
+import org.exoplatform.wiki.utils.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
@@ -112,11 +113,11 @@ public class EntityConverter {
       page.setUpdatedDate(pageEntity.getUpdatedDate());
       page.setMinorEdit(pageEntity.isMinorEdit());
       page.setComment(pageEntity.getComment());
-      page.setUrl(pageEntity.getUrl());
       page.setPermissions(convertPermissionEntitiesToPermissionEntries(pageEntity.getPermissions(),
               Arrays.asList(PermissionType.VIEWPAGE, PermissionType.EDITPAGE)));
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
+      page.setUrl(Utils.getPageUrl(page));
     }
     return page;
   }

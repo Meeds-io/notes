@@ -23,10 +23,12 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
+import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
+@Data
 public class JsonNodeData {  
 
   protected String           name;
@@ -62,8 +64,10 @@ public class JsonNodeData {
   private List<JsonNodeData>  children;
   
   private String parentPageId;
-  
+
   private Boolean hasDraftDescendant;
+  
+  private String             url;
     
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
@@ -89,146 +93,19 @@ public class JsonNodeData {
     this.children = TreeUtils.tranformToJson(treeNode, context);
     this.isSelected = treeNode.isSelected();
     this.isRestricted = treeNode.isRetricted;
-    if (this.children.size() > 0) {
+    if (!this.children.isEmpty()) {
       this.isExpanded = true;
     }
     if (treeNode.getNodeType().equals(TreeNodeType.PAGE)) {
       Page page = ((PageTreeNode) treeNode).getPage();
       this.isDraftPage = page.isDraftPage();
       this.parentPageId = page.getParentPageId();
+      this.url = page.getUrl();
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
       if (withDrafts) {
         this.disabled = !this.isDraftPage;
       }
     }
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  } 
-
-  public String getPath() {
-    return path;
-  }
-
-  public void setPath(String path) {
-    this.path = path;
-  }
-
-  public boolean isHasChild() {
-    return hasChild;
-  }
-
-  public void setHasChild(boolean hasChild) {
-    this.hasChild = hasChild;
-  }
-
-  public TreeNodeType getNodeType() {
-    return nodeType;
-  }
-
-  public void setNodeType(TreeNodeType nodeType) {
-    this.nodeType = nodeType;
-  }
-
-  public boolean isLastNode() {
-    return isLastNode;
-  }
-
-  public void setLastNode(boolean isLastNode) {
-    this.isLastNode = isLastNode;
-  }
-
-  public boolean isSelectable() {
-    return isSelectable;
-  }
-
-  public void setSelectable(boolean isSelectable) {
-    this.isSelectable = isSelectable;
-  }
-  
-  public boolean isRestricted() {
-    return isRestricted;
-  }
-  
-  public void setRestricted(boolean isRetricted) {
-    this.isRestricted = isRetricted;
-  }
-
-  public String getCurrentPath() {
-    return currentPath;
-  }
-
-  public void setCurrentPath(String currentPath) {
-    this.currentPath = currentPath;
-  }
-  
-  public boolean isExpanded() {
-    return isExpanded;
-  }
-
-  public void setExpanded(boolean isExpanded) {
-    this.isExpanded = isExpanded;
-  }
-
-  public boolean isSelected() {
-    return isSelected;
-  }
-
-  public void setSelected(boolean isSelected) {
-    this.isSelected = isSelected;
-  }
-
-  public String getExcerpt() {
-    return excerpt;
-  }
-
-  public void setExcerpt(String excerpt) {
-    this.excerpt = excerpt;
-  }
-
-  public List<JsonNodeData> getChildren() {
-    return children;
-  }
-
-  public void setChildren(List<JsonNodeData> children) {
-    this.children = children;
-  }
-
-  public String getParentPageId() {
-    return parentPageId;
-  }
-
-  public void setParentPageId(String parentPageId) {
-    this.parentPageId = parentPageId;
-  }
-
-  public String getNoteId() {
-    return noteId;
-  }
-
-  public void setNoteId(String noteId) {
-    this.noteId = noteId;
-  }
-
-  public boolean isDraftPage() {
-    return isDraftPage;
-  }
-
-  public void setDraftPage(boolean draftPage) {
-    isDraftPage = draftPage;
-  }
-
-  public boolean isDisabled() {
-    return disabled;
-  }
-
-  public void setDisabled(boolean disabled) {
-    this.disabled = disabled;
   }
 
   public Boolean isHasDraftDescendant() {
