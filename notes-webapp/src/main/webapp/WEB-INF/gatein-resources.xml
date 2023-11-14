@@ -61,9 +61,6 @@
         <module>versionHistoryDrawer</module>
       </depends>
       <depends>
-        <module>codeHighlighter</module>
-      </depends>
-      <depends>
         <module>jquery</module>
         <as>$</as>
       </depends>

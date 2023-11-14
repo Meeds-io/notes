@@ -69,13 +69,15 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   private String                     searchQueryFilePath;
 
-  public static final String           SEARCH_QUERY_TERM            = ",\"must\":{" +
-          "  \"query_string\":{" +
-          "    \"fields\": [\"name\",\"title\",\"content\",\"comment\",\"attachment.content\"]," +
-          "    \"default_operator\": \"AND\"," +
-          "    \"query\": \"@term@\"" +
-          "  }" +
-          "}";
+  public static final String         SEARCH_QUERY_TERM            = """
+      ,"must":{
+        "query_string":{
+          "fields": ["name","title","content","comment","attachment.content"],
+          "default_operator": "AND",
+          "query": "@term@"
+        }
+      }
+      """;
 
 
   public WikiElasticSearchServiceConnector(ConfigurationManager configurationManager,
@@ -135,19 +137,20 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       return "";
     }
     List<String> tagsQueryParts = values.stream()
-            .map(value -> "{\"term\": {\n" +
-                    "            \"metadatas.tags.metadataName.keyword\": {\n" +
-                    "              \"value\": \"" +
-                    value +
-                    "\",\n" +
-                    "              \"case_insensitive\":true\n" +
-                    "            }\n" +
-                    "          }}")
+            .map(value -> """
+                               {"term": {
+                               "metadatas.tags.metadataName.keyword": {
+                                 "value":""" + value + """
+                                 ,"case_insensitive":true
+                                } 
+                               }}
+                               """)
             .toList();
-    return ",\"should\": [\n" +
-            StringUtils.join(tagsQueryParts, ",") +
-            "      ],\n" +
-            "      \"minimum_should_match\": 1";
+    return """
+            ,"should": ["""+
+                         StringUtils.join(tagsQueryParts, ",") + """
+                       ],
+             "minimum_should_match": 1""";
   }
 
   private String buildTermQuery(String termQuery) {
