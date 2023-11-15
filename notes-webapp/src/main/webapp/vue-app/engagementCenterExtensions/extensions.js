@@ -9,8 +9,10 @@ export function init() {
         if (realization?.objectType === 'notes') {
           return window?.eXo?.env?.portal?.userName?.length && Vue.prototype.$notesService.getNoteById(realization?.objectId)
             .then(note => {
-              realization.link = note.url;
-              return realization.link;
+              if (note?.wikiType === 'group' && note?.wikiOwner?.includes?.('/spaces/')) {
+                realization.link = note.url;
+                return realization.link;
+              }
             }) || null;
         }
       },
