@@ -6,9 +6,12 @@ export function init() {
       icon: 'fas fa-clipboard',
       match: (actionLabel) => ['addWikiPage', 'updateWikiPage'].includes(actionLabel),
       getLink: (realization) => {
-        if (realization?.objectId && !realization.link) {
-          Vue.prototype.$notesService.getNoteById(realization?.objectId)
-            .then(note => Vue.prototype.$set(realization, 'link', note.url));
+        if (realization?.objectType === 'notes') {
+          return window?.eXo?.env?.portal?.userName?.length && Vue.prototype.$notesService.getNoteById(realization?.objectId)
+            .then(note => {
+              realization.link = note.url;
+              return realization.link;
+            }) || null;
         }
       },
     },
