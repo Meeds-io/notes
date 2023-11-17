@@ -557,7 +557,14 @@ export default {
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
-
+    window.addEventListener('message', (event) => {
+      if (event.origin === 'https://if-cdn.com') {
+        const data = JSON.parse(event.data);
+        if (data.method === 'open-href') {
+          window.open(data.href, '_blank');
+        }
+      }
+    });
   },
   mounted() {
     this.handleChangePages();
