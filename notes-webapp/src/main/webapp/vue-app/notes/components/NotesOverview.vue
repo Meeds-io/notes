@@ -318,6 +318,7 @@ export default {
       languages: [],
       slectedLanguage: null,
       originalVersion: { value: null, text: this.$t('notes.label.translation.originalVersion') },
+      iframelyOriginRegex: /^https?:\/\/if-cdn.com/
     };
   },
   watch: {
@@ -553,7 +554,14 @@ export default {
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
-
+    window.addEventListener('message', (event) => {
+      if (this.iframelyOriginRegex.exec(event.origin)) {
+        const data = JSON.parse(event.data);
+        if (data.method === 'open-href') {
+          window.open(data.href, '_blank');
+        }
+      }
+    });
   },
   mounted() {
     this.handleChangePages();
