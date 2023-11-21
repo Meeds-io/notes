@@ -635,58 +635,7 @@ export default {
       }
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
-      let extraPlugins = 'codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,' +
-          'tagSuggester,emoji,link,simpleLink,font,justify,widget,video,insertOptions,contextmenu,tabletools,tableresize,toc';
-      let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
-      const windowWidth = $(window).width();
-      const windowHeight = $(window).height();
-      if (windowWidth > windowHeight && windowWidth < this.SMARTPHONE_LANDSCAPE_WIDTH) {
-        // Disable suggester on smart-phone landscape
-        extraPlugins = 'simpleLink';
-      }
-      const toolbar = [
-        { name: 'format', items: ['Format'] },
-        { name: 'fontsize', items: ['FontSize'] },
-        {
-          name: 'basicstyles',
-          groups: ['basicstyles', 'cleanup'],
-          items: ['Bold', 'Italic', 'Underline', 'Strike', 'TextColor','RemoveFormat', 'CopyFormatting']
-        },
-        {
-          name: 'paragraph',
-          groups: ['align','list','indent'],
-          items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'NumberedList', 'BulletedList', 'Outdent', 'Indent'],
-        },
-        { name: 'links', items: [ 'Link', 'Anchor' ] },
-        { name: 'blocks', items: ['Blockquote', 'tagSuggester', 'emoji', 'selectImage', 'Table', 'EmbedSemantic', 'CodeSnippet', 'InsertOptions'] },
-      ];
-
-      CKEDITOR.on('dialogDefinition', function (e) {
-        if (e.data.name === 'link') {
-          const informationTab = e.data.definition.getContents('target');
-          const targetField = informationTab.get('linkTargetType');
-          targetField['default'] = '_self';
-          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
-        }
-        if (ckEditorRemovePlugins) {
-          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
-        }
-      }
-      const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
-      if (notesEditorExtensions?.length && this.useExtraPlugins) {
-        notesEditorExtensions.forEach(notesEditorExtension => {
-          if (notesEditorExtension.extraPlugin) {
-            extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
-          }
-          if (notesEditorExtension.removePlugin) {
-            removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
-          }
-          if (notesEditorExtension.extraToolbarItem) {
-            toolbar[0].push(notesEditorExtension.extraToolbarItem);
-          }
-        });
-      }
-
+      
       CKEDITOR.on('dialogDefinition', function (e) {
         if (e.data.name === 'link') {
           const informationTab = e.data.definition.getContents('target');
@@ -711,13 +660,6 @@ export default {
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
-        toolbar: toolbar,
-        toolbarGroups: [
-          { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-          { name: 'paragraph', groups: ['align', 'list', 'indent', ] },
-          { name: 'links'},
-          { name: 'blocks'},
-        ],
         copyFormatting_allowedContexts: true,
         indentBlock: {
           offset: 40,
@@ -732,17 +674,9 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            this.document.appendStyleSheet('/notes/skin/css/notes/editorContent.css');
             self.actualNote.content = evt.editor.getData();
             CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
             CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-            CKEDITOR.instances['notesContent'].contextMenu.addListener( function( element ) {
-              if ( element.getAscendant( 'table', true ) ) {
-                return {
-                  tableProperties: CKEDITOR.TRISTATE_ON
-                };
-              }
-            });
             $(CKEDITOR.instances['notesContent'].document.$)
               .find('.atwho-inserted')
               .each(function() {
