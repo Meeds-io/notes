@@ -1011,7 +1011,7 @@ export default {
       const domParser = new DOMParser();
       const newData = CKEDITOR.instances['notesContent'].getData();
       const body = CKEDITOR.instances['notesContent'].document.getBody().$;
-const documentElement = domParser.parseFromString(newData, 'text/html').documentElement;
+      const documentElement = domParser.parseFromString(newData, 'text/html').documentElement;
       this.preserveEmbedded(body, documentElement);
       this.preserveHighlightedCode(body, documentElement);
       return documentElement?.children[1].innerHTML;
