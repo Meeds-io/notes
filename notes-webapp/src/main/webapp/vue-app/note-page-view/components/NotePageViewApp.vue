@@ -102,6 +102,13 @@ export default {
         window.editNoteInProgress = false;
       }
     },
+    canView() {
+      if (this.canView) {
+        this.$el.parentElement.closest('.PORTLET-FRAGMENT').classList.remove('hidden');
+      } else {
+        this.$el.parentElement.closest('.PORTLET-FRAGMENT').classList.add('hidden');
+      }
+    }
   },
   created() {
     document.addEventListener('cms-preview-mode', this.switchToPreview);
