@@ -6,7 +6,7 @@
     <div>
       <div
         v-if="isAvailableNote"
-        class="notes-application white border-radius pa-5"
+        class="notes-application white card-border-radius pa-5"
         ref="content">
         <div class="notes-application-header">
           <div class="notes-title d-flex justify-space-between pb-4 ps-1">
