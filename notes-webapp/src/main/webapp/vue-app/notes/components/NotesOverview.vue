@@ -313,11 +313,14 @@ export default {
       exportStatus: '',
       exportId: 0,
       popStateChange: false,
+<<<<<<< HEAD
       selectedTranslation: {value: eXo.env.portal.language},
       translations: [],
       languages: [],
       slectedLanguage: null,
       originalVersion: { value: null, text: this.$t('notes.label.translation.originalVersion') },
+=======
+>>>>>>> e8dcf4696 (fix: fix open embedded links - EXO-65753 - Meeds-io/meeds#1306)
       iframelyOriginRegex: /^https?:\/\/if-cdn.com/
     };
   },
