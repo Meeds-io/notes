@@ -109,7 +109,6 @@
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <notes-translation-menu
-              v-if="notesMultilingualActive"
               :note="note"
               :translations="translations"
               :selected-translation="selectedTranslation"
@@ -505,9 +504,6 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
-    notesMultilingualActive() {
-      return eXo?.env?.portal?.notesMultilingual;
-    }
   },
   created() {
     this.getAvailableLanguages();
