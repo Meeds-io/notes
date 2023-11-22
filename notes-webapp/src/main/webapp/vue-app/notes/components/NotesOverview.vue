@@ -335,7 +335,7 @@ export default {
       this.retrieveNoteTreeById();
     },
     actualVersion() {
-      if (!this.isDraft) {
+      if (!this.isDraft && this.actualVersion) {
         this.noteContent = this.actualVersion.content;
         this.displayLastVersion = false;
       }
@@ -731,6 +731,10 @@ export default {
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
         this.getNoteLanguages(this.note.id);
+        if (!this.note.lang || this.note.lang === ''){
+          this.updateSelectedTranslation(this.originalVersion);
+          this.updateURL();
+        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -830,8 +834,10 @@ export default {
       this.noteVersions = [];
       return this.$notesService.getNoteVersionsByNoteId(noteId,this.selectedTranslation.value).then(data => {
         this.noteVersions = data && data.reverse() || [];
-        this.displayVersion(this.noteVersions[0]);
-        this.$root.$emit('version-restored', this.noteVersions[0]);
+        if (this.noteVersions.length>0){
+          this.displayVersion(this.noteVersions[0]);
+          this.$root.$emit('version-restored', this.noteVersions[0]);
+        }
       });
     },
     displayVersion(version) {
