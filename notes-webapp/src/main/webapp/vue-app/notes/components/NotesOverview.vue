@@ -303,7 +303,8 @@ export default {
       childNodes: [],
       exportStatus: '',
       exportId: 0,
-      popStateChange: false
+      popStateChange: false,
+      iframelyOriginRegex: /^https?:\/\/if-cdn.com/
     };
   },
   watch: {
@@ -527,6 +528,14 @@ export default {
       this.currentPath = window.location.pathname;
       this.popStateChange = true;
       this.handleChangePages();
+    });
+    window.addEventListener('message', (event) => {
+      if (this.iframelyOriginRegex.exec(event.origin)) {
+        const data = JSON.parse(event.data);
+        if (data.method === 'open-href') {
+          window.open(data.href, '_blank');
+        }
+      }
     });
   },
   mounted() {
