@@ -14,7 +14,6 @@
               <v-tooltip bottom>
                 <template #activator="{ on, attrs }">
                   <v-icon
-                    v-if="notesMultilingualActive"
                     :aria-label="$t('notes.label.button.translations.options')"
                     size="22"
                     class="clickable pa-2"
@@ -68,7 +67,6 @@
           </div>
         </div>
         <note-translation-edit-bar
-          v-if="notesMultilingualActive"
           ref="translationsEditBar"
           :note="note"
           :languages="languages"
@@ -208,9 +206,6 @@ export default {
     webPageNote() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('webPageNote') === 'true';
-    },
-    notesMultilingualActive() {
-      return eXo?.env?.portal?.notesMultilingual;
     },
     langBottonColor(){
       if (!this.noteId){
