@@ -208,15 +208,6 @@ public class NoteServiceImpl implements NoteService {
       note.setAuthor(userIdentity.getUserId());
       note.setContent(note.getContent());
       Page createdPage = createNote(noteBook, parentPage, note);
-      createdPage.setCanManage(canManageNotes(userIdentity.getUserId(), space, note));
-      createdPage.setCanImport(canImportNotes(userIdentity.getUserId(), space, note));
-      createdPage.setCanView(canViewNotes(userIdentity.getUserId(), space, note));
-      createdPage.setToBePublished(note.isToBePublished());
-      createdPage.setAppName(note.getAppName());
-      createdPage.setUrl(Utils.getPageUrl(createdPage));
-      createdPage.setLang(note.getLang());
-      invalidateCache(parentPage);
-      invalidateCache(note);
 
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       createdPage.setCanManage(canManageNotes(note.getAuthor(), space, note));
