@@ -19,7 +19,7 @@
         <span>{{ $t('notes.menu.label.delete') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note && note.canView"
+        v-if="note"
         class="px-2 text-left action-menu-item draftButton"
         @click="copyLink">
         <v-icon
@@ -51,7 +51,7 @@
         <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note && note.canView"
+        v-if="note"
         class="px-2 text-left noteExportPdf action-menu-item draftButton"
         @click="$emit('export-pdf')">
         <v-icon

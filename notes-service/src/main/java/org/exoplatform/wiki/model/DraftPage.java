@@ -37,4 +37,5 @@ public class DraftPage extends Page {
   public boolean isDraftPage() {
     return true;
   }
+
 }

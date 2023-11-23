@@ -25,7 +25,11 @@ import org.gatein.api.EntityNotFoundException;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
@@ -151,7 +155,7 @@ public interface NoteService {
    * @return The note.
    * @throws WikiException if an error occured
    */
-  DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException;
+  DraftPage getDraftNoteById(String noteId, Identity identity) throws WikiException, IllegalAccessException;
 
   /**
    * Returns latest draft of given page.
@@ -166,6 +170,24 @@ public interface NoteService {
   Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException;
 
   Page getNoteById(String id, Identity userIdentity, String source) throws IllegalAccessException, WikiException;
+
+  /**
+   * Checks whether the user can edit the page content
+   * 
+   * @param page
+   * @param identity
+   * @return true if can manage note page, else false
+   */
+  boolean canManagePage(Page page, Identity identity);
+
+  /**
+   * Checks whether the user can access to page content or not
+   * 
+   * @param page
+   * @param identity
+   * @return true if can view note page, else false
+   */
+  boolean canViewPage(Page page, Identity identity);
 
   /**
    * Get parent note of a note
@@ -449,15 +471,5 @@ public interface NoteService {
    * @throws WikiException if an error occured if an error occured
    */
   Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException;
-
-  /**
-   * Checks if the given user has the permission on a page
-   * @param user the userName
-   * @param page the wiki page object
-   * @param permissionType permission Type
-   * @return true if user has permissions
-   * @throws WikiException if an error occured
-   */
-  boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
 
 }

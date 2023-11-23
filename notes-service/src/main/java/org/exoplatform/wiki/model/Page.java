@@ -85,10 +85,6 @@ public class Page {
 
   private boolean                         canManage;
 
-  private boolean                         canView;
-
-  private boolean                         canImport;
-
   private List<Page>                      children;
 
   private boolean                         hasChild;
@@ -111,6 +107,24 @@ public class Page {
 
   public boolean isDraftPage() {
     return false;
+  }
+
+  /**
+   * @param canManage
+   * @deprecated this flag is the same thing as canManage, thus should be deleted
+   */
+  @Deprecated(forRemoval = true, since = "1.5.0")
+  public void setCanImport(boolean canManage) {
+    // No change on this
+  }
+
+  /**
+   * @return whether can import notes or not
+   * @deprecated this flag is the same thing as canManage, thus should be deleted
+   */
+  @Deprecated(forRemoval = true, since = "1.5.0")
+  public boolean isCanImport() {
+    return canManage;
   }
 
 }

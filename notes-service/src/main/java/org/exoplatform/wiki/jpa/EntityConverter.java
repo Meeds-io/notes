@@ -218,7 +218,7 @@ public class EntityConverter {
     return permissionEntities;
   }
 
-  public static Attachment convertAttachmentEntityToAttachment(FileService fileService, AttachmentEntity attachmentEntity, boolean loadContent) throws WikiException {
+  public static Attachment convertAttachmentEntityToAttachment(FileService fileService, AttachmentEntity attachmentEntity, boolean loadContent) {
     Attachment attachment = null;
     FileItem fileItem = null;
     if (attachmentEntity != null) {
@@ -237,7 +237,7 @@ public class EntityConverter {
           fileItem = new FileItem(fileInfo, null);
         }
       } catch (Exception e) {
-        throw new WikiException("Cannot get attachment file ID "+ attachmentEntity.getAttachmentFileID() + " from storage", e.getCause());
+        throw new IllegalStateException("Cannot get attachment file ID "+ attachmentEntity.getAttachmentFileID() + " from storage", e.getCause());
       }
       if (fileItem != null) {
         attachment.setName(fileItem.getFileInfo().getName());

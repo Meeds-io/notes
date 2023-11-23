@@ -83,7 +83,6 @@ public class WikiSpaceActivityPublisherTest {
         spaceService);
     WikiSpaceActivityPublisher wikiSpaceActivityPublisherSpy = spy(wikiSpaceActivityPublisher);
     Page page = new Page();
-    page.setCanView(true);
     page.setToBePublished(false);
     Identity identity = new Identity("user");
     ConversationState conversationState = new ConversationState(identity);
@@ -111,7 +110,6 @@ public class WikiSpaceActivityPublisherTest {
         spaceService);
     WikiSpaceActivityPublisher wikiSpaceActivityPublisherSpy = spy(wikiSpaceActivityPublisher);
     Page page = new Page();
-    page.setCanView(true);
     page.setToBePublished(true);
     Identity identity = new Identity("user");
     ConversationState conversationState = new ConversationState(identity);
@@ -140,7 +138,6 @@ public class WikiSpaceActivityPublisherTest {
         spaceService);
     WikiSpaceActivityPublisher wikiSpaceActivityPublisherSpy = spy(wikiSpaceActivityPublisher);
     Page page = new Page();
-    page.setCanView(true);
     page.setToBePublished(false);
     page.setActivityId("notNull");
     ExoSocialActivityImpl activity = new ExoSocialActivityImpl();

@@ -107,7 +107,6 @@ public class TestWikiRestService extends AbstractKernelTest { // NOSONAR
     entity.setRemoteId("root");
     entity.setId("1");
     entity.setDeleted(false);
-    when(wikiService.getPageOfWikiByName(any(), any(), any())).thenReturn(page);
     when(noteService.getNoteOfNoteBookByName(any(),
                                              any(),
                                              any(),

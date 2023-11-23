@@ -68,7 +68,7 @@ public class WikiHomeTreeNode extends TreeNode {
     Page currentPage = (Page) context.get(TreeNode.SELECTED_PAGE);
     while (childPageIterator.hasNext() && count < size) {
       Page childPage = childPageIterator.next();
-      if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
+      if (noteService.canViewPage(childPage, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
         PageTreeNode child = new PageTreeNode(childPage);
         this.children.add(child);

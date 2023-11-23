@@ -255,8 +255,8 @@ public class TestNoteService extends BaseTest {
     systemPermissionPage.setPermissions(new ArrayList<>());
     Page storedSystemPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), systemPermissionPage);
 
-    assertTrue(noteService.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, adminAclIdentity));
-    assertFalse(noteService.hasPermissionOnPage(storedSystemPermissionPage, PermissionType.VIEWPAGE, adminAclIdentity));
+    assertTrue(noteService.canViewPage(noPermissionPage, adminAclIdentity));
+    assertFalse(noteService.canViewPage(storedSystemPermissionPage, adminAclIdentity));
 
     assertNotNull(noteService.getNoteById(storedSystemPermissionPage.getId(), adminAclIdentity));
     assertThrows(IllegalAccessException.class,

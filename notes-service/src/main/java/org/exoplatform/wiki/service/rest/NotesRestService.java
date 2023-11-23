@@ -257,7 +257,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUserId = identity.getUserId();
-      DraftPage draftNote = noteService.getDraftNoteById(noteId, currentUserId);
+      DraftPage draftNote = noteService.getDraftNoteById(noteId, identity);
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
@@ -372,7 +372,6 @@ public class NotesRestService implements ResourceContainer {
       if (noteService.isExisting(noteBookType, noteBookOwner, TitleResolver.getId(note.getTitle(), false))) {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
-      /* TODO: check noteBook permissions */
       Wiki noteBook = noteBookService.getWikiByTypeAndOwner(noteBookType, noteBookOwner);
       if (noteBook == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -753,8 +752,8 @@ public class NotesRestService implements ResourceContainer {
   String noteId) {
 
     try {
-      String currentUserId = ConversationState.getCurrent().getIdentity().getUserId();
-      DraftPage draftNote = noteService.getDraftNoteById(noteId, currentUserId);
+      Identity currentIdentity = ConversationState.getCurrent().getIdentity();
+      DraftPage draftNote = noteService.getDraftNoteById(noteId, currentIdentity);
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }

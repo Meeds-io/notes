@@ -22,6 +22,7 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.service.NoteService;
@@ -66,11 +67,11 @@ public class PageTreeNode extends TreeNode {
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());
-    
+
     Page currentPage = (Page) context.get(TreeNode.SELECTED_PAGE);
     while (childPageIterator.hasNext() && count < size) {
       Page childPage = childPageIterator.next();
-      if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
+      if (noteService.canViewPage(childPage, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
         PageTreeNode child = new PageTreeNode(childPage);
         this.children.add(child);

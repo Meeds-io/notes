@@ -26,6 +26,7 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.PermissionType;
@@ -110,32 +111,30 @@ public class TreeUtils {
       
       if (child.getNodeType().equals(TreeNodeType.WIKI)) {
         isSelectable = false;
-      } else if (child.getNodeType().equals(TreeNodeType.PAGE)) {
-        Page page = ((PageTreeNode) child).getPage();
-        if (((currentPage != null) && (currentPage.equals(page) || Utils.isDescendantPage(page, currentPage)))) {
-          isSelectable = false;
+      } else {
+        Identity identity = ConversationState.getCurrent().getIdentity();
+        if (child.getNodeType().equals(TreeNodeType.PAGE)) {
+          Page page = ((PageTreeNode) child).getPage();
+          if (((currentPage != null) && (currentPage.equals(page) || Utils.isDescendantPage(page, currentPage)))) {
+            isSelectable = false;
+          }
+          
+          if (!noteService.canViewPage(page, identity)) {
+            isSelectable = false;
+            child.setRetricted(true);
+          }
+          if(BooleanUtils.isTrue(canEdit) && !noteService.canManagePage(page, identity)){
+            isSelectable = false;
+            child.setRetricted(true);
+          }
+        } else if (child.getNodeType().equals(TreeNodeType.WIKIHOME)) {
+          Page page = ((WikiHomeTreeNode) child).getWikiHome();
+          if (!noteService.canViewPage(page, identity)
+              || (BooleanUtils.isTrue(canEdit) && !noteService.canManagePage(page, identity))) {
+            isSelectable = false;
+            child.setRetricted(true);
+          }
         }
-        
-        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-      } else if (child.getNodeType().equals(TreeNodeType.WIKIHOME)) {
-        Page page = ((WikiHomeTreeNode) child).getWikiHome();
-        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-
-        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-
       }
       
       String excerpt = null;

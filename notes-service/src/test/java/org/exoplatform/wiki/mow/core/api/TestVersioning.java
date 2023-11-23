@@ -76,7 +76,7 @@ public class TestVersioning extends BaseTest {
 
     // restore to previous version (testCreateVersionHistoryTree-ver1.0)
     noteService.restoreVersionOfNote(String.valueOf(versions.get(0).getVersionNumber()), page,"");
-    page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), page.getName());
+    page = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), page.getName());
     assertEquals("testCreateVersionHistoryTree-ver1.0", page.getContent());
 
     page.setContent("testCreateVersionHistoryTree-ver3.0");

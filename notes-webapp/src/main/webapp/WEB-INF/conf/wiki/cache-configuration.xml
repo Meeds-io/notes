@@ -42,17 +42,6 @@
             <field name="cacheMode" profiles="cluster"><string>${exo.cache.wiki.PageRenderingCache.cacheMode:replication}</string></field>
           </object>
         </object-param>
-        <object-param>
-          <name>wiki.PageAttachmentCache</name>
-          <description>The Cache configuration for wiki page attachment count</description>
-          <object type="org.exoplatform.services.cache.impl.infinispan.generic.GenericExoCacheConfig">
-            <field name="name"><string>wiki.PageAttachmentCache</string></field>
-            <field name="strategy" profiles="cluster"><string>${exo.cache.wiki.PageAttachmentCache.strategy:LIRS}</string></field>
-            <field name="maxSize"><int>${exo.cache.wiki.PageAttachmentCache.MaxNodes:1000}</int></field>
-            <field name="liveTime"><long>${exo.cache.wiki.PageAttachmentCache.TimeToLive:86400}</long></field>
-            <field name="cacheMode" profiles="cluster"><string>${exo.cache.wiki.PageAttachmentCache.cacheMode:replication}</string></field>
-          </object>
-        </object-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>

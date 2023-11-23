@@ -79,43 +79,6 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
-  public void testWikiPermissions() throws Exception {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-
-    Identity userIdentity = new Identity("user", Arrays.asList(
-            new MembershipEntry("/platform/users", "*")));
-    Identity adminIdentity = new Identity("admin", Arrays.asList(
-            new MembershipEntry("/platform/users", "*"),
-            new MembershipEntry("/platform/administrators", "*")));
-
-    List<PermissionEntry> wikiPermissions = new ArrayList<>();
-    wikiPermissions.add(new PermissionEntry("user", null, IDType.USER, new Permission[] {
-            new Permission(PermissionType.VIEWPAGE, true) }));
-    wikiPermissions.add(new PermissionEntry("admin", null, IDType.USER, new Permission[]{
-            new Permission(PermissionType.VIEWPAGE, true),
-            new Permission(PermissionType.EDITPAGE, true),
-            new Permission(PermissionType.ADMINPAGE, true),
-            new Permission(PermissionType.ADMINSPACE, true)}));
-    wiki.setPermissions(wikiPermissions);
-
-    // When
-    storage.createWiki(wiki);
-
-    // Then
-    assertTrue(storage.hasPermissionOnWiki(wiki, PermissionType.VIEWPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnWiki(wiki, PermissionType.VIEWPAGE, adminIdentity));
-    assertFalse(storage.hasPermissionOnWiki(wiki, PermissionType.EDITPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnWiki(wiki, PermissionType.EDITPAGE, adminIdentity));
-    assertFalse(storage.hasAdminPagePermission(wiki.getType(), wiki.getOwner(), userIdentity));
-    assertTrue(storage.hasAdminPagePermission(wiki.getType(), wiki.getOwner(), adminIdentity));
-    assertFalse(storage.hasAdminSpacePermission(wiki.getType(), wiki.getOwner(), userIdentity));
-    assertTrue(storage.hasAdminSpacePermission(wiki.getType(), wiki.getOwner(), adminIdentity));
-  }
-
-  @Test
   public void testUpdateWikiPermissions() throws Exception {
     // Given
     Wiki wiki = new Wiki();
@@ -426,77 +389,6 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertNotNull(renamedPage);
     assertEquals("newName", renamedPage.getName());
     assertEquals("New Title", renamedPage.getTitle());
-  }
-
-  @Test
-  public void testPermissionsOnPage() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Identity userIdentity = new Identity("user", Arrays.asList(
-            new MembershipEntry("/platform/users", "*")));
-    Identity adminIdentity = new Identity("admin", Arrays.asList(
-            new MembershipEntry("/platform/users", "*"),
-            new MembershipEntry("/platform/administrators", "*")));
-
-    Page noPermissionPage = new Page();
-    noPermissionPage.setWikiId(wiki.getId());
-    noPermissionPage.setWikiType(wiki.getType());
-    noPermissionPage.setWikiOwner(wiki.getOwner());
-    noPermissionPage.setName("page1");
-    noPermissionPage.setTitle("Page 1");
-    noPermissionPage.setPermissions(new ArrayList<PermissionEntry>());
-    noPermissionPage = storage.createPage(wiki, wiki.getWikiHome(), noPermissionPage);
-
-    Page publicPage = new Page();
-    publicPage.setWikiId(wiki.getId());
-    publicPage.setWikiType(wiki.getType());
-    publicPage.setWikiOwner(wiki.getOwner());
-    publicPage.setName("page1");
-    publicPage.setTitle("Page 1");
-    publicPage.setPermissions(Arrays.asList(new PermissionEntry(IdentityConstants.ANY, null, IDType.USER, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )})));
-    publicPage = storage.createPage(wiki, wiki.getWikiHome(), publicPage);
-
-    Page authenticatedPage = new Page();
-    authenticatedPage.setWikiId(wiki.getId());
-    authenticatedPage.setWikiType(wiki.getType());
-    authenticatedPage.setWikiOwner(wiki.getOwner());
-    authenticatedPage.setName("page2");
-    authenticatedPage.setTitle("Page 2");
-    authenticatedPage.setPermissions(Arrays.asList(new PermissionEntry("/platform/users", null, IDType.GROUP, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )}), new PermissionEntry("/platform/administrators", null, IDType.GROUP, new Permission[] {(
-            new Permission(PermissionType.EDITPAGE, true)
-    )})));
-    authenticatedPage = storage.createPage(wiki, wiki.getWikiHome(), authenticatedPage);
-
-    Page adminPage = new Page();
-    adminPage.setWikiId(wiki.getId());
-    adminPage.setWikiType(wiki.getType());
-    adminPage.setWikiOwner(wiki.getOwner());
-    adminPage.setName("page3");
-    adminPage.setTitle("Page 3");
-    adminPage.setPermissions(Arrays.asList(new PermissionEntry("*:/platform/administrators", null, IDType.MEMBERSHIP, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )})));
-    adminPage = storage.createPage(wiki, wiki.getWikiHome(), adminPage);
-
-    //Then
-    assertTrue(storage.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, adminIdentity));
-    assertTrue(storage.hasPermissionOnPage(publicPage, PermissionType.VIEWPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnPage(publicPage, PermissionType.VIEWPAGE, adminIdentity));
-    assertTrue(storage.hasPermissionOnPage(authenticatedPage, PermissionType.VIEWPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnPage(authenticatedPage, PermissionType.VIEWPAGE, adminIdentity));
-    assertFalse(storage.hasPermissionOnPage(authenticatedPage, PermissionType.EDITPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnPage(authenticatedPage, PermissionType.EDITPAGE, adminIdentity));
-    assertFalse(storage.hasPermissionOnPage(adminPage, PermissionType.VIEWPAGE, userIdentity));
-    assertTrue(storage.hasPermissionOnPage(adminPage, PermissionType.VIEWPAGE, adminIdentity));
   }
 
   @Test

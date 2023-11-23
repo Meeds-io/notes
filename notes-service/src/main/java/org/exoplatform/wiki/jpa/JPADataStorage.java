@@ -33,6 +33,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfig;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -74,6 +75,7 @@ public class JPADataStorage implements DataStorage {
   private TemplateDAO    templateDAO;
   private FileService fileService;
   private UserACL userACL;
+  private LayoutService layoutService;
   
 
   public JPADataStorage(WikiDAO wikiDAO,
@@ -85,6 +87,7 @@ public class JPADataStorage implements DataStorage {
                         PageMoveDAO pageMoveDAO,
                         TemplateDAO templateDAO,
                         FileService fileService,
+                        LayoutService layoutService,
                         UserACL userACL) {
     this.wikiDAO = wikiDAO;
     this.pageDAO = pageDAO;
@@ -96,6 +99,7 @@ public class JPADataStorage implements DataStorage {
     this.templateDAO = templateDAO;
     this.fileService = fileService;
     this.userACL = userACL;
+    this.layoutService = layoutService;
   }
 
   @Override
@@ -223,7 +227,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public Page getPageOfWikiByName(String wikiType, String wikiOwner, String pageName) throws WikiException {
+  public Page getPageOfWikiByName(String wikiType, String wikiOwner, String pageName) {
     //getCurrentNewDraftWikiPage from org.exoplatform.wiki.commons.Utils can call this method with wikiType
     // and wikiOwner null. This will cause an error in the pageDAO
     if(wikiType == null || wikiOwner == null) return null;
@@ -235,17 +239,17 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public Page getPageById(String id) throws WikiException {
+  public Page getPageById(String id)  {
     return convertPageEntityToPage(pageDAO.find(Long.parseLong(id)));
   }
 
   @Override
-  public DraftPage getDraftPageById(String id) throws WikiException {
+  public DraftPage getDraftPageById(String id)  {
     return convertDraftPageEntityToDraftPage(draftPageDAO.find(Long.parseLong(id)));
   }
 
   @Override
-  public Page getParentPageOf(Page page) throws WikiException {
+  public Page getParentPageOf(Page page)  {
     Page parentPage = null;
 
     PageEntity childPageEntity = null;
@@ -263,11 +267,10 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts) throws WikiException {
+  public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts)  {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     if (pageEntity == null) {
-      throw new WikiException("Cannot get children of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-              + page.getName() + " because page does not exist.");
+      return Collections.emptyList();
     }
 
     List<Page> childrenPages = new ArrayList<>();
@@ -293,7 +296,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public boolean hasChildren(long noteId) throws WikiException {
+  public boolean hasChildren(long noteId)  {
     return pageDAO.countPageChildrenById(noteId) > 0;
   }
 
@@ -478,7 +481,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public Page getRelatedPage(String wikiType, String wikiOwner, String pageName) throws WikiException {
+  public Page getRelatedPage(String wikiType, String wikiOwner, String pageName)  {
     Page relatedPage = null;
     List<PageMoveEntity> pageMoveEntities = pageMoveDAO.findInPageMoves(wikiType, wikiOwner, pageName);
     if(pageMoveEntities != null && !pageMoveEntities.isEmpty()) {
@@ -566,7 +569,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public Page getExsitedOrNewDraftPageById(String wikiType, String wikiOwner, String pageName, String username) throws WikiException {
+  public Page getExsitedOrNewDraftPageById(String wikiType, String wikiOwner, String pageName, String username) throws WikiException  {
     DraftPage draftPage;
 
     if(pageName.contains(Utils.SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE)) {
@@ -641,7 +644,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public DraftPage getDraft(String draftName, String username) throws WikiException {
+  public DraftPage getDraft(String draftName, String username)  {
     DraftPage draftPageOfUser = null;
     List<DraftPage> draftPages = getDraftPagesOfUser(username);
     if (draftPages != null) {
@@ -656,7 +659,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<DraftPage> getDraftPagesOfUser(String username) throws WikiException {
+  public List<DraftPage> getDraftPagesOfUser(String username)  {
     List<DraftPage> draftPages = new ArrayList<>();
     List<DraftPageEntity> draftPagesEntities = draftPageDAO.findDraftPagesByUser(username);
     if (draftPagesEntities != null) {
@@ -684,7 +687,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<TemplateSearchResult> searchTemplate(TemplateSearchData templateSearchData) throws WikiException {
+  public List<TemplateSearchResult> searchTemplate(TemplateSearchData templateSearchData)  {
 
     String wikiOwner = templateSearchData.getWikiOwner();
     if(templateSearchData.getWikiType().toUpperCase().equals(WikiType.GROUP.toString())) {
@@ -726,12 +729,12 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<Attachment> getAttachmentsOfPage(Page page) throws WikiException {
+  public List<Attachment> getAttachmentsOfPage(Page page)  {
     return getAttachmentsOfPage(page, false);
   }
 
   @Override
-  public List<Attachment> getAttachmentsOfPage(Page page, boolean loadContent) throws WikiException {
+  public List<Attachment> getAttachmentsOfPage(Page page, boolean loadContent)  {
     List<AttachmentEntity> attachmentsEntities;
     String wikiType;
     String wikiOwner;
@@ -739,8 +742,7 @@ public class JPADataStorage implements DataStorage {
     if (page.isDraftPage()) {
       DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(page.getAuthor(), page.getName());
       if (draftPageEntity == null) {
-        throw new WikiException("Cannot get attachments of draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-            + page.getName() + " because draft page does not exist.");
+        return Collections.emptyList();
       }
       attachmentsEntities = new ArrayList<>();
       List<DraftPageAttachmentEntity> draftPageAttachmentEntities = draftPageEntity.getAttachments();
@@ -759,8 +761,7 @@ public class JPADataStorage implements DataStorage {
     } else {
       PageEntity pageEntity = fetchPageEntity(page);
       if (pageEntity == null) {
-        throw new WikiException("Cannot get attachments of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-            + page.getName() + " because page does not exist.");
+        return Collections.emptyList();
       }
       attachmentsEntities = new ArrayList<>();
       List<PageAttachmentEntity> pageAttachmentEntities = pageEntity.getAttachments();
@@ -941,127 +942,11 @@ public class JPADataStorage implements DataStorage {
     return attachmentFound;
   }
 
-  @Deprecated
   @Override
-  public Page getHelpSyntaxPage(String syntaxId, boolean fullContent, List<ValuesParam> syntaxHelpParams, ConfigurationManager configurationManager) throws WikiException {
-    return null;
-  }
-
-  @Override
-  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity identity) throws WikiException {
-    String userId = identity.getUserId();
-    if (userId.equals(IdentityConstants.SYSTEM)) {
-      // SYSTEM has permission everywhere
-      return true;
-    } else if (userId.equals(page.getOwner())) {
-      // Current user is owner of the page so has all privileges
-      return true;
-    }
-
-    List<PermissionEntry> pagePermissions = page.getPermissions();
-    if(pagePermissions == null) {
-      Page fetchedPage;
-      if(page.getId() != null && !page.getId().isEmpty()) {
-        fetchedPage = getPageById(page.getId());
-      } else {
-        fetchedPage = getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
-      }
-      pagePermissions = fetchedPage.getPermissions();
-    }
-
-    if(pagePermissions == null || pagePermissions.isEmpty()) {
-      // no permissions on the page
-      return true;
-    } else {
-      return hasPermission(pagePermissions, identity, permissionType);
-    }
-  }
-
-  @Override
-  public boolean hasPermissionOnWiki(Wiki wiki, PermissionType permissionType, Identity identity) throws WikiException {
-    if(wiki == null) {
-      throw new WikiException("Wiki cannot be null");
-    }
-
-    String userId = identity.getUserId();
-    if (userId.equals(IdentityConstants.SYSTEM)) {
-      // SYSTEM has permission everywhere
-      return true;
-    } else if (wiki.getType().equals(PortalConfig.USER_TYPE) && userId.equals(wiki.getOwner())) {
-      // Current user is owner of the wiki so has all privileges
-      return true;
-    }
-
-    List<PermissionEntry> wikiPermissions = wiki.getPermissions();
-    if (wikiPermissions == null || wikiPermissions.isEmpty()) {
-      // no permissions on the wiki
-      return true;
-    } else {
-      return hasPermission(wikiPermissions, identity, permissionType);
-    }
-  }
-
-  @Override
-  public boolean hasAdminSpacePermission(String wikiType, String owner, Identity identity) throws WikiException {
-      Wiki wiki = getWikiByTypeAndOwner(wikiType, owner);
-      return hasPermissionOnWiki(wiki, PermissionType.ADMINSPACE, identity);
-  }
-
-  @Override
-  public boolean hasAdminPagePermission(String wikiType, String owner, Identity identity) throws WikiException {
-    Wiki wiki = getWikiByTypeAndOwner(wikiType, owner);
-    return hasPermissionOnWiki(wiki, PermissionType.ADMINPAGE, identity);
-  }
-
-  /**
-   * Check if the identity has the permission of type permissionType in the resourcePermissions
-   * @param resourcePermissions List of permissions of the resource (wiki, page, ...)
-   * @param identity The identity of the user
-   * @param permissionType The permission type to check
-   * @return true of the user has the given permission type in the list of the given permission entries
-   */
-  private boolean hasPermission(List<PermissionEntry> resourcePermissions, Identity identity, PermissionType permissionType) {
-    String userId = identity.getUserId();
-    // for each permission set on the page
-    for(PermissionEntry pagePermission : resourcePermissions) {
-      // for each type of permission (VIEWPAGE, EDITPAGE, ...)
-      for(Permission permission : pagePermission.getPermissions()) {
-        // if the permission type equals the type we want to test
-        if(permission.isAllowed() && permission.getPermissionType().equals(permissionType)) {
-          // if the user belongs to this identity (user, membership or any)
-          if(IdentityConstants.ANY.equals(pagePermission.getId())) {
-            return true;
-          } else {
-            switch(pagePermission.getIdType()) {
-              case USER:
-                if(userId.equals(pagePermission.getId())) {
-                  return true;
-                }
-              case GROUP:
-                if(identity.isMemberOf(pagePermission.getId())) {
-                  return true;
-                }
-              case MEMBERSHIP:
-                UserACL.Permission membershipPermission = new UserACL.Permission();
-                membershipPermission.setPermissionExpression(pagePermission.getId());
-                if(identity.isMemberOf(membershipPermission.getGroupId(), membershipPermission.getMembership())) {
-                  return true;
-                }
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  @Override
-  public List<PageVersion> getVersionsOfPage(Page page) throws WikiException {
+  public List<PageVersion> getVersionsOfPage(Page page) {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
-      throw new WikiException("Cannot get versions of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" + page.getName()
-          + " because page does not exist.");
+      return Collections.emptyList();
     }
 
     List<PageVersion> pageVersions = new ArrayList<>();
@@ -1071,19 +956,15 @@ public class JPADataStorage implements DataStorage {
         pageVersions.add(convertPageVersionEntityToPageVersion(pageVersionEntity));
       }
     }
-
     Collections.sort(pageVersions, new VersionNameComparatorDesc());
-
     return pageVersions;
   }
 
   @Override
-  public List<PageHistory> getHistoryOfPage(Page page) throws WikiException {
+  public List<PageHistory> getHistoryOfPage(Page page) {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
-      throw new WikiException("Cannot get versions of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" + page.getName()
-        + " because page does not exist.");
+      return Collections.emptyList();
     }
 
     List<PageHistory> pageVersionsHistory = new ArrayList<>();
@@ -1204,25 +1085,20 @@ public class JPADataStorage implements DataStorage {
       pageEntity.setAuthor(page.getAuthor());
       pageEntity.setContent(page.getContent());
       pageEntity.setSyntax(page.getSyntax());
-      pageEntity.setCreatedDate(page.getCreatedDate());
-      pageEntity.setUpdatedDate(page.getUpdatedDate());
       pageEntity.setMinorEdit(page.isMinorEdit());
       pageEntity.setComment(page.getComment());
-      pageEntity.setUrl(page.getUrl());
-      pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
+      pageEntity.setUpdatedDate(new Date());
 
       return convertPageEntityToPage(pageDAO.update(pageEntity));
     }
   }
 
   @Override
-  public List<String> getPreviousNamesOfPage(Page page) throws WikiException {
+  public List<String> getPreviousNamesOfPage(Page page) {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
-      throw new WikiException("Cannot get previous names of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-          + page.getName() + " because page does not exist.");
+      return Collections.emptyList();
     }
 
     List<String> previousPageName = new ArrayList<>();
@@ -1232,17 +1108,14 @@ public class JPADataStorage implements DataStorage {
         previousPageName.add(pageMoveEntity.getPageName());
       }
     }
-
     return previousPageName;
   }
 
   @Override
-  public List<String> getWatchersOfPage(Page page) throws WikiException {
+  public List<String> getWatchersOfPage(Page page) {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
-      throw new WikiException("Cannot get watchers of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
-          + page.getName() + " because page does not exist.");
+      return Collections.emptyList();
     }
     return pageEntity.getWatchers() == null ? null : new ArrayList<>(pageEntity.getWatchers());
   }
@@ -1322,10 +1195,10 @@ public class JPADataStorage implements DataStorage {
     return pageEntity;
   }
   
-  private List<PermissionEntry> getWikiHomePageDefaultPermissions(String wikiType, String wikiOwner) throws WikiException {
+  private List<PermissionEntry> getWikiHomePageDefaultPermissions(String wikiType, String wikiOwner) {
     Permission[] permissions = new Permission[] {
-        new Permission(PermissionType.VIEWPAGE, true),
-        new Permission(PermissionType.EDITPAGE, true)
+                                                  new Permission(PermissionType.VIEWPAGE, true),
+                                                  new Permission(PermissionType.EDITPAGE, true)
     };
     List<PermissionEntry> permissionEntries = new ArrayList<>();
     if (PortalConfig.PORTAL_TYPE.equals(wikiType)) {
@@ -1336,76 +1209,66 @@ public class JPADataStorage implements DataStorage {
         PermissionEntry permissionEntry = new PermissionEntry(entry.getKey(), "", entry.getValue(), permissions);
         permissionEntries.add(permissionEntry);
       }
-      UserPortalConfigService userPortalConfigService = ExoContainerContext.getCurrentContainer()
-                                                                           .getComponentInstanceOfType(UserPortalConfigService.class);
-      try {
-        if (userPortalConfigService != null) {
-          UserPortalConfig userPortalConfig = userPortalConfigService.getUserPortalConfig(wikiOwner, null);
-          if (userPortalConfig != null) {
-            PortalConfig portalConfig = userPortalConfig.getPortalConfig();
-            String portalEditPermission = portalConfig.getEditPermission();
-            if (!aclForAdmins.containsKey(portalEditPermission)) {
-              PermissionEntry portalPermissionEntry = new PermissionEntry(portalEditPermission,
-                                                                          "",
-                                                                          IDType.MEMBERSHIP,
-                                                                          permissions);
-              permissionEntries.add(portalPermissionEntry);
+      PortalConfig portalConfig = layoutService.getPortalConfig(wikiOwner);
+      if (portalConfig != null) {
+        String portalEditPermission = portalConfig.getEditPermission();
+        if (!aclForAdmins.containsKey(portalEditPermission)) {
+          PermissionEntry portalPermissionEntry = new PermissionEntry(portalEditPermission,
+                                                                      "",
+                                                                      IDType.MEMBERSHIP,
+                                                                      permissions);
+          permissionEntries.add(portalPermissionEntry);
+        }
+
+        String[] portalAccessPermissions = portalConfig.getAccessPermissions();
+        if (portalAccessPermissions != null && portalAccessPermissions.length > 0) {
+          Permission[] viewPermissions = new Permission[] {
+                                                            new Permission(PermissionType.VIEWPAGE, true),
+                                                            new Permission(PermissionType.EDITPAGE, false)
+          };
+
+          for (String portalAccessPermissionExpression : portalAccessPermissions) {
+            if (StringUtils.equals(portalAccessPermissionExpression, portalEditPermission)
+                || aclForAdmins.containsKey(portalAccessPermissionExpression)) {
+              continue;
             }
 
-            String[] portalAccessPermissions = portalConfig.getAccessPermissions();
-            if (portalAccessPermissions != null && portalAccessPermissions.length > 0) {
-              Permission[] viewPermissions = new Permission[] {
-                  new Permission(PermissionType.VIEWPAGE, true),
-                  new Permission(PermissionType.EDITPAGE, false)
-              };
-
-              for (String portalAccessPermissionExpression : portalAccessPermissions) {
-                if (StringUtils.equals(portalAccessPermissionExpression, portalEditPermission)
-                    || aclForAdmins.containsKey(portalAccessPermissionExpression)) {
-                  continue;
-                }
-
-                IDType idType = null;
-                if (StringUtils.equals(UserACL.EVERYONE, portalAccessPermissionExpression)) {
-                  // Avoid adding wiki pages accessible to everyone, only
-                  // for loggedin users
-                  if (!StringUtils.equals("*:/platform/users", portalEditPermission)
-                      && !aclForAdmins.containsKey("*:/platform/users")) {
-                    PermissionEntry internalUsersPermissionEntry = new PermissionEntry("/platform/users",
-                                                                                       "",
-                                                                                       IDType.GROUP,
-                                                                                       viewPermissions);
-                    permissionEntries.add(internalUsersPermissionEntry);
-                  }
-                  if (!StringUtils.equals("*:/platform/externals", portalEditPermission)
-                      && !aclForAdmins.containsKey("*:/platform/externals")) {
-                    PermissionEntry externalUsersPermissionEntry = new PermissionEntry("/platform/externals",
-                                                                                       "",
-                                                                                       IDType.GROUP,
-                                                                                       viewPermissions);
-                    permissionEntries.add(externalUsersPermissionEntry);
-                  }
-                  continue;
-                } else if (StringUtils.contains(portalAccessPermissionExpression, "/")
-                    && StringUtils.contains(portalAccessPermissionExpression, ":")) {
-                  idType = IDType.MEMBERSHIP;
-                } else if (StringUtils.contains(portalAccessPermissionExpression, "/")) {
-                  idType = IDType.GROUP;
-                } else {
-                  idType = IDType.USER;
-                }
-                PermissionEntry accessPermissionEntry = new PermissionEntry(portalAccessPermissionExpression,
-                                                                            "",
-                                                                            idType,
-                                                                            viewPermissions);
-                permissionEntries.add(accessPermissionEntry);
+            IDType idType = null;
+            if (StringUtils.equals(UserACL.EVERYONE, portalAccessPermissionExpression)) {
+              // Avoid adding wiki pages accessible to everyone, only
+              // for loggedin users
+              if (!StringUtils.equals("*:/platform/users", portalEditPermission)
+                  && !aclForAdmins.containsKey("*:/platform/users")) {
+                PermissionEntry internalUsersPermissionEntry = new PermissionEntry("/platform/users",
+                                                                                   "",
+                                                                                   IDType.GROUP,
+                                                                                   viewPermissions);
+                permissionEntries.add(internalUsersPermissionEntry);
               }
+              if (!StringUtils.equals("*:/platform/externals", portalEditPermission)
+                  && !aclForAdmins.containsKey("*:/platform/externals")) {
+                PermissionEntry externalUsersPermissionEntry = new PermissionEntry("/platform/externals",
+                                                                                   "",
+                                                                                   IDType.GROUP,
+                                                                                   viewPermissions);
+                permissionEntries.add(externalUsersPermissionEntry);
+              }
+              continue;
+            } else if (StringUtils.contains(portalAccessPermissionExpression, "/")
+                       && StringUtils.contains(portalAccessPermissionExpression, ":")) {
+              idType = IDType.MEMBERSHIP;
+            } else if (StringUtils.contains(portalAccessPermissionExpression, "/")) {
+              idType = IDType.GROUP;
+            } else {
+              idType = IDType.USER;
             }
+            PermissionEntry accessPermissionEntry = new PermissionEntry(portalAccessPermissionExpression,
+                                                                        "",
+                                                                        idType,
+                                                                        viewPermissions);
+            permissionEntries.add(accessPermissionEntry);
           }
         }
-      } catch (Exception e) {
-        throw new WikiException("Cannot get user portal config for wiki " + wikiType + ":" + wikiOwner
-            + " - Cause : " + e.getMessage(), e);
       }
     } else if (PortalConfig.GROUP_TYPE.equals(wikiType)) {
       PermissionEntry groupPermissionEntry = new PermissionEntry(wikiOwner, "", IDType.GROUP, permissions);
@@ -1414,7 +1277,6 @@ public class JPADataStorage implements DataStorage {
       PermissionEntry ownerPermissionEntry = new PermissionEntry(wikiOwner, "", IDType.USER, permissions);
       permissionEntries.add(ownerPermissionEntry);
     }
-
     return permissionEntries;
   }
 

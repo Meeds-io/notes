@@ -19,18 +19,23 @@
 
 package org.exoplatform.wiki.service;
 
+import java.util.List;
+
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ValuesParam;
-import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-
-import java.util.List;
 
 public interface DataStorage {
 
@@ -154,32 +159,6 @@ public interface DataStorage {
   public void addAttachmentToPage(Attachment attachment, Page page) throws WikiException;
 
   public void deleteAttachmentOfPage(String attachmentId, Page page) throws WikiException;
-
-  public Page getHelpSyntaxPage(String syntaxId, boolean fullContent, List<ValuesParam> syntaxHelpParams, ConfigurationManager configurationManager) throws WikiException;
-
-  /**
-   * Check if the identity has the given permission type on a page
-   * @param page Page
-   * @param permissionType Permission type to check
-   * @param user Identity of the user
-   * @return true if the user has the given permission type on the page
-   * @throws WikiException if an error occured
-   */
-  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
-
-  /**
-   * Check if the identity has the given permission type on a wiki
-   * @param wiki Wiki
-   * @param permissionType Permission type to check
-   * @param identity Identity of the user
-   * @return true if the user has the given permission type on the wiki
-   * @throws WikiException if an error occured
-   */
-  public boolean hasPermissionOnWiki(Wiki wiki, PermissionType permissionType, Identity identity) throws WikiException;
-
-  public boolean hasAdminSpacePermission(String wikiType, String owner, Identity user) throws WikiException;
-
-  public boolean hasAdminPagePermission(String wikiType, String owner, Identity user) throws WikiException;
 
   public List<PageVersion> getVersionsOfPage(Page page) throws WikiException;
 
