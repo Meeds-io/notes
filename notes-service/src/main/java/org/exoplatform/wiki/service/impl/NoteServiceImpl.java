@@ -207,7 +207,6 @@ public class NoteServiceImpl implements NoteService {
       note.setOwner(userIdentity.getUserId());
       note.setAuthor(userIdentity.getUserId());
       note.setContent(note.getContent());
-      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       Page createdPage = createNote(noteBook, parentPage, note);
       createdPage.setCanManage(canManageNotes(userIdentity.getUserId(), space, note));
       createdPage.setCanImport(canImportNotes(userIdentity.getUserId(), space, note));
@@ -219,6 +218,10 @@ public class NoteServiceImpl implements NoteService {
       invalidateCache(parentPage);
       invalidateCache(note);
 
+      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
+      createdPage.setCanManage(canManageNotes(note.getAuthor(), space, note));
+      createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
+      createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not foond");
@@ -228,8 +231,14 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page createNote(Wiki noteBook, Page parentPage, Page note) throws WikiException {
     Page createdPage = dataStorage.createPage(noteBook, parentPage, note);
+    createdPage.setToBePublished(note.isToBePublished());
+    createdPage.setToBePublished(note.isToBePublished());
+    createdPage.setAppName(note.getAppName());
+    createdPage.setUrl(Utils.getPageUrl(createdPage));
+    invalidateCache(parentPage);
+    invalidateCache(note);
+
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
-    // call listeners
     postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
     return createdPage;
   }
