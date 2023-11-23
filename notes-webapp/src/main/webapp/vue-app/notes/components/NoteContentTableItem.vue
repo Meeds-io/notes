@@ -21,8 +21,9 @@
 <template>
   <v-list-item
     :href="noteLink"
+    ripple
     link>
-    <span class="subtitle-1 ps-2">
+    <span class="primary--text subtitle-1 ps-2">
       {{ note.name }}
     </span>
   </v-list-item>

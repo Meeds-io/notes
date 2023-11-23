@@ -197,6 +197,7 @@
             v-if="noteChildren && noteChildren[0]"
             dense
             :items="noteAllChildren"
+            class="ps-1"
             item-key="noteId">
             <template #label="{ item }">
               <note-content-table-item :note="item" />
@@ -348,14 +349,16 @@ export default {
         data() {
           return {
             vTreeComponent: {
-              template: '<v-treeview \
-              dense \
-              :items="noteChildItems" \
-              item-key="noteId"> \
-              <template #label="{ item }"> \
-                <note-content-table-item :note="item" />\
-              </template> \
-              </v-treeview >',
+              template: `
+                <v-treeview
+                  dense
+                  :items="noteChildItems"
+                  class="ps-1"
+                  item-key="noteId">
+                  <template #label="{ item }">
+                    <note-content-table-item :note="item" />
+                  </template>
+                </v-treeview >`,
               props: {
                 noteId: 0,
                 source: '',
