@@ -105,7 +105,7 @@
               class="pt-2 pe-1 pl-1"
               :note-breadcrumb="notebreadcrumb"
               :actual-note-id="note.id"
-              @open-note="getNoteByName($event, 'breadCrumb')" />
+              @open-note="getNoteByName($event, 'breadCrumb', true)" />
           </div>
           <div v-show="!hideElementsForSavingPDF" class="notes-last-update-info">
             <notes-translation-menu
@@ -521,9 +521,9 @@ export default {
     this.$root.$on('open-note-by-name', (noteName, isDraft) => {
       if (!isDraft) {
         this.noteId = noteName;
-        this.getNoteByName(noteName,'tree');
+        this.getNoteByName(noteName,'tree',true);
       } else {
-        this.getDraftNote(noteName,this.selectedTranslation.value);
+        this.getDraftNote(noteName,true);
       }
     });
     this.$root.$on('confirmDeleteNote', () => {
@@ -586,12 +586,12 @@ export default {
     handleChangePages() {
       if (this.noteId) {
         if (this.isDraft) {
-          this.getDraftNote(this.noteId,this.selectedTranslation.value);
+          this.getDraftNote(this.noteId, true);
         } else {
-          this.getNoteById(this.noteId,this.selectedTranslation.value);
+          this.getNoteById(this.noteId,'',true);
         }
       } else {
-        this.getNoteByName(this.notesPageName);
+        this.getNoteByName(this.notesPageName,'',true);
       }
     },
     getHomeTitle(title) {
@@ -690,7 +690,7 @@ export default {
     stopGetStatus(){
       clearInterval(this.intervalId);
     },
-    getNoteById(noteId, source) {
+    getNoteById(noteId, source, viewNote) {
       return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
         this.isDraft = data.draftPage;
@@ -701,6 +701,9 @@ export default {
         if (!this.note.lang || this.note.lang === ''){
           this.updateSelectedTranslation(this.originalVersion);
           this.updateURL();
+        }
+        if (viewNote){
+          this.viewNoteStatistics(this.note);
         }
         return this.$nextTick();
       }).catch(e => {
@@ -723,7 +726,7 @@ export default {
         });
       });
     },
-    getNoteByName(noteName, source) {
+    getNoteByName(noteName, source, viewNote) {
       return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.selectedTranslation.value).then(data => {
         this.note = data || {};
         this.isDraft = data.draftPage;
@@ -735,6 +738,9 @@ export default {
           this.updateSelectedTranslation(this.originalVersion);
           this.updateURL();
         }
+        if (viewNote){
+          this.viewNoteStatistics(this.note);
+        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -744,7 +750,7 @@ export default {
         this.$root.$emit('refresh-treeView-items', this.note);
       });
     },
-    getDraftNote(noteId) {
+    getDraftNote(noteId, viewNote) {
       return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
         this.note = {};
         this.note = data || {};
@@ -752,6 +758,9 @@ export default {
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
+        if (viewNote){
+          this.viewNoteStatistics(this.note);
+        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -991,10 +1000,30 @@ export default {
         }
         this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
+        this.viewNoteStatistics(this.note);
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
       });
+    },
+    viewNoteStatistics(note) {
+      document.dispatchEvent(new CustomEvent('exo-statistic-message', {
+        detail: {
+          module: 'contents',
+          subModule: 'contents',
+          userId: eXo.env.portal.userIdentityId,
+          userName: eXo.env.portal.userName,
+          operation: 'viewContent',
+          parameters: {
+            contentId: note.id,
+            contentTitle: note.title,
+            contentType: 'Note',
+            contentLanguage: note.lang?note.lang:this.$t('notes.label.translation.originalVersion'),
+            spaceId: eXo.env.portal.spaceId,
+          },
+          timestamp: Date.now()
+        }
+      }));
     },
 
   }
