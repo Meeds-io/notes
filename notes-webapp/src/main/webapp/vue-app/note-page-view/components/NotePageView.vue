@@ -24,9 +24,23 @@
       v-if="$root.loading"
       class="ma-auto"
       indeterminate />
-    <div
+    <component
       v-else
-      v-sanitized-html="$root.pageContent"
-      class="rich-editor-content extended-rich-content overflow-hidden full-width"></div>
+      :is="notesContentProcessor" />
   </div>
 </template>
+
+<script>
+export default {
+  computed: {
+    notesContentProcessor() {
+      return {
+        template: `<div class='reset-style-box rich-editor-content extended-rich-content overflow-hidden full-width'>${this.pageContent}</div>`,
+      };
+    },
+    pageContent() {
+      return this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
+    },
+  },
+};
+</script>

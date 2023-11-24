@@ -29,20 +29,13 @@
     @closed="reset"
     @expand-updated="expanded = $event">
     <template #content>
-      <rich-editor
+      <note-rich-editor
         ref="richEditor"
         v-model="pageContent"
         :placeholder="$t('notePageView.placeholder.editText')"
-        :tag-enabled="false"
-        :ck-editor-id="richEditorId"
-        class="ma-4"
-        ck-editor-type="notePageInline"
-        toolbar-position="bottom"
-        focus-position="end"
-        autofocus
-        hide-chars-count
-        disable-auto-grow
-        oembed
+        :instance-id="richEditorId"
+        :large-toolbar="!isSmall"
+        toolbar-location="bottom"
         @ready="$root.$emit('notes-editor-ready')"
         @unloaded="$root.$emit('notes-editor-unloaded')" />
     </template>
