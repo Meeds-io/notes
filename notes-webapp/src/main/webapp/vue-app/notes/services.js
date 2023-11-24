@@ -17,21 +17,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import * as notePageViewService from './js/NotePageViewService.js';
-import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 import * as noteUtils from '../notes-editor/js/Utils.js';
-
-if (!Vue.prototype.$notePageViewService) {
-  window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
-    value: notePageViewService,
-  });
-}
-
-if (!Vue.prototype.$notesService) {
-  window.Object.defineProperty(Vue.prototype, '$notesService', {
-    value: notesService,
-  });
-}
 
 if (!Vue.prototype.$noteUtils) {
   window.Object.defineProperty(Vue.prototype, '$noteUtils', {
