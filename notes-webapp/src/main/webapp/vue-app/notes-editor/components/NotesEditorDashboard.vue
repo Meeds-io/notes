@@ -77,26 +77,18 @@
         </div>
       </form>
     </div>
-    <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
+    <note-custom-plugins ref="noteCustomPlugins" :instance="editor" />
     <note-table-plugins-drawer
       ref="noteTablePlugins"
-      :instance="instance"
+      :instance="editor"
       @closed="closePluginsDrawer()" />
     <note-treeview-drawer 
       ref="noteTreeview"
       @closed="closePluginsDrawer()" />
   </v-app>
 </template>
-
 <script>
-
 export default {
-  props: {
-    instance: {
-      type: Object,
-      default: () => null,
-    },
-  },
   data() {
     return {
       lang: eXo.env.portal.language,
@@ -144,6 +136,9 @@ export default {
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       oembedMinWidth: 300,
+      editor: null,
+      loadedNote: null,
+      draftNote: null,
     };
   },
   computed: {
@@ -178,6 +173,21 @@ export default {
     'note.content'() {
       if (this.note.content !== this.actualNote.content) {
         this.autoSave();
+      }
+    },
+    draftNote() {
+      if (!this.draftNote) {
+        this.$root.$emit('close-alert-message');
+      }
+    },
+    editor() {
+      if (this.editor) {
+        if (this.draftNote?.id || this.loadedNote?.id) {
+          this.fillNote(this.draftNote || this.loadedNote);
+          this.displayDraftMessage();
+          this.initActualNoteDone = true;
+        }
+        this.setToolBarEffect();
       }
     },
   },
@@ -279,7 +289,6 @@ export default {
     init() {
       setTimeout(() => {
         this.initCKEditor();
-        this.setToolBarEffect();
         this.initDone = true;
       },200);
     },
@@ -312,14 +321,23 @@ export default {
         this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
-        if (latestDraft) {
-          this.fillNote(latestDraft);
-          this.displayDraftMessage();
-          this.initActualNoteDone = true;
-        } else {
-          this.$notesService.getNoteById(id).then(data => {
-            this.$nextTick(()=> this.fillNote(data));
+        if (latestDraft?.id) {
+          if (this.editor) {
+            this.fillNote(latestDraft);
+            this.displayDraftMessage();
             this.initActualNoteDone = true;
+          } else {
+            this.draftNote = latestDraft;
+          }
+        } else {
+          this.draftNote = null;
+          this.$notesService.getNoteById(id).then(data => {
+            if (this.editor) {
+              this.fillNote(data);
+              this.initActualNoteDone = true;
+            } else {
+              this.loadedNote = data;
+            }
           });
         }
       });
@@ -328,15 +346,16 @@ export default {
       return this.$notesService.getDraftNoteById(id).then(data => {
         this.init();
         this.fillNote(data);
-      }).finally(() => {
-        this.displayDraftMessage();
+        if (data?.id) {
+          this.displayDraftMessage();
+        }
         this.initActualNoteDone = true;
       });
     },
     fillNote(data) {
       this.initActualNoteDone = false;
       if (data) {
-        data.content = this.getContentToEdit(data.content);
+        data.content = this.$noteUtils.getContentToEdit(data.content);
         this.note = data;
         this.actualNote = {
           id: this.note.id,
@@ -351,11 +370,11 @@ export default {
         const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
         +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
         +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
-        CKEDITOR.instances['notesContent'].setData(data.content);
+        this.editor.setData(data.content);
         if ((this.note.content.trim().length === 0)) {
           this.$notesService.getNoteById(this.noteId, '','','',true).then(data => {
             if (data && data.children && data.children.length) {
-              CKEDITOR.instances['notesContent'].setData(childContainer);
+              this.editor.setData(childContainer);
               this.setFocus();
             }
           });
@@ -374,7 +393,7 @@ export default {
             name: this.note.name,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() || this.note.content,
+            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
             parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -386,7 +405,7 @@ export default {
             name: this.note.name,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() || this.note.content,
+            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
             parentPageId: this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -441,7 +460,7 @@ export default {
       const draftNote = {
         id: this.note.draftPage ? this.note.id : '',
         title: this.note.title,
-        content: this.getBody() || this.note.content,
+        content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
         name: this.note.name,
         appName: this.appName,
         wikiType: this.note.wikiType,
@@ -509,8 +528,8 @@ export default {
       this.$refs.noteCustomPlugins.close();
     },
     initCKEditor: function() {
-      if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
-        CKEDITOR.instances['notesContent'].destroy(true);
+      if (this.editor?.destroy) {
+        this.editor.destroy(true);
       }
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
@@ -552,10 +571,11 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            self.actualNote.content = evt.editor.getData();
-            CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
-            CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-            $(CKEDITOR.instances['notesContent'].document.$)
+            self.editor = evt.editor;
+            self.actualNote.content = self.editor.getData();
+            self.editor.removeMenuItem('linkItem');
+            self.editor.removeMenuItem('selectImageItem');
+            $(self.editor.document.$)
               .find('.atwho-inserted')
               .each(function() {
                 $(this).on('click', '.remove', function() {
@@ -563,7 +583,7 @@ export default {
                 });
               });
             
-            const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+            const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
@@ -604,9 +624,9 @@ export default {
             /*add plugin fileUploadResponse to handle file upload response ,
               in this method we can get the response from server and update the editor content
               this method is called when file upload is finished*/
-            CKEDITOR.instances.notesContent.once('afterInsertHtml', ()=> {
+            self.editor.once('afterInsertHtml', ()=> {
               window.setTimeout(() => {
-                CKEDITOR.instances.notesContent.fire('mode');
+                self.editor.fire('mode');
               }, 2000);
             });
           },
@@ -622,17 +642,15 @@ export default {
           }
         }
       });
-      this.instance = CKEDITOR.instances['notesContent'];
     },
     setToolBarEffect() {
-      const element = CKEDITOR.instances['notesContent'] ;
       const elementNewTop = document.getElementById('notesTop');
-      element.on('contentDom', function () {
+      this.editor.on('contentDom', function () {
         this.document.on('click', function(){
           elementNewTop.classList.add('darkComposerEffect');
         });
       });
-      element.on('contentDom', function () {
+      this.editor.on('contentDom', function () {
         this.document.on('keyup', function(){
           elementNewTop.classList.add('darkComposerEffect');
         });
@@ -649,13 +667,11 @@ export default {
     setFocus() {
       if (!this.noteId) {
         this.$refs.noteTitle.focus();
-      } else {
-        if (CKEDITOR.instances['notesContent']) {
-          CKEDITOR.instances['notesContent'].status = 'ready';
-          window.setTimeout(() => {
-            this.$nextTick().then(() => CKEDITOR.instances['notesContent'].focus());
-          }, 200);
-        }        
+      } else if (this.editor) {
+        this.editor.status = 'ready';
+        window.setTimeout(() => {
+          this.$nextTick().then(() => this.editor.focus());
+        }, 200);
       }
     },
     validateForm() {
@@ -794,7 +810,7 @@ export default {
       const div = document.createElement('div');
       div.innerHTML = noteContent;
       if ( div.childElementCount === 2) {
-        const childrenWrapper = CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+        const childrenWrapper = this.editor.window.$.document.getElementById('note-children-container');
         if ( childrenWrapper ) {
           if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
             return true;
@@ -808,68 +824,6 @@ export default {
         return false;
       }
     },
-    getContentToEdit(content) {
-      const domParser = new DOMParser();
-      const docElement = domParser.parseFromString(content, 'text/html').documentElement;
-      this.restoreOembed(docElement);
-      this.restoreUnHighlightedCode(docElement);
-      return docElement?.children[1].innerHTML;
-    },
-    restoreUnHighlightedCode(documentElement) {
-      documentElement.querySelectorAll('code.hljs').forEach(code => {
-        code.innerHTML = code.innerText;
-        code.classList.remove('hljs');
-      });
-    },
-    restoreOembed(documentElement) {
-      documentElement.querySelectorAll('div.embed-wrapper').forEach(wrapper => {
-        const oembed = document.createElement('oembed');
-        oembed.innerHTML = wrapper.dataset.url;
-        wrapper.replaceWith(oembed);
-      });
-    },
-    preserveEmbedded(body, documentElement) {
-      const iframes = body.querySelectorAll('[data-widget="embedSemantic"] div iframe');
-      if (iframes.length) {
-        documentElement.querySelectorAll('oembed').forEach((oembed, index) => {
-          const wrapper = document.createElement('div');
-          wrapper.dataset.url = decodeURIComponent(oembed.innerHTML);
-          wrapper.innerHTML = iframes[index]?.parentNode?.innerHTML;
-          const width = iframes[index]?.parentNode?.offsetWidth;
-          const height = iframes[index]?.parentNode?.offsetHeight;
-          const aspectRatio = width / height;
-          const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
-          const style = `
-            min-height: ${minHeight}px;
-            min-width: ${this.oembedMinWidth}px;
-            width: 100%;
-            margin-bottom: 10px;
-            aspect-ratio: ${aspectRatio};
-          `;
-          wrapper.setAttribute('style', style);
-          wrapper.setAttribute('class', 'embed-wrapper d-flex position-relative ml-auto mr-auto');
-          oembed.replaceWith(wrapper);
-        });
-      }
-    },
-    preserveHighlightedCode(body, documentElement) {
-      const codes = body.querySelectorAll('pre[data-widget="codeSnippet"] code');
-      if (codes.length) {
-        documentElement.querySelectorAll('code').forEach((code, index) => {
-          code.innerHTML = codes[index]?.innerHTML;
-          code.setAttribute('class', codes[index]?.getAttribute('class'));
-        });
-      }
-    },
-    getBody: function() {
-      const domParser = new DOMParser();
-      const newData = CKEDITOR.instances['notesContent'].getData();
-      const body = CKEDITOR.instances['notesContent'].document.getBody().$;
-      const documentElement = domParser.parseFromString(newData, 'text/html').documentElement;
-      this.preserveEmbedded(body, documentElement);
-      this.preserveHighlightedCode(body, documentElement);
-      return documentElement?.children[1].innerHTML;
-    }
   }
 };
 </script>

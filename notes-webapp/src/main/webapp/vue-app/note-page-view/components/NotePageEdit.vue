@@ -24,21 +24,14 @@
       v-if="fixedToolbar"
       :min-height="richEditorToolbarHeight"
       flat />
-    <rich-editor
+    <note-rich-editor
       v-if="initialized"
       ref="richEditor"
       v-model="pageContent"
       :placeholder="$t('notePageView.placeholder.editText')"
-      :tag-enabled="false"
-      :ck-editor-id="richEditorId"
-      :toolbar-position="isSmall && 'bottom' || 'top'"
+      :instance-id="richEditorId"
+      :toolbar-location="isSmall && 'bottom' || 'top'"
       :large-toolbar="!isSmall"
-      ck-editor-type="notePageInline"
-      focus-position="start"
-      autofocus
-      hide-chars-count
-      disable-auto-grow
-      oembed
       @ready="$root.$emit('notes-editor-ready')"
       @unloaded="$root.$emit('notes-editor-unloaded')" />
     <div
@@ -124,9 +117,6 @@ export default {
     },
     isSmall() {
       return this.$root.isSmall;
-    },
-    ckEditorId() {
-      return `cke_${this.richEditorId}`;
     },
     richEditorElement() {
       return this.$refs?.richEditor?.$el;
@@ -285,6 +275,6 @@ export default {
         }
       }
     },
-  }
+  },
 };
 </script>
