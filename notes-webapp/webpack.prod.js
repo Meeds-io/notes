@@ -13,7 +13,6 @@ const config = {
     wikiSearchCard: './src/main/webapp/vue-app/wikiSearch/main.js',
     notes: './src/main/webapp/vue-app/notes/main.js',
     notesEditor: './src/main/webapp/vue-app/notes-editor/main.js',
-    notesSwitch: './src/main/webapp/vue-app/notes-switch/main.js',
     notesActivityStreamExtension: './src/main/webapp/vue-app/notes-activity-stream-extension/main.js',
     notesFavoriteDrawerExtension: './src/main/webapp/vue-app/notes-favorite-drawer-extension/main.js',
     engagementCenterExtensions: './src/main/webapp/vue-app/engagementCenterExtensions/extensions.js',
