@@ -1,6 +1,5 @@
 import './initComponents.js';
-import * as notesService from '../../javascript/eXo/wiki/notesService.js';
-import * as notePageViewService from '../note-page-view/js/NotePageViewService.js';
+import './services.js';
 
 // get overrided components if exists
 if (extensionRegistry) {
@@ -12,36 +11,18 @@ if (extensionRegistry) {
   }
 }
 
-Vue.use(Vuetify);
-const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
-
 const appId = 'notesEditorApplication';
-
-//getting language of the PLF
-const lang = eXo?.env.portal.language || 'en';
-
-//should expose the locale ressources as REST API 
+const lang = window.eXo?.env?.portal?.language || 'en';
 const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.notes.notesPortlet-${lang}.json`;
 
-if (!Vue.prototype.$notesService) {
-  window.Object.defineProperty(Vue.prototype, '$notesService', {
-    value: notesService,
-  });
-}
-
-if (!Vue.prototype.$notePageViewService) {
-  window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
-    value: notePageViewService,
-  });
-}
-
 export function init() {
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    // init Vue app when locale ressources are ready
-    Vue.createApp({
-      template: `<notes-editor-dashboard id="${appId}" />`,
-      vuetify,
-      i18n
-    }, `#${appId}`, 'Notes Editor Dashboard');
-  });
+  exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => {
+      // init Vue app when locale ressources are ready
+      Vue.createApp({
+        template: `<notes-editor-dashboard id="${appId}" />`,
+        vuetify: Vue.prototype.vuetifyOptions,
+        i18n
+      }, `#${appId}`, 'Notes Editor Dashboard');
+    });
 }

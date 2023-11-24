@@ -39,6 +39,7 @@ import javax.ws.rs.core.Response.Status;
 import com.google.javascript.jscomp.jarjar.com.google.common.base.Objects;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
@@ -107,6 +108,7 @@ public class NotePageViewRest implements ResourceContainer {
       if (note == null) {
         return Response.status(Status.NOT_FOUND).build();
       }
+      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
       Date updatedDate = note.getUpdatedDate();
       EntityTag eTag = new EntityTag(String.valueOf(Objects.hashCode(name, lang, String.valueOf(updatedDate.getTime()))));
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
@@ -120,6 +122,9 @@ public class NotePageViewRest implements ResourceContainer {
     } catch (IllegalAccessException e) {
       LOG.warn("Error accessing note page {} for user {}", name, RestUtils.getCurrentUser(), e);
       return Response.status(Status.UNAUTHORIZED).build();
+    } catch (Exception e) {
+      LOG.warn("Error retrieving page content {} for user {}", name, RestUtils.getCurrentUser(), e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
     }
   }
 

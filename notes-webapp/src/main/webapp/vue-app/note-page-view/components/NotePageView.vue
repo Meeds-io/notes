@@ -26,7 +26,17 @@
       indeterminate />
     <div
       v-else
-      v-sanitized-html="$root.pageContent"
-      class="rich-editor-content extended-rich-content overflow-hidden full-width"></div>
+      v-sanitized-html="pageContent"
+      class="reset-style-box rich-editor-content extended-rich-content overflow-hidden full-width"></div>
   </div>
 </template>
+
+<script>
+export default {
+  computed: {
+    pageContent() {
+      return this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
+    },
+  },
+};
+</script>
