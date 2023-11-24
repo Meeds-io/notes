@@ -99,7 +99,7 @@
       <form class="notes-content">
         <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
           <div
-            v-if="!webPageNote"
+            v-show="!webPageNote"
             class="formInputGroup notesTitle white px-5">
             <input
               id="notesTitle"
@@ -121,10 +121,10 @@
         </div>
       </form>
     </div>
-    <note-custom-plugins ref="noteCustomPlugins" :instance="instance" />
+    <note-custom-plugins ref="noteCustomPlugins" :instance="editor" />
     <note-table-plugins-drawer
       ref="noteTablePlugins"
-      :instance="instance"
+      :instance="editor"
       @closed="closePluginsDrawer()" />
     <note-treeview-drawer 
       ref="noteTreeview"
@@ -139,16 +139,8 @@
     </div>
   </v-app>
 </template>
-
 <script>
-
 export default {
-  props: {
-    instance: {
-      type: Object,
-      default: () => null,
-    },
-  },
   data() {
     return {
       lang: eXo.env.portal.language,
@@ -197,7 +189,7 @@ export default {
       spaceGroupId: null,
       oembedMinWidth: 300,
       showTranslationBar: false,
-      slectedLanguage: null,
+      selectedLanguage: null,
       translations: null,
       languages: [],
       allLanguages: [],
@@ -235,7 +227,7 @@ export default {
       if (!this.noteId){
         return 'disabled--text not-clickable remove-focus';
       }
-      return this.slectedLanguage ? 'primary--text':'';
+      return this.selectedLanguage ? 'primary--text':'';
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 1280;
@@ -261,7 +253,24 @@ export default {
         this.autoSave();
         this.hideTranslations();
       }
-    }
+    },
+    draftNote() {
+      if (!this.draftNote) {
+        this.$root.$emit('close-alert-message');
+      }
+    },
+    editor() {
+      if (this.editor) {
+        if (this.draftNote?.id || this.loadedNote?.id) {
+          this.fillNote(this.draftNote || this.loadedNote);
+          this.displayDraftMessage();
+          this.initActualNoteDone = true;
+          this.newDraft = !this.draftNote;
+        }
+        this.setToolBarEffect();
+        this.initDone = true;
+      }
+    },
   },
   created() {
     this.refreshTranslationExtensions();
@@ -280,7 +289,7 @@ export default {
       this.appName = urlParams.get('appName');
     }
     if (urlParams.has('translation')) {
-      this.slectedLanguage = urlParams.get('translation');
+      this.selectedLanguage = urlParams.get('translation');
     }
     if (urlParams.has('noteId')) {
       this.noteId = urlParams.get('noteId');
@@ -375,17 +384,11 @@ export default {
 
   },
   mounted() {
-    if (this.spaceId) {
-      this.init();
-    }
+    this.init();
   },
   methods: {
     init() {
-      setTimeout(() => {
-        this.initCKEditor();
-        this.setToolBarEffect();
-        this.initDone = true;
-      },200);
+      this.initCKEditor();
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -401,7 +404,6 @@ export default {
       if ((this.note.title && this.note.title === this.actualNote.title) && (this.note.content && this.note.content === this.actualNote.content)) {
         return;
       }
-
      
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
@@ -421,50 +423,59 @@ export default {
       }
     },
     getNote(id) {
-      return this.$notesService.getLatestDraftOfPage(id,this.slectedLanguage).then(latestDraft => {
+      return this.$notesService.getLatestDraftOfPage(id,this.selectedLanguage).then(latestDraft => {
         this.init();
         // check if page has a draft
         latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
-        if (latestDraft) {
-          this.newDraft=false;
-          this.fillNote(latestDraft);
-          setTimeout(() => {
-            this.displayDraftMessage();
-          }, this.autoSaveDelay/2);    
-          this.initActualNoteDone = true;
+        if (latestDraft?.id) {
+          if (this.editor) {
+            this.newDraft=false;
+            this.fillNote(latestDraft);
+            setTimeout(() => {
+              this.displayDraftMessage();
+            }, this.autoSaveDelay / 2);
+            this.initActualNoteDone = true;
+          } else {
+            this.draftNote = latestDraft;
+          }
         } else {
-          this.$notesService.getNoteById(id,this.slectedLanguage).then(data => {
-            if (this.slectedLanguage && !data.lang){
-              this.slectedLanguage=null;
+          this.draftNote = null;
+          this.$notesService.getNoteById(id,this.selectedLanguage).then(data => {
+            if (this.selectedLanguage && !data.lang){
+              this.selectedLanguage=null;
               const url = new URL(window.location.href);
               const params = new URLSearchParams(url.search);
               params.delete('translation'); 
               window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
             }
-            this.$nextTick(()=> this.fillNote(data));
-            this.newDraft=true;
-            this.initActualNoteDone = true;
+            if (this.editor) {
+              this.fillNote(data);
+              this.newDraft=true;
+              this.initActualNoteDone = true;
+            } else {
+              this.loadedNote = data;
+            }
           });
         }
       });
     },
     getDraftNote(id) {
-      return this.$notesService.getDraftNoteById(id,this.slectedLanguage).then(data => {
+      return this.$notesService.getDraftNoteById(id,this.selectedLanguage).then(data => {
         this.init();
         this.fillNote(data);
-      }).finally(() => {
-        this.displayDraftMessage();
+        if (data?.id) {
+          this.displayDraftMessage();
+        }
         this.initActualNoteDone = true;
       });
     },
     fillNote(data) {
       this.initActualNoteDone = false;
       if (data) {
-        data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
-        data.content = this.getContentToEdit(data.content);
+        data.content = this.$noteUtils.getContentToEdit(data.content);
         data.content= !data.parentPageId && (data.content===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>`) ? '' : data.content;
         this.note = data;
-        this.slectedLanguage = data.lang;
+        this.selectedLanguage = data.lang;
         this.getNoteLanguages();
         this.actualNote = {
           id: this.note.id,
@@ -480,14 +491,12 @@ export default {
         const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
         +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
         +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
-        if (CKEDITOR.instances['notesContent']) {
-          CKEDITOR.instances['notesContent'].setData(data.content);
-        }
+        this.editor.setData(data.content);
         if ((this.note.content.trim().length === 0)) {
           const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-          this.$notesService.getNoteById(noteId,this.slectedLanguage,'','','',true).then(data => {
+          this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true).then(data => {
             if (data && data.children && data.children.length) {
-              CKEDITOR.instances['notesContent'].setData(childContainer);
+              this.editor.setData(childContainer);
               this.setFocus();
             }
           });
@@ -527,7 +536,7 @@ export default {
             lang: this.note.lang,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() || this.note.content,
+            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
             parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -540,7 +549,7 @@ export default {
             lang: this.note.lang,
             wikiType: this.note.wikiType,
             wikiOwner: this.note.wikiOwner,
-            content: this.getBody() || this.note.content,
+            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
             parentPageId: this.parentPageId,
             toBePublished: toPublish,
             appName: this.appName,
@@ -559,8 +568,8 @@ export default {
             notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
             this.draftSavingStatus = '';
             let translation = '';
-            if (this.slectedLanguage){
-              translation = `?translation=${this.slectedLanguage}`;
+            if (this.selectedLanguage){
+              translation = `?translation=${this.selectedLanguage}`;
             } else {
               translation = '?translation=original';
             }
@@ -626,7 +635,7 @@ export default {
     },
     persistDraftNote(draftNote,update) {
       clearTimeout(this.saveDraft);
-      draftNote.lang=this.slectedLanguage;
+      draftNote.lang=this.selectedLanguage;
       if (this.note.title || this.note.content) {
         if (this.newDraft){
           draftNote.id=null;
@@ -666,8 +675,8 @@ export default {
       this.$refs.noteCustomPlugins.close();
     },
     initCKEditor: function() {
-      if (CKEDITOR.instances['notesContent'] && CKEDITOR.instances['notesContent'].destroy) {
-        CKEDITOR.instances['notesContent'].destroy(true);
+      if (this.editor?.destroy) {
+        this.editor.destroy(true);
       }
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
@@ -710,10 +719,11 @@ export default {
         },
         on: {
           instanceReady: function (evt) {
-            self.actualNote.content = evt.editor.getData();
-            CKEDITOR.instances['notesContent'].removeMenuItem('linkItem');
-            CKEDITOR.instances['notesContent'].removeMenuItem('selectImageItem');
-            $(CKEDITOR.instances['notesContent'].document.$)
+            self.editor = evt.editor;
+            self.actualNote.content = self.editor.getData();
+            self.editor.removeMenuItem('linkItem');
+            self.editor.removeMenuItem('selectImageItem');
+            $(self.editor.document.$)
               .find('.atwho-inserted')
               .each(function() {
                 $(this).on('click', '.remove', function() {
@@ -721,7 +731,7 @@ export default {
                 });
               });
             
-            const treeviewParentWrapper =  CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+            const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
             }
@@ -762,9 +772,9 @@ export default {
             /*add plugin fileUploadResponse to handle file upload response ,
               in this method we can get the response from server and update the editor content
               this method is called when file upload is finished*/
-            CKEDITOR.instances.notesContent.once('afterInsertHtml', ()=> {
+            self.editor.once('afterInsertHtml', ()=> {
               window.setTimeout(() => {
-                CKEDITOR.instances.notesContent.fire('mode');
+                self.editor.fire('mode');
               }, 2000);
             });
           },
@@ -772,7 +782,7 @@ export default {
             const element = evt.data.element;
             if ( element && element.is('a')) {
               const noteId = element.getAttribute( 'href' );
-              self.$notesService.getNoteById(noteId,this.slectedLanguage).then(data => {
+              self.$notesService.getNoteById(noteId,this.selectedLanguage).then(data => {
                 const note = data;
                 self.$refs.noteTreeview.open(note, 'includePages', 'no-arrow');
               });
@@ -780,18 +790,16 @@ export default {
           }
         }
       });
-      this.instance = CKEDITOR.instances['notesContent'];
     },
     setToolBarEffect() {
-      const element = CKEDITOR.instances['notesContent'] ;
       const elementNewTop = document.getElementById('notesTop');
-      if (element){
-        element.on('contentDom', function () {
+      if (this.editor){
+        this.editor.on('contentDom', function () {
           this.document.on('click', function(){
             elementNewTop.classList.add('darkComposerEffect');
           });
         });
-        element.on('contentDom', function () {
+        this.editor.on('contentDom', function () {
           this.document.on('keyup', function(){
             elementNewTop.classList.add('darkComposerEffect');
           });
@@ -809,13 +817,10 @@ export default {
     setFocus() {
       if (!this.noteId) {
         this.$refs.noteTitle.focus();
-      } else {
-        if (CKEDITOR.instances['notesContent']) {
-          CKEDITOR.instances['notesContent'].status = 'ready';
-          window.setTimeout(() => {
-            this.$nextTick().then(() => CKEDITOR.instances['notesContent']?.focus());
-          }, 200);
-        }        
+      } else if (this.editor) {
+        window.setTimeout(() => {
+          this.$nextTick().then(() => this.editor.focus());
+        }, 200);
       }
     },
     validateForm() {
@@ -847,7 +852,7 @@ export default {
     },
     displayDraftMessage() {
       let draftMessage = `${this.$t('notes.alert.warning.label.original.draft.drop')}, `;
-      if (this.slectedLanguage ) {
+      if (this.selectedLanguage) {
         draftMessage = `${this.$t('notes.alert.warning.label.draft.drop')}, `;
         draftMessage = draftMessage.replace('{0}', this.getLanguageName(this.note.lang));
       }
@@ -894,9 +899,9 @@ export default {
         this.$notesService.deleteDraftNote(this.note).then(() => {
           this.draftSavingStatus = '';
           this.getNoteLanguages().then(() => {
-            let lang = this.translations.find(item => item.value ===this.slectedLanguage);
+            let lang = this.translations.find(item => item.value === this.selectedLanguage);
             if (!lang){
-              lang = this.allLanguages.find(item => item.value === this.slectedLanguage);
+              lang = this.allLanguages.find(item => item.value === this.selectedLanguage);
               this.addTranslation(lang);
             } else if (targetPageId) {
               this.getNote(targetPageId);
@@ -965,7 +970,7 @@ export default {
     showTranslations() {
       if (this.noteId){
         this.showTranslationBar=true;
-        this.$refs.translationsEditBar.show(this.slectedLanguage);
+        this.$refs.translationsEditBar.show(this.selectedLanguage);
       }
     },
     hideTranslations() {
@@ -976,7 +981,7 @@ export default {
       const div = document.createElement('div');
       div.innerHTML = noteContent;
       if ( div.childElementCount === 2) {
-        const childrenWrapper = CKEDITOR.instances['notesContent'].window.$.document.getElementById('note-children-container');
+        const childrenWrapper = this.editor.window.$.document.getElementById('note-children-container');
         if ( childrenWrapper ) {
           if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
             return true;
@@ -990,68 +995,6 @@ export default {
         return false;
       }
     },
-    getContentToEdit(content) {
-      const domParser = new DOMParser();
-      const docElement = domParser.parseFromString(content, 'text/html').documentElement;
-      this.restoreOembed(docElement);
-      this.restoreUnHighlightedCode(docElement);
-      return docElement?.children[1].innerHTML;
-    },
-    restoreUnHighlightedCode(documentElement) {
-      documentElement.querySelectorAll('code.hljs').forEach(code => {
-        code.innerHTML = code.innerText;
-        code.classList.remove('hljs');
-      });
-    },
-    restoreOembed(documentElement) {
-      documentElement.querySelectorAll('div.embed-wrapper').forEach(wrapper => {
-        const oembed = document.createElement('oembed');
-        oembed.innerHTML = wrapper.dataset.url;
-        wrapper.replaceWith(oembed);
-      });
-    },
-    preserveEmbedded(body, documentElement) {
-      const iframes = body.querySelectorAll('[data-widget="embedSemantic"] div iframe');
-      if (iframes.length) {
-        documentElement.querySelectorAll('oembed').forEach((oembed, index) => {
-          const wrapper = document.createElement('div');
-          wrapper.dataset.url = decodeURIComponent(oembed.innerHTML);
-          wrapper.innerHTML = iframes[index]?.parentNode?.innerHTML;
-          const width = iframes[index]?.parentNode?.offsetWidth;
-          const height = iframes[index]?.parentNode?.offsetHeight;
-          const aspectRatio = width / height;
-          const minHeight = parseInt(this.oembedMinWidth) / aspectRatio;
-          const style = `
-            min-height: ${minHeight}px;
-            min-width: ${this.oembedMinWidth}px;
-            width: 100%;
-            margin-bottom: 10px;
-            aspect-ratio: ${aspectRatio};
-          `;
-          wrapper.setAttribute('style', style);
-          wrapper.setAttribute('class', 'embed-wrapper d-flex position-relative ml-auto mr-auto');
-          oembed.replaceWith(wrapper);
-        });
-      }
-    },
-    preserveHighlightedCode(body, documentElement) {
-      const codes = body.querySelectorAll('pre[data-widget="codeSnippet"] code');
-      if (codes.length) {
-        documentElement.querySelectorAll('code').forEach((code, index) => {
-          code.innerHTML = codes[index]?.innerHTML;
-          code.setAttribute('class', codes[index]?.getAttribute('class'));
-        });
-      }
-    },
-    getBody: function() {
-      const domParser = new DOMParser();
-      const newData = CKEDITOR.instances['notesContent'].getData();
-      const body = CKEDITOR.instances['notesContent'].document.getBody().$;
-      const documentElement = domParser.parseFromString(newData, 'text/html').documentElement;
-      this.preserveEmbedded(body, documentElement);
-      this.preserveHighlightedCode(body, documentElement);
-      return documentElement?.children[1].innerHTML;
-    },
     getNoteLanguages(){
       const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
       return this.$notesService.getNoteLanguages(noteId,true).then(data => {
@@ -1064,8 +1007,8 @@ export default {
         if (this.isMobile) {
           this.translations.unshift({value: null,text: this.$t('notes.label.translation.originalVersion')});
         }
-        if (!this.slectedLanguage){
-          const lang = this.translations.find(item => item.value === this.slectedLanguage);
+        if (!this.selectedLanguage){
+          const lang = this.translations.find(item => item.value === this.selectedLanguage);
           if (lang){
             this.translations=this.translations.filter(item => item.value !== lang.value);
             this.translations.unshift(lang);
@@ -1110,11 +1053,15 @@ export default {
         lang: lang?.value
       };
       this.languages = this.languages.filter(item => item.value !== lang?.value);
-      this.slectedLanguage=lang?.value;
+      this.selectedLanguage = lang?.value;
       this.translations.unshift(lang);
-      this.note.content='';
-      this.note.title='';
-      this.note.lang=lang.value;
+      if (this.webPageNote) {
+        this.note.title = `${this.note.title}_${this.selectedLanguage}`;
+      } else {
+        this.note.title = '';
+      }
+      this.note.content = '';
+      this.note.lang = this.selectedLanguage;
       this.newDraft=true;
       this.initCKEditor();
       document.dispatchEvent(new CustomEvent('translation-added',{ detail: originNoteContent }));
@@ -1131,7 +1078,7 @@ export default {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         this.saveDraftFromLocalStorage();
       }
-      this.slectedLanguage=lang.value;
+      this.selectedLanguage = lang.value;
       if (lang.value || this.isMobile) {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);
@@ -1141,9 +1088,9 @@ export default {
       this.note.lang=lang.value;
       const url = new URL(window.location.href);
       const params = new URLSearchParams(url.search);
-      params.delete('translation'); 
-      if (this.slectedLanguage) {
-        params.append('translation', this.slectedLanguage);
+      params.delete('translation');
+      if (this.selectedLanguage) {
+        params.append('translation', this.selectedLanguage);
       }
       window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
     },

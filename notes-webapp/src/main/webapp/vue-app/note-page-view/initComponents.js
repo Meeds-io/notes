@@ -22,6 +22,7 @@ import NotePageHeader from './components/NotePageHeader.vue';
 import NotePageView from './components/NotePageView.vue';
 import NotePageEdit from './components/NotePageEdit.vue';
 import NotePageEditDrawer from './components/NotePageEditDrawer.vue';
+import NoteRichEditor from './components/NoteRichEditor.vue';
 
 const components = {
   'note-page-view-app': NotePageViewApp,
@@ -29,6 +30,7 @@ const components = {
   'note-page-view': NotePageView,
   'note-page-edit': NotePageEdit,
   'note-page-edit-drawer': NotePageEditDrawer,
+  'note-rich-editor': NoteRichEditor,
 };
 
 for (const key in components) {
