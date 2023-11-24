@@ -32,14 +32,13 @@ if (extensionRegistry) {
 const lang = eXo.env.portal.language;
 const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.NotePageView-${lang}.json`;
 
-export function init(appId, name, canEdit, fullPageEditFeature) {
+export function init(appId, name, canEdit) {
   exoi18n.loadLanguageAsync(lang, url)
     .then(i18n => {
       Vue.createApp({
         data: {
           name,
           canEdit,
-          fullPageEditFeature,
           page: null,
           language: lang,
           defaultLanguage: 'en',

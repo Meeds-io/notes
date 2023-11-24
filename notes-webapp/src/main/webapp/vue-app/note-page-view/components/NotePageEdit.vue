@@ -50,7 +50,7 @@
         'z-index-two': displayFixedToolbar,
       }"
       class="ms-auto me-2 my-2 d-flex align-center justify-end">
-      <v-tooltip v-if="$root.fullPageEditFeature" bottom>
+      <v-tooltip bottom>
         <template #activator="{on, bind}">
           <v-btn
             v-on="on"
