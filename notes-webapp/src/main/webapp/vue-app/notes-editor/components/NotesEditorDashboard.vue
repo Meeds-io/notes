@@ -203,7 +203,10 @@ export default {
       allLanguages: [],
       newDraft: false,
       spaceDisplayName: null,
-      noteEditorExtensions: null
+      noteEditorExtensions: null,
+      editor: null,
+      loadedNote: null,
+      draftNote: null,
     };
   },
   computed: {
