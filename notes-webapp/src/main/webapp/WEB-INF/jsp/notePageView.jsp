@@ -6,18 +6,13 @@
   String name = (String) request.getAttribute("settingName");
   boolean canEdit = (boolean) request.getAttribute("canEdit");
   String id = "NotePageView" + renderRequest.getWindowID();
-
-  ExoFeatureService featureService = ExoContainerContext.getService(ExoFeatureService.class);
-  String userName = request.getRemoteUser();
-  boolean fullPageEditFeature = userName == null ? featureService.isActiveFeature("SNVFullPageAccess")
-                                                 : featureService.isFeatureActiveForUser("SNVFullPageAccess", userName);
 %>
 <div class="VuetifyApp">
   <div data-app="true"
     class="v-application transparent v-application--is-ltr theme--light" flat=""
     id="<%=id%>">
     <script type="text/javascript">
-      require(['PORTLET/notes/NotePageView'], app => app.init('<%=id%>', '<%=name%>', <%=canEdit%>, <%=fullPageEditFeature%>));
+      require(['PORTLET/notes/NotePageView'], app => app.init('<%=id%>', '<%=name%>', <%=canEdit%>));
     </script>
   </div>
 </div>
