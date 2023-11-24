@@ -358,7 +358,7 @@ export function getNoteVersionsByNoteId(noteId,lang) {
 }
 
 export function getAvailableLanguages() {
-  const lang = eXo && eXo.env.portal.language || 'en';
+  const lang = eXo?.env.portal.language || 'en';
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/languages?lang=${lang}`, {
     method: 'GET',
     credentials: 'include',

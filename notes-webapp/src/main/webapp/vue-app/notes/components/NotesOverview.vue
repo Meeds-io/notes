@@ -313,7 +313,7 @@ export default {
       exportStatus: '',
       exportId: 0,
       popStateChange: false,
-      iframelyOriginRegex: /^https?:\/\/if-cdn.com/
+      iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
       selectedTranslation: {value: eXo.env.portal.language},
       translations: [],
       languages: [],
