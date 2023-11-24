@@ -27,6 +27,6 @@
     <div
       v-else
       v-sanitized-html="$root.pageContent"
-      class="rich-editor-content extended-rich-content overflow-hidden"></div>
+      class="rich-editor-content extended-rich-content overflow-hidden full-width"></div>
   </div>
 </template>
