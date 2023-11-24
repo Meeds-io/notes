@@ -24,7 +24,7 @@ const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
 const appId = 'notesOverviewApplication';
 
 //getting language of the PLF
-const lang = eXo && eXo.env.portal.language || 'en';
+const lang = eXo?.env.portal.language || 'en';
 
 //should expose the locale ressources as REST API
 const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.notes.notesPortlet-${lang}.json`;
