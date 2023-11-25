@@ -13,6 +13,22 @@ CKEDITOR.editorConfig = function (config) {
   CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
   CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const webPageNote = urlParams.get('webPageNote') === 'true';
+
+  const blocksToolbarGroup = [
+    'Blockquote',
+    'tagSuggester',
+    'emoji',
+    'selectImage',
+    'Table',
+    'EmbedSemantic',
+    'CodeSnippet',
+    'InsertOptions'
+  ];
+  if (webPageNote) {
+    blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('tagSuggester'), 1);
+  }
   const toolbar = [
     {name: 'accessibility', items: ['A11ychecker']},
     {name: 'format', items: ['Format']},
@@ -30,13 +46,11 @@ CKEDITOR.editorConfig = function (config) {
     {name: 'links', items: ['Link', 'Anchor']},
     {
       name: 'blocks',
-      items: ['Blockquote', 'tagSuggester', 'emoji', 'selectImage', 'Table', 'EmbedSemantic', 'CodeSnippet', 'InsertOptions']
+      items: blocksToolbarGroup
     },
   ];
-  let extraPlugins = 'a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-        'autolink,colordialog,tagSuggester,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc';
-
-  let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed';
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc`;
+  let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
     const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
