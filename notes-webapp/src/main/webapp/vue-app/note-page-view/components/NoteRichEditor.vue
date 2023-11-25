@@ -20,13 +20,19 @@
 -->
 <template>
   <div
-    class="richEditor"
-    :class="largeToolbar && 'large-toolbar'">
+    :class="largeToolbar && 'large-toolbar'"
+    class="richEditor">
+    <v-progress-circular
+      v-if="!instanceReady"
+      :width="3"
+      indeterminate
+      class="absolute-all-center z-index-one" />
     <textarea
       ref="editor"
       v-model="content"
       :id="instanceId"
-      :placeholder="placeholder">
+      :placeholder="placeholder"
+      :class="!instanceReady && 'filter-blur-3'">
     </textarea>
   </div>
 </template>
