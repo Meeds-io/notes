@@ -54,6 +54,7 @@
             @edit="openEditor" />
           <note-page-view
             v-if="hasNote"
+            :class="editorLoading && 'opacity-8 filter-blur-1'"
             class="full-width overflow-hidden pa-1" />
         </template>
       </v-card>

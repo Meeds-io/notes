@@ -508,7 +508,7 @@ export default {
       const draftNote = {
         id: this.note.draftPage ? this.note.id : '',
         title: this.note.title,
-        content: this.getBody() || this.note.content,
+        content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
         name: this.note.name,
         lang: this.note.lang,
         appName: this.appName,
