@@ -10,11 +10,13 @@ CKEDITOR.editorConfig = function (config) {
   document.querySelectorAll('[skin-type=portal-skin]').forEach(link => config.contentsCss.push(link.href));
   config.contentsCss.push('/notes/ckeditorCustom/contents.css'); // load last
 
-  CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
-  CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
-
   const urlParams = new URLSearchParams(window.location.search);
   const webPageNote = urlParams.get('webPageNote') === 'true';
+
+  if (!webPageNote) {
+    CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
+  }
+  CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
 
   const blocksToolbarGroup = [
     'Blockquote',
@@ -28,6 +30,7 @@ CKEDITOR.editorConfig = function (config) {
   ];
   if (webPageNote) {
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('tagSuggester'), 1);
+    blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('InsertOptions'), 1);
   }
   const toolbar = [
     {name: 'accessibility', items: ['A11ychecker']},
@@ -49,7 +52,7 @@ CKEDITOR.editorConfig = function (config) {
       items: blocksToolbarGroup
     },
   ];
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc`;
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
