@@ -112,8 +112,9 @@ export default {
       formData.append('showMaxWindow', 'true');
       formData.append('hideSharedLayout', 'true');
       formData.append('webPageNote', 'true');
+      formData.append('webPageUrl', `${window.location.pathname}${window.location.search || ''}`);
       const urlParams = new URLSearchParams(formData).toString();
-      return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?${urlParams}`;
+      return `${eXo.env.portal.context}/${eXo.env.portal.defaultPortal}/notes-editor?${urlParams}`;
     },
     isSmall() {
       return this.$root.isSmall;

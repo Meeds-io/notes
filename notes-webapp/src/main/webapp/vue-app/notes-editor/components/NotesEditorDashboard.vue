@@ -219,9 +219,14 @@ export default {
     initCompleted() {
       return this.initDone && ((this.initActualNoteDone || this.noteId) || (this.initActualNoteDone || !this.noteId)) ;
     },
+    urlParams() {
+      return window.location.search && new URLSearchParams(window.location.search) || null;
+    },
     webPageNote() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('webPageNote') === 'true';
+      return this.urlParams?.get?.('webPageNote') === 'true';
+    },
+    webPageUrl() {
+      return this.urlParams?.get?.('webPageUrl');
     },
     langBottonColor(){
       if (!this.noteId){
@@ -562,18 +567,7 @@ export default {
             || this.$notesService.updateNoteById(note);
           updateNotePromise.then(data => {
             this.removeLocalStorageCurrentDraft();
-            if (!data) {
-              data = note;
-            }
-            notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
-            this.draftSavingStatus = '';
-            let translation = '';
-            if (this.selectedLanguage){
-              translation = `?translation=${this.selectedLanguage}`;
-            } else {
-              translation = '?translation=original';
-            }
-            window.location.href = `${notePath}${translation}`;
+            this.redirectAfterSave(data || note);
           }).catch(e => {
             console.error('Error when update note page', e);
             this.enableClickOnce();
@@ -588,8 +582,7 @@ export default {
             // delete draft note
             const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
             this.deleteDraftNote(draftNote, notePath);
-            // show the created note
-            window.location.href = notePath;
+            this.redirectAfterSave(data || note);
           }).catch(e => {
             console.error('Error when creating note page', e);
             this.enableClickOnce();
@@ -599,6 +592,21 @@ export default {
             });
           });
         }
+      }
+    },
+    redirectAfterSave(note) {
+      if (this.webPageUrl) {
+        window.location.href = this.webPageUrl;
+      } else {
+        const notePath = this.$notesService.getPathByNoteOwner(note, this.appName).replace(/ /g, '_');
+        this.draftSavingStatus = '';
+        let translation = '';
+        if (this.selectedLanguage){
+          translation = `?translation=${this.selectedLanguage}`;
+        } else {
+          translation = '?translation=original';
+        }
+        window.location.href = `${notePath}${translation}`;
       }
     },
     openPublishAndPost(event) {
