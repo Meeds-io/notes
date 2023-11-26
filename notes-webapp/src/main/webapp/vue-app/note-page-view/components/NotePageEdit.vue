@@ -84,7 +84,6 @@ export default {
     richEditorId: `notePageInline${parseInt(Math.random() * 10000)}`,
     saving: false,
     initialized: false,
-    siteBody: document.querySelector('#UISiteBody') || document.querySelector('#UIPageBody'),
     topbarHeight: document.querySelector('#UITopBarContainer')?.offsetHeight || 0,
     checkToolbarPosition: false,
     editorTop: 0,
@@ -167,13 +166,15 @@ export default {
   },
   mounted() {
     if (!this.isSmall) {
-      this.siteBody.addEventListener('scroll', this.controlBodyScrollClass, false);
+      document.querySelector('#UISiteBody').addEventListener('scroll', this.controlBodyScrollClass, false);
+      document.querySelector('#UIPageBody').addEventListener('scroll', this.controlBodyScrollClass, false);
       window.addEventListener('resize', this.controlBodyScrollClass, false);
       this.$root.$on('notes-editor-ready', this.controlBodyScrollClass);
     }
   },
   beforeDestroy() {
-    this.siteBody.removeEventListener('scroll', this.controlBodyScrollClass, false);
+    document.querySelector('#UISiteBody').removeEventListener('scroll', this.controlBodyScrollClass, false);
+    document.querySelector('#UIPageBody').removeEventListener('scroll', this.controlBodyScrollClass, false);
     window.removeEventListener('resize', this.controlBodyScrollClass, false);
     this.$root.$off('notes-editor-ready', this.controlBodyScrollClass);
   },
