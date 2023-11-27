@@ -1238,13 +1238,11 @@ public class NotesRestService implements ResourceContainer {
       // from the bottom children nodes
       List<JsonNodeData> bottomChildren =
                                         Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
-                                                                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
-                                                                                       && StringUtils.equals(jsonNodeData.getLang(),
-                                                                                                             lang))
-                                                                                   .collect(Collectors.toList())
-                                                                        : finalTree.stream()
-                                                                                   .filter(jsonNodeData -> !jsonNodeData.isHasChild())
-                                                                                   .collect(Collectors.toList());
+                                                     .filter(JsonNodeData::isDraftPage)
+                                                     .collect(Collectors.toList())
+                                          : finalTree.stream()
+                                                     .filter(jsonNodeData -> !jsonNodeData.isHasChild())
+                                                     .collect(Collectors.toList());
 
       // prepare draft note nodes tree
       if (Boolean.TRUE.equals(withDrafts)) {
@@ -1256,8 +1254,7 @@ public class NotesRestService implements ResourceContainer {
             String parentId = child.getParentPageId();
             Optional<JsonNodeData> parentOptional = finalTree.stream()
                                                              .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
-                                                                                                        parentId)
-                                                                 && StringUtils.equals(jsonNodeData.getLang(), lang))
+                                                                                                        parentId))
                                                              .findFirst();
             if (parentOptional.isPresent()) {
               parent = parentOptional.get();
@@ -1271,7 +1268,6 @@ public class NotesRestService implements ResourceContainer {
         }
         finalTree = finalTree.stream()
                              .filter(jsonNodeData -> jsonNodeData.isDraftPage()
-                                 && StringUtils.equals(jsonNodeData.getLang(), lang)
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
@@ -1290,8 +1286,7 @@ public class NotesRestService implements ResourceContainer {
               if (Boolean.TRUE.equals(withDrafts)) {
                 children = TreeUtils.cleanDraftChildren(children, request.getLocale());
                 children = children.stream()
-                                   .filter(jsonNodeData -> (jsonNodeData.isDraftPage()
-                                       && StringUtils.equals(jsonNodeData.getLang(), lang))
+                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
                                        || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                                    .collect(Collectors.toList());
               }

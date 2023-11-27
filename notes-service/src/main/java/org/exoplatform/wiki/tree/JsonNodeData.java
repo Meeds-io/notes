@@ -76,8 +76,6 @@ public class JsonNodeData {
   
   private String             url;
 
-  private String             lang;
-
   public JsonNodeData(TreeNode treeNode,
                       boolean isLastNode,
                       boolean isSelectable,

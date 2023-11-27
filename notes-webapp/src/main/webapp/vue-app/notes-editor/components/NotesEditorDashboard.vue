@@ -510,25 +510,6 @@ export default {
       }
       return draftNote;
     },
-    fillDraftNote() {
-      const draftNote = {
-        id: this.note.draftPage ? this.note.id : '',
-        title: this.note.title,
-        content: this.getBody() || this.note.content,
-        name: this.note.name,
-        lang: this.note.lang,
-        appName: this.appName,
-        wikiType: this.note.wikiType,
-        wikiOwner: this.note.wikiOwner,
-        parentPageId: this.parentPageId,
-      };
-      if (this.note.draftPage && this.note.id) {
-        draftNote.targetPageId = this.note.targetPageId;
-      } else {
-        draftNote.targetPageId = this.note.id ? this.note.id : '';
-      }
-      return draftNote;
-    },
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
@@ -1098,10 +1079,6 @@ export default {
           this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
         }
       });
-    },
-    getLanguageName(lang){
-      const language = this.allLanguages.find(item => item.value === lang);
-      return language?language.text:lang;
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);

@@ -314,12 +314,7 @@ export default {
       exportStatus: '',
       exportId: 0,
       popStateChange: false,
-      selectedTranslation: {value: eXo.env.portal.language},
-      translations: [],
-      languages: [],
-      slectedLanguage: null,
-      originalVersion: { value: null, text: this.$t('notes.label.translation.originalVersion') },
-      iframelyOriginRegex: /^https?:\/\/if-cdn.com/
+      iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
       selectedTranslation: {value: eXo.env.portal.language},
       translations: [],
       languages: [],
