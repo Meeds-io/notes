@@ -112,6 +112,9 @@ export default {
       formData.append('hideSharedLayout', 'true');
       formData.append('webPageNote', 'true');
       formData.append('webPageUrl', `${window.location.pathname}${window.location.search || ''}`);
+      if (this.note?.lang) {
+        formData.append('translation', this.note.lang);
+      }
       const urlParams = new URLSearchParams(formData).toString();
       return `${eXo.env.portal.context}/${eXo.env.portal.defaultPortal}/notes-editor?${urlParams}`;
     },
@@ -226,6 +229,7 @@ export default {
         wikiOwner: this.note.wikiOwner,
         parentPageId: this.note.parentPageId,
         targetPageId: this.note.id,
+        lang: this.note.lang,
       }, this.note.parentPageId).then(savedDraftNote => {
         localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(savedDraftNote));
       });
