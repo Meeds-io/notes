@@ -696,12 +696,11 @@ export default {
         this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        this.updateURL();
         this.getNoteLanguages(noteId);
         if (!this.note.lang || this.note.lang === ''){
           this.updateSelectedTranslation(this.originalVersion);
-          this.updateURL();
         }
+        this.updateURL();
         if (viewNote){
           this.viewNoteStatistics(this.note);
         }
@@ -732,12 +731,11 @@ export default {
         this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
-        this.updateURL();
         this.getNoteLanguages(this.note.id);
-        if (!this.note.lang || this.note.lang === ''){
+        if (!this.note.lang || this.note.lang === '') {
           this.updateSelectedTranslation(this.originalVersion);
-          this.updateURL();
         }
+        this.updateURL();
         if (viewNote){
           this.viewNoteStatistics(this.note);
         }
@@ -916,13 +914,12 @@ export default {
     updateURL(){
       const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
       let translation = '';
-      if (this.selectedTranslation.value){
+      if (this.selectedTranslation.value) {
         translation = `?translation=${this.selectedTranslation.value}`;
       }
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}`;
-      
       if (!this.popStateChange) {
-        window.history.pushState('notes', '', notesConstants.PORTAL_BASE_URL);
+        window.history.replaceState(window.history.state, window.document.title, notesConstants.PORTAL_BASE_URL);
       }
       this.popStateChange = false;
     },
