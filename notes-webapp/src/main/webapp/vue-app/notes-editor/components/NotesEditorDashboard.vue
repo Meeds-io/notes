@@ -111,10 +111,10 @@
           <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
             <textarea
               id="notesContent"
-              v-model="note.content"
+              ref="notesContent"
               :placeholder="notesBodyPlaceholder"
-              class="notesFormInput"
-              name="notesContent">
+              name="notesContent"
+              class="notesFormInput">
             </textarea>
           </div>
         </div>
@@ -360,24 +360,23 @@ export default {
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('include-page', (note) => {
-      const editor = $('textarea#notesContent').ckeditor().editor;
-      const editorSelectedElement = editor.getSelection().getStartElement();
-      if (editor.getSelection().getSelectedText()) {
+      const editorSelectedElement = this.editor.getSelection().getStartElement();
+      if (this.editor.getSelection().getSelectedText()) {
         if (editorSelectedElement.is('a')) {
           if (editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
-            editor.getSelection().getStartElement().remove();
-            editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
+            this.editor.getSelection().getStartElement().remove();
+            this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
           }
           if (editorSelectedElement.getAttribute( 'class' ) === 'labelLink') {
             const linkText = editorSelectedElement.getHtml();
-            editor.getSelection().getStartElement().remove();
-            editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${linkText}</a>`);
+            this.editor.getSelection().getStartElement().remove();
+            this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${linkText}</a>`);
           }
         } else {
-          editor.insertHtml(`<a href='${note.noteId}' class='labelLink'>${editor.getSelection().getSelectedText()}</a>`);
+          this.editor.insertHtml(`<a href='${note.noteId}' class='labelLink'>${this.editor.getSelection().getSelectedText()}</a>`);
         }
       } else {
-        editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
+        this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
       }
     });
 
@@ -387,7 +386,6 @@ export default {
         message: this.$t('notes.message.manualChild')
       });
     });
-
   },
   mounted() {
     this.init();
@@ -428,42 +426,40 @@ export default {
         this.persistDraftNote(draftToPersist, false);
       }
     },
-    getNote(id) {
-      return this.$notesService.getLatestDraftOfPage(id,this.selectedLanguage).then(latestDraft => {
-        this.init();
-        // check if page has a draft
-        latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
-        if (latestDraft?.id) {
-          if (this.editor) {
-            this.newDraft=false;
-            this.fillNote(latestDraft);
-            setTimeout(() => {
-              this.displayDraftMessage();
-            }, this.autoSaveDelay / 2);
-            this.initActualNoteDone = true;
-          } else {
-            this.draftNote = latestDraft;
-          }
-        } else {
-          this.draftNote = null;
-          this.$notesService.getNoteById(id,this.selectedLanguage).then(data => {
-            if (this.selectedLanguage && !data.lang){
-              this.selectedLanguage=null;
-              const url = new URL(window.location.href);
-              const params = new URLSearchParams(url.search);
-              params.delete('translation'); 
-              window.history.pushState('notes', '', `${url.origin}${url.pathname}?${params.toString()}`);
-            }
+    getNote(id, lang) {
+      if (!lang) {
+        lang = this.selectedLanguage;
+      }
+      this.draftNote = null;
+      this.loadedNote = null;
+      return this.$notesService.getLatestDraftOfPage(id, lang)
+        .then(latestDraft => {
+          // check if page has a draft
+          latestDraft = Object.keys(latestDraft).length !== 0 ? latestDraft : null;
+          if (latestDraft?.id) {
             if (this.editor) {
-              this.fillNote(data);
-              this.newDraft=true;
+              this.newDraft = false;
+              this.fillNote(latestDraft);
+              setTimeout(() => {
+                this.displayDraftMessage();
+              }, this.autoSaveDelay / 2);
               this.initActualNoteDone = true;
             } else {
-              this.loadedNote = data;
+              this.draftNote = latestDraft;
             }
-          });
-        }
-      });
+          } else {
+            return this.$notesService.getNoteById(id, lang)
+              .then(data => {
+                if (this.editor) {
+                  this.fillNote(data);
+                  this.newDraft = true;
+                  this.initActualNoteDone = true;
+                } else {
+                  this.loadedNote = data;
+                }
+              });
+          }
+        });
     },
     getDraftNote(id) {
       return this.$notesService.getDraftNoteById(id,this.selectedLanguage).then(data => {
@@ -502,12 +498,12 @@ export default {
           this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true)
             .then(data => {
               if (data && data.children && data.children.length) {
-                this.editor.setData(childContainer);
+                this.updateNoteContent(childContainer);
                 this.setFocus();
               }
             });
         } else {
-          this.editor.setData(data.content);
+          this.updateNoteContent(data.content);
         }
       }
       this.initActualNoteDone = true;
@@ -565,10 +561,7 @@ export default {
         }
         let notePath = '';
         if (note.id) {
-          const updateNotePromise = this.webPageNote
-            && this.$notePageViewService.saveNotePage(note.title, note.content)
-            || this.$notesService.updateNoteById(note);
-          updateNotePromise.then(data => {
+          this.$notesService.updateNoteById(note).then(data => {
             this.removeLocalStorageCurrentDraft();
             this.redirectAfterSave(data || note);
           }).catch(e => {
@@ -705,7 +698,7 @@ export default {
       CKEDITOR.basePath = '/commons-extension/ckeditor/';
       const self = this;
 
-      $('textarea#notesContent').ckeditor({
+      $(this.$refs.notesContent).ckeditor({
         customConfig: `${eXo.env.portal.context}/${eXo.env.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
         allowedContent: true,
         spaceURL: self.spaceURL,
@@ -741,7 +734,7 @@ export default {
                   $(this).closest('[data-atwho-at-query]').remove();
                 });
               });
-            
+
             const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable='false';
@@ -756,7 +749,7 @@ export default {
                   self.note.content = evt.editor.getData();
                 }
                 self.setFocus();
-              } );
+              });
             }
             window.setTimeout(() => self.setFocus(), 50);
             self.$root.$applicationLoaded();
@@ -771,7 +764,7 @@ export default {
             self.note.content = evt.editor.getData();
             self.autoSave();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if ( removeTreeviewBtn ) {
+            if (removeTreeviewBtn) {
               evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
                 const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
                 if ( treeviewParentWrapper) {
@@ -917,7 +910,7 @@ export default {
         this.$notesService.deleteDraftNote(this.note)
           .then(() => {
             this.removeLocalStorageCurrentDraft();
-            window.location.reload();
+            return this.getNote(this.note.targetPageId, this.selectedLanguage);
           })
           .catch(e => console.error('Error when deleting draft note', e));
       }
@@ -1056,7 +1049,7 @@ export default {
       this.selectedLanguage = lang?.value;
       this.translations.unshift(lang);
       if (this.webPageNote) {
-        this.note.title = `${this.note.title}_${this.selectedLanguage}`;
+        this.note.title = this.selectedLanguage && `${this.note.title}_${this.selectedLanguage}` || this.note.title;
       } else {
         this.note.title = '';
       }
@@ -1071,7 +1064,11 @@ export default {
     },
     updateNoteContent(content) {
       this.note.content = content;
-      this.initCKEditor();
+      if (this.editor) {
+        this.editor.setData(content);
+      } else {
+        this.$refs.notesContent.value = content;
+      }
     },
     changeTranslation(lang){
       this.closeAlertMessage();
@@ -1083,9 +1080,11 @@ export default {
         this.translations=this.translations.filter(item => item.value !== lang.value);
         this.translations.unshift(lang);
       }
-      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      this.getNote(noteId);
-      this.note.lang=lang.value;
+      const noteId = !this.note.draftPage ? this.note.id : this.note.targetPageId;
+      return this.getNote(noteId, lang.value)
+        .finally(() => this.updateUrl());
+    },
+    updateUrl() {
       const url = new URL(window.location.href);
       const params = new URLSearchParams(url.search);
       params.delete('translation');

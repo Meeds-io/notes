@@ -245,12 +245,12 @@ public class NoteServiceImpl implements NoteService {
   public Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
                                                                                 IllegalAccessException,
                                                                                 EntityNotFoundException {
-    Page note_ = getNoteById(note.getId());
-    if (note_ == null) {
+    Page existingNote = getNoteById(note.getId());
+    if (existingNote == null) {
       throw new EntityNotFoundException("Note to update not found");
     }
     Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    if (userIdentity != null && !canManageNotes(userIdentity.getUserId(), space, note_)) {
+    if (userIdentity != null && !canManageNotes(userIdentity.getUserId(), space, existingNote)) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
@@ -259,7 +259,7 @@ public class NoteServiceImpl implements NoteService {
     note.setContent(note.getContent());
     Page updatedPage = dataStorage.updatePage(note);
     invalidateCache(note);
-    
+
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
     updatedPage.setCanManage(note.isCanManage());
