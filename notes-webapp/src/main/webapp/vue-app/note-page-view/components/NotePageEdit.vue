@@ -43,6 +43,17 @@
         'z-index-two': displayFixedToolbar,
       }"
       class="ms-auto me-2 my-2 d-flex align-center justify-end">
+      <v-tooltip v-if="hasLanguages" bottom>
+        <template #activator="{on, bind}">
+          <div
+            v-on="on"
+            v-bind="bind"
+            class="me-5">
+            <v-icon size="20" color="primary">fa-language</v-icon>
+          </div>
+        </template>
+        <span>{{ $t('notePageView.label.openFullPageWithMultiLanguage') }}</span>
+      </v-tooltip>
       <v-tooltip bottom>
         <template #activator="{on, bind}">
           <v-btn
@@ -91,10 +102,14 @@ export default {
     editorX: 0,
     timeout: null,
     fixedToolbar: false,
+    languages: null,
   }),
   computed: {
     note() {
       return this.$root.page;
+    },
+    hasLanguages() {
+      return this.languages?.length;
     },
     parentPageId() {
       return this.note?.parentPageId;
@@ -185,7 +200,9 @@ export default {
     init() {
       this.pageContent = this.$root.pageContent || '';
       if (this.$root.pageId) {
-        this.initialized = true;
+        return this.$notesService.getNoteLanguages(this.$root.pageId)
+          .then(languages => this.languages = languages)
+          .finally(() => this.initialized = true);
       } else {
         return this.save()
           .finally(() => this.initialized = true);
