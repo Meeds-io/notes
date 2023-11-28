@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 export function getContentToSave(ckEditorInstanceId, oembedMinWidth) {
   const domParser = new DOMParser();
   const newData = CKEDITOR.instances[ckEditorInstanceId].getData();
@@ -82,7 +81,7 @@ export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner
 
 function restoreUnHighlightedCode(documentElement) {
   documentElement.querySelectorAll('code.hljs').forEach(code => {
-    code.innerHTML = code.innerText;
+    code.innerHTML = code.innerText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     code.classList.remove('hljs');
   });
 }

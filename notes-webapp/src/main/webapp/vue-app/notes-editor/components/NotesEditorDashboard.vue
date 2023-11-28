@@ -18,7 +18,6 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
-
 <template>
   <v-app class="notesEditor">
     <div
@@ -199,6 +198,8 @@ export default {
       editor: null,
       loadedNote: null,
       draftNote: null,
+      instanceReady: false,
+      initialized: false,
     };
   },
   computed: {
@@ -496,16 +497,18 @@ export default {
         const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
         +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
         +'<figcaption class="note-navigation-label">Navigation</figcaption></figure></div><p></p>';
-        this.editor.setData(data.content);
         if ((this.note.content.trim().length === 0)) {
-          const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-          this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true).then(data => {
-            if (data && data.children && data.children.length) {
-              this.editor.setData(childContainer);
-              this.setFocus();
-            }
-          });
-        } 
+          const noteId = !this.note.draftPage ? this.note.id : this.note.targetPageId;
+          this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true)
+            .then(data => {
+              if (data && data.children && data.children.length) {
+                this.editor.setData(childContainer);
+                this.setFocus();
+              }
+            });
+        } else {
+          this.editor.setData(data.content);
+        }
       }
       this.initActualNoteDone = true;
     },
@@ -756,13 +759,19 @@ export default {
             }
             window.setTimeout(() => self.setFocus(), 50);
             self.$root.$applicationLoaded();
+            self.instanceReady = true;
           },
           change: function (evt) {
+            if (!self.initialized) {
+              // First time setting data
+              self.initialized = true;
+              return;
+            }
             self.note.content = evt.editor.getData();
             self.autoSave();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
             if ( removeTreeviewBtn ) {
-              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+              evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
                 const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
                 if ( treeviewParentWrapper) {
                   const newLine = treeviewParentWrapper.getNext();
@@ -772,7 +781,7 @@ export default {
                   }
                   self.note.content = evt.editor.getData();
                 }
-              } );
+              });
             }
           },
           fileUploadResponse: function() {
@@ -858,6 +867,9 @@ export default {
       }
     },
     displayDraftMessage() {
+      if (!this.draftNote) {
+        return;
+      }
       let draftMessage = `${this.$t('notes.alert.warning.label.original.draft.drop')}, `;
       if (this.selectedLanguage) {
         draftMessage = `${this.$t('notes.alert.warning.label.draft.drop')}, `;
@@ -901,32 +913,12 @@ export default {
     },
     dropDraft() {
       if (this.note.draftPage && this.note.id) {
-        const targetPageId = this.note.targetPageId;
-        this.removeLocalStorageCurrentDraft();
-        this.$notesService.deleteDraftNote(this.note).then(() => {
-          this.draftSavingStatus = '';
-          this.getNoteLanguages().then(() => {
-            let lang = this.translations.find(item => item.value === this.selectedLanguage);
-            if (!lang){
-              lang = this.allLanguages.find(item => item.value === this.selectedLanguage);
-              this.addTranslation(lang);
-            } else if (targetPageId) {
-              this.getNote(targetPageId);
-            } else {
-              const parentNote = {
-                id: this.note.parentPageId,
-                wikiId: this.note.wikiId,
-                wikiOwner: this.note.wikiOwner,
-                wikiType: this.note.wikiType,
-              };
-              window.location.href = this.$notesService.getPathByNoteOwner(parentNote, this.appName).replace(/ /g, '_');
-            }  
-            this.closeAlertMessage(); 
-          });
-      
-        }).catch(e => {
-          console.error('Error when deleting draft note', e);
-        });
+        this.$notesService.deleteDraftNote(this.note)
+          .then(() => {
+            this.removeLocalStorageCurrentDraft();
+            window.location.reload();
+          })
+          .catch(e => console.error('Error when deleting draft note', e));
       }
     },
     deleteDraftNote(draftNote, notePath) {
