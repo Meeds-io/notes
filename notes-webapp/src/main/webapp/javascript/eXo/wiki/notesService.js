@@ -374,7 +374,8 @@ export function getAvailableLanguages() {
     }
   });
 }
-export function getNoteLanguages(noteId,withDrafts) {
+
+export function getNoteLanguages(noteId, withDrafts) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/translation/${noteId}`;
   if (withDrafts){
     url=`${url}${getSeparator(url)}withDrafts=${withDrafts}`;
