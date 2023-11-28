@@ -580,7 +580,7 @@ export default {
       const baseUrl = window.location.href;
       return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
     },
-    loadMoreVersions(){
+    loadMoreVersions() {
       this.versionsPageSize += this.versionsPageSize;
     },
     handleChangePages() {
