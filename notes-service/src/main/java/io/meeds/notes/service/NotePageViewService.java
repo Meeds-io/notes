@@ -20,8 +20,11 @@ package io.meeds.notes.service;
 
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
+
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.pom.data.PageKey;
+import org.exoplatform.services.resources.LocaleConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -36,20 +39,24 @@ import io.meeds.social.cms.service.CMSService;
 
 public class NotePageViewService {
 
-  public static final String CMS_CONTENT_TYPE = "notePage";
+  public static final String  CMS_CONTENT_TYPE = "notePage";
 
-  private NoteService        noteService;
+  private NoteService         noteService;
 
-  private WikiService        noteBookService;
+  private WikiService         noteBookService;
 
-  private CMSService         cmsService;
+  private CMSService          cmsService;
+
+  private LocaleConfigService localeConfigService;
 
   public NotePageViewService(NoteService noteService,
                              WikiService noteBookService,
-                             CMSService cmsService) {
+                             CMSService cmsService,
+                             LocaleConfigService localeConfigService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.cmsService = cmsService;
+    this.localeConfigService = localeConfigService;
   }
 
   public Page getNotePage(String name, String lang, Identity currentUserAclIdentity) throws IllegalAccessException {
@@ -62,7 +69,7 @@ public class NotePageViewService {
       }
       String pageReference = setting.getPageReference();
       PageKey pageKey = PageKey.create(pageReference);
-      return getNotePage(pageKey, name);
+      return getNotePage(pageKey, name, lang);
     }
   }
 
@@ -81,7 +88,7 @@ public class NotePageViewService {
       PageKey pageKey = PageKey.create(pageReference);
       try {
         Wiki noteBook = getNote(pageKey);
-        Page page = getNotePage(pageKey, name);
+        Page page = getNotePage(pageKey, name, null);
         if (page == null) {
           page = new Page(name, name);
           page.setContent(content);
@@ -90,10 +97,21 @@ public class NotePageViewService {
           page.setOwner(IdentityConstants.SYSTEM);
           noteService.createNote(noteBook, noteBook.getWikiHome(), page);
         } else {
-          page.setContent(content);
-          page.setUpdatedDate(new Date());
-          page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
-
+          String defaultLang = localeConfigService.getDefaultLocaleConfig().getLocale().toLanguageTag();
+          Page pageWithLang = getNotePage(pageKey, name, lang);
+          if (pageWithLang == null
+              || StringUtils.isBlank(pageWithLang.getLang())
+              || StringUtils.equals(defaultLang, pageWithLang.getLang())) {
+            page.setLang(null);
+            page.setContent(content);
+            page.setUpdatedDate(new Date());
+            page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
+          } else {
+            page.setUpdatedDate(new Date());
+            page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
+            page.setContent(content);
+            page.setLang(pageWithLang.getLang());
+          }
           String username = currentUserAclIdentity.getUserId();
           noteService.createVersionOfNote(page, username);
           noteService.removeDraftOfNote(page, username);
@@ -116,11 +134,20 @@ public class NotePageViewService {
     }
   }
 
-  private Page getNotePage(PageKey pageKey, String name) {
+  private Page getNotePage(PageKey pageKey, String name, String lang) {
     try {
       String ownerType = pageKey.getType();
       String ownerName = pageKey.getId();
-      return noteService.getNoteOfNoteBookByName(ownerType, ownerName, name);
+      Page page = noteService.getNoteOfNoteBookByName(ownerType, ownerName, name);
+      if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
+        Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
+        if (publishedVersion != null) {
+          page.setTitle(publishedVersion.getTitle());
+          page.setContent(publishedVersion.getContent());
+          page.setLang(publishedVersion.getLang());
+        }
+      }
+      return page;
     } catch (WikiException e) {
       throw new IllegalStateException(String.format("Error retrieving note with name %s referenced in page %s",
                                                     name,

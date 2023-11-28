@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Random;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
@@ -35,8 +36,10 @@ import org.exoplatform.portal.mop.page.PageState;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.NoteService;
 
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.cms.service.CMSServiceImpl;
@@ -53,6 +56,8 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
   private static final String   USERNAME             = "testUser";
 
+  private NoteService           noteService;
+
   private NotePageViewService   notePageViewService;
 
   private CMSService            cmsService;
@@ -68,6 +73,7 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     this.cmsService = getContainer().getComponentInstanceOfType(CMSServiceImpl.class);
     this.layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
     this.identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    this.noteService = getContainer().getComponentInstanceOfType(NoteService.class);
   }
 
   public void testGetNotePageWithAnonim() throws IllegalAccessException, ObjectAlreadyExistsException, ObjectNotFoundException {
@@ -92,9 +98,11 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
   public void testGetNotePageWithAuthenticated() throws IllegalAccessException,
                                                  ObjectAlreadyExistsException,
-                                                 ObjectNotFoundException {
+                                                 ObjectNotFoundException,
+                                                 WikiException {
     String pageNoteName = "pageNoteName" + RANDOM.nextLong();
-    String pageContent = "pageContent" + RANDOM.nextLong();
+    String pageContentEn = "pageContentEn" + RANDOM.nextLong();
+    String pageContentFr = "pageContentFr" + RANDOM.nextLong();
     String pageReference = createPage("pageName" + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
     cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
 
@@ -102,15 +110,37 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     Page notePage = notePageViewService.getNotePage(pageNoteName, null, registerInternalUser(USERNAME));
     assertNull(notePage);
     assertThrows(ObjectNotFoundException.class,
-                 () -> notePageViewService.saveNotePage(pageNoteName + "22", pageContent, null, null));
-    assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContent, null, null));
-    assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContent, null, registerInternalUser(USERNAME)));
-    notePageViewService.saveNotePage(pageNoteName, pageContent, null, registerAdministratorUser(USERNAME));
+                 () -> notePageViewService.saveNotePage(pageNoteName + "22", pageContentEn, null, null));
+    assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, null));
+    assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, registerInternalUser(USERNAME)));
+    notePageViewService.saveNotePage(pageNoteName, pageContentFr, null, registerAdministratorUser(USERNAME));
+    // Test save a language not saved, which has to change the default lang
+    notePageViewService.saveNotePage(pageNoteName, pageContentEn, "fr", registerAdministratorUser(USERNAME));
 
     assertThrows(IllegalAccessException.class, () -> notePageViewService.getNotePage(pageNoteName, null, null));
     notePage = notePageViewService.getNotePage(pageNoteName, null, registerInternalUser(USERNAME));
     assertNotNull(notePage);
-    assertEquals(pageContent, notePage.getContent());
+    assertEquals(pageContentEn, notePage.getContent());
+    notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContentEn, notePage.getContent());
+
+    notePageViewService.saveNotePage(pageNoteName, pageContentFr, "fr", registerAdministratorUser(USERNAME));
+
+    notePage.setLang(null);
+    notePage.setUpdatedDate(new Date());
+    noteService.updateNote(notePage);
+    notePage.setLang("fr");
+    notePage.setContent(pageContentFr);
+    noteService.createVersionOfNote(notePage, USERNAME);
+
+    notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContentFr, notePage.getContent());
+
+    notePage = notePageViewService.getNotePage(pageNoteName, "it", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContentEn, notePage.getContent());
   }
 
   private String createPage(String pageName, String accessPermission, String editPermission) {
