@@ -131,7 +131,7 @@ export default {
         formData.append('translation', this.note.lang);
       }
       const urlParams = new URLSearchParams(formData).toString();
-      return `${eXo.env.portal.context}/${eXo.env.portal.defaultPortal}/notes-editor?${urlParams}`;
+      return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`;
     },
     isSmall() {
       return this.$root.isSmall;
