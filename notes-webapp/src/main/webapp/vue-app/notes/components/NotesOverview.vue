@@ -355,7 +355,7 @@ export default {
   computed: {
     notesContentProcessor() {
       return {
-        template: `<div class='reset-style-box rich-editor-content extended-rich-content'>${this.$noteUtils.getContentToDisplay(this.noteContent, this.note?.id, this.noteBookType, this.noteBookOwner, true)}</div>`,
+        template: `<div class='rich-editor-content extended-rich-content'>${this.$noteUtils.getContentToDisplay(this.noteContent, this.note?.id, this.noteBookType, this.noteBookOwner, true)}</div>`,
         data() {
           return {
             vTreeComponent: {
