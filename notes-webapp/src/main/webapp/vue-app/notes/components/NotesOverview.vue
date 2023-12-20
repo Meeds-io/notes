@@ -393,7 +393,6 @@ export default {
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
-                    this.getNoteLanguages(noteId);
                     this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
                       if (data && data.jsonList.length) {
                         const allNotesTreeview = data.jsonList;
