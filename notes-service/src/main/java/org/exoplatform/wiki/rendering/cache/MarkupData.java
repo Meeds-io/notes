@@ -16,7 +16,7 @@
  */
 package org.exoplatform.wiki.rendering.cache;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MarkupData implements CacheData<String> {
 

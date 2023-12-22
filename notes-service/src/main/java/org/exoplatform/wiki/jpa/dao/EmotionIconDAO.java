@@ -19,8 +19,8 @@ package org.exoplatform.wiki.jpa.dao;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.wiki.jpa.entity.EmotionIconEntity;
 
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 
 public class EmotionIconDAO extends WikiBaseDAO<EmotionIconEntity, Long> {
 

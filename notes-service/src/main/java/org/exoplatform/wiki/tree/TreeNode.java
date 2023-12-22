@@ -19,7 +19,7 @@
 
 package org.exoplatform.wiki.tree;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
