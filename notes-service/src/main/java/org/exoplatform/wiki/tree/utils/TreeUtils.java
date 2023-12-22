@@ -22,7 +22,7 @@ package org.exoplatform.wiki.tree.utils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.container.ExoContainerContext;

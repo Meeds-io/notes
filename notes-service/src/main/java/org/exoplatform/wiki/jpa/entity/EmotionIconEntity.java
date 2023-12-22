@@ -2,7 +2,7 @@ package org.exoplatform.wiki.jpa.entity;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity(name = "WikiEmotionIconEntity")
 @ExoEntity

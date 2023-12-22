@@ -21,7 +21,7 @@ package org.exoplatform.wiki.jpa.dao;
 import org.exoplatform.wiki.jpa.entity.PageMoveEntity;
 import org.exoplatform.wiki.model.WikiType;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 public class PageMoveDAO extends WikiBaseDAO<PageMoveEntity,Long> {

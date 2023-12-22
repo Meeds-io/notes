@@ -19,7 +19,7 @@
 
 package org.exoplatform.wiki.jpa.search;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.search.domain.Document;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;

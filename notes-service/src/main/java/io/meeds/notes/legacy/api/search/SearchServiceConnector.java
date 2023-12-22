@@ -1,6 +1,6 @@
 package io.meeds.notes.legacy.api.search;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
