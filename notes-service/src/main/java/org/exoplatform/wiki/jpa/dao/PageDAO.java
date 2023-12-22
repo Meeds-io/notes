@@ -21,8 +21,8 @@ package org.exoplatform.wiki.jpa.dao;
 
 import java.util.List;
 
-import javax.persistence.NonUniqueResultException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.NonUniqueResultException;
+import jakarta.persistence.TypedQuery;
 
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.model.WikiType;

@@ -19,8 +19,8 @@ package org.exoplatform.wiki.jpa.dao;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**

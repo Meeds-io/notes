@@ -18,8 +18,8 @@ package org.exoplatform.wiki.jpa.dao;
 
 import org.exoplatform.wiki.jpa.entity.TemplateEntity;
 
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 public class TemplateDAO extends WikiBaseDAO<TemplateEntity, Long> {

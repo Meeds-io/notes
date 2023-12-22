@@ -23,8 +23,8 @@ import java.util.*;
 import org.exoplatform.wiki.model.*;
 import org.mockito.Mockito;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import org.exoplatform.container.PortalContainer;
