@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.text.Normalizer;
 import java.util.*;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.wiki.utils.Utils;
 
