@@ -1370,7 +1370,7 @@ public class NoteServiceImpl implements NoteService {
           if (conflict.equals("update")) {
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
               note_2.setTitle(note.getTitle());
-              String processedContent = htmlUploadImageProcessor.processSpaceImages(note_2.getContent(), wiki.getOwner(), imagesSubLocationPath);
+              String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(), wiki.getOwner(), imagesSubLocationPath);
               note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());

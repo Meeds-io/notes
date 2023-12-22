@@ -69,7 +69,7 @@ import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
