@@ -117,6 +117,8 @@ export default {
           enterMode: CKEDITOR.ENTER_P,
           shiftEnterMode: CKEDITOR.ENTER_BR,
           copyFormatting_allowedContexts: true,
+          isImagePasteBlocked: true,
+          hideUploadImageLink: true,
           indentBlock: {
             offset: 40,
             unit: 'px'
