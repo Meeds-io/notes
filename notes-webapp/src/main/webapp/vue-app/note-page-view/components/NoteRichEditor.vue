@@ -123,8 +123,6 @@ export default {
             offset: 40,
             unit: 'px'
           },
-          autoGrow_onStartup: true,
-          autoGrow_maxHeight: 800,
           format_tags: 'p;h1;h2;h3',
           bodyClass: 'notesContent',
           dialog_noConfirmCancel: true,
