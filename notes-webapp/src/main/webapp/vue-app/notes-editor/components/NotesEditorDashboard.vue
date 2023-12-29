@@ -720,6 +720,7 @@ export default {
         colorButton_enableMore: true,
         isImagePasteBlocked: this.webPageNote,
         hideUploadImageLink: this.webPageNote,
+        isImageDragBlocked: this.webPageNote,
         sharedSpaces: {
           top: 'notesTop'
         },

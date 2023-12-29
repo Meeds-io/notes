@@ -119,6 +119,7 @@ export default {
           copyFormatting_allowedContexts: true,
           isImagePasteBlocked: true,
           hideUploadImageLink: true,
+          isImageDragBlocked: true,
           indentBlock: {
             offset: 40,
             unit: 'px'
