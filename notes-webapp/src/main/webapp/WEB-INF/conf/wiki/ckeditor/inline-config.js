@@ -54,6 +54,8 @@ CKEDITOR.editorConfig = function (config) {
 
   config.autoGrow_onStartup = true;
   config.autoGrow_minHeight = 165;
+  config.autoGrow_maxHeight =  800;
+
   config.height = 165;
   config.format_tags = 'p;h1;h2;h3';
 };
