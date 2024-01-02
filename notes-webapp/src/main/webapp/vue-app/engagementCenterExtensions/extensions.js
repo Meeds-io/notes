@@ -1,3 +1,11 @@
+import * as notesService from '../../javascript/eXo/wiki/notesService.js';
+
+if (!Vue.prototype.$notesService) {
+  window.Object.defineProperty(Vue.prototype, '$notesService', {
+    value: notesService,
+  });
+}
+
 export function init() {
   extensionRegistry.registerExtension('engagementCenterActions', 'user-actions', {
     type: 'note',
