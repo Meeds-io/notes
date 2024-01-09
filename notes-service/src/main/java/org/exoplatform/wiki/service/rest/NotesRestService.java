@@ -1372,7 +1372,7 @@ public class NotesRestService implements ResourceContainer {
                                                         searchResult.getLang(),
                                                         currentIdentity);
         if (page != null) {
-          page.setUrl(searchResult.getUrl());
+          page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
             Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
                             page);
