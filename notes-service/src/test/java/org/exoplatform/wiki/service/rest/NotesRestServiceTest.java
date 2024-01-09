@@ -364,6 +364,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     page.setId("100");
     page.setActivityId("12");
     page.setLang("en");
+    page.setUrl("/space/note/100");
     when(noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
                                              searchResult.getWikiOwner(),
                                              searchResult.getPageName(),
