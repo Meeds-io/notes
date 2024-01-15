@@ -29,15 +29,17 @@
     @closed="reset"
     @expand-updated="expanded = $event">
     <template #content>
-      <note-rich-editor
-        ref="richEditor"
-        v-model="pageContent"
-        :placeholder="$t('notePageView.placeholder.editText')"
-        :instance-id="richEditorId"
-        :large-toolbar="!isSmall"
-        toolbar-location="bottom"
-        @ready="$root.$emit('notes-editor-ready')"
-        @unloaded="$root.$emit('notes-editor-unloaded')" />
+      <div class="white pa-5">
+        <note-rich-editor
+          ref="richEditor"
+          v-model="pageContent"
+          :placeholder="$t('notePageView.placeholder.editText')"
+          :instance-id="richEditorId"
+          :large-toolbar="!isSmall"
+          toolbar-location="bottom"
+          @ready="$root.$emit('notes-editor-ready')"
+          @unloaded="$root.$emit('notes-editor-unloaded')" />
+      </div>
     </template>
     <template #footer>
       <div class="d-flex align-center justify-end">

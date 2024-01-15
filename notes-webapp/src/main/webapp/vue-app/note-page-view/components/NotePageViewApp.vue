@@ -28,7 +28,7 @@
         min-width="100%"
         max-width="100%"
         min-height="60"
-        class="d-flex flex-column border-box-sizing position-relative card-border-radius"
+        class="d-flex flex-column border-box-sizing position-relative card-border-radius overflow-hidden"
         color="white"
         flat>
         <template v-if="edit">
