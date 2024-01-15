@@ -32,6 +32,7 @@
       :instance-id="richEditorId"
       :toolbar-location="isSmall && 'bottom' || 'top'"
       :large-toolbar="!isSmall"
+      class="no-border-recursive"
       @ready="$root.$emit('notes-editor-ready')"
       @unloaded="$root.$emit('notes-editor-unloaded')" />
     <div
