@@ -7,7 +7,9 @@ CKEDITOR.editorConfig = function (config) {
 
   // style inside the editor
   config.contentsCss = [];
-  document.querySelectorAll('[skin-type=portal-skin]').forEach(link => config.contentsCss.push(link.href));
+  document.querySelectorAll('[skin-type=portal-skin]')
+    .forEach(link => config.contentsCss.push(link.href));
+  config.contentsCss.push(document.querySelector('#brandingSkin').href);
   config.contentsCss.push('/notes/ckeditorCustom/contents.css'); // load last
 
   CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
