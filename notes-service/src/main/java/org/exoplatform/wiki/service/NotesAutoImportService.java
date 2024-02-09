@@ -193,8 +193,8 @@ public class NotesAutoImportService implements Startable {
                            String spaceDescription,
                            String zipPath,
                            Identity superUserIdentity) {
-
-    Space space = spaceService.getSpaceByPrettyName(spaceName);
+    String groupId  = "/spaces/" + spaceName;
+    Space space = spaceService.getSpaceByGroupId(groupId);
     if (space == null) {
       space = createSpace(spaceName, spaceDisplayName, spaceDescription, SPACE_TEMPLATE, superUserIdentity);
     }

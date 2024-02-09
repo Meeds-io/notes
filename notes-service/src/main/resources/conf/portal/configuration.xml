@@ -90,7 +90,7 @@
       </value-param>
       <value-param>
         <name>frKnowledgeBaseSpaceName</name>
-        <value>${exo.notes.knowledge.base.fr.space.nam:exo_knowledge_base_fr}</value>
+        <value>${exo.notes.knowledge.base.fr.space.name:exo_knowledge_base_fr}</value>
       </value-param>
       <value-param>
         <name>enKnowledgeBaseSpaceDispalyName</name>
