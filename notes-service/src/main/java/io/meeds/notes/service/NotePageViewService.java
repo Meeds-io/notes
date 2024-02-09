@@ -67,9 +67,16 @@ public class NotePageViewService {
       if (!cmsService.hasAccessPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
         throw new IllegalAccessException("Note page isn't accessible");
       }
-      String pageReference = setting.getPageReference();
-      PageKey pageKey = PageKey.create(pageReference);
-      return getNotePage(pageKey, name, lang);
+      return getNotePage(setting, lang);
+    }
+  }
+
+  public Page getNotePage(String name, String lang) {
+    CMSSetting setting = cmsService.getSetting(CMS_CONTENT_TYPE, name);
+    if (setting == null) {
+      return null;
+    } else {
+      return getNotePage(setting, lang);
     }
   }
 
@@ -132,6 +139,12 @@ public class NotePageViewService {
     } else {
       return noteBook;
     }
+  }
+
+  private Page getNotePage(CMSSetting setting, String lang) {
+    String pageReference = setting.getPageReference();
+    PageKey pageKey = PageKey.create(pageReference);
+    return getNotePage(pageKey, setting.getName(), lang);
   }
 
   private Page getNotePage(PageKey pageKey, String name, String lang) {
