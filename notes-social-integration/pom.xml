@@ -4,7 +4,7 @@
   <parent>
     <artifactId>notes</artifactId>
     <groupId>org.exoplatform.addons.notes</groupId>
-    <version>1.4.x-exo-SNAPSHOT</version>
+    <version>1.4.0-exo-20240212</version>
   </parent>
   <artifactId>notes-social-integration</artifactId>
   <packaging>jar</packaging>
