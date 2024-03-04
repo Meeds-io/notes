@@ -24,5 +24,5 @@ export function init() {
         vuetify: Vue.prototype.vuetifyOptions,
         i18n
       }, `#${appId}`, 'Notes Editor Dashboard');
-    });
+    }).finally(() => Vue.prototype.$utils.includeExtensions('NotesEditorExtension'));
 }

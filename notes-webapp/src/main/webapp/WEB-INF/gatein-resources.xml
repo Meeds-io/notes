@@ -47,6 +47,7 @@
   <portlet>
     <name>Notes</name>
     <module>
+      <load-group>NotesGRP</load-group>
       <script>
         <minify>false</minify>
         <path>/javascript/notes.bundle.js</path>
@@ -85,6 +86,7 @@
   <portlet>
     <name>NotesEditor</name>
     <module>
+      <load-group>NotesEditorGRP</load-group>
       <script>
         <minify>false</minify>
         <path>/javascript/notesEditor.bundle.js</path>
