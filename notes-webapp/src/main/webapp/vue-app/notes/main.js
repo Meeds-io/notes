@@ -46,5 +46,5 @@ export function init() {
       vuetify,
       i18n
     }, appElement, 'Notes Overview');
-  });
+  }).finally(() => Vue.prototype.$utils.includeExtensions('NotesExtension'));
 }
