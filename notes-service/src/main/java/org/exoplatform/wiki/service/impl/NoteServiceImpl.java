@@ -227,7 +227,9 @@ public class NoteServiceImpl implements NoteService {
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
     createdPage.setLang(note.getLang());
-    invalidateCache(parentPage);
+    if (parentPage != null) {
+      invalidateCache(parentPage);
+    }
     invalidateCache(note);
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);

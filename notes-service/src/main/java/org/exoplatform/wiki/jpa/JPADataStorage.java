@@ -214,7 +214,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity createdPageEntity = pageDAO.create(pageEntity);
 
     // if the page to create is the Home, update the wiki
-    if (parentPage == null) {
+    if (parentPage == null && NoteConstants.NOTE_HOME_NAME.equals(createdPageEntity.getName())) {
       wikiEntity.setWikiHome(createdPageEntity);
       wikiDAO.update(wikiEntity);
     }
