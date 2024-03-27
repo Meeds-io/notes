@@ -86,6 +86,14 @@ public interface DataStorage {
   public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException;
 
   public void deleteDraftByName(String newDraftPageName, String username) throws WikiException;
+  
+  /**
+   * Deletes a draft note by its technical id.
+   *
+   * @param id Id of the draft note.
+   * @throws WikiException if an error occured
+   */
+  public void deleteDraftById(String id) throws WikiException;
 
   public void renamePage(String wikiType, String wikiOwner, String pageName, String newName, String newTitle) throws WikiException;
 

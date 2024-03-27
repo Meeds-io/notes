@@ -227,7 +227,9 @@ public class NoteServiceImpl implements NoteService {
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
     createdPage.setLang(note.getLang());
-    invalidateCache(parentPage);
+    if (parentPage != null) {
+      invalidateCache(parentPage);
+    }
     invalidateCache(note);
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
@@ -728,7 +730,12 @@ public class NoteServiceImpl implements NoteService {
   public void removeDraft(String draftName) throws WikiException {
     dataStorage.deleteDraftByName(draftName, Utils.getCurrentUser());
   }
-
+  
+  @Override
+  public void removeDraftById(String draftId) throws WikiException {
+    dataStorage.deleteDraftById(draftId);
+  }
+  
   @Override
   public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
     List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);

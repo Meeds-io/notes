@@ -214,7 +214,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity createdPageEntity = pageDAO.create(pageEntity);
 
     // if the page to create is the Home, update the wiki
-    if (parentPage == null) {
+    if (parentPage == null && NoteConstants.NOTE_HOME_NAME.equals(createdPageEntity.getName())) {
       wikiEntity.setWikiHome(createdPageEntity);
       wikiDAO.update(wikiEntity);
     }
@@ -358,6 +358,12 @@ public class JPADataStorage implements DataStorage {
       deleteAttachmentsOfDraftPage(draftPage);
     }
     draftPageDAO.deleteDraftPagesByUserAndName(draftPageName, username);
+  }
+  
+  @Override
+  public void deleteDraftById(String id) throws WikiException {
+    DraftPageEntity draftPageEntity = draftPageDAO.find(Long.parseLong(id));
+    draftPageDAO.delete(draftPageEntity);
   }
 
   @Override
