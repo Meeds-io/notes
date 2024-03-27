@@ -359,6 +359,12 @@ public class JPADataStorage implements DataStorage {
     }
     draftPageDAO.deleteDraftPagesByUserAndName(draftPageName, username);
   }
+  
+  @Override
+  public void deleteDraftById(String id) throws WikiException {
+    DraftPageEntity draftPageEntity = draftPageDAO.find(Long.parseLong(id));
+    draftPageDAO.delete(draftPageEntity);
+  }
 
   @Override
   @ExoTransactional

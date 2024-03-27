@@ -266,7 +266,7 @@ public interface NoteService {
   void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException;
 
   void removeDraftOfNote(Page page, String username) throws WikiException;
-
+  
   /**
    * Removes a draft page by its name.
    *
@@ -274,6 +274,14 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   void removeDraft(String draftName) throws WikiException;
+  
+  /**
+   * Removes a draft page by its technical id.
+   *
+   * @param draftId Technical Id of the draft page.
+   * @throws WikiException if an error occured
+   */
+  void removeDraftById(String draftId) throws WikiException;
 
 
   /**
