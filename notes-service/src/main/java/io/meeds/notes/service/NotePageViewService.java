@@ -121,7 +121,7 @@ public class NotePageViewService {
           }
           String username = currentUserAclIdentity.getUserId();
           noteService.createVersionOfNote(page, username);
-          noteService.removeDraftOfNote(page, username);
+          noteService.removeDraftOfNote(page);
         }
       } catch (WikiException e) {
         throw new IllegalStateException(String.format("Error retrieving note with name %s referenced in page %s",

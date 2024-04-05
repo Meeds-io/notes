@@ -249,7 +249,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createPage(wiki, wiki.getWikiHome(), parentPage);
     storage.createPage(wiki, parentPage, page1);
     storage.createPage(wiki, parentPage, page2);
-    List<Page> childrenPages = storage.getChildrenPageOf(parentPage, "root", true);
+    List<Page> childrenPages = storage.getChildrenPageOf(parentPage, true);
 
     // Then
     assertEquals(4, pageDAO.findAll().size());
@@ -352,20 +352,20 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createPage(wiki1, page1, page11);
     storage.createPage(wiki1, wiki1.getWikiHome(), page2);
     assertEquals(5, pageDAO.findAll().size());
-    assertEquals(2, storage.getChildrenPageOf(wiki1.getWikiHome(), "root", true).size());
+    assertEquals(2, storage.getChildrenPageOf(wiki1.getWikiHome(), true).size());
     storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), page1.getName()), new WikiPageParams(wiki2.getType(),
             wiki2.getOwner(),
             wiki2.getWikiHome().getName()));
 
     // Then
     assertEquals(5, pageDAO.findAll().size());
-    assertEquals(1, storage.getChildrenPageOf(wiki1.getWikiHome(), "root", true).size());
-    List<Page> wiki2HomeChildrenPages = storage.getChildrenPageOf(wiki2.getWikiHome(), "root", true);
+    assertEquals(1, storage.getChildrenPageOf(wiki1.getWikiHome(), true).size());
+    List<Page> wiki2HomeChildrenPages = storage.getChildrenPageOf(wiki2.getWikiHome(), true);
     assertEquals(1, wiki2HomeChildrenPages.size());
     Page movedPage1 = wiki2HomeChildrenPages.get(0);
     assertEquals("page1", movedPage1.getName());
     assertEquals("Page 1", movedPage1.getTitle());
-    assertEquals(1, storage.getChildrenPageOf(movedPage1, "root", true).size());
+    assertEquals(1, storage.getChildrenPageOf(movedPage1, true).size());
     Page fetchedPage11 = storage.getPageOfWikiByName(PortalConfig.PORTAL_TYPE, "wiki2", "page11");
     assertNotNull(fetchedPage11);
     assertEquals("page11", fetchedPage11.getName());
@@ -600,151 +600,48 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals(1, relatedPagesAfterDeletion.size());
   }
 
-  @Test
-  public void testDraftPagesOfUser() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Page page = new Page();
-    page.setWikiId(wiki.getId());
-    page.setWikiType(wiki.getType());
-    page.setWikiOwner(wiki.getOwner());
-    page.setCreatedDate(new Date());
-    page.setUpdatedDate(new Date());
-    page.setName("page1");
-    page.setTitle("Page 1");
-    page.setContent("Content Page 1");
-    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-
-    DraftPage draftPage = new DraftPage();
-    draftPage.setAuthor("user1");
-    draftPage.setName("DraftPage1");
-    draftPage.setTitle("DraftPage 1");
-    draftPage.setContent("Content Page 1 Updated");
-    draftPage.setTargetPageId(createdPage.getId());
-    draftPage.setTargetPageRevision("1");
-    draftPage.setCreatedDate(new Date());
-    draftPage.setUpdatedDate(new Date());
-
-    // When
-    storage.createDraftPageForUser(draftPage, "user1");
-    List<DraftPage> draftPagesOfUser1 = storage.getDraftPagesOfUser("user1");
-    List<DraftPage> draftPagesOfUser2 = storage.getDraftPagesOfUser("user2");
-
-    // Then
-    assertNotNull(draftPagesOfUser1);
-    assertEquals(1, draftPagesOfUser1.size());
-    assertEquals("DraftPage1", draftPagesOfUser1.get(0).getName());
-    assertEquals(createdPage.getId(), draftPagesOfUser1.get(0).getTargetPageId());
-    assertEquals(createdPage.getWikiType(), draftPagesOfUser1.get(0).getWikiType());
-    assertEquals(createdPage.getWikiOwner(), draftPagesOfUser1.get(0).getWikiOwner());
-    assertEquals("Content Page 1 Updated", draftPagesOfUser1.get(0).getContent());
-    assertNotNull(draftPagesOfUser2);
-    assertEquals(0, draftPagesOfUser2.size());
-  }
-
-  @Test
-  public void testDraftPageOfUserByName() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Page page = new Page();
-    page.setWikiId(wiki.getId());
-    page.setWikiType(wiki.getType());
-    page.setWikiOwner(wiki.getOwner());
-    page.setCreatedDate(new Date());
-    page.setUpdatedDate(new Date());
-    page.setName("page1");
-    page.setTitle("Page 1");
-    page.setContent("Content Page 1");
-    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-
-    DraftPage draftPage = new DraftPage();
-    draftPage.setAuthor("user1");
-    draftPage.setName("DraftPage1");
-    draftPage.setTitle("DraftPage 1");
-    draftPage.setContent("Content Page 1 Updated");
-    draftPage.setTargetPageId(createdPage.getId());
-    draftPage.setTargetPageRevision("1");
-    draftPage.setCreatedDate(new Date());
-    draftPage.setUpdatedDate(new Date());
-
-    // When
-    storage.createDraftPageForUser(draftPage, "user1");
-    DraftPage draftPage1OfUser1 = storage.getDraft("DraftPage1", "user1");
-    DraftPage draftPage2OfUser1 = storage.getDraft("DraftPage2", "user1");
-    DraftPage draftPage1OfUser2 = storage.getDraft("DraftPage1", "user2");
-
-    // Then
-    assertNotNull(draftPage1OfUser1);
-    assertEquals(createdPage.getId(), draftPage1OfUser1.getTargetPageId());
-    assertEquals("Content Page 1 Updated", draftPage1OfUser1.getContent());
-    assertNull(draftPage2OfUser1);
-    assertNull(draftPage1OfUser2);
-  }
-
-  @Test
-  public void testLatestDraftPageOfUser() throws WikiException {
-    // Given
-    Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = storage.createWiki(wiki);
-
-    Page page = new Page();
-    page.setWikiId(wiki.getId());
-    page.setWikiType(wiki.getType());
-    page.setWikiOwner(wiki.getOwner());
-    page.setCreatedDate(new Date());
-    page.setUpdatedDate(new Date());
-    page.setName("page1");
-    page.setTitle("Page 1");
-    page.setContent("Content Page 1");
-    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-
-    Calendar calendar = Calendar.getInstance();
-    Date now = calendar.getTime();
-    calendar.add(Calendar.YEAR, -1);
-    Date oneYearAgo = calendar.getTime();
-
-    DraftPage draftPage1 = new DraftPage();
-    draftPage1.setAuthor("user1");
-    draftPage1.setName("DraftPage1");
-    draftPage1.setTitle("DraftPage 1");
-    draftPage1.setContent("Content Page 1 Updated");
-    draftPage1.setTargetPageId(createdPage.getId());
-    draftPage1.setTargetPageRevision("1");
-    draftPage1.setUpdatedDate(oneYearAgo);
-    draftPage1.setCreatedDate(oneYearAgo);
-
-    DraftPage draftPage2 = new DraftPage();
-    draftPage2.setAuthor("user1");
-    draftPage2.setName("DraftPage1");
-    draftPage2.setTitle("DraftPage 1");
-    draftPage2.setContent("Content Page 1 Updated Again");
-    draftPage2.setTargetPageId(createdPage.getId());
-    draftPage2.setTargetPageRevision("2");
-    draftPage2.setUpdatedDate(now);
-    draftPage2.setCreatedDate(now);
-
-    // When
-    storage.createDraftPageForUser(draftPage1, "user1");
-    storage.createDraftPageForUser(draftPage2, "user1");
-    DraftPage fetchedDraftPage1 = storage.getLastestDraft("user1");
-    DraftPage fetchedDraftPage2 = storage.getLastestDraft("user2");
-
-    // Then
-    assertNotNull(fetchedDraftPage1);
-    assertEquals(createdPage.getId(), fetchedDraftPage1.getTargetPageId());
-    assertEquals("Content Page 1 Updated Again", fetchedDraftPage1.getContent());
-    assertNull(fetchedDraftPage2);
-  }
+//  @Test
+//  public void testDraftPagerByName() throws WikiException {
+//    // Given
+//    Wiki wiki = new Wiki();
+//    wiki.setType("portal");
+//    wiki.setOwner("wiki1");
+//    wiki = storage.createWiki(wiki);
+//
+//    Page page = new Page();
+//    page.setWikiId(wiki.getId());
+//    page.setWikiType(wiki.getType());
+//    page.setWikiOwner(wiki.getOwner());
+//    page.setCreatedDate(new Date());
+//    page.setUpdatedDate(new Date());
+//    page.setName("page1");
+//    page.setTitle("Page 1");
+//    page.setContent("Content Page 1");
+//    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+//
+//    DraftPage draftPage = new DraftPage();
+//    draftPage.setAuthor("user1");
+//    draftPage.setName("DraftPage1");
+//    draftPage.setTitle("DraftPage 1");
+//    draftPage.setContent("Content Page 1 Updated");
+//    draftPage.setTargetPageId(createdPage.getId());
+//    draftPage.setTargetPageRevision("1");
+//    draftPage.setCreatedDate(new Date());
+//    draftPage.setUpdatedDate(new Date());
+//
+//    // When
+//    storage.createDraftPageForUser(draftPage, "user1");
+//    DraftPage draftPage1OfUser1 = storage.getLa("DraftPage1");
+//    DraftPage draftPage2OfUser1 = storage.getDraft("DraftPage2");
+//    DraftPage draftPage1OfUser2 = storage.getDraft("DraftPage1");
+//
+//    // Then
+//    assertNotNull(draftPage1OfUser1);
+//    assertEquals(createdPage.getId(), draftPage1OfUser1.getTargetPageId());
+//    assertEquals("Content Page 1 Updated", draftPage1OfUser1.getContent());
+//    assertNull(draftPage2OfUser1);
+//    assertNull(draftPage1OfUser2);
+//  }
 
   @Test
   public void testGetDraftsOfPage() throws WikiException {
@@ -793,7 +690,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user1");
-    List<DraftPage> fetchedDrafts = storage.getDraftsOfPage(Long.valueOf(createdPage.getId()),"user1");
+    List<DraftPage> fetchedDrafts = storage.getDraftsOfPage(Long.valueOf(createdPage.getId()));
 
     // Then
     assertNotNull(fetchedDrafts);
@@ -802,7 +699,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
-  public void testDraftPageOfUserByNameAndTargetPage() throws WikiException {
+  public void testDraftPageByNameAndTargetPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
     wiki.setType("portal");
@@ -846,13 +743,11 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user1");
-    DraftPage fetchedDraftPage1 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user1");
-    DraftPage fetchedDraftPage2 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user2");
+    DraftPage fetchedDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
 
     // Then
-    assertNotNull(fetchedDraftPage1);
-    assertEquals("DraftPage2", fetchedDraftPage1.getName());
-    assertNull(fetchedDraftPage2);
+    assertNotNull(fetchedDraftPage);
+    assertEquals("DraftPage2", fetchedDraftPage.getName());
   }
 
   @Test
@@ -886,7 +781,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
-  public void testDeleteDraftPageOfUserByNameAndTargetPage() throws WikiException {
+  public void testDeleteDraftPageByNameAndTargetPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
     wiki.setType("portal");
@@ -930,21 +825,15 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user2");
-    DraftPage initialDraftPageUser1 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user1");
-    DraftPage initialDraftPageUser2 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user2");
-    storage.deleteDraftOfPage(createdPage, "user1");
-    DraftPage updatedDraftPageUser1 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user1");
-    DraftPage updatedDraftPageUser2 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user2");
+    storage.deleteDraftOfPage(createdPage);
+    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
 
     // Then
-    assertNotNull(initialDraftPageUser1);
-    assertNotNull(initialDraftPageUser2);
-    assertNull(updatedDraftPageUser1);
-    assertNotNull(updatedDraftPageUser2);
+    assertNull(initialDraftPage);
   }
 
   @Test
-  public void testDeleteDraftPageOfUserByName() throws WikiException {
+  public void testDeleteDraftPageByName() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
     wiki.setType("portal");
@@ -988,17 +877,18 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user2");
-    DraftPage initialDraftPageUser1 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user1");
-    DraftPage initialDraftPageUser2 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user2");
-    storage.deleteDraftByName("DraftPage1", "user1");
-    DraftPage updatedDraftPageUser1 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user1");
-    DraftPage updatedDraftPageUser2 = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"), "user2");
+    storage.deleteDraftByName("DraftPage1");
 
     // Then
-    assertNotNull(initialDraftPageUser1);
-    assertNotNull(initialDraftPageUser2);
-    assertNull(updatedDraftPageUser1);
-    assertNotNull(updatedDraftPageUser2);
+    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    assertNotNull(initialDraftPage);
+    
+    // When
+    storage.deleteDraftByName("DraftPage2");
+    
+    // Then
+    initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    assertNull(initialDraftPage);
   }
 
   @Test

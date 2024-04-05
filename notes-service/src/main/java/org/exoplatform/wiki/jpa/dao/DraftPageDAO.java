@@ -31,15 +31,9 @@ import java.util.List;
  */
 public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
 
-  public List<DraftPageEntity> findDraftPagesByUser(String username) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPagesByUser", DraftPageEntity.class)
-            .setParameter("username", username);
-    return query.getResultList();
-  }
-
-  public DraftPageEntity findLatestDraftPageByUserAndName(String username, String draftPageName) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPageByUserAndName", DraftPageEntity.class)
-            .setParameter("username", username).setMaxResults(1)
+  public DraftPageEntity findLatestDraftPageByName(String draftPageName) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPageByName", DraftPageEntity.class)
+            .setMaxResults(1)
             .setParameter("draftPageName", draftPageName);
 
     try {
@@ -49,31 +43,22 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     }
   }
 
-  public DraftPageEntity findLatestDraftPageByUser(String username) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPagesByUser", DraftPageEntity.class)
-            .setParameter("username", username).setMaxResults(1);
-    List<DraftPageEntity> draftPages = query.getResultList();
-    return draftPages.size() > 0 ? draftPages.get(0) : null;
-  }
-
-  public List<DraftPageEntity> findDraftPagesByUserAndTargetPage(String username, long targetPageId) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPageByUserAndTargetPage", DraftPageEntity.class)
-            .setParameter("username", username)
+  public List<DraftPageEntity> findDraftPagesByTargetPage(long targetPageId) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPageByTargetPage", DraftPageEntity.class)
             .setParameter("targetPageId", targetPageId);
     return query.getResultList();
   }
 
-  public List<DraftPageEntity> findDraftPagesByUserAndParentPage(String username, long parentPageId) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPagesByUserAndParentPage", DraftPageEntity.class)
-            .setParameter("username", username)
+  public List<DraftPageEntity> findDraftPagesByParentPage(long parentPageId) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPagesByParentPage", DraftPageEntity.class)
             .setParameter("parentPageId", parentPageId);
     return query.getResultList();
   }
 
   @ExoTransactional
-  public void deleteDraftPagesByUserAndTargetPage(String username, long targetPageId) {
+  public void deleteDraftPagesByTargetPage(long targetPageId) {
 
-    List<DraftPageEntity> draftPages = findDraftPagesByUserAndTargetPage(username, targetPageId);
+    List<DraftPageEntity> draftPages = findDraftPagesByTargetPage(targetPageId);
     for (DraftPageEntity draftPage: draftPages) {
       delete(draftPage);
     }
@@ -81,16 +66,15 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
   }
 
   @ExoTransactional
-  public void deleteDraftPagesByUserAndName(String draftName, String username) {
-    DraftPageEntity draftPage = findLatestDraftPageByUserAndName(username, draftName);
+  public void deleteDraftPagesByName(String draftName) {
+    DraftPageEntity draftPage = findLatestDraftPageByName(draftName);
     if(draftPage != null) {
       delete(draftPage);
     }
   }
 
-  public DraftPageEntity findLatestDraftPageByUserAndTargetPage(Long targetPageId, String username) {
-    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByUserAndTargetPage", DraftPageEntity.class)
-            .setParameter("username", username)
+  public DraftPageEntity findLatestDraftPageByTargetPage(Long targetPageId) {
+    TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByTargetPage", DraftPageEntity.class)
             .setParameter("targetPageId", targetPageId);
 
     try {
@@ -101,11 +85,10 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     }
   }
 
-  public DraftPageEntity findLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
+  public DraftPageEntity findLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang) {
     TypedQuery<DraftPageEntity> query =
-                                      getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByUserAndTargetPageAndLang",
+                                      getEntityManager().createNamedQuery("wikiDraftPage.findLatestDraftPageByTargetPageAndLang",
                                                                           DraftPageEntity.class)
-                                                        .setParameter("username", username)
                                                         .setParameter("targetPageId", targetPageId)
                                                         .setParameter("lang", lang);
     query.setMaxResults(1);

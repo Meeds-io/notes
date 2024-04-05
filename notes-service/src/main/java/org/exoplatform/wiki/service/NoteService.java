@@ -24,6 +24,7 @@ import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.search.SearchResult;
@@ -172,11 +173,10 @@ public interface NoteService {
    * Returns latest draft of given page.
    *
    * @param targetPage
-   * @param username
    * @return
    * @throws WikiException
    */
-  DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException;
+  DraftPage getLatestDraftOfPage(Page targetPage) throws WikiException;
 
   Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException;
 
@@ -195,12 +195,11 @@ public interface NoteService {
    * Get all the children notes of a note
    *
    * @param note note.
-   * @param userId
    * @param withDrafts if set to true returns the children notes and draft notes
    * @return The list of children notes
    * @throws WikiException if an error occured
    */
-  List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts, boolean withChild) throws WikiException;
+  List<Page> getChildrenNoteOf(Page note, boolean withDrafts, boolean withChild) throws WikiException;
 
   /**
    * Gets a list of data which is used for composing the breadcrumb.
@@ -265,8 +264,8 @@ public interface NoteService {
    */
   void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException;
 
-  void removeDraftOfNote(Page page, String username) throws WikiException;
-  
+  void removeDraftOfNote(Page page) throws WikiException;
+
   /**
    * Removes a draft page by its name.
    *
@@ -554,22 +553,19 @@ public interface NoteService {
    * Retrieves list of available translations languages of a page
    *
    * @param pageId page id
-   * @param userId owner username
    * @param withDrafts if set to true returns languages draft notes
    * @return {@link List} of {@link String}
    */
-  List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException;
+  List<String> getPageAvailableTranslationLanguages(Long pageId, boolean withDrafts) throws WikiException;
 
   /**
    * Retrieves latest draft of a specific page by target page id and content language
-   * and owner username
    *
    * @param targetPageId target page id
-   * @param username owner username
    * @param lang content language
    * @return {@link DraftPage}
    */
-  DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
+  DraftPage getLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang);
 
   /**
    * Deletes a list of versions of note by language.
@@ -580,5 +576,5 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws WikiException;
-
+  
 }

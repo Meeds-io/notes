@@ -22,6 +22,8 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.service.NoteService;
@@ -39,16 +41,20 @@ public class PageTreeNode extends TreeNode {
   private Page page;
 
   private NoteService noteService;
+  
+  private SpaceService spaceService;
 
   public PageTreeNode(Page page) throws Exception {
     super(page.getTitle(), TreeNodeType.PAGE);
 
     this.noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
+    
+    this.spaceService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(SpaceService.class);
 
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
-    this.hasChild = !page.isDraftPage() && !noteService.getChildrenNoteOf(page, ConversationState.getCurrent().getIdentity().getUserId(), true, false).isEmpty();
+    this.hasChild = !page.isDraftPage() && !noteService.getChildrenNoteOf(page, true, false).isEmpty();
   }
 
   public Page getPage() {
@@ -62,7 +68,7 @@ public class PageTreeNode extends TreeNode {
   @Override
   protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
     boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
-    Collection<Page> pages = noteService.getChildrenNoteOf(page, userId, withDrafts,false);
+    Collection<Page> pages = noteService.getChildrenNoteOf(page, withDrafts, false);
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());
@@ -72,8 +78,11 @@ public class PageTreeNode extends TreeNode {
       Page childPage = childPageIterator.next();
       if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
-        PageTreeNode child = new PageTreeNode(childPage);
-        this.children.add(child);
+        Space space = spaceService.getSpaceByGroupId(childPage.getWikiOwner());
+        if (!childPage.isDraftPage() || Utils.canManageNotes(userId, space, childPage)) {
+          PageTreeNode child = new PageTreeNode(childPage);
+          this.children.add(child);
+        }
       }
       count++;
     }

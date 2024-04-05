@@ -238,7 +238,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       if (BooleanUtils.isTrue(withChildren)) {
-        note.setChildren(noteService.getChildrenNoteOf(note, identity.getUserId(), false, withChildren));
+        note.setChildren(noteService.getChildrenNoteOf(note, false, withChildren));
       }
       // check for old notes children container to update
       if (note.getContent().contains("wiki-children-pages ck-widget")) {
@@ -280,9 +280,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      Identity identity = ConversationState.getCurrent().getIdentity();
       List<String> languages = noteService.getPageAvailableTranslationLanguages(noteId,
-                                                                                identity.getUserId(),
                                                                                 Boolean.TRUE.equals(withDrafts));
       return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
@@ -329,11 +327,11 @@ public class NotesRestService implements ResourceContainer {
                                    @PathParam("noteId") Long noteId,
                                    @Parameter(description = "draft content language")
                                    @QueryParam("lang") String lang) {
+    Identity identity = ConversationState.getCurrent().getIdentity();
+    String currentUserId = identity.getUserId();
     try {
       EnvironmentContext env = EnvironmentContext.getCurrent();
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
-      Identity identity = ConversationState.getCurrent().getIdentity();
-      String currentUserId = identity.getUserId();
       DraftPage draftNote = noteService.getDraftNoteById(String.valueOf(noteId), currentUserId);
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -351,10 +349,13 @@ public class NotesRestService implements ResourceContainer {
                                                         true));
 
       return Response.ok(draftNote).build();
+    } catch (IllegalAccessException e) {
+      log.warn("User '{}' is not autorized to get draft note {}", currentUserId, noteId, e);
+      return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
     } catch (Exception e) {
       log.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
-    }
+    } 
   }
 
   @GET
@@ -372,14 +373,11 @@ public class NotesRestService implements ResourceContainer {
                                        @Parameter(description = "draft content language")
                                        @QueryParam("lang") String lang) {
     try {
-      Identity identity = ConversationState.getCurrent().getIdentity();
-      String currentUserId = identity.getUserId();
       Page targetPage = noteService.getNoteById(noteId);
       if (targetPage == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      DraftPage draftNote = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(targetPage.getId()),
-                                                                                     currentUserId,
+      DraftPage draftNote = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      lang);
       return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
     } catch (Exception e) {
@@ -527,8 +525,7 @@ public class NotesRestService implements ResourceContainer {
 
       if (targetNote != null) {
         DraftPage draftPage =
-                            noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(draftNoteToSave.getTargetPageId()),
-                                                                                     currentUser,
+                            noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(draftNoteToSave.getTargetPageId()),
                                                                                      draftNoteToSave.getLang());
         if (draftPage != null) {
           draftNoteToSave.setId(draftPage.getId());

@@ -23,6 +23,8 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.PermissionType;
@@ -46,22 +48,25 @@ public class WikiHomeTreeNode extends TreeNode {
   private NoteService noteService;
 
   private WikiService wikiService;
+  
+  private SpaceService spaceService;
 
   public WikiHomeTreeNode(Page wikiHome) throws Exception {
     super(wikiHome.getTitle(), TreeNodeType.WIKIHOME);
 
     noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
     wikiService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(WikiService.class);
+    spaceService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(SpaceService.class);
 
     this.wikiHome = wikiHome;
     this.path = this.buildPath();
-    this.hasChild = !wikiHome.isDraftPage() && !noteService.getChildrenNoteOf(wikiHome, ConversationState.getCurrent().getIdentity().getUserId(), true, true).isEmpty();
+    this.hasChild = !wikiHome.isDraftPage() && !noteService.getChildrenNoteOf(wikiHome, true, true).isEmpty();
   }
 
   @Override
   protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
     boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
-    Collection<Page> pages = noteService.getChildrenNoteOf(wikiHome, userId, withDrafts,false);
+    Collection<Page> pages = noteService.getChildrenNoteOf(wikiHome, withDrafts, false);
     Iterator<Page> childPageIterator = pages.iterator();
     int count = 0;
     int size = getNumberOfChildren(context, pages.size());
@@ -70,8 +75,11 @@ public class WikiHomeTreeNode extends TreeNode {
       Page childPage = childPageIterator.next();
       if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
-        PageTreeNode child = new PageTreeNode(childPage);
-        this.children.add(child);
+        Space space = spaceService.getSpaceByGroupId(childPage.getWikiOwner());
+        if (!childPage.isDraftPage() || Utils.canManageNotes(userId, space, childPage)) {
+          PageTreeNode child = new PageTreeNode(childPage);
+          this.children.add(child);
+        }
       }
       count++;
     }

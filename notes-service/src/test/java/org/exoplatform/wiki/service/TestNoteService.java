@@ -447,7 +447,7 @@ public class TestNoteService extends BaseTest {
     note.setLang("fr");
     noteService.createVersionOfNote(note, "root");
 
-    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), "root", false);
+    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), false);
 
     assertNotNull(langs);
     assertEquals(3, langs.size());
@@ -480,7 +480,7 @@ public class TestNoteService extends BaseTest {
     draftPage.setName("test draft");
     draftPage.setTargetPageId(note.getId());
     noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
-    DraftPage latestDraft = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(note.getId()), "root", null);
+    DraftPage latestDraft = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), null);
     assertNotNull(latestDraft);
   }
 
@@ -557,10 +557,10 @@ public class TestNoteService extends BaseTest {
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
-    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false, false).size();
+    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size();
     noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", user);
     assertTrue(zipFile.delete());
-    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false, false).size(),childern+3);
+    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size(), childern+3);
   }
 
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
@@ -623,7 +623,7 @@ public class TestNoteService extends BaseTest {
     noteService.createNote(portalWiki, "Home", new Page("imported1", "imported1"),user) ;
     noteService.createNote(portalWiki, "Home", new Page("imported2", "imported2"),user) ;
     Page home = portalWiki.getWikiHome();
-    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false, false).size();
+    int childern = noteService.getChildrenNoteOf(home, false, false).size();
      NoteToExport note = new NoteToExport();
      note.setId(home.getId());
      note.setName(home.getName());
@@ -660,16 +660,16 @@ public class TestNoteService extends BaseTest {
     assertEquals(targetPage.getId(), draftOfExistingPage.getTargetPageId());
     assertEquals("1", draftOfExistingPage.getTargetPageRevision());
 
-    DraftPage draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    DraftPage draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
     WikiPageParams noteParams = new WikiPageParams(targetPage.getWikiType(), targetPage.getWikiOwner(), targetPage.getName());
     noteService.removeDraftOfNote(noteParams,"en");
 
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
 
     noteService.removeDraftOfNote(noteParams,"fr");
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertNull(draft);
   }
 

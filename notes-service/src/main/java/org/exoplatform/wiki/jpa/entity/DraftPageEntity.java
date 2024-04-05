@@ -31,12 +31,12 @@ import java.util.List;
 @ExoEntity
 @Table(name = "WIKI_DRAFT_PAGES")
 @NamedQueries({
-        @NamedQuery(name = "wikiDraftPage.findDraftPagesByUser", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.name = :draftPageName ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPagesByUserAndParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.parentPage.id = :parentPageId"),
-        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId AND " +
+        @NamedQuery(name = "wikiDraftPage.findDraftPages", query = "SELECT d FROM WikiDraftPageEntity d ORDER BY d.updatedDate DESC"),
+        @NamedQuery(name = "wikiDraftPage.findDraftPageByName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.name = :draftPageName ORDER BY d.updatedDate DESC"),
+        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC"),
+        @NamedQuery(name = "wikiDraftPage.findDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId"),
+        @NamedQuery(name = "wikiDraftPage.findDraftPagesByParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId"),
+        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId AND " +
                                                                                                   "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"), })
 public class DraftPageEntity extends BasePageEntity {
 

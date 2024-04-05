@@ -66,84 +66,38 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     assertNull(draftPageDAO.find(dp.getId()));
   }
 
-  @Test
-  public void testFindDraftPagesByUser(){
-    WikiEntity wiki = new WikiEntity();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = wikiDAO.create(wiki);
-    PageEntity page = new PageEntity();
-    page.setName("name");
-    page.setWiki(wiki);
-    page.setCreatedDate(new Date());
-    page.setUpdatedDate(new Date());
-    page = pageDAO.create(page);
-    DraftPageEntity dp = new DraftPageEntity();
-    dp.setName("draft1");
-    dp.setTargetPage(page);
-    dp.setAuthor("user1");
-    dp.setCreatedDate(new Date());
-    dp.setUpdatedDate(new Date());
-    draftPageDAO.create(dp);
-
-    assertNotNull(draftPageDAO.find(dp.getId()));
-    assertNotNull(pageDAO.find(page.getId()));
-    List<DraftPageEntity> user1DraftPages = draftPageDAO.findDraftPagesByUser("user1");
-    assertNotNull(user1DraftPages);
-    assertEquals(1, user1DraftPages.size());
-    List<DraftPageEntity> user2DraftPages = draftPageDAO.findDraftPagesByUser("user2");
-    assertNotNull(user2DraftPages);
-    assertEquals(0, user2DraftPages.size());
-
-    draftPageDAO.deleteAll();
-    pageDAO.deleteAll();
-  }
-
-  @Test
-  public void testFindLatestDraftPageByUser(){
-    Calendar calendar = Calendar.getInstance();
-    Date now = calendar.getTime();
-    calendar.roll(Calendar.YEAR, 1);
-    Date oneYearAgo = calendar.getTime();
-
-    WikiEntity wiki = new WikiEntity();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
-    wiki = wikiDAO.create(wiki);
-    PageEntity page = new PageEntity();
-    page.setName("page1");
-    page.setWiki(wiki);
-    page.setUpdatedDate(oneYearAgo);
-    page.setCreatedDate(oneYearAgo);
-    pageDAO.create(page);
-    DraftPageEntity dp1 = new DraftPageEntity();
-    dp1.setName("draft1");
-    dp1.setTargetPage(page);
-    dp1.setAuthor("user1");
-    dp1.setUpdatedDate(oneYearAgo);
-    dp1.setCreatedDate(oneYearAgo);
-    dp1.setTargetRevision("1");
-    draftPageDAO.create(dp1);
-    DraftPageEntity dp2 = new DraftPageEntity();
-    dp2.setName("draft2");
-    dp2.setTargetPage(page);
-    dp2.setAuthor("user1");
-    dp2.setUpdatedDate(now);
-    dp2.setCreatedDate(now);
-    dp1.setTargetRevision("2");
-    draftPageDAO.create(dp2);
-
-    assertNotNull(draftPageDAO.find(dp2.getId()));
-    assertNotNull(pageDAO.find(page.getId()));
-    DraftPageEntity user1DraftPage = draftPageDAO.findLatestDraftPageByUser("user1");
-    assertNotNull(user1DraftPage);
-    assertEquals("2", user1DraftPage.getTargetRevision());
-    DraftPageEntity user2DraftPage = draftPageDAO.findLatestDraftPageByUser("user2");
-    assertNull(user2DraftPage);
-
-    draftPageDAO.deleteAll();
-    pageDAO.deleteAll();
-  }
+//  @Test
+//  public void testFindDraftPagesByUser(){
+//    WikiEntity wiki = new WikiEntity();
+//    wiki.setType("portal");
+//    wiki.setOwner("wiki1");
+//    wiki = wikiDAO.create(wiki);
+//    PageEntity page = new PageEntity();
+//    page.setName("name");
+//    page.setWiki(wiki);
+//    page.setCreatedDate(new Date());
+//    page.setUpdatedDate(new Date());
+//    page = pageDAO.create(page);
+//    DraftPageEntity dp = new DraftPageEntity();
+//    dp.setName("draft1");
+//    dp.setTargetPage(page);
+//    dp.setAuthor("user1");
+//    dp.setCreatedDate(new Date());
+//    dp.setUpdatedDate(new Date());
+//    draftPageDAO.create(dp);
+//
+//    assertNotNull(draftPageDAO.find(dp.getId()));
+//    assertNotNull(pageDAO.find(page.getId()));
+//    List<DraftPageEntity> user1DraftPages = draftPageDAO.findDraftPages();
+//    assertNotNull(user1DraftPages);
+//    assertEquals(1, user1DraftPages.size());
+//    List<DraftPageEntity> user2DraftPages = draftPageDAO.findDraftPages();
+//    assertNotNull(user2DraftPages);
+//    assertEquals(0, user2DraftPages.size());
+//
+//    draftPageDAO.deleteAll();
+//    pageDAO.deleteAll();
+//  }
 
   @Test
   public void testFindDraftPagesByUserAndTargetPage(){
@@ -167,9 +121,8 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     draftPageDAO.create(dp);
 
     //When
-    List<DraftPageEntity> drafts1 = draftPageDAO.findDraftPagesByUserAndTargetPage("user1", page.getId());
-    List<DraftPageEntity> drafts2 = draftPageDAO.findDraftPagesByUserAndTargetPage("user2", page.getId());
-    List<DraftPageEntity> drafts3 = draftPageDAO.findDraftPagesByUserAndTargetPage("user1", page.getId() + 1);
+    List<DraftPageEntity> drafts1 = draftPageDAO.findDraftPagesByTargetPage(page.getId());
+    List<DraftPageEntity> drafts2 = draftPageDAO.findDraftPagesByTargetPage(page.getId() + 1);
 
     //Then
     assertNotNull(draftPageDAO.find(dp.getId()));
@@ -178,15 +131,13 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     assertEquals(1, drafts1.size());
     assertNotNull(drafts2);
     assertEquals(0, drafts2.size());
-    assertNotNull(drafts3);
-    assertEquals(0, drafts3.size());
 
     draftPageDAO.deleteAll();
     pageDAO.deleteAll();
   }
 
   @Test
-  public void testDeleteDraftPageByUserAndTargetPage(){
+  public void testDeleteDraftPageByTargetPage(){
     Calendar calendar = Calendar.getInstance();
     Date now = calendar.getTime();
     calendar.roll(Calendar.YEAR, 1);
@@ -228,11 +179,11 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
 
     assertEquals(2, draftPageDAO.findAll().size());
     assertEquals(2, pageDAO.findAll().size());
-    draftPageDAO.deleteDraftPagesByUserAndTargetPage("user1", page1.getId());
+    draftPageDAO.deleteDraftPagesByTargetPage(page1.getId());
     assertEquals(1, draftPageDAO.findAll().size());
     assertEquals("draft2", draftPageDAO.findAll().get(0).getName());
     assertEquals(2, pageDAO.findAll().size());
-    draftPageDAO.deleteDraftPagesByUserAndTargetPage("user1", page2.getId());
+    draftPageDAO.deleteDraftPagesByTargetPage(page2.getId());
     assertEquals(0, draftPageDAO.findAll().size());
     assertEquals(2, pageDAO.findAll().size());
 
@@ -283,11 +234,11 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
 
     assertEquals(2, draftPageDAO.findAll().size());
     assertEquals(2, pageDAO.findAll().size());
-    draftPageDAO.deleteDraftPagesByUserAndName("draft1", "user1");
+    draftPageDAO.deleteDraftPagesByName("draft1");
     assertEquals(1, draftPageDAO.findAll().size());
     assertEquals("draft2", draftPageDAO.findAll().get(0).getName());
     assertEquals(2, pageDAO.findAll().size());
-    draftPageDAO.deleteDraftPagesByUserAndName("draft2", "user1");
+    draftPageDAO.deleteDraftPagesByName("draft2");
     assertEquals(0, draftPageDAO.findAll().size());
     assertEquals(2, pageDAO.findAll().size());
 

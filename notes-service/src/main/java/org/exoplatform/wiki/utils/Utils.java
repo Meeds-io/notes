@@ -21,6 +21,7 @@ package org.exoplatform.wiki.utils;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.diff.DiffResult;
 import org.exoplatform.commons.diff.DiffService;
@@ -40,6 +41,9 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -63,6 +67,9 @@ import org.exoplatform.wiki.service.*;
 import org.exoplatform.wiki.service.impl.WikiPageHistory;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
+
+import io.meeds.notes.service.NotePageViewService;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
@@ -74,6 +81,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import io.meeds.social.cms.service.CMSService;
 
 public class Utils {
 
@@ -710,5 +718,44 @@ public class Utils {
     } catch (Exception e) {
       LOG.warn("Error while broadcasting event: {}. Wheres, the operation will continue to proceed", eventName, e);
     }
+  }
+  
+  public static boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+    SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+    CMSService cmsService = CommonsUtils.getService(CMSService.class);
+    if (space != null) {
+      return (spaceService.isSuperManager(authenticatedUser)
+          || spaceService.isManager(space, authenticatedUser)
+          || spaceService.isRedactor(space, authenticatedUser)
+          || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
+      return cmsService.hasEditPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+    } else {
+      return StringUtils.equals(page.getOwner(), authenticatedUser);
+    }
+  }
+  
+  public static org.exoplatform.services.security.Identity getIdentity(String username) {
+    if (StringUtils.isBlank(username)) {
+      return null;
+    }
+    IdentityRegistry identityRegistry = CommonsUtils.getService(IdentityRegistry.class);
+    org.exoplatform.services.security.Identity aclIdentity = identityRegistry.getIdentity(username);
+    if (aclIdentity == null) {
+      try {
+        OrganizationService organizationService = CommonsUtils.getService(OrganizationService.class);
+        List<MembershipEntry> entries = organizationService.getMembershipHandler()
+                                                           .findMembershipsByUser(username)
+                                                           .stream()
+                                                           .map(membership -> new MembershipEntry(membership.getGroupId(),
+                                                                                                  membership.getMembershipType()))
+                                                           .toList();
+        aclIdentity = new org.exoplatform.services.security.Identity(username, entries);
+        identityRegistry.register(aclIdentity);
+      } catch (Exception e) {
+        throw new IllegalStateException("Unable to retrieve user " + username + " memberships", e);
+      }
+    }
+    return aclIdentity;
   }
 }

@@ -17,17 +17,30 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gatein.api.EntityNotFoundException;
@@ -57,12 +70,24 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.ImportList;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.BreadcrumbData;
+import org.exoplatform.wiki.service.DataStorage;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.PageUpdateType;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
@@ -72,6 +97,7 @@ import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
+import lombok.SneakyThrows;
 
 public class NoteServiceImpl implements NoteService {
 
@@ -210,7 +236,7 @@ public class NoteServiceImpl implements NoteService {
       Page createdPage = createNote(noteBook, parentPage, note);
 
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-      createdPage.setCanManage(canManageNotes(note.getAuthor(), space, note));
+      createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
       createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
       createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
       return createdPage;
@@ -252,7 +278,7 @@ public class NoteServiceImpl implements NoteService {
       throw new EntityNotFoundException("Note to update not found");
     }
     Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    if (userIdentity != null && !canManageNotes(userIdentity.getUserId(), space, existingNote)) {
+    if (userIdentity != null && !Utils.canManageNotes(userIdentity.getUserId(), space, existingNote)) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
@@ -317,12 +343,12 @@ public class NoteServiceImpl implements NoteService {
       }
       Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
       if (note != null) {
-        if (!canManageNotes(userIdentity.getUserId(), space, note)) {
+        if (!Utils.canManageNotes(userIdentity.getUserId(), space, note)) {
           log.error("Can't delete note '" + noteName + "'. does not have edit permission on it.");
           throw new IllegalAccessException("User does not have edit permissions on the note.");
         }
 
-        invalidateCachesOfPageTree(note, userIdentity.getUserId());
+        invalidateCachesOfPageTree(note);
         invalidateAttachmentCache(note);
 
         // Store all children to launch post deletion listeners
@@ -332,7 +358,7 @@ public class NoteServiceImpl implements NoteService {
         Page tempPage;
         while (!queue.isEmpty()) {
           tempPage = queue.poll();
-          List<Page> childrenPages = getChildrenNoteOf(tempPage, userIdentity.getUserId(), false, false);
+          List<Page> childrenPages = getChildrenNoteOf(tempPage, false, false);
           for (Page childPage : childrenPages) {
             queue.add(childPage);
             allChrildrenPages.add(childPage);
@@ -403,7 +429,7 @@ public class NoteServiceImpl implements NoteService {
       }
       if (moveNote != null) {
         Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
-        if (!canManageNotes(userIdentity.getUserId(), space, moveNote)) {
+        if (!Utils.canManageNotes(userIdentity.getUserId(), space, moveNote)) {
           throw new IllegalAccessException("User does not have edit the note.");
         }
       }
@@ -487,7 +513,7 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have view the note.");
       }
       page.setCanView(true);
-      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
       page.setMetadatas(metadata);
@@ -522,7 +548,7 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have the right view the note.");
       }
       draftPage.setCanView(true);
-      draftPage.setCanManage(canManageNotes(userId, space, draftPage));
+      draftPage.setCanManage(Utils.canManageNotes(userId, space, draftPage));
       draftPage.setCanImport(canImportNotes(userId, space, draftPage));
       String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
               .getProfile()
@@ -532,12 +558,12 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException {
-    if (targetPage == null || StringUtils.isEmpty(username)) {
+  public DraftPage getLatestDraftOfPage(Page targetPage) throws WikiException {
+    if (targetPage == null) {
       return null;
     }
 
-    return dataStorage.getLatestDraftOfPage(targetPage, username);
+    return dataStorage.getLatestDraftOfPage(targetPage);
   }
 
   @Override
@@ -553,7 +579,7 @@ public class NoteServiceImpl implements NoteService {
         throw new IllegalAccessException("User does not have view the note.");
       }
       page.setCanView(true);
-      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
     }
     return page;
@@ -573,7 +599,7 @@ public class NoteServiceImpl implements NoteService {
       }
       page.setCanView(true);
       page.setUrl(Utils.getPageUrl(page));
-      page.setCanManage(canManageNotes(userIdentity.getUserId(), space, page));
+      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
       page.setMetadatas(metadata);
@@ -621,8 +647,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts, boolean withChild) throws WikiException {
-    List<Page> pages = dataStorage.getChildrenPageOf(note, userId, withDrafts);
+  public List<Page> getChildrenNoteOf(Page note, boolean withDrafts, boolean withChild) throws WikiException {
+    List<Page> pages = dataStorage.getChildrenPageOf(note, withDrafts);
     if (withChild) {
       for (Page page : pages) {
         long pageId = Long.parseLong(page.getId());
@@ -642,7 +668,7 @@ public class NoteServiceImpl implements NoteService {
     page.setWikiOwner(note.getWikiOwner());
     page.setWikiType(note.getWikiType());
 
-    List<Page> pages = getChildrenNoteOf(page, userId,false, false);
+    List<Page> pages = getChildrenNoteOf(page, false, false);
     List<NoteToExport> children = new ArrayList<>();
 
     for (Page child : pages) {
@@ -702,7 +728,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     // Check the duplication of all childrent
-    List<Page> childrenNotes = getChildrenNoteOf(parentNote, userId, false, false);
+    List<Page> childrenNotes = getChildrenNoteOf(parentNote, false, false);
     for (Page note : childrenNotes) {
       getDuplicateNotes(note, targetNoteBook, resultList, userId);
     }
@@ -712,23 +738,23 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void removeDraftOfNote(WikiPageParams param) throws WikiException {
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
-    removeDraftOfNote(page, Utils.getCurrentUser());
+    removeDraftOfNote(page);
   }
 
   @Override
-  public void removeDraftOfNote(Page page, String username) throws WikiException {
-    dataStorage.deleteDraftOfPage(page, username);
+  public void removeDraftOfNote(Page page) throws WikiException {
+    dataStorage.deleteDraftOfPage(page);
   }
 
   @Override
   public void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException {
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
-    dataStorage.deleteDraftOfPage(page, Utils.getCurrentUser(), lang);
+    dataStorage.deleteDraftOfPage(page, lang);
   }
 
   @Override
   public void removeDraft(String draftName) throws WikiException {
-    dataStorage.deleteDraftByName(draftName, Utils.getCurrentUser());
+    dataStorage.deleteDraftByName(draftName);
   }
   
   @Override
@@ -944,16 +970,15 @@ public class NoteServiceImpl implements NoteService {
    * Invalidate all caches of a page and all its descendants
    *
    * @param note root page
-   * @param userId
    * @throws WikiException if an error occured
    */
-  protected void invalidateCachesOfPageTree(Page note, String userId) throws WikiException {
+  protected void invalidateCachesOfPageTree(Page note) throws WikiException {
     Queue<Page> queue = new LinkedList<>();
     queue.add(note);
     while (!queue.isEmpty()) {
       Page currentPage = queue.poll();
       invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenNoteOf(currentPage, userId, false,false);
+      List<Page> childrenPages = getChildrenNoteOf(currentPage, false, false);
       for (Page child : childrenPages) {
         queue.add(child);
       }
@@ -1075,7 +1100,7 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
-
+  
   /******* Private methods *******/
 
   private void checkToRemoveDomainInUrl(Page note) {
@@ -1096,25 +1121,12 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  private boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null) {
-      return (spaceService.isSuperManager(authenticatedUser)
-          || spaceService.isManager(space, authenticatedUser)
-          || spaceService.isRedactor(space, authenticatedUser)
-          || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
-    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
-      return cmsService.hasEditPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
-    } else {
-      return StringUtils.equals(page.getOwner(), authenticatedUser);
-    }
-  }
-
   private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
       return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
               || spaceService.isRedactor(space, authenticatedUser));
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
-      return cmsService.hasAccessPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
       return StringUtils.equals(page.getOwner(), authenticatedUser);
     }
@@ -1122,9 +1134,9 @@ public class NoteServiceImpl implements NoteService {
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
-      return spaceService.isMember(space, authenticatedUser);
+      return !page.isDraftPage() ? spaceService.isMember(space, authenticatedUser) : Utils.canManageNotes(authenticatedUser, space, page);
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
-      return cmsService.hasAccessPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
       return spaceService.isSuperManager(authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
@@ -1134,8 +1146,9 @@ public class NoteServiceImpl implements NoteService {
   public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
     if (StringUtils.equals(IdentityConstants.SYSTEM, page.getOwner())) {
       return false;
-    } else if (page.isDraftPage()) {
-      return page.getAuthor().equals(user.getUserId());
+    }
+    else if (page.isDraftPage()) {
+      return true;
     }
     return dataStorage.hasPermissionOnPage(page, permissionType, user);
   }
@@ -1501,7 +1514,7 @@ public class NoteServiceImpl implements NoteService {
   private void addAllNodes(Page note, List<Page> listOfNotes, String userName) throws WikiException {
     if (note != null) {
       listOfNotes.add(note);
-      List<Page> children = getChildrenNoteOf(note, userName, true, false);
+      List<Page> children = getChildrenNoteOf(note, true, false);
       if (children != null) {
         for (Page child: children) {
           addAllNodes(child, listOfNotes, userName);
@@ -1530,27 +1543,6 @@ public class NoteServiceImpl implements NoteService {
     return metadata;
   }
 
-  private Identity getIdentity(String username) {
-    if (StringUtils.isBlank(username)) {
-      return null;
-    }
-    Identity aclIdentity = identityRegistry.getIdentity(username);
-    if (aclIdentity == null) {
-      try {
-        List<MembershipEntry> entries = organizationService.getMembershipHandler()
-                                                           .findMembershipsByUser(username)
-                                                           .stream()
-                                                           .map(membership -> new MembershipEntry(membership.getGroupId(),
-                                                                                                  membership.getMembershipType()))
-                                                           .toList();
-        aclIdentity = new Identity(username, entries);
-        identityRegistry.register(aclIdentity);
-      } catch (Exception e) {
-        throw new IllegalStateException("Unable to retrieve user " + username + " memberships", e);
-      }
-    }
-    return aclIdentity;
-  }
   /**
    * {@inheritDoc}
    */
@@ -1582,11 +1574,10 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public List<String> getPageAvailableTranslationLanguages(Long pageId,
-                                                           String userName,
                                                            boolean withDrafts) throws WikiException {
     Set<String> langs = new HashSet<>(dataStorage.getPageAvailableTranslationLanguages(pageId));
     if (withDrafts) {
-      List<DraftPage> drafts = dataStorage.getDraftsOfPage(pageId, userName);
+      List<DraftPage> drafts = dataStorage.getDraftsOfPage(pageId);
       drafts = drafts.stream()
                      .filter(jsonNodeData -> StringUtils.isNotBlank(jsonNodeData.getLang()))
                      .toList();
@@ -1612,8 +1603,8 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
-    return dataStorage.getLatestDraftPageByUserAndTargetPageAndLang(targetPageId, username, lang);
+  public DraftPage getLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang) {
+    return dataStorage.getLatestDraftPageByTargetPageAndLang(targetPageId, lang);
   }
 
   /**
@@ -1622,7 +1613,7 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws WikiException {
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
-    List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId, userName);
+    List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
     for (DraftPage draftPage : drafts) {
       if (StringUtils.equals(draftPage.getLang(),lang)) {
         removeDraft(draftPage.getName());
