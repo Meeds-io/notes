@@ -713,7 +713,9 @@ public class JPADataStorage implements DataStorage {
   @Override
   public DraftPage createDraftPageForUser(DraftPage draftPage, String username) throws WikiException {
     DraftPageEntity draftPageEntity = convertDraftPageToDraftPageEntity(draftPage, pageDAO);
-    draftPageEntity.setAuthor(username);
+    if (username != null) {
+      draftPageEntity.setAuthor(username);
+    }
     draftPage = convertDraftPageEntityToDraftPage(draftPageDAO.create(draftPageEntity));
     return draftPage;
   }

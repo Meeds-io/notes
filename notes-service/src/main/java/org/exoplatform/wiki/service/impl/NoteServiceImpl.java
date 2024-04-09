@@ -223,7 +223,7 @@ public class NoteServiceImpl implements NoteService {
     }
     invalidateCache(note);
 
-    Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
+//    Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
     return createdPage;
   }
@@ -1029,6 +1029,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setTargetPageRevision("1");
     newDraftPage.setParentPageId(draftPage.getParentPageId());
     newDraftPage.setContent(draftPage.getContent());
+    newDraftPage.setAuthor(draftPage.getAuthor());
     newDraftPage.setLang(draftPage.getLang());
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
