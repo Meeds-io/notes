@@ -1,38 +1,44 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Deque;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
-import jakarta.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.exoplatform.commons.utils.PageList;
-import org.exoplatform.social.rest.api.EntityBuilder;
-import org.exoplatform.social.rest.api.RestUtils;
-import org.exoplatform.social.rest.entity.IdentityEntity;
-import org.exoplatform.wiki.service.search.SearchResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +47,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
@@ -48,17 +55,29 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.rest.api.EntityBuilder;
+import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.BreadcrumbData;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.NotesExportService;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class NotesRestServiceTest extends AbstractKernelTest {
@@ -82,6 +101,9 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   @Mock
   private Identity                          identity;
 
+  @Mock
+  private SpaceService                      spaceService;
+
   private MockedStatic<ConversationState>   conversationStateStatic;
 
   private MockedStatic<EnvironmentContext>  environmentContextStatic;
@@ -90,10 +112,9 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   private MockedStatic<Utils>               utilsStatic;
 
-  private MockedStatic<RestUtils> REST_UTILS;
+  private MockedStatic<RestUtils>           REST_UTILS;
 
-  private MockedStatic<EntityBuilder> ENTITY_BUILDER;
-
+  private MockedStatic<EntityBuilder>       ENTITY_BUILDER;
 
   private MockedStatic<ExoContainerContext> containerContextStatic;
 
@@ -114,14 +135,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     when(resourceBundle.getString(anyString())).thenReturn("Notes" + System.currentTimeMillis());
     when(resourceBundleService.getResourceBundle(anyString(), any())).thenReturn(resourceBundle);
 
-
     this.notesRestService = new NotesRestService(noteService,
                                                  noteBookService,
                                                  uploadService,
                                                  resourceBundleService,
                                                  notesExportService);
-
-
 
     ConversationState currentConversationState = mock(ConversationState.class);
     conversationStateStatic.when(() -> ConversationState.getCurrent()).thenReturn(currentConversationState);
@@ -138,6 +156,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     containerContextStatic.when(() -> ExoContainerContext.getCurrentContainer()).thenReturn(exoContainer);
     when(exoContainer.getComponentInstanceOfType(WikiService.class)).thenReturn(noteBookService);
     when(exoContainer.getComponentInstanceOfType(NoteService.class)).thenReturn(noteService);
+    when(exoContainer.getComponentInstanceOfType(SpaceService.class)).thenReturn(spaceService);
   }
 
   @Override
@@ -179,7 +198,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     page.setWikiOwner("user");
     page.setContent("any wiki-children-pages ck-widget any");
     when(identity.getUserId()).thenReturn("userId");
-    when(noteService.getChildrenNoteOf(page, "userId", false, true)).thenReturn(children);
+    when(noteService.getChildrenNoteOf(page, false, true)).thenReturn(children);
 
     when(noteService.getBreadCrumb("note", "user", "1", false)).thenReturn(breadcrumb);
     when(noteService.updateNote(page)).thenReturn(page);
@@ -251,7 +270,10 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     pageParams.setOwner("user");
     pageParams.setType("WIKI");
     List<Page> childrenWithDraft = new ArrayList<>(List.of(page, draftPage, page10, page12, page2, page1));
-    List<Page> childrenWithoutDrafts = new ArrayList<>(List.of(page12, page10, page1, page, page2)); // return an unordered list
+    List<Page> childrenWithoutDrafts = new ArrayList<>(List.of(page12, page10, page1, page, page2)); // return
+                                                                                                     // an
+                                                                                                     // unordered
+                                                                                                     // list
     @SuppressWarnings("unchecked")
     Deque<Object> paramsDeque = mock(Deque.class);
     when(identity.getUserId()).thenReturn("1");
@@ -268,14 +290,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
     when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
-    when(noteService.getChildrenNoteOf(homePage,
-                                       ConversationState.getCurrent().getIdentity().getUserId(),
-                                       true,
-                                       false)).thenReturn(childrenWithDraft);
-    when(noteService.getChildrenNoteOf(homePage,
-            ConversationState.getCurrent().getIdentity().getUserId(),
-            false,
-            false)).thenReturn(childrenWithoutDrafts);
+    when(noteService.getChildrenNoteOf(homePage, true, false)).thenReturn(childrenWithDraft);
+    when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(childrenWithoutDrafts);
 
     treeUtilsStatic.when(() -> TreeUtils.getPathFromPageParams(any())).thenCallRealMethod();
     treeUtilsStatic.when(() -> TreeUtils.tranformToJson(any(), any())).thenCallRealMethod();
@@ -288,6 +304,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page10)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
+    utilsStatic.when(() -> Utils.canManageNotes(anyString(), any(Space.class), any(Page.class))).thenReturn(true);
+    when(spaceService.getSpaceByGroupId(anyString())).thenReturn(mock(Space.class));
     treeUtilsStatic.when(() -> TreeUtils.cleanDraftChildren(anyList(), any())).then(returnsFirstArg());
     Response response = notesRestService.getFullTreeData("path", true);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -323,21 +341,21 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Test
   public void testGetPageAvailableTranslationLanguages() throws WikiException {
-   List<String> langs = new ArrayList<>();
-   langs.add("ar");
-   langs.add("en");
-   Response response = notesRestService.getPageAvailableTranslationLanguages(null, false);
-   assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-   when(identity.getUserId()).thenReturn("1");
-   when(noteService.getPageAvailableTranslationLanguages(1L, "1", false)).thenReturn(langs);
-   response = notesRestService.getPageAvailableTranslationLanguages(1L, false);
-   assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-   doThrow(new WikiException()).when(noteService).getPageAvailableTranslationLanguages(2L, "1", false);
-   response = notesRestService.getPageAvailableTranslationLanguages(2L, false);
-   assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+    List<String> langs = new ArrayList<>();
+    langs.add("ar");
+    langs.add("en");
+    Response response = notesRestService.getPageAvailableTranslationLanguages(null, false);
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    when(identity.getUserId()).thenReturn("1");
+    when(noteService.getPageAvailableTranslationLanguages(1L, false)).thenReturn(langs);
+    response = notesRestService.getPageAvailableTranslationLanguages(1L, false);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    doThrow(new WikiException()).when(noteService).getPageAvailableTranslationLanguages(2L, false);
+    response = notesRestService.getPageAvailableTranslationLanguages(2L, false);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
 
   }
-  
+
   @Test
   public void testSearchData() throws Exception {
     UriInfo uriInfo = mock(UriInfo.class);

@@ -1,27 +1,49 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2021 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.utils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.suigeneris.jrcs.diff.DifferentiationFailedException;
+
 import org.exoplatform.commons.diff.DiffResult;
 import org.exoplatform.commons.diff.DiffService;
 import org.exoplatform.commons.utils.CommonsUtils;
@@ -40,6 +62,9 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -58,22 +83,23 @@ import org.exoplatform.web.url.navigation.NavigationResource;
 import org.exoplatform.web.url.navigation.NodeURL;
 import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.service.IDType;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.WikiContext;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.WikiPageHistory;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
+import io.meeds.notes.service.NotePageViewService;
+import io.meeds.social.cms.service.CMSService;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.*;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class Utils {
 
@@ -710,5 +736,44 @@ public class Utils {
     } catch (Exception e) {
       LOG.warn("Error while broadcasting event: {}. Wheres, the operation will continue to proceed", eventName, e);
     }
+  }
+  
+  public static boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+    SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+    CMSService cmsService = CommonsUtils.getService(CMSService.class);
+    if (space != null) {
+      return (spaceService.isSuperManager(authenticatedUser)
+          || spaceService.isManager(space, authenticatedUser)
+          || spaceService.isRedactor(space, authenticatedUser)
+          || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
+      return cmsService.hasEditPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+    } else {
+      return StringUtils.equals(page.getOwner(), authenticatedUser);
+    }
+  }
+  
+  public static org.exoplatform.services.security.Identity getIdentity(String username) {
+    if (StringUtils.isBlank(username)) {
+      return null;
+    }
+    IdentityRegistry identityRegistry = CommonsUtils.getService(IdentityRegistry.class);
+    org.exoplatform.services.security.Identity aclIdentity = identityRegistry.getIdentity(username);
+    if (aclIdentity == null) {
+      try {
+        OrganizationService organizationService = CommonsUtils.getService(OrganizationService.class);
+        List<MembershipEntry> entries = organizationService.getMembershipHandler()
+                                                           .findMembershipsByUser(username)
+                                                           .stream()
+                                                           .map(membership -> new MembershipEntry(membership.getGroupId(),
+                                                                                                  membership.getMembershipType()))
+                                                           .toList();
+        aclIdentity = new org.exoplatform.services.security.Identity(username, entries);
+        identityRegistry.register(aclIdentity);
+      } catch (Exception e) {
+        throw new IllegalStateException("Unable to retrieve user " + username + " memberships", e);
+      }
+    }
+    return aclIdentity;
   }
 }

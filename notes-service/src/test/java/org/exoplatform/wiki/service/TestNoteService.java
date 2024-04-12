@@ -1,39 +1,40 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 
 package org.exoplatform.wiki.service;
 
 
+import static org.junit.Assert.assertThrows;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
-import org.exoplatform.container.PortalContainer;
-
-
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -42,20 +43,14 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.jpa.JPADataStorage;
-import org.exoplatform.wiki.model.*;
-
-import io.meeds.notes.service.NotePageViewService;
-import io.meeds.social.cms.service.CMSService;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.junit.Assert.assertThrows;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.Permission;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 
 public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -447,7 +442,7 @@ public class TestNoteService extends BaseTest {
     note.setLang("fr");
     noteService.createVersionOfNote(note, "root");
 
-    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), "root", false);
+    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), false);
 
     assertNotNull(langs);
     assertEquals(3, langs.size());
@@ -480,7 +475,7 @@ public class TestNoteService extends BaseTest {
     draftPage.setName("test draft");
     draftPage.setTargetPageId(note.getId());
     noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
-    DraftPage latestDraft = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(note.getId()), "root", null);
+    DraftPage latestDraft = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), null);
     assertNotNull(latestDraft);
   }
 
@@ -557,10 +552,10 @@ public class TestNoteService extends BaseTest {
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
-    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false, false).size();
+    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size();
     noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", user);
     assertTrue(zipFile.delete());
-    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false, false).size(),childern+3);
+    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size(), childern+3);
   }
 
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
@@ -623,15 +618,15 @@ public class TestNoteService extends BaseTest {
     noteService.createNote(portalWiki, "Home", new Page("imported1", "imported1"),user) ;
     noteService.createNote(portalWiki, "Home", new Page("imported2", "imported2"),user) ;
     Page home = portalWiki.getWikiHome();
-    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false, false).size();
-     NoteToExport note = new NoteToExport();
-     note.setId(home.getId());
-     note.setName(home.getName());
-     note.setTitle(home.getTitle());
-     note.setWikiId(home.getWikiId());
-     note.setWikiOwner(home.getWikiOwner());
-     note.setWikiType(home.getWikiType());
-    int eXportCildren= noteService.getChildrenNoteOf(note, user.getUserId()).size();
+    int childern = noteService.getChildrenNoteOf(home, false, false).size();
+    NoteToExport note = new NoteToExport();
+    note.setId(home.getId());
+    note.setName(home.getName());
+    note.setTitle(home.getTitle());
+    note.setWikiId(home.getWikiId());
+    note.setWikiOwner(home.getWikiOwner());
+    note.setWikiType(home.getWikiType());
+    int eXportCildren= noteService.getChildrenNoteOf(note).size();
     assertEquals(eXportCildren,childern);
   }
 
@@ -660,16 +655,16 @@ public class TestNoteService extends BaseTest {
     assertEquals(targetPage.getId(), draftOfExistingPage.getTargetPageId());
     assertEquals("1", draftOfExistingPage.getTargetPageRevision());
 
-    DraftPage draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    DraftPage draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
     WikiPageParams noteParams = new WikiPageParams(targetPage.getWikiType(), targetPage.getWikiOwner(), targetPage.getName());
     noteService.removeDraftOfNote(noteParams,"en");
 
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
 
     noteService.removeDraftOfNote(noteParams,"fr");
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertNull(draft);
   }
 
