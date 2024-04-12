@@ -1,27 +1,47 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
- * Copyright (C) 2022 Meeds Association
- * contact@meeds.io
+ *
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.service;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -37,7 +57,12 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.ExportList;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
 
 public class ExportThread implements Runnable {
 
@@ -165,8 +190,7 @@ public class ExportThread implements Runnable {
                                                                          note.getWikiId(),
                                                                          note.getWikiType(),
                                                                          note.getWikiOwner()),
-                                                        exportId,
-                                                        identity);
+                                                        exportId);
             if (noteToExport == null) {
               exportResource = notesExportService.getExportRessourceById(exportId);
               if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
@@ -384,7 +408,7 @@ public class ExportThread implements Runnable {
    * @return
    * @throws WikiException
    */
-  public NoteToExport getNoteToExport(NoteToExport note, int exportId, Identity identity) throws WikiException,
+  public NoteToExport getNoteToExport(NoteToExport note, int exportId) throws WikiException,
                                                                                           IOException,
                                                                                           InterruptedException {
     try {
@@ -404,14 +428,14 @@ public class ExportThread implements Runnable {
         return null;
       }
     }
-    List<NoteToExport> children = noteService.getChildrenNoteOf(note, identity.getUserId());
+    List<NoteToExport> children = noteService.getChildrenNoteOf(note);
     for (NoteToExport child : children) {
       child.setParent(note);
     }
     note.setChildren(children);
     note.setParent(noteService.getParentNoteOf(note));
     for (NoteToExport child : children) {
-      getNoteToExport(child, exportId, identity);
+      getNoteToExport(child, exportId);
     }
     return note;
   }
@@ -448,7 +472,7 @@ public class ExportThread implements Runnable {
     return content;
   }
 
-  public List<File> getFilesfromContent(NoteToExport note, List<File> files, String userId) throws WikiException {
+  public List<File> getFilesfromContent(NoteToExport note, List<File> files) throws WikiException {
     String contentUpdated = note.getContent();
     String fileName = "";
     String filePath = "";
@@ -458,9 +482,9 @@ public class ExportThread implements Runnable {
       files.add(new File(filePath));
       contentUpdated = contentUpdated.replace("//-" + fileName + "-//", "");
     }
-    List<NoteToExport> children = noteService.getChildrenNoteOf(note, userId);
+    List<NoteToExport> children = noteService.getChildrenNoteOf(note);
     for (NoteToExport child : children) {
-      getFilesfromContent(child, files, userId);
+      getFilesfromContent(child, files);
     }
     return files;
   }

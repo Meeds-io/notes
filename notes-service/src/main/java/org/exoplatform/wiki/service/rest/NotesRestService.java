@@ -1,36 +1,58 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
- * Copyright (C) 2022 Meeds Association
- * contact@meeds.io
+ *
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.service.rest;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -52,9 +74,17 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.resolver.TitleResolver;
-import org.exoplatform.wiki.service.*;
+import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.NotesExportService;
+import org.exoplatform.wiki.service.PageUpdateType;
+import org.exoplatform.wiki.service.WikiPageParams;
+import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
@@ -74,6 +104,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Path("/notes")
 @Tag(name = "/notes", description = "Managing notes")

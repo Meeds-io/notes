@@ -1,41 +1,55 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 package org.exoplatform.wiki.jpa;
 
-import java.util.*;
-
-import org.exoplatform.wiki.model.*;
-import org.mockito.Mockito;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.services.security.*;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.Permission;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.search.TemplateSearchData;
-import org.exoplatform.wiki.service.search.TemplateSearchResult;
 import org.exoplatform.wiki.utils.NoteConstants;
 
 /**
@@ -45,7 +59,6 @@ import org.exoplatform.wiki.utils.NoteConstants;
 public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
 
   protected JPADataStorage storage;
-  private static final String USERNAME_TEST = "test";
   
   public void setUp() throws Exception {
     super.setUp();
@@ -599,49 +612,6 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertNotNull(relatedPagesAfterDeletion);
     assertEquals(1, relatedPagesAfterDeletion.size());
   }
-
-//  @Test
-//  public void testDraftPagerByName() throws WikiException {
-//    // Given
-//    Wiki wiki = new Wiki();
-//    wiki.setType("portal");
-//    wiki.setOwner("wiki1");
-//    wiki = storage.createWiki(wiki);
-//
-//    Page page = new Page();
-//    page.setWikiId(wiki.getId());
-//    page.setWikiType(wiki.getType());
-//    page.setWikiOwner(wiki.getOwner());
-//    page.setCreatedDate(new Date());
-//    page.setUpdatedDate(new Date());
-//    page.setName("page1");
-//    page.setTitle("Page 1");
-//    page.setContent("Content Page 1");
-//    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-//
-//    DraftPage draftPage = new DraftPage();
-//    draftPage.setAuthor("user1");
-//    draftPage.setName("DraftPage1");
-//    draftPage.setTitle("DraftPage 1");
-//    draftPage.setContent("Content Page 1 Updated");
-//    draftPage.setTargetPageId(createdPage.getId());
-//    draftPage.setTargetPageRevision("1");
-//    draftPage.setCreatedDate(new Date());
-//    draftPage.setUpdatedDate(new Date());
-//
-//    // When
-//    storage.createDraftPageForUser(draftPage, "user1");
-//    DraftPage draftPage1OfUser1 = storage.getLa("DraftPage1");
-//    DraftPage draftPage2OfUser1 = storage.getDraft("DraftPage2");
-//    DraftPage draftPage1OfUser2 = storage.getDraft("DraftPage1");
-//
-//    // Then
-//    assertNotNull(draftPage1OfUser1);
-//    assertEquals(createdPage.getId(), draftPage1OfUser1.getTargetPageId());
-//    assertEquals("Content Page 1 Updated", draftPage1OfUser1.getContent());
-//    assertNull(draftPage2OfUser1);
-//    assertNull(draftPage1OfUser2);
-//  }
 
   @Test
   public void testGetDraftsOfPage() throws WikiException {
