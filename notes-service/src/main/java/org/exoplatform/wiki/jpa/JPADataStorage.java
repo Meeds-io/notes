@@ -1,29 +1,52 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.jpa;
 
-import static org.exoplatform.wiki.jpa.EntityConverter.*;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertAttachmentEntityToAttachment;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertAttachmentToDraftPageAttachmentEntity;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertAttachmentToPageAttachmentEntity;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertDraftPageEntityToDraftPage;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertDraftPageToDraftPageEntity;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPageEntityToPage;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPageToPageEntity;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPageVersionEntityToPageHistory;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPageVersionEntityToPageVersion;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPermissionEntitiesToPermissionEntries;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertPermissionEntriesToPermissionEntities;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertWikiEntityToWiki;
+import static org.exoplatform.wiki.jpa.EntityConverter.convertWikiToWikiEntity;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,14 +65,42 @@ import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.jpa.dao.*;
-import org.exoplatform.wiki.jpa.entity.*;
+import org.exoplatform.wiki.jpa.dao.DraftPageAttachmentDAO;
+import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
+import org.exoplatform.wiki.jpa.dao.PageAttachmentDAO;
+import org.exoplatform.wiki.jpa.dao.PageDAO;
+import org.exoplatform.wiki.jpa.dao.PageMoveDAO;
+import org.exoplatform.wiki.jpa.dao.PageVersionDAO;
+import org.exoplatform.wiki.jpa.dao.TemplateDAO;
+import org.exoplatform.wiki.jpa.dao.WikiDAO;
+import org.exoplatform.wiki.jpa.entity.AttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
+import org.exoplatform.wiki.jpa.entity.PageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.jpa.entity.PageMoveEntity;
+import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
+import org.exoplatform.wiki.jpa.entity.TemplateEntity;
+import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.Permission;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.DataStorage;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
-import org.exoplatform.wiki.service.search.*;
+import org.exoplatform.wiki.service.search.SearchResult;
+import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.wiki.service.search.TemplateSearchData;
+import org.exoplatform.wiki.service.search.TemplateSearchResult;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 import org.exoplatform.wiki.utils.VersionNameComparatorDesc;
@@ -228,7 +279,7 @@ public class JPADataStorage implements DataStorage {
     // and wikiOwner null. This will cause an error in the pageDAO
     if(wikiType == null || wikiOwner == null) return null;
     if(WIKI_TYPE_DRAFT.equals(wikiType)) {
-      return convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByUserAndName(wikiOwner, pageName));
+      return convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByName(pageName));
     } else {
       return convertPageEntityToPage(pageDAO.getPageOfWikiByName(wikiType, wikiOwner, pageName));
     }
@@ -263,7 +314,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts) throws WikiException {
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     if (pageEntity == null) {
       throw new WikiException("Cannot get children of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -280,7 +331,7 @@ public class JPADataStorage implements DataStorage {
     
     if (withDrafts) {
       List<DraftPageEntity> draftPageEntities;
-      draftPageEntities = draftPageDAO.findDraftPagesByUserAndParentPage(userId, pageEntity.getId());
+      draftPageEntities = draftPageDAO.findDraftPagesByParentPage(pageEntity.getId());
 
       if (!draftPageEntities.isEmpty()) {
         for (DraftPageEntity draftPageEntity : draftPageEntities) {
@@ -330,19 +381,19 @@ public class JPADataStorage implements DataStorage {
 
 
   @Override
-  public void deleteDraftOfPage(Page page, String username) throws WikiException {
-    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.parseLong(page.getId()));
+  public void deleteDraftOfPage(Page page) throws WikiException {
+    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByTargetPage(Long.parseLong(page.getId()));
     for (DraftPageEntity draftPage: draftPages) {
       if(draftPage != null){
         deleteAttachmentsOfDraftPage(draftPage);
       }
     }
-    draftPageDAO.deleteDraftPagesByUserAndTargetPage(username, Long.valueOf(page.getId()));
+    draftPageDAO.deleteDraftPagesByTargetPage(Long.valueOf(page.getId()));
   }
 
   @Override
-  public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException {
-    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByUserAndTargetPage(username, Long.parseLong(page.getId()));
+  public void deleteDraftOfPage(Page page, String lang) throws WikiException {
+    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByTargetPage(Long.parseLong(page.getId()));
     for (DraftPageEntity draftPage : draftPages) {
       if (draftPage != null && StringUtils.equals(draftPage.getLang(), lang)) {
         deleteAttachmentsOfDraftPage(draftPage);
@@ -352,12 +403,12 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public void deleteDraftByName(String draftPageName, String username) throws WikiException {
-    DraftPageEntity draftPage = draftPageDAO.findLatestDraftPageByUserAndName(username, draftPageName);
+  public void deleteDraftByName(String draftPageName) throws WikiException {
+    DraftPageEntity draftPage = draftPageDAO.findLatestDraftPageByName(draftPageName);
     if(draftPage != null){
       deleteAttachmentsOfDraftPage(draftPage);
     }
-    draftPageDAO.deleteDraftPagesByUserAndName(draftPageName, username);
+    draftPageDAO.deleteDraftPagesByName(draftPageName);
   }
   
   @Override
@@ -584,14 +635,13 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   public Page getExsitedOrNewDraftPageById(String wikiType, String wikiOwner, String pageName, String username) throws WikiException {
-    DraftPage draftPage;
 
     if(pageName.contains(Utils.SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE)) {
       String[] pageNameParts = pageName.split(Utils.SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE);
       username = pageNameParts[0];
     }
-
-    draftPage = getDraft(pageName, username);
+    DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(pageName);
+    DraftPage draftPage = convertDraftPageEntityToDraftPage(draftPageEntity);
 
     if (draftPage == null) {
       Date now = GregorianCalendar.getInstance().getTime();
@@ -620,9 +670,9 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<DraftPage> getDraftsOfPage(Long pageId, String username) {
+  public List<DraftPage> getDraftsOfPage(Long pageId) {
     List<DraftPage> draftPages = new ArrayList<>();
-    List<DraftPageEntity> draftPagesOfUser = draftPageDAO.findDraftPagesByUserAndTargetPage(username, pageId);
+    List<DraftPageEntity> draftPagesOfUser = draftPageDAO.findDraftPagesByTargetPage(pageId);
     for (DraftPageEntity draft : draftPagesOfUser) {
       draftPages.add(convertDraftPageEntityToDraftPage(draft));
     }
@@ -630,17 +680,16 @@ public class JPADataStorage implements DataStorage {
     return draftPages;
   }
   @Override
-  public DraftPage getDraft(WikiPageParams wikiPageParams, String username) throws WikiException {
+  public DraftPage getDraft(WikiPageParams wikiPageParams) throws WikiException {
     DraftPage latestDraft = null;
 
     Page page = getPageOfWikiByName(wikiPageParams.getType(), wikiPageParams.getOwner(), wikiPageParams.getPageName());
 
     if (page != null) {
-      List<DraftPageEntity> draftPagesOfUser = draftPageDAO.findDraftPagesByUserAndTargetPage(username,
-          Long.valueOf(page.getId()));
+      List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByTargetPage(Long.valueOf(page.getId()));
 
       DraftPageEntity latestDraftEntity = null;
-      for (DraftPageEntity draft : draftPagesOfUser) {
+      for (DraftPageEntity draft : draftPages) {
         // Compare and get the latest draft
         if ((latestDraftEntity == null) || (latestDraftEntity.getUpdatedDate().getTime() < draft.getUpdatedDate().getTime())) {
           latestDraftEntity = draft;
@@ -656,42 +705,9 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public DraftPage getLastestDraft(String username) throws WikiException {
-    DraftPageEntity draftPagEntity = draftPageDAO.findLatestDraftPageByUser(username);
+  public DraftPage getLatestDraftOfPage(Page targetPage) {
+    DraftPageEntity draftPagEntity = draftPageDAO.findLatestDraftPageByTargetPage(Long.parseLong(targetPage.getId()));
     return convertDraftPageEntityToDraftPage(draftPagEntity);
-  }
-
-  @Override
-  public DraftPage getLatestDraftOfPage(Page targetPage, String username) {
-    DraftPageEntity draftPagEntity = draftPageDAO.findLatestDraftPageByUserAndTargetPage(Long.parseLong(targetPage.getId()), username);
-    return convertDraftPageEntityToDraftPage(draftPagEntity);
-  }
-
-  @Override
-  public DraftPage getDraft(String draftName, String username) throws WikiException {
-    DraftPage draftPageOfUser = null;
-    List<DraftPage> draftPages = getDraftPagesOfUser(username);
-    if (draftPages != null) {
-      for (DraftPage draftPage : draftPages) {
-        if (draftPage.getName() != null && draftPage.getName().equals(draftName)) {
-          draftPageOfUser = draftPage;
-          break;
-        }
-      }
-    }
-    return draftPageOfUser;
-  }
-
-  @Override
-  public List<DraftPage> getDraftPagesOfUser(String username) throws WikiException {
-    List<DraftPage> draftPages = new ArrayList<>();
-    List<DraftPageEntity> draftPagesEntities = draftPageDAO.findDraftPagesByUser(username);
-    if (draftPagesEntities != null) {
-      for (DraftPageEntity draftPageEntity : draftPagesEntities) {
-        draftPages.add(convertDraftPageEntityToDraftPage(draftPageEntity));
-      }
-    }
-    return draftPages;
   }
 
   @Override
@@ -764,7 +780,7 @@ public class JPADataStorage implements DataStorage {
     String wikiOwner;
     String pageName;
     if (page.isDraftPage()) {
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(page.getAuthor(), page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
       if (draftPageEntity == null) {
         throw new WikiException("Cannot get attachments of draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
             + page.getName() + " because draft page does not exist.");
@@ -835,7 +851,7 @@ public class JPADataStorage implements DataStorage {
         attachmentEntity.setCreatedDate(now);
       }
 
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(Utils.getCurrentUser(), page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
 
       if (draftPageEntity == null) {
         throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -894,7 +910,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity pageEntity = fetchPageEntity(page);
     DraftPageEntity draftPageEntity = null;
     if(pageEntity == null) {
-      draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(Utils.getCurrentUser(),page.getName());
+      draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
     }
     
     if (pageEntity == null && draftPageEntity == null) {
@@ -1206,7 +1222,7 @@ public class JPADataStorage implements DataStorage {
   @ExoTransactional
   public Page updatePage(Page page) throws WikiException {
     if (page.isDraftPage()) {
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByUserAndName(page.getAuthor(), page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
 
       if (draftPageEntity == null) {
         throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -1489,15 +1505,11 @@ public class JPADataStorage implements DataStorage {
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
-    if (username == null) {
-      throw new IllegalArgumentException("username argument is null");
-    }
+  public DraftPage getLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang) {
     if (targetPageId == null) {
       throw new IllegalArgumentException("targetPageId argument is null");
     }
-    return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByUserAndTargetPageAndLang(targetPageId,
-                                                                                                                        username,
+    return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByTargetPageAndLang(targetPageId,
                                                                                                                         lang));
   }
 

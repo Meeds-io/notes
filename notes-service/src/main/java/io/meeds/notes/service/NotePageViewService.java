@@ -1,12 +1,13 @@
-/**
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2023 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -121,7 +122,7 @@ public class NotePageViewService {
           }
           String username = currentUserAclIdentity.getUserId();
           noteService.createVersionOfNote(page, username);
-          noteService.removeDraftOfNote(page, username);
+          noteService.removeDraftOfNote(page);
         }
       } catch (WikiException e) {
         throw new IllegalStateException(String.format("Error retrieving note with name %s referenced in page %s",
