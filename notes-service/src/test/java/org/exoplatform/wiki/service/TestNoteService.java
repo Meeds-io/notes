@@ -346,7 +346,6 @@ public class TestNoteService extends BaseTest {
     targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage", "TestPage"), root);
 
     // Test create draft for existing page
-    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
     DraftPage draftPageTosave = new DraftPage();
     String draftTitle = targetPage.getTitle() + "_draft";
     String draftContent = targetPage.getContent() + "_draft";
@@ -561,9 +560,9 @@ public class TestNoteService extends BaseTest {
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal1");
-    Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
-    Page note2 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
-    Page note3 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported1")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported2")) ;
@@ -596,13 +595,13 @@ public class TestNoteService extends BaseTest {
     note1.setLang("fr");
     note1.setTitle("frenchTitle");
     noteService.createVersionOfNote(note1, "root");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "root", "en");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en");
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
     assertEquals(note.getTitle(), "testPage1");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertNotNull(note);
     assertEquals(note.getTitle(), "frenchTitle");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "root", "fr");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertEquals(note.getTitle(), "testPage1");
     noteService.deleteNote(note1.getWikiType(), note1.getWikiOwner(), note1.getName());
@@ -640,7 +639,6 @@ public class TestNoteService extends BaseTest {
     targetPage.setContent("Page content");
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
     targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage1", "TestPage1"), root);
-    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
     DraftPage draftPageTosave = new DraftPage();
     String draftTitle = targetPage.getTitle() + "_draft";
     String draftContent = targetPage.getContent() + "_draft";

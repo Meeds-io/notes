@@ -1,22 +1,22 @@
- /**
- * This file is part of the Meeds project (https://meeds.io/).
- *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+/**
+* This file is part of the Meeds project (https://meeds.io/).
+*
+* Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 package org.exoplatform.wiki.jpa;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ import org.exoplatform.wiki.utils.NoteConstants;
 public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
 
   protected JPADataStorage storage;
-  
+
   public void setUp() throws Exception {
     super.setUp();
 
@@ -98,20 +98,23 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     wiki.setType("portal");
     wiki.setOwner("wiki1");
 
-    Identity userIdentity = new Identity("user", Arrays.asList(
-            new MembershipEntry("/platform/users", "*")));
-    Identity adminIdentity = new Identity("admin", Arrays.asList(
-            new MembershipEntry("/platform/users", "*"),
-            new MembershipEntry("/platform/administrators", "*")));
+    Identity userIdentity = new Identity("user", Arrays.asList(new MembershipEntry("/platform/users", "*")));
+    Identity adminIdentity = new Identity("admin",
+                                          Arrays.asList(new MembershipEntry("/platform/users", "*"),
+                                                        new MembershipEntry("/platform/administrators", "*")));
 
     List<PermissionEntry> wikiPermissions = new ArrayList<>();
-    wikiPermissions.add(new PermissionEntry("user", null, IDType.USER, new Permission[] {
-            new Permission(PermissionType.VIEWPAGE, true) }));
-    wikiPermissions.add(new PermissionEntry("admin", null, IDType.USER, new Permission[]{
-            new Permission(PermissionType.VIEWPAGE, true),
-            new Permission(PermissionType.EDITPAGE, true),
-            new Permission(PermissionType.ADMINPAGE, true),
-            new Permission(PermissionType.ADMINSPACE, true)}));
+    wikiPermissions.add(new PermissionEntry("user",
+                                            null,
+                                            IDType.USER,
+                                            new Permission[] { new Permission(PermissionType.VIEWPAGE, true) }));
+    wikiPermissions.add(new PermissionEntry("admin",
+                                            null,
+                                            IDType.USER,
+                                            new Permission[] { new Permission(PermissionType.VIEWPAGE, true),
+                                                new Permission(PermissionType.EDITPAGE, true),
+                                                new Permission(PermissionType.ADMINPAGE, true),
+                                                new Permission(PermissionType.ADMINSPACE, true) }));
     wiki.setPermissions(wikiPermissions);
 
     // When
@@ -136,12 +139,16 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     wiki.setOwner("wiki1");
 
     List<PermissionEntry> initialPermissions = new ArrayList<>();
-    initialPermissions.add(new PermissionEntry("user", null, IDType.USER, new Permission[] {
-            new Permission(PermissionType.ADMINPAGE, true) }));
+    initialPermissions.add(new PermissionEntry("user",
+                                               null,
+                                               IDType.USER,
+                                               new Permission[] { new Permission(PermissionType.ADMINPAGE, true) }));
     List<PermissionEntry> updatedPermissions = new ArrayList<>();
-    updatedPermissions.add(new PermissionEntry("admin", null, IDType.USER, new Permission[]{
-            new Permission(PermissionType.ADMINPAGE, true),
-            new Permission(PermissionType.ADMINSPACE, true)}));
+    updatedPermissions.add(new PermissionEntry("admin",
+                                               null,
+                                               IDType.USER,
+                                               new Permission[] { new Permission(PermissionType.ADMINPAGE, true),
+                                                   new Permission(PermissionType.ADMINSPACE, true) }));
 
     // When
     storage.createWiki(wiki);
@@ -153,12 +160,16 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // Then
     assertNotNull(fetchedInitialPermissions);
     assertEquals(1, fetchedInitialPermissions.size());
-    assertTrue(ArrayUtils.contains(fetchedInitialPermissions.get(0).getPermissions(), new Permission(PermissionType.ADMINPAGE, true)));
-    assertTrue(ArrayUtils.contains(fetchedInitialPermissions.get(0).getPermissions(), new Permission(PermissionType.ADMINSPACE, false)));
+    assertTrue(ArrayUtils.contains(fetchedInitialPermissions.get(0).getPermissions(),
+                                   new Permission(PermissionType.ADMINPAGE, true)));
+    assertTrue(ArrayUtils.contains(fetchedInitialPermissions.get(0).getPermissions(),
+                                   new Permission(PermissionType.ADMINSPACE, false)));
     assertNotNull(fetchedUpdatedPermissions);
     assertEquals(1, fetchedUpdatedPermissions.size());
-    assertTrue(ArrayUtils.contains(fetchedUpdatedPermissions.get(0).getPermissions(), new Permission(PermissionType.ADMINPAGE, true)));
-    assertTrue(ArrayUtils.contains(fetchedUpdatedPermissions.get(0).getPermissions(), new Permission(PermissionType.ADMINSPACE, true)));
+    assertTrue(ArrayUtils.contains(fetchedUpdatedPermissions.get(0).getPermissions(),
+                                   new Permission(PermissionType.ADMINPAGE, true)));
+    assertTrue(ArrayUtils.contains(fetchedUpdatedPermissions.get(0).getPermissions(),
+                                   new Permission(PermissionType.ADMINSPACE, true)));
   }
 
   @Test
@@ -366,9 +377,8 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createPage(wiki1, wiki1.getWikiHome(), page2);
     assertEquals(5, pageDAO.findAll().size());
     assertEquals(2, storage.getChildrenPageOf(wiki1.getWikiHome(), true).size());
-    storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), page1.getName()), new WikiPageParams(wiki2.getType(),
-            wiki2.getOwner(),
-            wiki2.getWikiHome().getName()));
+    storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), page1.getName()),
+                     new WikiPageParams(wiki2.getType(), wiki2.getOwner(), wiki2.getWikiHome().getName()));
 
     // Then
     assertEquals(5, pageDAO.findAll().size());
@@ -449,11 +459,10 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     wiki.setOwner("wiki1");
     wiki = storage.createWiki(wiki);
 
-    Identity userIdentity = new Identity("user", Arrays.asList(
-            new MembershipEntry("/platform/users", "*")));
-    Identity adminIdentity = new Identity("admin", Arrays.asList(
-            new MembershipEntry("/platform/users", "*"),
-            new MembershipEntry("/platform/administrators", "*")));
+    Identity userIdentity = new Identity("user", Arrays.asList(new MembershipEntry("/platform/users", "*")));
+    Identity adminIdentity = new Identity("admin",
+                                          Arrays.asList(new MembershipEntry("/platform/users", "*"),
+                                                        new MembershipEntry("/platform/administrators", "*")));
 
     Page noPermissionPage = new Page();
     noPermissionPage.setWikiId(wiki.getId());
@@ -470,9 +479,11 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     publicPage.setWikiOwner(wiki.getOwner());
     publicPage.setName("page1");
     publicPage.setTitle("Page 1");
-    publicPage.setPermissions(Arrays.asList(new PermissionEntry(IdentityConstants.ANY, null, IDType.USER, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )})));
+    publicPage.setPermissions(Arrays.asList(new PermissionEntry(IdentityConstants.ANY,
+                                                                null,
+                                                                IDType.USER,
+                                                                new Permission[] {
+                                                                    (new Permission(PermissionType.VIEWPAGE, true)) })));
     publicPage = storage.createPage(wiki, wiki.getWikiHome(), publicPage);
 
     Page authenticatedPage = new Page();
@@ -481,11 +492,16 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     authenticatedPage.setWikiOwner(wiki.getOwner());
     authenticatedPage.setName("page2");
     authenticatedPage.setTitle("Page 2");
-    authenticatedPage.setPermissions(Arrays.asList(new PermissionEntry("/platform/users", null, IDType.GROUP, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )}), new PermissionEntry("/platform/administrators", null, IDType.GROUP, new Permission[] {(
-            new Permission(PermissionType.EDITPAGE, true)
-    )})));
+    authenticatedPage.setPermissions(Arrays.asList(new PermissionEntry("/platform/users",
+                                                                       null,
+                                                                       IDType.GROUP,
+                                                                       new Permission[] {
+                                                                           (new Permission(PermissionType.VIEWPAGE, true)) }),
+                                                   new PermissionEntry("/platform/administrators",
+                                                                       null,
+                                                                       IDType.GROUP,
+                                                                       new Permission[] {
+                                                                           (new Permission(PermissionType.EDITPAGE, true)) })));
     authenticatedPage = storage.createPage(wiki, wiki.getWikiHome(), authenticatedPage);
 
     Page adminPage = new Page();
@@ -494,12 +510,14 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     adminPage.setWikiOwner(wiki.getOwner());
     adminPage.setName("page3");
     adminPage.setTitle("Page 3");
-    adminPage.setPermissions(Arrays.asList(new PermissionEntry("*:/platform/administrators", null, IDType.MEMBERSHIP, new Permission[] {(
-            new Permission(PermissionType.VIEWPAGE, true)
-    )})));
+    adminPage.setPermissions(Arrays.asList(new PermissionEntry("*:/platform/administrators",
+                                                               null,
+                                                               IDType.MEMBERSHIP,
+                                                               new Permission[] {
+                                                                   (new Permission(PermissionType.VIEWPAGE, true)) })));
     adminPage = storage.createPage(wiki, wiki.getWikiHome(), adminPage);
 
-    //Then
+    // Then
     assertTrue(storage.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, userIdentity));
     assertTrue(storage.hasPermissionOnPage(noPermissionPage, PermissionType.VIEWPAGE, adminIdentity));
     assertTrue(storage.hasPermissionOnPage(publicPage, PermissionType.VIEWPAGE, userIdentity));
@@ -664,7 +682,62 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
 
     // Then
     assertNotNull(fetchedDrafts);
-    assertEquals( 2, fetchedDrafts.size());
+    assertEquals(2, fetchedDrafts.size());
+
+  }
+
+  @Test
+  public void testGetLatestDraftOfPage() throws WikiException {
+    // Given
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = storage.createWiki(wiki);
+
+    Page page = new Page();
+    page.setWikiId(wiki.getId());
+    page.setWikiType(wiki.getType());
+    page.setWikiOwner(wiki.getOwner());
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    page.setName("page1");
+    page.setTitle("Page 1");
+    page.setContent("Content Page 1");
+    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+
+    Calendar calendar = Calendar.getInstance();
+    Date now = calendar.getTime();
+    calendar.add(Calendar.YEAR, -1);
+    Date oneYearAgo = calendar.getTime();
+
+    DraftPage draftPage1 = new DraftPage();
+    draftPage1.setAuthor("user1");
+    draftPage1.setName("DraftPage1");
+    draftPage1.setTitle("DraftPage 1");
+    draftPage1.setContent("Content Page 1 Updated");
+    draftPage1.setTargetPageId(createdPage.getId());
+    draftPage1.setTargetPageRevision("1");
+    draftPage1.setUpdatedDate(oneYearAgo);
+    draftPage1.setCreatedDate(oneYearAgo);
+
+    DraftPage draftPage2 = new DraftPage();
+    draftPage2.setAuthor("user1");
+    draftPage2.setName("DraftPage1");
+    draftPage2.setTitle("DraftPage 1");
+    draftPage2.setContent("Content Page 1 Updated Again");
+    draftPage2.setTargetPageId(createdPage.getId());
+    draftPage2.setTargetPageRevision("2");
+    draftPage2.setUpdatedDate(now);
+    draftPage2.setCreatedDate(now);
+
+    // When
+    storage.createDraftPageForUser(draftPage1, "user1");
+    storage.createDraftPageForUser(draftPage2, "user1");
+    DraftPage latestDraft = storage.getLatestDraftOfPage(createdPage);
+
+    // Then
+    assertNotNull(latestDraft);
+    assertEquals(draftPage2.getName(), latestDraft.getName());
 
   }
 
@@ -852,10 +925,10 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // Then
     DraftPage initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
     assertNotNull(initialDraftPage);
-    
+
     // When
     storage.deleteDraftByName("DraftPage2");
-    
+
     // Then
     initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
     assertNull(initialDraftPage);
@@ -877,11 +950,12 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     page.setTitle("Page 1");
     page.setContent("Content Page 1");
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-    org.exoplatform.social.core.identity.model.Identity identity = Mockito.mock( org.exoplatform.social.core.identity.model.Identity.class);
+    org.exoplatform.social.core.identity.model.Identity identity =
+                                                                 Mockito.mock(org.exoplatform.social.core.identity.model.Identity.class);
     // When
     storage.addPageVersion(createdPage, identity.getId());
     List<PageVersion> pageVersions1 = storage.getVersionsOfPage(createdPage);
-    storage.addPageVersion(createdPage,identity.getId());
+    storage.addPageVersion(createdPage, identity.getId());
     List<PageVersion> pageVersions2 = storage.getVersionsOfPage(createdPage);
 
     // Then
@@ -910,7 +984,8 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     page.setTitle("Page 1");
     page.setContent("Content Page 1");
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-    org.exoplatform.social.core.identity.model.Identity identity = Mockito.mock( org.exoplatform.social.core.identity.model.Identity.class);
+    org.exoplatform.social.core.identity.model.Identity identity =
+                                                                 Mockito.mock(org.exoplatform.social.core.identity.model.Identity.class);
     // When
     storage.addPageVersion(createdPage, identity.getId());
     List<PageHistory> pageVersions1 = storage.getHistoryOfPage(createdPage);
@@ -943,7 +1018,8 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     page.setTitle("Page 1");
     page.setContent("Content Page Version 1");
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
-    org.exoplatform.social.core.identity.model.Identity identity = Mockito.mock( org.exoplatform.social.core.identity.model.Identity.class);
+    org.exoplatform.social.core.identity.model.Identity identity =
+                                                                 Mockito.mock(org.exoplatform.social.core.identity.model.Identity.class);
 
     storage.addPageVersion(createdPage, identity.getId());
     createdPage.setContent("Content Page Version 2");
@@ -1008,7 +1084,8 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     // rename the page (so we keep the page in the same wiki)
     storage.renamePage(wiki1.getType(), wiki1.getOwner(), createdPage1.getName(), "page2", "Page 1");
     // move the page to another wiki
-    storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), "page2"), new WikiPageParams(wiki2.getType(), wiki2.getOwner(), wiki2.getWikiHome().getName()));
+    storage.movePage(new WikiPageParams(wiki1.getType(), wiki1.getOwner(), "page2"),
+                     new WikiPageParams(wiki2.getType(), wiki2.getOwner(), wiki2.getWikiHome().getName()));
 
     Page relatedPage1 = storage.getRelatedPage(wiki1.getType(), wiki1.getOwner(), "page1");
     Page relatedPage2 = storage.getRelatedPage(wiki1.getType(), wiki1.getOwner(), "page2");
@@ -1064,7 +1141,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals(1, step3Watchers.size());
     assertTrue(step3Watchers.contains("user2"));
   }
-  
+
   protected void startSessionAs(String user) {
     startSessionAs(user, new HashSet<MembershipEntry>());
   }
