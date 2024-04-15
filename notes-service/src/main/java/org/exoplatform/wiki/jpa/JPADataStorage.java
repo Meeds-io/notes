@@ -279,7 +279,7 @@ public class JPADataStorage implements DataStorage {
     // and wikiOwner null. This will cause an error in the pageDAO
     if(wikiType == null || wikiOwner == null) return null;
     if(WIKI_TYPE_DRAFT.equals(wikiType)) {
-      return convertDraftPageEntityToDraftPage(draftPageDAO.findLatestDraftPageByName(pageName));
+      return convertDraftPageEntityToDraftPage(draftPageDAO.findDraftPageByName(pageName));
     } else {
       return convertPageEntityToPage(pageDAO.getPageOfWikiByName(wikiType, wikiOwner, pageName));
     }
@@ -404,7 +404,7 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   public void deleteDraftByName(String draftPageName) throws WikiException {
-    DraftPageEntity draftPage = draftPageDAO.findLatestDraftPageByName(draftPageName);
+    DraftPageEntity draftPage = draftPageDAO.findDraftPageByName(draftPageName);
     if(draftPage != null){
       deleteAttachmentsOfDraftPage(draftPage);
     }
@@ -640,7 +640,7 @@ public class JPADataStorage implements DataStorage {
       String[] pageNameParts = pageName.split(Utils.SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE);
       username = pageNameParts[0];
     }
-    DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(pageName);
+    DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(pageName);
     DraftPage draftPage = convertDraftPageEntityToDraftPage(draftPageEntity);
 
     if (draftPage == null) {
@@ -780,7 +780,7 @@ public class JPADataStorage implements DataStorage {
     String wikiOwner;
     String pageName;
     if (page.isDraftPage()) {
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
       if (draftPageEntity == null) {
         throw new WikiException("Cannot get attachments of draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
             + page.getName() + " because draft page does not exist.");
@@ -851,7 +851,7 @@ public class JPADataStorage implements DataStorage {
         attachmentEntity.setCreatedDate(now);
       }
 
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
 
       if (draftPageEntity == null) {
         throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -910,7 +910,7 @@ public class JPADataStorage implements DataStorage {
     PageEntity pageEntity = fetchPageEntity(page);
     DraftPageEntity draftPageEntity = null;
     if(pageEntity == null) {
-      draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
+      draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
     }
     
     if (pageEntity == null && draftPageEntity == null) {
@@ -1222,7 +1222,7 @@ public class JPADataStorage implements DataStorage {
   @ExoTransactional
   public Page updatePage(Page page) throws WikiException {
     if (page.isDraftPage()) {
-      DraftPageEntity draftPageEntity = draftPageDAO.findLatestDraftPageByName(page.getName());
+      DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
 
       if (draftPageEntity == null) {
         throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"

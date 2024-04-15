@@ -35,7 +35,7 @@ import jakarta.persistence.TypedQuery;
  */
 public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
 
-  public DraftPageEntity findLatestDraftPageByName(String draftPageName) {
+  public DraftPageEntity findDraftPageByName(String draftPageName) {
     TypedQuery<DraftPageEntity> query = getEntityManager().createNamedQuery("wikiDraftPage.findDraftPageByName", DraftPageEntity.class)
             .setMaxResults(1)
             .setParameter("draftPageName", draftPageName);
@@ -71,7 +71,7 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
 
   @ExoTransactional
   public void deleteDraftPagesByName(String draftName) {
-    DraftPageEntity draftPage = findLatestDraftPageByName(draftName);
+    DraftPageEntity draftPage = findDraftPageByName(draftName);
     if(draftPage != null) {
       delete(draftPage);
     }

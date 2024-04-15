@@ -171,9 +171,51 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     containerContextStatic.close();
     super.tearDown();
   }
+  
+  @Test
+  public void testGetNote() throws WikiException, IllegalAccessException {
+    Page homePage = new Page("home");
+    homePage.setWikiOwner("user");
+    homePage.setWikiType("WIKIHOME");
+    homePage.setOwner("user");
+    homePage.setId("1");
+    homePage.setParentPageId("0");
+    homePage.setHasChild(true);
+    Wiki noteBook = new Wiki();
+    noteBook.setOwner("user");
+    noteBook.setType("WIKI");
+    noteBook.setId("0");
+    noteBook.setWikiHome(homePage);
+    when(noteBookService.getWikiByTypeAndOwner("group", "/spaces/test")).thenReturn(noteBook);
+    Page page = new Page();
+    page.setId("1");
+    page.setName("note1");
+    page.setActivityId("1");
+    page.setLang("en");
+    page.setUrl("/space/test/notes/1");
+    page.setContent("<h3>test</h3>");
+    when(noteService.getNoteOfNoteBookByName("group", "/spaces/test", "1", identity, "source")).thenReturn(page);
+    List<BreadcrumbData> breadcrumb = new ArrayList<>();
+    breadcrumb.add(new BreadcrumbData("1", "test", "note", "user"));
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(page);
+
+    when(noteService.getBreadCrumb("group", "/spaces/test", "1", "en", identity, false)).thenReturn(breadcrumb);
+    Response response = notesRestService.getNote("group", "/spaces/test", "1", "source", "en");
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    Page fetchedNote = (Page) response.getEntity();
+    assertEquals(page.getName(), fetchedNote.getName());
+
+    doThrow(new IllegalAccessException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
+    Response response1 = notesRestService.getNote("group", "/spaces/test", "1", "source", "en");
+    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response1.getStatus());
+
+    doThrow(new IllegalStateException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
+    Response response2 = notesRestService.getNote("group", "/spaces/test", "1", "source", "en");
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
+  }
 
   @Test
-  public void getNoteById() throws WikiException, IllegalAccessException {
+  public void testGetNoteById() throws WikiException, IllegalAccessException {
     Page page = new Page();
     List<Page> children = new ArrayList<>();
     children.add(new Page("child1"));
@@ -213,9 +255,9 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
-
+  
   @Test
-  public void getFullTreeData() throws Exception {
+  public void testGetFullTreeData() throws Exception {
     Page homePage = new Page("home");
     homePage.setWikiOwner("user");
     homePage.setWikiType("WIKIHOME");
