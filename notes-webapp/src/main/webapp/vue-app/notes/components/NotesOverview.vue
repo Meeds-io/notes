@@ -21,7 +21,7 @@
               class="notes-header-icons text-right">
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="!isMobile && !hasDraft && isManager">
+                <v-tooltip bottom v-if="!hasDraft && isManager">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       v-on="on"
@@ -41,7 +41,7 @@
               </div>
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="isManager && !isMobile">
+                <v-tooltip bottom v-if="isManager">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       icon
