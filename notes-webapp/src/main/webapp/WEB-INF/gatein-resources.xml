@@ -227,21 +227,6 @@
   </module>
 
   <module>
-    <name>html2canvas</name>
-    <script>
-      <path>/javascript/eXo/wiki/html2canvas.js</path>
-    </script>
-   </module>
-  
-  <module>
-    <name>jspdf</name>
-    <script>
-      <minify>false</minify>
-      <path>/javascript/eXo/wiki/jspdf.js</path>
-    </script>
-   </module>
-
-  <module>
     <name>vueCustomElement</name>
     <script>
       <path>/javascript/lib/vue-custom-element.min.js</path>
