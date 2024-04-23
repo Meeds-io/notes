@@ -755,4 +755,12 @@ public interface NoteService {
   @Deprecated
   // Use {@link deleteVersionsByNoteIdAndLang(Long noteId, String lang)} instead
   void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws WikiException;
+
+
+  /**
+   * Remove all children drafts of a parent page without existing target
+   *
+   * @param parentPageId Note parent page id
+   */
+  void removeOrphanDraftPagesByParentPage(long parentPageId);
 }

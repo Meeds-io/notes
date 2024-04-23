@@ -1559,4 +1559,12 @@ public class JPADataStorage implements DataStorage {
     pageEntity.setVersions(history);
     pageDAO.update(pageEntity);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void deleteOrphanDraftPagesByParentPage(long parentPageId) {
+    draftPageDAO.deleteOrphanDraftPagesByParentPage(parentPageId);
+  }
 }
