@@ -53,7 +53,8 @@ import jakarta.persistence.Table;
         @NamedQuery(name = "wikiDraftPage.findDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId"),
         @NamedQuery(name = "wikiDraftPage.findDraftPagesByParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId"),
         @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId AND " +
-                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"), })
+                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"),
+        @NamedQuery(name = "wikiDraftPage.deleteOrphanDraftPagesByParentPage", query = "DELETE FROM WikiDraftPageEntity d WHERE d.targetPage IS NULL AND d.parentPage.id=:id")})
 public class DraftPageEntity extends BasePageEntity {
 
   @Id

@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -51,6 +52,8 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.utils.NoteConstants;
+
+import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -1140,6 +1143,26 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     assertTrue(step2Watchers.contains("user2"));
     assertEquals(1, step3Watchers.size());
     assertTrue(step3Watchers.contains("user2"));
+  }
+
+  public void testDeleteOrphanDraftPagesByParentPage() throws Exception {
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("root");
+    wiki = storage.createWiki(wiki);
+    PageEntity homePage = pageDAO.find(Long.valueOf(wiki.getWikiHome().getId()));
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setParentPage(homePage);
+    draft.setName("orphanDraft");
+    draft.setTargetPage(null);
+    draft.setCreatedDate(new Date());
+    draft.setUpdatedDate(new Date());
+
+    draft = draftPageDAO.create(draft);
+    assertNotNull(draft);
+    storage.deleteOrphanDraftPagesByParentPage(Long.parseLong(wiki.getWikiHome().getId()));
+    persist();
+    assertNull(draftPageDAO.find(draft.getId()));
   }
 
   protected void startSessionAs(String user) {

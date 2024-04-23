@@ -1754,4 +1754,12 @@ public class NoteServiceImpl implements NoteService {
                  });
     return metadata;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void removeOrphanDraftPagesByParentPage(long parentPageId) {
+    dataStorage.deleteOrphanDraftPagesByParentPage(parentPageId);
+  }
 }
