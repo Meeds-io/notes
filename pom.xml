@@ -9,7 +9,7 @@
   </parent>
   <groupId>io.meeds.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.0.x-exo-SNAPSHOT</version>
+  <version>7.0.x-experience-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Meeds:: PLF:: Notes</name>
   <description>Meeds Notes</description>
@@ -30,10 +30,10 @@
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
 
-    <io.meeds.social.version>7.0.x-exo-SNAPSHOT</io.meeds.social.version>
+    <io.meeds.social.version>7.0.x-experience-SNAPSHOT</io.meeds.social.version>
     <io.meeds.platform-ui.version>7.0.x-exo-SNAPSHOT</io.meeds.platform-ui.version>
     <addon.meeds.gamification.version>7.0.x-exo-SNAPSHOT</addon.meeds.gamification.version>
-    <addon.meeds.analytics.version>7.0.x-exo-SNAPSHOT</addon.meeds.analytics.version>
+    <addon.meeds.analytics.version>7.0.x-experience-SNAPSHOT</addon.meeds.analytics.version>
     <addon.meeds.layout.version>7.0.x-exo-SNAPSHOT</addon.meeds.layout.version>
 
     <!-- Sonar properties -->
