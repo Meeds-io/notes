@@ -23,7 +23,7 @@
   <parent>
     <artifactId>notes</artifactId>
     <groupId>org.exoplatform.addons.notes</groupId>
-    <version>7.0.x-exo-SNAPSHOT</version>
+    <version>7.0.0-exo-20240425</version>
   </parent>
   <artifactId>notes-service</artifactId>
   <packaging>jar</packaging>
