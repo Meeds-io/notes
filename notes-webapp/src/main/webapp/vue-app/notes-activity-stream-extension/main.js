@@ -5,6 +5,7 @@ extensionRegistry.registerExtension('activity', 'type', {
     canEdit: () => false,
     supportsThumbnail: true,
     useSameViewForMobile: true,
+    isCollapsed: false,
     thumbnailProperties: {
       height: '90px',
       width: '90px',
