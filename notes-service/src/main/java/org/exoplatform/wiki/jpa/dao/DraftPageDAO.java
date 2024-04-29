@@ -21,6 +21,7 @@ package org.exoplatform.wiki.jpa.dao;
 
 import java.util.List;
 
+import jakarta.persistence.Query;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 
@@ -87,6 +88,13 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     } catch (NoResultException e) {
       return null;
     }
+  }
+
+  @ExoTransactional
+  public void deleteOrphanDraftPagesByParentPage(long parentPageId) {
+    Query query = getEntityManager().createNamedQuery("wikiDraftPage.deleteOrphanDraftPagesByParentPage");
+    query.setParameter("id", parentPageId);
+    query.executeUpdate();
   }
 
   public DraftPageEntity findLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang) {

@@ -21,6 +21,7 @@
 package org.exoplatform.wiki.service;
 
 
+import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
 import static org.junit.Assert.assertThrows;
 
 import java.io.File;
@@ -683,5 +684,19 @@ public class TestNoteService extends BaseTest {
     note.setContent("english content");
     noteService.createVersionOfNote(note, user.getUserId());
     assertNotNull(noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), "en"));
+  }
+
+  public void testRemoveOrphanDraftPagesByParentPage() throws Exception {
+    startSessionAs("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.GROUP_TYPE, "/platform/users");
+    Page homePage = noteService.getNoteById(portalWiki.getWikiHome().getId());
+    DraftPage draft = new DraftPage();
+    draft.setParentPageId(homePage.getId());
+    draft.setTargetPageId(null);
+    draft = noteService.createDraftForNewPage(draft, new Date().getTime());
+    assertNotNull(draft);
+    noteService.removeOrphanDraftPagesByParentPage(Long.parseLong(homePage.getId()));
+    persist();
+    assertNull(noteService.getDraftNoteById(draft.getId(), "root"));
   }
 }

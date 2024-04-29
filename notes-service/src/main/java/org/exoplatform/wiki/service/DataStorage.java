@@ -264,4 +264,10 @@ public interface DataStorage {
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
 
+  /**
+   * Remove all children drafts of a parent page without existing target
+   *
+   * @param parentPageId Note parent page id
+   */
+  void deleteOrphanDraftPagesByParentPage(long parentPageId);
 }
