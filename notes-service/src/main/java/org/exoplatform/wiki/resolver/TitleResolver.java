@@ -16,47 +16,23 @@
  */
 package org.exoplatform.wiki.resolver;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.StringTokenizer;
-
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
-import org.exoplatform.wiki.utils.WikiNameValidator;
+import java.nio.charset.StandardCharsets;
 
 public class TitleResolver {
-  
-  private static final Log      log               = ExoLogger.getLogger(TitleResolver.class);
-  private static final String[] INVALID_CHARACTERS = WikiNameValidator.INVALID_CHARACTERS.split(" ");
-  
+
+  private TitleResolver() {
+    // Utils class
+  }
+
   public static String getId(String title, boolean isEncoded) {
     if (title == null) {
       return null;
     }
-    String id = title;
     if (isEncoded) {
-      try {
-        id = URLDecoder.decode(title, "UTF-8");
-      } catch (UnsupportedEncodingException e1) {
-        if (log.isWarnEnabled()) 
-          log.warn(String.format("Getting Page Id from %s failed because of UnspportedEncodingException. Using page title(%s) instead (Not recommended. Fix it if possible!!!)", title), e1);
-      }
+      title = URLDecoder.decode(title, StandardCharsets.UTF_8);
     }
-    for (String specialChar : INVALID_CHARACTERS) {
-      id = replaceSpecialCharacter(specialChar, id);
-    }
-    return replaceSpecialCharacter(" ", id);
-  }
-
-  private static String replaceSpecialCharacter(String specialChar, String id) {
-    StringTokenizer st = new StringTokenizer(id, specialChar, false);
-    StringBuilder sb = new StringBuilder();
-    if (st.hasMoreElements()) {
-      sb.append(st.nextElement());
-    }
-    while (st.hasMoreElements())
-      sb.append("_").append(st.nextElement());
-    return sb.toString();
+    return title.replaceAll("[^a-zA-Z0-9_\\-]", "_");
   }
 
 }
