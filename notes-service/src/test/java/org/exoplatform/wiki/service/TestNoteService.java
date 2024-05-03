@@ -75,17 +75,13 @@ public class TestNoteService extends BaseTest {
   }
   
 
-  public void testGetGroupPageById() throws WikiException {
+  public void testGetGroupPageById() throws WikiException, IllegalAccessException {
     Wiki wiki = getOrCreateWiki(wService, PortalConfig.GROUP_TYPE, "/platform/users");
     Identity root = new Identity("root");
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "Home")) ;
 
-    try {
-      noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
-    } catch (IllegalAccessException e) {
-      Assert.fail("Current user don't have needed permissions to create the note");
-    }
+    noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "testGetGroupPageById-101")) ;
     assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "unknown", "Home"));
