@@ -1,3 +1,5 @@
+const activityTypeExtensions = extensionRegistry.loadExtensions('activity', 'type');
+const defaultActivityOptions = activityTypeExtensions.find(extension => extension.type === 'default').options;
 extensionRegistry.registerExtension('activity', 'type', {
   type: 'ks-wiki:spaces',
   options: {
@@ -29,6 +31,7 @@ extensionRegistry.registerExtension('activity', 'type', {
       }
       return '#';
     },
+    displayLastCommentsRequiredActions: defaultActivityOptions.displayLastCommentsRequiredActions,
     canShare: () => true,
   },
 });
