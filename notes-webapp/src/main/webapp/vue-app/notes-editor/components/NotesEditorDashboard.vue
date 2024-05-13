@@ -496,8 +496,11 @@ export default {
         if ((this.note.content.trim().length === 0)) {
           const noteId = !this.note.draftPage ? this.note.id : this.note.targetPageId;
           this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true)
-            .then(data => {
-              if (data && data.children && data.children.length) {
+            .then(note => {
+              if (this.selectedLanguage && !note?.lang) {
+                return;
+              }
+              if (note?.children?.length) {
                 this.updateNoteContent(childContainer);
                 this.setFocus();
               }
@@ -1063,7 +1066,7 @@ export default {
       document.dispatchEvent(new CustomEvent('translation-added',{ detail: originNoteContent }));
     },
     updateNoteTitle(title) {
-      this.note.title=title;
+      this.note.title = title;
     },
     updateNoteContent(content) {
       this.note.content = content;
