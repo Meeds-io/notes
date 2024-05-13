@@ -375,7 +375,7 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
   }
   
   @Test
-  public void testFindLatestDraftPageByTargetPageAndLang() {
+  public void testFindLatestDraftPageByTargetPageAndLang() throws InterruptedException {
     // Given
     WikiEntity wiki = new WikiEntity();
     wiki.setType("portal");
@@ -387,6 +387,11 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     page.setUpdatedDate(new Date());
     page.setName("page1");
     page = pageDAO.create(page);
+
+    // Added to fix random fail when draft pages
+    // are added at the same time
+    Thread.sleep(10);
+
     DraftPageEntity dp1 = new DraftPageEntity();
     dp1.setName("draft1");
     dp1.setTargetPage(page);
@@ -395,6 +400,11 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     dp1.setUpdatedDate(new Date());
     dp1.setLang("fr");
     draftPageDAO.create(dp1);
+
+    // Added to fix random fail when draft pages
+    // are added at the same time
+    Thread.sleep(10);
+
     DraftPageEntity dp2 = new DraftPageEntity();
     dp2.setName("draft2");
     dp2.setTargetPage(page);
@@ -403,6 +413,11 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     dp2.setUpdatedDate(new Date());
     dp2.setLang("en");
     draftPageDAO.create(dp2);
+
+    // Added to fix random fail when draft pages
+    // are added at the same time
+    Thread.sleep(10);
+
     DraftPageEntity dp3 = new DraftPageEntity();
     dp3.setName("draft3");
     dp3.setTargetPage(page);
