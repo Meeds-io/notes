@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.exoplatform.addons.notes</groupId>
     <artifactId>notes</artifactId>
-    <version>7.0.x-exo-SNAPSHOT</version>
+    <version>7.0.0-exo-20240519</version>
   </parent>
   <artifactId>notes-packaging</artifactId>
   <packaging>pom</packaging>
