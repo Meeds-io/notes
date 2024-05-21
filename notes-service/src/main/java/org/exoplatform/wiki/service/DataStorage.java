@@ -1,20 +1,21 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.service;
@@ -26,7 +27,14 @@ import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ValuesParam;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.TemplateSearchData;
 import org.exoplatform.wiki.service.search.TemplateSearchResult;
@@ -70,22 +78,29 @@ public interface DataStorage {
    * Get children notes and draft notes of page
    * 
    * @param page the target page to retrieve its children
-   * @param userId
    * @param withDrafts if set to true returns the children notes and draft notes
    * @return children notes of page
    * @throws WikiException
    */
-  public List<Page> getChildrenPageOf(Page page, String userId, boolean withDrafts) throws WikiException;
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException;
 
   public boolean hasChildren(long noteId) throws WikiException;
 
   public void deletePage(String wikiType, String wikiOwner, String pageId) throws WikiException;
 
-  public void deleteDraftOfPage(Page page, String username) throws WikiException;
+  public void deleteDraftOfPage(Page page) throws WikiException;
 
-  public void deleteDraftOfPage(Page page, String username, String lang) throws WikiException;
+  public void deleteDraftOfPage(Page page, String lang) throws WikiException;
 
-  public void deleteDraftByName(String newDraftPageName, String username) throws WikiException;
+  /**
+   * Deletes a draft note by its technical id.
+   *
+   * @param id Id of the draft note.
+   * @throws WikiException if an error occured
+   */
+  public void deleteDraftById(String id) throws WikiException;
+
+  public void deleteDraftByName(String newDraftPageName) throws WikiException;
 
   public void renamePage(String wikiType, String wikiOwner, String pageName, String newName, String newTitle) throws WikiException;
 
@@ -105,25 +120,18 @@ public interface DataStorage {
 
   public Page getExsitedOrNewDraftPageById(String wikiType, String wikiOwner, String pageId, String username) throws WikiException;
 
-  List<DraftPage> getDraftsOfPage(Long pageId, String username) throws WikiException;
+  List<DraftPage> getDraftsOfPage(Long pageId) throws WikiException;
 
-  public DraftPage getDraft(WikiPageParams param, String username) throws WikiException;
-
-  public DraftPage getLastestDraft(String username) throws WikiException;
+  public DraftPage getDraft(WikiPageParams param) throws WikiException;
 
   /**
    * Returns latest draft of given page.
    * 
    * @param targetPage
-   * @param username
-   * @return
+   * @return latest draft of the given target page
    * @throws WikiException
    */
-  DraftPage getLatestDraftOfPage(Page targetPage, String username) throws WikiException;
-
-  public DraftPage getDraft(String draftName, String username) throws WikiException;
-
-  public List<DraftPage> getDraftPagesOfUser(String username) throws WikiException;
+  DraftPage getLatestDraftOfPage(Page targetPage) throws WikiException;
 
   /**
    * Creates a new draft note
@@ -223,14 +231,12 @@ public interface DataStorage {
 
   /**
    * Retrieves latest draft of a specific page by target page id and content language
-   * and owner username
    *
    * @param targetPageId target page id
-   * @param username owner username
    * @param lang content language
    * @return {@link DraftPage}
    */
-  DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
+  DraftPage getLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang);
 
   /**
    * Retrieves the published note page version by its id and content language
@@ -258,4 +264,10 @@ public interface DataStorage {
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
 
+  /**
+   * Remove all children drafts of a parent page without existing target
+   *
+   * @param parentPageId Note parent page id
+   */
+  void deleteOrphanDraftPagesByParentPage(long parentPageId);
 }

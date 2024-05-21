@@ -1,24 +1,24 @@
-/*
+ /**
+ * This file is part of the Meeds project (https://meeds.io/).
  *
- *  * Copyright (C) 2003-2015 eXo Platform SAS.
- *  *
- *  * This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Affero General Public License
- *  as published by the Free Software Foundation; either version 3
- *  of the License, or (at your option) any later version.
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see<http://www.gnu.org/licenses/>.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 package org.exoplatform.wiki.jpa.dao;
-
 
 import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
@@ -38,7 +38,7 @@ import java.util.List;
 public class PageDAOTest extends BaseWikiJPAIntegrationTest {
 
   @Test
-  public void testPageOfWikiByName() {
+  public void testGetPageOfWikiByName() {
     WikiEntity wiki = new WikiEntity();
     wiki.setType("portal");
     wiki.setOwner("wiki1");
@@ -70,8 +70,8 @@ public class PageDAOTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
-  public void testInsert(){
-    //Given
+  public void testInsert() {
+    // Given
     WikiEntity wiki = new WikiEntity();
     wiki.setType("portal");
     wiki.setOwner("wiki1");
@@ -87,7 +87,7 @@ public class PageDAOTest extends BaseWikiJPAIntegrationTest {
     List<PermissionEntity> permissions = new ArrayList<PermissionEntity>();
     permissions.add(per);
     page.setPermissions(permissions);
-    
+
     page.setAuthor("author");
     page.setContent("content");
     page.setComment("comment");
@@ -128,6 +128,60 @@ public class PageDAOTest extends BaseWikiJPAIntegrationTest {
       fail();
     } catch (Exception e) {
     }
+  }
+
+  @Test
+  public void testCountAllIds() {
+    WikiEntity wiki = new WikiEntity();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = wikiDAO.create(wiki);
+    PageEntity parentPage = new PageEntity();
+    parentPage.setWiki(wiki);
+    parentPage.setName("parentPage1");
+    parentPage.setCreatedDate(new Date());
+    parentPage.setUpdatedDate(new Date());
+    PageEntity page = new PageEntity();
+    page.setWiki(wiki);
+    page.setParentPage(parentPage);
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    page.setName("page1");
+    page.setTitle("Page 1");
+
+    pageDAO.create(parentPage);
+    pageDAO.create(page);
+
+    assertEquals(2, pageDAO.countAllIds().intValue());
+  }
+
+  @Test
+  public void testFindAllBySyntax() {
+    WikiEntity wiki = new WikiEntity();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = wikiDAO.create(wiki);
+    PageEntity parentPage = new PageEntity();
+    parentPage.setWiki(wiki);
+    parentPage.setName("parentPage1");
+    parentPage.setCreatedDate(new Date());
+    parentPage.setUpdatedDate(new Date());
+    parentPage.setSyntax("syntax1");
+    PageEntity page = new PageEntity();
+    page.setWiki(wiki);
+    page.setParentPage(parentPage);
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    page.setName("page1");
+    page.setTitle("Page 1");
+    page.setSyntax("syntax2");
+
+    pageDAO.create(parentPage);
+    pageDAO.create(page);
+    List<PageEntity> fetchedPages = pageDAO.findAllBySyntax("syntax2", 0, 10);
+
+    assertEquals(1, fetchedPages.size());
+    assertEquals("page1", fetchedPages.get(0).getName());
   }
 
 }

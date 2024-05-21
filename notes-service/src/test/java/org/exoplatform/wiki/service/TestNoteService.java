@@ -1,39 +1,41 @@
-/*
+ /**
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 
 package org.exoplatform.wiki.service;
 
 
+import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
+import static org.junit.Assert.assertThrows;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
-import org.exoplatform.container.PortalContainer;
-
-
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -42,20 +44,14 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.jpa.JPADataStorage;
-import org.exoplatform.wiki.model.*;
-
-import io.meeds.notes.service.NotePageViewService;
-import io.meeds.social.cms.service.CMSService;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.junit.Assert.assertThrows;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.Permission;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
 
 public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -75,17 +71,13 @@ public class TestNoteService extends BaseTest {
   }
   
 
-  public void testGetGroupPageById() throws WikiException {
+  public void testGetGroupPageById() throws WikiException, IllegalAccessException {
     Wiki wiki = getOrCreateWiki(wService, PortalConfig.GROUP_TYPE, "/platform/users");
     Identity root = new Identity("root");
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "Home")) ;
 
-    try {
-      noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
-    } catch (IllegalAccessException e) {
-      Assert.fail("Current user don't have needed permissions to create the note");
-    }
+    noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "testGetGroupPageById-101")) ;
     assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "unknown", "Home"));
@@ -351,7 +343,6 @@ public class TestNoteService extends BaseTest {
     targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage", "TestPage"), root);
 
     // Test create draft for existing page
-    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
     DraftPage draftPageTosave = new DraftPage();
     String draftTitle = targetPage.getTitle() + "_draft";
     String draftContent = targetPage.getContent() + "_draft";
@@ -447,7 +438,7 @@ public class TestNoteService extends BaseTest {
     note.setLang("fr");
     noteService.createVersionOfNote(note, "root");
 
-    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), "root", false);
+    List<String> langs = noteService.getPageAvailableTranslationLanguages(Long.valueOf(note.getId()), false);
 
     assertNotNull(langs);
     assertEquals(3, langs.size());
@@ -480,7 +471,7 @@ public class TestNoteService extends BaseTest {
     draftPage.setName("test draft");
     draftPage.setTargetPageId(note.getId());
     noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
-    DraftPage latestDraft = noteService.getLatestDraftPageByUserAndTargetPageAndLang(Long.valueOf(note.getId()), "root", null);
+    DraftPage latestDraft = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), null);
     assertNotNull(latestDraft);
   }
 
@@ -557,18 +548,18 @@ public class TestNoteService extends BaseTest {
 
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
 
-    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root" , false, false).size();
+    int childern = noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size();
     noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", user);
     assertTrue(zipFile.delete());
-    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(),"root",false, false).size(),childern+3);
+    assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size(), childern+3);
   }
 
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal1");
-    Page note1 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
-    Page note2 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
-    Page note3 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
+    noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported1")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported2")) ;
@@ -601,13 +592,13 @@ public class TestNoteService extends BaseTest {
     note1.setLang("fr");
     note1.setTitle("frenchTitle");
     noteService.createVersionOfNote(note1, "root");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "root", "en");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en");
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
     assertEquals(note.getTitle(), "testPage1");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertNotNull(note);
     assertEquals(note.getTitle(), "frenchTitle");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "root", "fr");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertEquals(note.getTitle(), "testPage1");
     noteService.deleteNote(note1.getWikiType(), note1.getWikiOwner(), note1.getName());
@@ -623,15 +614,15 @@ public class TestNoteService extends BaseTest {
     noteService.createNote(portalWiki, "Home", new Page("imported1", "imported1"),user) ;
     noteService.createNote(portalWiki, "Home", new Page("imported2", "imported2"),user) ;
     Page home = portalWiki.getWikiHome();
-    int childern = noteService.getChildrenNoteOf(home,user.getUserId() ,false, false).size();
-     NoteToExport note = new NoteToExport();
-     note.setId(home.getId());
-     note.setName(home.getName());
-     note.setTitle(home.getTitle());
-     note.setWikiId(home.getWikiId());
-     note.setWikiOwner(home.getWikiOwner());
-     note.setWikiType(home.getWikiType());
-    int eXportCildren= noteService.getChildrenNoteOf(note, user.getUserId()).size();
+    int childern = noteService.getChildrenNoteOf(home, false, false).size();
+    NoteToExport note = new NoteToExport();
+    note.setId(home.getId());
+    note.setName(home.getName());
+    note.setTitle(home.getTitle());
+    note.setWikiId(home.getWikiId());
+    note.setWikiOwner(home.getWikiOwner());
+    note.setWikiType(home.getWikiType());
+    int eXportCildren= noteService.getChildrenNoteOf(note).size();
     assertEquals(eXportCildren,childern);
   }
 
@@ -645,7 +636,6 @@ public class TestNoteService extends BaseTest {
     targetPage.setContent("Page content");
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
     targetPage = noteService.createNote(userWiki, "Home", new Page("TestPage1", "TestPage1"), root);
-    WikiPageParams param = new WikiPageParams(PortalConfig.PORTAL_TYPE, "classic", targetPage.getName());
     DraftPage draftPageTosave = new DraftPage();
     String draftTitle = targetPage.getTitle() + "_draft";
     String draftContent = targetPage.getContent() + "_draft";
@@ -660,16 +650,16 @@ public class TestNoteService extends BaseTest {
     assertEquals(targetPage.getId(), draftOfExistingPage.getTargetPageId());
     assertEquals("1", draftOfExistingPage.getTargetPageRevision());
 
-    DraftPage draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    DraftPage draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
     WikiPageParams noteParams = new WikiPageParams(targetPage.getWikiType(), targetPage.getWikiOwner(), targetPage.getName());
     noteService.removeDraftOfNote(noteParams,"en");
 
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertEquals(draft.getId(), draftOfExistingPage.getId());
 
     noteService.removeDraftOfNote(noteParams,"fr");
-    draft = noteService.getLatestDraftOfPage(targetPage,root.getUserId());
+    draft = noteService.getLatestDraftOfPage(targetPage);
     assertNull(draft);
   }
 
@@ -690,5 +680,19 @@ public class TestNoteService extends BaseTest {
     note.setContent("english content");
     noteService.createVersionOfNote(note, user.getUserId());
     assertNotNull(noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), "en"));
+  }
+
+  public void testRemoveOrphanDraftPagesByParentPage() throws Exception {
+    startSessionAs("root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.GROUP_TYPE, "/platform/users");
+    Page homePage = noteService.getNoteById(portalWiki.getWikiHome().getId());
+    DraftPage draft = new DraftPage();
+    draft.setParentPageId(homePage.getId());
+    draft.setTargetPageId(null);
+    draft = noteService.createDraftForNewPage(draft, new Date().getTime());
+    assertNotNull(draft);
+    noteService.removeOrphanDraftPagesByParentPage(Long.parseLong(homePage.getId()));
+    persist();
+    assertNull(noteService.getDraftNoteById(draft.getId(), "root"));
   }
 }

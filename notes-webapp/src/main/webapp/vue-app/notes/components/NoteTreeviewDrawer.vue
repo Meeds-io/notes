@@ -506,8 +506,7 @@ export default {
   },
   mounted() {
     this.filterOptions = [
-      this.$t('notes.filter.label.published.notes'),
-      this.$t('notes.filter.label.drafts'),
+      this.$t('notes.filter.label.published.notes')
     ];
     this.filter = this.filterOptions[0];
   },
@@ -547,6 +546,9 @@ export default {
         this.render = true;
         this.$refs.breadcrumbDrawer.open();
       });
+      if (this.note.canManage && !this.filterOptions.includes(this.$t('notes.filter.label.drafts'))) {
+        this.filterOptions.push(this.$t('notes.filter.label.drafts'));
+      }
     },
     backToPlugins() {
       this.closeAll = false;

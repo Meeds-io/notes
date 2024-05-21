@@ -732,4 +732,14 @@
       <column name="LANG" type="NVARCHAR(50)"/>
     </addColumn>
   </changeSet>
+
+  <changeSet id="1.0.0-61" author="wiki" dbms="mysql">
+    <sql>
+      ALTER TABLE WIKI_PAGES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE WIKI_DRAFT_PAGES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE WIKI_PAGE_VERSIONS MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE WIKI_TEMPLATES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    </sql>
+  </changeSet>
+
 </databaseChangeLog>
