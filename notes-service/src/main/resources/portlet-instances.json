@@ -1,0 +1,44 @@
+{
+  "descriptors":[
+    {
+      "nameId":"Notes",
+      "categoryNameId":"spaces",
+      "portletName":"Notes",
+      "names":{
+        "en":"layout.portletInstance.Notes.name"
+      },
+      "descriptions":{
+        "en":"layout.portletInstance.Notes.description"
+      },
+      "illustrationPath":"war:/../skin/DefaultSkin/portletIcons/Notes.png",
+      "preferences":[
+        
+      ],
+      "permissions":[
+        "*:/platform/users"
+      ],
+      "system":true,
+      "spaceApplication":true
+    },
+    {
+      "nameId":"NotePageView",
+      "categoryNameId":"content",
+      "portletName":"NotePageView",
+      "names":{
+        "en":"layout.portletInstance.NotePageView.name"
+      },
+      "descriptions":{
+        "en":"layout.portletInstance.NotePageView.description"
+      },
+      "illustrationPath":"war:/../skin/DefaultSkin/portletIcons/NotePageView.png",
+      "preferences":[
+        
+      ],
+      "permissions":[
+        "*:/platform/users"
+      ],
+      "system":true,
+      "spaceApplication":false
+    }
+  ]
+}
