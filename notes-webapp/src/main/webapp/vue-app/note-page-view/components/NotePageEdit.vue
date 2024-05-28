@@ -127,7 +127,7 @@ export default {
       formData.append('showMaxWindow', 'true');
       formData.append('hideSharedLayout', 'true');
       formData.append('webPageNote', 'true');
-      formData.append('webPageUrl', `${window.location.pathname}${window.location.search || ''}`);
+      formData.append('webPageUrl', eXo?.env?.portal?.webPageUrl || `${window.location.pathname}${window.location.search || ''}`);
       if (this.note?.lang) {
         formData.append('translation', this.note.lang);
       }
