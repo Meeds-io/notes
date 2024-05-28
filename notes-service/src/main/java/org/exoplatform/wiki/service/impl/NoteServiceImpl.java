@@ -226,7 +226,7 @@ public class NoteServiceImpl implements NoteService {
     }
     invalidateCache(note);
 
-//    Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
+    Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
     return createdPage;
   }
