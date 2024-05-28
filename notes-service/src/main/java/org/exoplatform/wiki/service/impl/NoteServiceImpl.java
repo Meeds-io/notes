@@ -182,7 +182,10 @@ public class NoteServiceImpl implements NoteService {
   public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
                                                                                                  IllegalAccessException {
 
-    String pageName = TitleResolver.getId(note.getTitle(), false);
+    String pageName = TitleResolver.getId(note.getName(), false);
+    if (pageName == null) {
+      pageName = TitleResolver.getId(note.getTitle(), false);
+    }
     note.setName(pageName);
 
     if (isExisting(noteBook.getType(), noteBook.getOwner(), pageName)) {

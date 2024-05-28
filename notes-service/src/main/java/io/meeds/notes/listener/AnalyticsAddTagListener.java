@@ -43,6 +43,9 @@ public class AnalyticsAddTagListener extends Listener<TagObject, Set<TagName>> {
 
   @Override
   public void onEvent(Event<TagObject, Set<TagName>> event) {
+    if (ConversationState.getCurrent() == null) {
+      return;
+    }
     TagObject tagObject = event.getSource();
     Set<TagName> tagNames = event.getData();
     if (tagObject.getType().equals(NOTES_METADATA_OBJECT_TYPE)) {
