@@ -10,6 +10,7 @@
       class="breadcrumbDrawer"
       :confirm-close="exporting"
       :confirm-close-labels="confirmCloseLabels"
+      allow-expand
       v-model="drawer"
       show-overlay
       @closed="closeAllDrawer()"
