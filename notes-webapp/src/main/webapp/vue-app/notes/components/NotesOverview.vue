@@ -388,6 +388,9 @@ export default {
                 });
               },
               methods: {
+                getNoteLanguages(noteId) {
+                  return this.$root.$children[0].getNoteLanguages(noteId);
+                },
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
