@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.exoplatform.addons.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.0.x-meed-SNAPSHOT</version>
+  <version>7.0.0-meed-20240530</version>
   <packaging>pom</packaging>
   <name>eXo PLF:: Notes</name>
   <description>eXo Notes</description>
@@ -22,7 +22,7 @@
   <scm>
     <connection>scm:git:git://github.com/meeds-io/notes.git</connection>
     <developerConnection>scm:git:git@github.com:meeds-io/notes.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>7.0.0-meed-20240530</tag>
     <url>https://github.com/meeds-io/notes</url>
   </scm>
   <properties>
