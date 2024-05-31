@@ -58,6 +58,11 @@
       <artifactId>jrcs.rcs</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>io.meeds.layout</groupId>
+      <artifactId>layout-service</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- Tests -->
     <dependency>
