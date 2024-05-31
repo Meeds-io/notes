@@ -56,7 +56,7 @@
    <portlet>
     <portlet-name>NotePageView</portlet-name>
     <display-name xml:lang="EN">Single Note View</display-name>
-    <portlet-class>io.meeds.social.portlet.CMSPortlet</portlet-class>
+    <portlet-class>io.meeds.notes.portlet.NotePageViewPortlet</portlet-class>
     <init-param>
       <name>content-type</name>
       <value>notePage</value>

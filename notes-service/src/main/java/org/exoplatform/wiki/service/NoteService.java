@@ -682,6 +682,15 @@ public interface NoteService {
                                                                                           IllegalAccessException;
 
   /**
+   * Retrieves note page by its id and content lang
+   * 
+   * @param pageId page id
+   * @param lang content language
+   * @return {@link Page}
+   */
+  Page getNoteByIdAndLang(Long pageId, String lang);
+
+  /**
    * Retrieves published note version page by its page id and content lang
    *
    * @param pageId page id
