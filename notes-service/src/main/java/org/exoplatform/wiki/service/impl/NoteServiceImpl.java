@@ -1200,6 +1200,19 @@ public class NoteServiceImpl implements NoteService {
     return page;
   }
 
+  @Override
+  @SneakyThrows
+  public Page getNoteByIdAndLang(Long pageId, String lang) {
+    Page page = getNoteById(String.valueOf(pageId));
+    PageVersion publishedVersion = dataStorage.getPublishedVersionByPageIdAndLang(pageId, lang);
+    if (page != null && publishedVersion != null) {
+      page.setTitle(publishedVersion.getTitle());
+      page.setContent(publishedVersion.getContent());
+      page.setLang(publishedVersion.getLang());
+    }
+    return page;
+  }
+
   /**
    * {@inheritDoc}
    */

@@ -32,6 +32,10 @@
     <type>io.meeds.notes.service.NotePageViewService</type>
   </component>
 
+  <component profiles="layout">
+    <type>io.meeds.notes.plugin.layout.renderer.NoteSingleViewRenderPlugin</type>
+  </component>
+
   <component>
     <type>io.meeds.notes.rest.NotePageViewRest</type>
   </component>
