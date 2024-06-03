@@ -17,8 +17,7 @@
       "permissions":[
         "*:/platform/users"
       ],
-      "system":true,
-      "spaceApplication":true
+      "system":true
     },
     {
       "nameId":"NotePageView",
@@ -37,8 +36,7 @@
       "permissions":[
         "*:/platform/users"
       ],
-      "system":true,
-      "spaceApplication":false
+      "system":true
     }
   ]
 }
