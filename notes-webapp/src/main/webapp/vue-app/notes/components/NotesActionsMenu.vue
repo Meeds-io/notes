@@ -3,85 +3,88 @@
     v-model="displayActionMenu"
     :attach="'#note-actions-menu'"
     transition="slide-x-reverse-transition"
-    content-class="note-actions-menu"
+    content-class="py-0 note-actions-menu pa-0"
+    max-width="100%"
     offset-y
     left>
-    <v-list>
+    <v-list class="py-0 text-center text-no-wrap">
       <v-list-item
-        v-if="!homePage && note.canManage"
-        class="px-2 text-left action-menu-item draftButton"
-        @click="$root.$emit('delete-note')">
-        <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-trash-can-outline
-        </v-icon>
-        <span>{{ $t('notes.menu.label.delete') }}</span>
-      </v-list-item>
-      <v-list-item
-        v-if="note && note.canView"
-        class="px-2 text-left action-menu-item draftButton"
+        v-if="note?.canView"
+        class="px-4 py-1 action-menu-item draftButton"
         @click="copyLink">
         <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-link-variant
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-link
         </v-icon>
         <span>{{ $t('notes.menu.label.copyLink') }}</span>
       </v-list-item>
       <v-list-item
-        class="px-2 text-left action-menu-item draftButton"
+        v-if="note?.canView"
+        class="px-4 py-1 noteExportPdf action-menu-item draftButton"
+        @click="$emit('export-pdf')">
+        <v-icon
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-file-pdf
+        </v-icon>
+        <span>{{ $t('notes.menu.label.exportPdf') }}</span>
+      </v-list-item>
+      <v-list-item
+        class="px-4 py-1 action-menu-item draftButton"
         @click="$emit('open-history')">
         <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-history
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-history
         </v-icon>
         <span>{{ $t('notes.menu.label.noteHistory') }}</span>
       </v-list-item>
       <v-list-item
         v-if="!homePage && note.canManage"
-        class="px-2 text-left action-menu-item draftButton"
+        class="px-4 py-1 text-left action-menu-item draftButton"
         @click="$emit('open-treeview')">
         <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-cursor-move
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-arrows-alt
         </v-icon>
         <span>{{ $t('notes.menu.label.movePage') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="note && note.canView"
-        class="px-2 text-left noteExportPdf action-menu-item draftButton"
-        @click="$emit('export-pdf')">
-        <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-file-pdf-box
-        </v-icon>
-        <span>{{ $t('notes.menu.label.exportPdf') }}</span>
-      </v-list-item>
-      <v-list-item
         v-if="homePage"
-        class="px-2 text-left action-menu-item draftButton"
+        class="px-4 py-1 text-left action-menu-item draftButton"
         @click="$emit('open-treeview-export')">
         <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-export
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-file-export
         </v-icon>
         <span>{{ $t('notes.menu.label.export') }}</span>
       </v-list-item>
       <v-list-item
-        v-if="homePage && note.canImport"
-        class="px-2 text-left action-menu-item draftButton"
+        v-if="homePage && note?.canImport"
+        class="px-4 py-1 action-menu-item draftButton"
         @click="$emit('open-import-drawer')">
         <v-icon
-          size="18"
-          class="primary--text clickable pr-2">
-          mdi-import
+          size="14"
+          class="clickable pe-2 icon-menu">
+          fas fa-file-import
         </v-icon>
         <span>{{ $t('notes.menu.label.import') }}</span>
+      </v-list-item>
+      <v-list-item
+        v-if="!homePage && note?.canManage"
+        class="red--text px-4 py-1 action-menu-item draftButton"
+        @click="$root.$emit('delete-note')">
+        <v-icon
+          size="14"
+          class="delete-option-color clickable pe-2 icon-menu">
+          fas fa-trash
+        </v-icon>
+        <span class="delete-option-color">
+          {{ $t('notes.menu.label.delete') }}
+        </span>
       </v-list-item>
     </v-list>
   </v-menu>
