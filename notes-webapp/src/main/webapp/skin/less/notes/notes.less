@@ -213,6 +213,25 @@
 	  }
   }
 
+  #notesActionMenuBottomDrawer {
+    height: fit-content !important;
+  }
+
+  #notesActionMenuBottomDrawer, .notes-application-header .note-actions-menu {
+    .action-menu-item {
+      min-height: 28px !important;
+    }
+
+    .delete-option-color {
+      color: @errorColor;
+    }
+
+    .icon-menu {
+      width: 12px;
+      height: 13px;
+    }
+  }
+
   .notes-application {
     min-height: calc(~"100vh - 170px");
 
@@ -235,19 +254,6 @@
             right: 7px;
             top: 30px !important;
             left: auto !important;
-
-            .action-menu-item {
-              min-height: 32px !important;
-            }
-
-            .delete-option-color {
-              color: @errorColor;
-            }
-
-            .icon-menu {
-              width: 14px;
-              height: 14px;
-            }
           }
         }
       }
