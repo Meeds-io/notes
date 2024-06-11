@@ -30,8 +30,7 @@
         min-width="100%"
         max-width="100%"
         min-height="60"
-        class="d-flex flex-column border-box-sizing position-relative card-border-radius"
-        color="white"
+        class="d-flex flex-column border-box-sizing position-relative card-border-radius app-background-color"
         flat>
         <template v-if="edit">
           <note-page-edit-drawer
