@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.exoplatform.addons.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.0.0-exo-20240612</version>
+  <version>7.0.x-exo-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>eXo PLF:: Notes</name>
   <description>eXo Notes</description>
@@ -22,18 +22,18 @@
   <scm>
     <connection>scm:git:git://github.com/meeds-io/notes.git</connection>
     <developerConnection>scm:git:git@github.com:meeds-io/notes.git</developerConnection>
-    <tag>7.0.0-exo-20240612</tag>
+    <tag>HEAD</tag>
     <url>https://github.com/meeds-io/notes</url>
   </scm>
   <properties>
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-    <org.exoplatform.social.version>7.0.0-exo-20240612</org.exoplatform.social.version>
-    <org.exoplatform.platform-ui.version>7.0.0-exo-20240612</org.exoplatform.platform-ui.version>
-    <addon.exo.gamification.version>7.0.0-exo-20240612</addon.exo.gamification.version>
-    <addon.exo.analytics.version>7.0.0-exo-20240612</addon.exo.analytics.version>
-    <addon.meeds.layout.version>7.0.0-exo-20240612</addon.meeds.layout.version>
+    <org.exoplatform.social.version>7.0.x-exo-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.platform-ui.version>7.0.x-exo-SNAPSHOT</org.exoplatform.platform-ui.version>
+    <addon.exo.gamification.version>7.0.x-exo-SNAPSHOT</addon.exo.gamification.version>
+    <addon.exo.analytics.version>7.0.x-exo-SNAPSHOT</addon.exo.analytics.version>
+    <addon.meeds.layout.version>7.0.x-exo-SNAPSHOT</addon.meeds.layout.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
