@@ -19,14 +19,14 @@
  -->
 
 <template>
-  <v-list class="py-0 text-center text-no-wrap">
+  <v-list class="py-0 text-no-wrap width-fit-content">
     <v-list-item
       v-if="note?.canView"
-      class="px-4 py-1 action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="copyLink">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-link
       </v-icon>
       <span class="text-color">
@@ -35,11 +35,11 @@
     </v-list-item>
     <v-list-item
       v-if="note?.canView"
-      class="px-4 py-1 noteExportPdf action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 noteExportPdf action-menu-item draftButton"
       @click="exportPdf">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-file-pdf
       </v-icon>
       <span class="text-color">
@@ -47,11 +47,11 @@
       </span>
     </v-list-item>
     <v-list-item
-      class="px-4 py-1 action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="openNoteHistory">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-history
       </v-icon>
       <span class="text-color">
@@ -60,11 +60,11 @@
     </v-list-item>
     <v-list-item
       v-if="!homePage && note.canManage"
-      class="px-4 py-1 text-left action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="openTreeView('movePage')">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-arrows-alt
       </v-icon>
       <span class="text-color">
@@ -73,11 +73,11 @@
     </v-list-item>
     <v-list-item
       v-if="homePage"
-      class="px-4 py-1 text-left action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="openTreeView('exportNotes')">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-sign-in-alt
       </v-icon>
       <span class="text-color">
@@ -86,11 +86,11 @@
     </v-list-item>
     <v-list-item
       v-if="homePage && note?.canImport"
-      class="px-4 py-1 action-menu-item draftButton"
+      class="ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="openImportDrawer">
       <v-icon
         size="12"
-        class="clickable me-2 icon-menu">
+        class="clickable icon-menu">
         fas fa-sign-out-alt
       </v-icon>
       <span class="text-color">
@@ -99,11 +99,11 @@
     </v-list-item>
     <v-list-item
       v-if="!homePage && note?.canManage"
-      class="red--text px-4 py-1 action-menu-item draftButton"
+      class="red--text ps-2 pe-4 py-1 action-menu-item draftButton"
       @click="deleteNote">
       <v-icon
         size="12"
-        class="delete-option-color clickable me-2 icon-menu">
+        class="delete-option-color clickable icon-menu">
         fas fa-trash
       </v-icon>
       <span class="delete-option-color">

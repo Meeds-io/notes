@@ -23,8 +23,9 @@
     v-model="displayActionMenu"
     :attach="'#note-actions-menu'"
     transition="slide-x-reverse-transition"
-    content-class="py-0 note-actions-menu pa-0"
-    max-width="100%"
+    content-class="py-0 note-actions-menu pa-0 overflow-hidden"
+    max-width="fit-content"
+    max-height="fit-content"
     offset-y
     left>
     <notes-action-menu-items
