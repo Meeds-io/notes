@@ -18,7 +18,7 @@
  */
 package io.meeds.notes.listener;
 
-import org.exoplatform.analytics.utils.AnalyticsUtils;
+import io.meeds.analytics.utils.AnalyticsUtils;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;

@@ -19,8 +19,8 @@
 package io.meeds.notes.listener;
 
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.analytics.model.StatisticData;
-import org.exoplatform.analytics.utils.AnalyticsUtils;
+import io.meeds.analytics.model.StatisticData;
+import io.meeds.analytics.utils.AnalyticsUtils;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.security.ConversationState;
