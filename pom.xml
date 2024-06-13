@@ -29,7 +29,6 @@
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-<<<<<<< HEAD
     <org.exoplatform.social.version>7.0.x-exo-SNAPSHOT</org.exoplatform.social.version>
     <org.exoplatform.platform-ui.version>7.0.x-exo-SNAPSHOT</org.exoplatform.platform-ui.version>
     <addon.exo.gamification.version>7.0.x-exo-SNAPSHOT</addon.exo.gamification.version>
