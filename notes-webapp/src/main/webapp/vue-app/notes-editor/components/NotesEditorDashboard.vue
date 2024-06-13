@@ -731,8 +731,6 @@ export default {
           instanceReady: function (evt) {
             self.editor = evt.editor;
             self.actualNote.content = self.editor.getData();
-            self.editor.removeMenuItem('linkItem');
-            self.editor.removeMenuItem('selectImageItem');
             $(self.editor.document.$)
               .find('.atwho-inserted')
               .each(function() {
