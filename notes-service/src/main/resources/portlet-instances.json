@@ -10,7 +10,7 @@
       "descriptions":{
         "en":"layout.portletInstance.Notes.description"
       },
-      "illustrationPath":"war:/../skin/DefaultSkin/portletIcons/Notes.png",
+      "illustrationPath":"war:/../images/portlets/notes.webp",
       "preferences":[
         
       ],
@@ -29,7 +29,7 @@
       "descriptions":{
         "en":"layout.portletInstance.NotePageView.description"
       },
-      "illustrationPath":"war:/../skin/DefaultSkin/portletIcons/NotePageView.png",
+      "illustrationPath":"war:/../images/portlets/singleNoteView.webp",
       "preferences":[
         
       ],
