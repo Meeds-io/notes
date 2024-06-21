@@ -188,6 +188,22 @@
   }
 }
 
+#notesActionMenuBottomDrawer, #notesOverviewApplication,
+                           .notesApplication .notes-application-header .note-actions-menu {
+  .action-menu-item {
+    min-height: 28px !important;
+  }
+
+  .delete-option-color {
+    color: @errorColor;
+  }
+
+  .icon-menu {
+    width: 28px;
+    height: 36px;
+  }
+}
+
 #notesOverviewApplication, .notesApplication {
   max-width: 100%;
 
@@ -232,14 +248,9 @@
           }
 
           .note-actions-menu {
-            min-width: 150px !important;
             right: 7px;
-            top: 25px !important;
+            top: 30px !important;
             left: auto !important;
-
-            .action-menu-item {
-              min-height: 30px !important;
-            }
           }
         }
       }

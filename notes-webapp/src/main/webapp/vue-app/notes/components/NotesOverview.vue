@@ -230,13 +230,14 @@
       </div>
     </div>
     <notes-actions-menu
+      v-if="!isMobile"
       :note="note"
-      :default-path="defaultPath"
-      @open-treeview="$refs.notesBreadcrumb.open(note, 'movePage')"
-      @export-pdf="createPDF(note)"
-      @open-history="openNoteVersionsHistoryDrawer()"
-      @open-treeview-export="$refs.notesBreadcrumb.open(note.id, 'exportNotes')"
-      @open-import-drawer="$refs.noteImportDrawer.open()" />
+      :default-path="defaultPath" />
+    <notes-mobile-action-menu
+      v-else
+      ref="notesMobileActionMenu"
+      :note="note"
+      :default-path="defaultPath" />
     <note-treeview-drawer
       ref="notesBreadcrumb" 
       :selected-translation="selectedTranslation.value" />
@@ -466,7 +467,7 @@ export default {
       }
     },
     isMobile() {
-      return this.$vuetify.breakpoint.name === 'xs';
+      return this.$vuetify?.breakpoint?.smAndDown;
     },
 
     isAvailableNote() {
@@ -577,6 +578,12 @@ export default {
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
 
+    this.$root.$on('open-note-treeview', this.openNoteTreeView);
+    this.$root.$on('note-export-pdf', this.createPDF);
+    this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
+    this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
+    this.$root.$on('open-note-import-drawer', this.openImportDrawer);
+
   },
   mounted() {
     this.handleChangePages();
@@ -585,6 +592,19 @@ export default {
     });
   },
   methods: {
+    closeMobileActionMenu() {
+      setTimeout(() => {
+        this.$refs.notesMobileActionMenu.close();
+      }, 200);
+    },
+    openNoteTreeView(note, action) {
+      this.$refs.notesBreadcrumb.open(note, action);
+      this.closeMobileActionMenu();
+    },
+    openImportDrawer() {
+      this.$refs.noteImportDrawer.open();
+      this.closeMobileActionMenu();
+    },
     updateNoteTitle(title) {
       this.noteTitle = title;
     },
@@ -850,6 +870,7 @@ export default {
           console.error('Error when exporting note: ', e);
         });
       });
+      this.closeMobileActionMenu();
     },
     displayMessage(message) {
       this.$root.$emit('alert-message', message?.message, message?.type || 'success');
@@ -897,6 +918,7 @@ export default {
         }
         this.$refs.noteVersionsHistoryDrawer.open();
       }
+      this.closeMobileActionMenu();
     },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
