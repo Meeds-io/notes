@@ -8,7 +8,6 @@ import AttachmentsUploadedNotes from './components/importNotes/AttachmentsNotesU
 import AttachmentsNotesItem from './components/importNotes/AttachmentsNotesItem.vue';
 import NoteFavoriteAction from './components/NoteFavoriteAction.vue';
 import NotesTranslationMenu from './components/NotesTranslationMenu.vue';
-import NoteContentTableItem from './components/NoteContentTableItem.vue';
 import NotesActionMenuItems from './components/menu/NotesActionMenuItems.vue';
 import NotesMobileActionMenu from './components/menu/NotesMobileActionMenu.vue';
 

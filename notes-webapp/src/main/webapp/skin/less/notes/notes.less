@@ -212,63 +212,6 @@
   }
 }
 
-#editorMetadataDrawer {
-
-  .add-image-area, .image-preview {
-    background-color: @primaryBackground !important;
-  }
-
-  .image-pre-upload {
-    .v-image__image {
-      filter: blur(2px);
-    }
-  }
-
-  .cke_bottom {
-    height: auto;
-    opacity: 0.4;
-    background: transparent;
-  }
-
-  .feature-image-trash-icon {
-    width: 18px;
-    height: 21px;
-  }
-
-  .feature-image-file-icon {
-    width: 15px;
-    height: 21px;
-  }
-
-  .feature-image-button {
-    background: @greyColorLighten1Default;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid @whiteColorDefault;
-    color: @whiteColorDefault
-  }
-
-  .summary-metadata-input {
-    .v-input__slot {
-      padding: 0;
-
-      fieldset {
-        padding: 0;
-      }
-
-      .v-text-field__slot {
-        margin: 0;
-
-        textarea {
-          overflow: auto;
-          border: 0;
-          margin: 0 auto;
-          padding: 12px;
-        }
-      }
-    }
-  }
-}
-
 #notesActionMenuBottomDrawer, #notesOverviewApplication,
                            .notesApplication .notes-application-header .note-actions-menu {
   .action-menu-item {
@@ -285,7 +228,7 @@
   }
 }
 
-#notesOverviewApplication {
+#notesOverviewApplication, .notesApplication {
   max-width: 100%;
 
   .notes-wrapper {
@@ -339,6 +282,12 @@
 
           button {
             padding: 1px 2px;
+          }
+
+          .note-actions-menu {
+            right: 7px;
+            top: 30px !important;
+            left: auto !important;
           }
         }
       }
