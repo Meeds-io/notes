@@ -19,7 +19,7 @@
 
 -->
 <template>
-  <div>
+  <div class="d-flex flex-column">
     <v-card
       v-if="fixedToolbar"
       :min-height="richEditorToolbarHeight"
@@ -32,7 +32,7 @@
       :instance-id="richEditorId"
       :toolbar-location="isSmall && 'bottom' || 'top'"
       :large-toolbar="!isSmall"
-      class="no-border-recursive"
+      class="no-border-recursive flex-grow-1"
       @ready="$root.$emit('notes-editor-ready')"
       @unloaded="$root.$emit('notes-editor-unloaded')" />
     <div

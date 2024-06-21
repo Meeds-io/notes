@@ -29,8 +29,7 @@
         }"
         min-width="100%"
         max-width="100%"
-        min-height="60"
-        class="d-flex flex-column border-box-sizing position-relative card-border-radius app-background-color"
+        class="d-flex flex-column border-box-sizing position-relative application-body"
         flat>
         <template v-if="edit">
           <note-page-edit-drawer
@@ -43,7 +42,7 @@
             ref="editor"
             :class="editorBackgroundLoading && 'position-absolute l-0 r-0'"
             :style="editorBackgroundLoading && 'z-index: -1;'"
-            class="full-width"
+            class="full-width full-height"
             @saved="closeEditor"
             @cancel="closeEditor" />
         </template>
@@ -56,7 +55,7 @@
           <note-page-view
             v-if="hasNote"
             :class="editorLoading && 'opacity-8 filter-blur-1'"
-            class="full-width overflow-hidden pa-1" />
+            class="full-width full-height overflow-hidden pa-1" />
         </template>
       </v-card>
     </v-hover>
