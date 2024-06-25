@@ -17,7 +17,6 @@
  *
  */
 
-import * as noteUtils from './js/Utils.js';
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 import * as notePageViewService from '../note-page-view/js/NotePageViewService.js';
 
@@ -30,11 +29,5 @@ if (!Vue.prototype.$notesService) {
 if (!Vue.prototype.$notePageViewService) {
   window.Object.defineProperty(Vue.prototype, '$notePageViewService', {
     value: notePageViewService,
-  });
-}
-
-if (!Vue.prototype.$noteUtils) {
-  window.Object.defineProperty(Vue.prototype, '$noteUtils', {
-    value: noteUtils,
   });
 }

@@ -222,30 +222,30 @@ export default {
 
   methods: {
     show(lang) {
-      this.selectedTranslation={value: lang};
+      this.selectedTranslation = {value: lang};
       if (this.translations){
         const translation = this.translations.find(item => item.value === lang);
-        if (translation){
-          this.selectedTranslation=translation;
+        if (translation) {
+          this.selectedTranslation = translation;
         }
       }
-      this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
-      if (!this.translations && this.note && this.noteId){
+      this.selectedLang = {value: '', text: this.$t('notes.label.chooseLangage')};
+      if (!this.translations && this.note && this.noteId) {
         this.getNoteLanguages(this.noteId);
       }
       this.showTranslationbar=true;
     },
     hide() {
-      this.showTranslationbar=false;
-      this.$root.$emit('hide-translations');
+      this.showTranslationbar = false;
+      this.$emit('translations-hidden');
     },
     add(){
       this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
-      this.selectedLang={value: '',text: this.$t('notes.label.chooseLangage')};
+      this.selectedLang = {value: '', text: this.$t('notes.label.chooseLangage')};
     },
     changeTranslation(translation){
-      this.selectedTranslation=translation;
+      this.selectedTranslation = translation;
       this.$root.$emit('lang-translation-changed', this.selectedTranslation);
     },
     removeTranslation(translation){
