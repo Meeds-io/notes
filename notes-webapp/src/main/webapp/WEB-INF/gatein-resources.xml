@@ -83,14 +83,47 @@
     </module>
   </portlet>
 
+  <module>
+    <name>NotesRichEditor</name>
+    <load-group>NotesEditorGRP</load-group>
+    <script>
+      <path>/javascript/notesRichEditor.bundle.js</path>
+    </script>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>commons-editor</module>
+      <as>editor</as>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>jquery</module>
+      <as>$</as>
+    </depends>
+  </module>
+
   <portlet>
     <name>NotesEditor</name>
     <module>
-      <load-group>NotesEditorGRP</load-group>
       <script>
         <minify>false</minify>
         <path>/javascript/notesEditor.bundle.js</path>
       </script>
+      <depends>
+        <module>NotesRichEditor</module>
+      </depends>
       <depends>
         <module>commonVueComponents</module>
       </depends>
@@ -102,10 +135,6 @@
       </depends>
       <depends>
         <module>vuetify</module>
-      </depends>
-      <depends>
-        <module>commons-editor</module>
-        <as>editor</as>
       </depends>
       <depends>
         <module>eXoVueI18n</module>
