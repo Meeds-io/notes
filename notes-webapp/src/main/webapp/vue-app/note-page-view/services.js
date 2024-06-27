@@ -19,7 +19,7 @@
 
 import * as notePageViewService from './js/NotePageViewService.js';
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
-import * as noteUtils from '../notes-editor/js/Utils.js';
+import * as noteUtils from '../notes-rich-editor/js/Utils.js';
 
 if (!Vue.prototype.$notePageViewService) {
   window.Object.defineProperty(Vue.prototype, '$notePageViewService', {

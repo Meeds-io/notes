@@ -20,115 +20,37 @@
 -->
 <template>
   <v-app class="notesEditor">
-    <div
-      id="notesEditor"
-      class="notesEditor width-full">
-      <div class="notes-topbar">
-        <div
-          v-if="!showTranslationBar"
-          class="notesActions white">
-          <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
-            <div class="notesFormLeftActions d-inline-flex align-center me-10">
-              <img :src="srcImageNote">
-              <span class="notesFormTitle ps-2">{{ noteFormTitle }}</span>
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-icon
-                    :aria-label="$t('notes.label.button.translations.options')"
-                    size="22"
-                    class="clickable pa-2"
-                    :class="langBottonColor"
-                    v-on="on"
-                    v-bind="attrs"
-                    @click="showTranslations">
-                    fa-language
-                  </v-icon>
-                </template>
-                <span class="caption">{{ langBottonTooltipText }}</span>
-              </v-tooltip>
-            </div>
-            <div class="notesFormRightActions pr-7">
-              <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
-              <button
-                id="notesUpdateAndPost"
-                class="btn btn-primary primary px-2 py-0"
-                :key="postKey"
-                :aria-label="publishButtonText"
-                @click.once="postNote(false)">
-                {{ publishButtonText }}
-                <v-icon
-                  v-if="!webPageNote"
-                  id="notesPublichAndPost"
-                  dark
-                  @click="openPublishAndPost">
-                  mdi-menu-down
-                </v-icon>
-              </button>
-              <v-menu
-                v-if="!webPageNote"
-                v-model="publishAndPost"
-                :attach="'#notesUpdateAndPost'"
-                transition="scroll-y-transition"
-                content-class="publish-and-post-btn width-full"
-                offset-y
-                left>
-                <v-list-item
-                  @click.stop="postNote(true)"
-                  class="px-2">
-                  <v-icon
-                    size="16"
-                    class="primary--text clickable pr-2">
-                    mdi-arrow-collapse-up
-                  </v-icon>
-                  <span class="body-2 text-color">{{ publishAndPostButtonText }}</span>
-                </v-list-item>
-              </v-menu>
-            </div>
-          </div>
-        </div>
-        <note-translation-edit-bar
-          ref="translationsEditBar"
-          :note="note"
-          :languages="languages"
-          :translations="translations"
-          :is-mobile="isMobile" />
-        <div id="notesTop" class="width-full darkComposerEffect"></div>
-      </div>
-
-      <form class="notes-content">
-        <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
-          <div
-            v-show="!webPageNote"
-            class="formInputGroup notesTitle white px-5">
-            <input
-              id="notesTitle"
-              ref="noteTitle"
-              v-model="note.title"
-              :placeholder="notesTitlePlaceholder"
-              type="text"
-              class="py-0 px-1 mt-5 mb-0">
-          </div>
-          <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
-            <textarea
-              id="notesContent"
-              ref="notesContent"
-              :placeholder="notesBodyPlaceholder"
-              name="notesContent"
-              class="notesFormInput">
-            </textarea>
-          </div>
-        </div>
-      </form>
-    </div>
-    <note-custom-plugins ref="noteCustomPlugins" :instance="editor" />
-    <note-table-plugins-drawer
-      ref="noteTablePlugins"
-      :instance="editor"
-      @closed="closePluginsDrawer()" />
-    <note-treeview-drawer 
+    <note-full-rich-editor
+      ref="editor"
+      :note="note"
+      :draft-saving-status="draftSavingStatus"
+      :note-id-param="noteId"
+      :post-key="postKey"
+      :body-placeholder="notesBodyPlaceholder"
+      :title-placeholder="notesTitlePlaceholder"
+      :form-title="noteFormTitle"
+      :app-name="appName"
+      :web-page-note="webPageNote"
+      :web-page-url="webPageUrl"
+      :languages="languages"
+      :translations="translations"
+      :selected-language="selectedLanguage"
+      :lang-button-tooltip-text="langButtonTooltipText"
+      :publish-and-post-button-text="publishAndPostButtonText"
+      :publish-button-text="publishButtonText"
+      :space-group-id="`/spaces/${this.spaceGroupId}`"
+      :enable-publish-and-post="true"
+      :is-mobile="isMobile"
+      :editor-body-input-ref="'notesContent'"
+      :editor-title-input-ref="'noteTitle'"
+      @open-treeview="openTreeView"
+      @post-note="postNote"
+      @auto-save="autoSave"
+      @editor-ready="editorReady"
+      @update-data="updateNoteData" />
+    <note-treeview-drawer
       ref="noteTreeview"
       @closed="closePluginsDrawer()" />
-
     <div
       v-for="(extension, i) in noteEditorExtensions"
       :key="i">
@@ -168,11 +90,8 @@ export default {
       noteId: '',
       parentPageId: '',
       appName: 'notes',
-      srcImageNote: '/notes/images/wiki.png',
-      titleMaxLength: 1000,
       notesTitlePlaceholder: `${this.$t('notes.title.placeholderContentInput')}*`,
       notesBodyPlaceholder: `${this.$t('notes.body.placeholderContentInput')}`,
-      publishAndPost: false,
       spaceId: '',
       noteFormTitle: '',
       postingNote: false,
@@ -181,13 +100,13 @@ export default {
       initActualNoteDone: false,
       draftSavingStatus: '',
       autoSaveDelay: 1000,
+      titleMaxLength: 1000,
       saveDraft: '',
       postKey: 1,
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       oembedMinWidth: 300,
-      showTranslationBar: false,
       selectedLanguage: null,
       translations: null,
       languages: [],
@@ -204,17 +123,24 @@ export default {
   },
   computed: {
     publishAndPostButtonText() {
-      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
+      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
         return this.$t('notes.button.updateAndPost');
       } else {
         return this.$t('notes.button.publishAndPost');
       }
     },
     publishButtonText() {
-      if (this.note.id && (this.note.targetPageId || !this.note.draftPage)) {
+      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
         return this.$t('notes.button.update');
       } else {
         return this.$t('notes.button.publish');
+      }
+    },
+    langButtonTooltipText() {
+      if (this.noteId) {
+        return this.$t('notes.label.button.translations.options');
+      } else {
+        return this.$t('notes.message.firstVersionShouldBeCreated');
       }
     },
     initCompleted() {
@@ -229,54 +155,29 @@ export default {
     webPageUrl() {
       return this.urlParams?.get?.('webPageUrl');
     },
-    langBottonColor(){
-      if (!this.noteId){
-        return 'disabled--text not-clickable remove-focus';
-      }
-      return this.selectedLanguage ? 'primary--text':'';
-    },
     isMobile() {
       return this.$vuetify.breakpoint.width < 1280;
-    },
-    langBottonTooltipText() {
-      if (this.noteId) {
-        return this.$t('notes.label.button.translations.options');
-      } else {
-        return this.$t('notes.message.firstVersionShouldBeCreated');
-      }
-    },
-
+    }
   },
   watch: {
     'note.title'() {
       if (this.note.title && this.note.title !== this.actualNote.title ) {
         this.autoSave();
-        this.hideTranslations();
       }
     },
     'note.content'() {
       if (this.note.content && this.note.content !== this.actualNote.content) {
         this.autoSave();
-        this.hideTranslations();
       }
     },
     draftNote() {
       if (!this.draftNote) {
         this.$root.$emit('close-alert-message');
       }
-    },
-    editor() {
-      if (this.editor) {
-        if (this.draftNote?.id || this.loadedNote?.id) {
-          this.fillNote(this.draftNote || this.loadedNote);
-          this.displayDraftMessage();
-          this.initActualNoteDone = true;
-          this.newDraft = !this.draftNote;
-        }
-        this.setToolBarEffect();
-        this.initDone = true;
-      }
-    },
+    }
+  },
+  mounted() {
+    this.init();
   },
   created() {
     this.refreshTranslationExtensions();
@@ -316,69 +217,19 @@ export default {
       this.note.parentPageId = this.parentPageId;
     }
     this.displayFormTitle();
-    $(document).on('mousedown', () => {
-      if (this.publishAndPost) {
-        window.setTimeout(() => {
-          this.publishAndPost = false;
-        }, this.waitTimeUntilCloseMenu);
-      }
-    });
-    document.addEventListener('note-custom-plugins', () => {
-      this.$refs.noteCustomPlugins.open();
-    });
-    this.$root.$on('note-table-plugins', () => {
-      this.$refs.noteTablePlugins.open();
-    });
-    this.$root.$on('updateData', data => {
-      this.note.content= data;
-    });
     this.$root.$on('show-alert', this.displayMessage);
-    this.$root.$on('hide-translations', () => {
-      this.showTranslationBar=false;
-    });
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
         this.$refs.noteTreeview.open(this.note, 'includePages', null, filter);
       } else if (urlParams.has('parentNoteId')) {
-        this.$notesService.getNoteById(this.parentPageId).then(data => {
-          const note = data;
-          this.$refs.noteTreeview.open(note, 'includePages', null, filter);
-          this.$refs.noteTreeview.open(note, 'includePages', null, filter);
+        this.$notesService.getNoteById(this.parentPageId).then(note => {
+          this.openTreeView(note, 'includePages', null, filter);
         });
       }
     });
-    this.$root.$on('add-translation', lang => {
-      this.addTranslation(lang);
-    });
-    this.$root.$on('lang-translation-changed', lang => {
-      this.changeTranslation(lang);
-    });
-    this.$root.$on('delete-lang-translation', translation => {
-      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      this.deleteTranslation(translation, noteId);
-    });
-    this.$root.$on('update-note-title', this.updateNoteTitle);
-    this.$root.$on('update-note-content', this.updateNoteContent);
-    this.$root.$on('include-page', (note) => {
-      const editorSelectedElement = this.editor.getSelection().getStartElement();
-      if (this.editor.getSelection().getSelectedText()) {
-        if (editorSelectedElement.is('a')) {
-          if (editorSelectedElement.getAttribute( 'class' ) === 'noteLink') {
-            this.editor.getSelection().getStartElement().remove();
-            this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
-          }
-          if (editorSelectedElement.getAttribute( 'class' ) === 'labelLink') {
-            const linkText = editorSelectedElement.getHtml();
-            this.editor.getSelection().getStartElement().remove();
-            this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${linkText}</a>`);
-          }
-        } else {
-          this.editor.insertHtml(`<a href='${note.noteId}' class='labelLink'>${this.editor.getSelection().getSelectedText()}</a>`);
-        }
-      } else {
-        this.editor.insertHtml(`<a href='${note.noteId}' class='noteLink'>${note.name}</a>`);
-      }
-    });
+    this.$root.$on('add-translation', this.addTranslation);
+    this.$root.$on('lang-translation-changed', this.changeTranslation);
+    this.$root.$on('delete-lang-translation', this.deleteTranslation);
 
     document.addEventListener('note-navigation-plugin', () => {
       this.$root.$emit('show-alert', {
@@ -387,12 +238,113 @@ export default {
       });
     });
   },
-  mounted() {
-    this.init();
-  },
   methods: {
+    closePluginsDrawer() {
+      this.$refs.editor.closePluginsDrawer();
+    },
+    openTreeView(noteId, source, includeDisplay, filter) {
+      this.$notesService.getNoteById(noteId, this.selectedLanguage).then(note => {
+        this.$refs.noteTreeview.open(note, source, includeDisplay, filter);
+      });
+    },
     init() {
-      this.initCKEditor();
+      this.$refs.editor.initCKEditor();
+    },
+    editorReady(editor) {
+      this.editor = editor;
+      this.actualNote.content = editor.getData();
+      if (this.editor) {
+        if (this.draftNote?.id || this.loadedNote?.id) {
+          this.fillNote(this.draftNote || this.loadedNote);
+          this.displayDraftMessage();
+          this.initActualNoteDone = true;
+          this.newDraft = !this.draftNote;
+        }
+        this.initDone = true;
+      }
+    },
+    updateNoteData(noteObject) {
+      this.note.title = noteObject.title;
+      this.note.content = noteObject.content;
+    },
+    postNote(toPublish) {
+      this.postingNote = true;
+      clearTimeout(this.saveDraft);
+      if (this.validateForm()) {
+        const note = {
+          id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
+          title: this.note.title,
+          name: this.note.name,
+          lang: this.note.lang,
+          wikiType: this.note.wikiType,
+          wikiOwner: this.note.wikiOwner,
+          content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
+          parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
+          toBePublished: toPublish,
+          appName: this.appName,
+        };
+        if (note.id) {
+          this.updateNote(note);
+        } else {
+          this.createNote(note);
+        }
+      }
+    },
+    validateForm() {
+      if (!this.note.title) {
+        this.enableClickOnce();
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.missingTitle')
+        });
+        return false;
+      }
+      if (!isNaN(this.note.title)) {
+        this.enableClickOnce();
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t('notes.message.numericTitle')
+        });
+        return false;
+      } else {
+        const cleanedTitle = this.note.title.replace(/<[^>]*>|&nbsp;/g, '').trim();
+        if (cleanedTitle.length < 3 || cleanedTitle.length > this.titleMaxLength) {
+          this.enableClickOnce();
+          this.$root.$emit('show-alert', {
+            type: 'error',
+            message: this.$t('notes.message.missingLengthTitle')
+          });
+          return false;
+        }
+      }
+      return true;
+    },
+    updateNote(note) {
+      return this.$notesService.updateNoteById(note).then(data => {
+        this.removeLocalStorageCurrentDraft();
+        this.redirectAfterSave(data || note);
+      }).catch(e => {
+        this.enableClickOnce();
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    createNote(note) {
+      return this.$notesService.createNote(note).then(data => {
+        const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
+        // delete draft note
+        const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
+        this.deleteDraftNote(draftNote, notePath);
+        this.redirectAfterSave(data || note);
+      }).catch(e => {
+        this.enableClickOnce();
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -405,10 +357,10 @@ export default {
       }
 
       // if the Note is not updated, no need to autosave anymore
-      if ((this.note.title && this.note.title === this.actualNote.title) && (this.note.content && this.note.content === this.actualNote.content)) {
+      if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)) {
         return;
       }
-     
+
       clearTimeout(this.saveDraft);
       this.saveDraft = setTimeout(() => {
         this.savingDraft = true;
@@ -502,7 +454,7 @@ export default {
               }
               if (note?.children?.length) {
                 this.updateNoteContent(childContainer);
-                this.setFocus();
+                this.$refs.editor.setFocus();
               }
             });
         } else {
@@ -530,69 +482,6 @@ export default {
       }
       return draftNote;
     },
-    postNote(toPublish) {
-      this.postingNote = true;
-      clearTimeout(this.saveDraft);
-      if (this.validateForm()) {
-        let note;
-        if (this.note.draftPage) {
-          note = {
-            id: this.note.targetPageId ? this.note.targetPageId : null,
-            title: this.note.title,
-            name: this.note.name,
-            lang: this.note.lang,
-            wikiType: this.note.wikiType,
-            wikiOwner: this.note.wikiOwner,
-            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
-            parentPageId: this.note.targetPageId === this.parentPageId ? null : this.parentPageId,
-            toBePublished: toPublish,
-            appName: this.appName,
-          };
-        } else {
-          note = {
-            id: this.note.id,
-            title: this.note.title,
-            name: this.note.name,
-            lang: this.note.lang,
-            wikiType: this.note.wikiType,
-            wikiOwner: this.note.wikiOwner,
-            content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
-            parentPageId: this.parentPageId,
-            toBePublished: toPublish,
-            appName: this.appName,
-          };
-        }
-        let notePath = '';
-        if (note.id) {
-          this.$notesService.updateNoteById(note).then(data => {
-            this.removeLocalStorageCurrentDraft();
-            this.redirectAfterSave(data || note);
-          }).catch(e => {
-            console.error('Error when update note page', e);
-            this.enableClickOnce();
-            this.$root.$emit('show-alert', {
-              type: 'error',
-              message: this.$t(`notes.message.${e.message}`)
-            });
-          });
-        } else {
-          this.$notesService.createNote(note).then(data => {
-            notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
-            // delete draft note
-            const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
-            this.deleteDraftNote(draftNote, notePath);
-            this.redirectAfterSave(data || note);
-          }).catch(e => {
-            console.error('Error when creating note page', e);
-            this.enableClickOnce();
-            this.$root.$emit('show-alert', {
-              type: 'error',
-              message: this.$t(`notes.message.${e.message}`)
-            });
-          });
-        }
-      }
-    },
     redirectAfterSave(note) {
       if (this.webPageUrl) {
         window.location.href = this.webPageUrl;
@@ -606,13 +495,6 @@ export default {
           translation = '?translation=original';
         }
         window.location.href = `${notePath}${translation}`;
-      }
-    },
-    openPublishAndPost(event) {
-      this.publishAndPost = !this.publishAndPost;
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
       }
     },
     saveNoteDraft(update) {
@@ -676,192 +558,6 @@ export default {
             message: this.$t(`notes.message.${e.message}`)
           });
         });
-      }
-    },
-    closePluginsDrawer() {
-      this.$refs.noteCustomPlugins.close();
-    },
-    initCKEditor: function() {
-      if (this.editor?.destroy) {
-        this.editor.destroy(true);
-      }
-
-      CKEDITOR.dtd.$removeEmpty['i'] = false;
-      
-      CKEDITOR.on('dialogDefinition', function (e) {
-        if (e.data.name === 'link') {
-          const informationTab = e.data.definition.getContents('target');
-          const targetField = informationTab.get('linkTargetType');
-          targetField['default'] = '_self';
-          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
-        }
-      });
-
-      // this line is mandatory when a custom skin is defined
-      CKEDITOR.basePath = '/commons-extension/ckeditor/';
-      const self = this;
-
-      $(this.$refs.notesContent).ckeditor({
-        customConfig: `${eXo.env.portal.context}/${eXo.env.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
-        allowedContent: true,
-        spaceURL: self.spaceURL,
-        spaceGroupId: `/spaces/${this.spaceGroupId}`,
-        imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
-        toolbarLocation: 'top',
-        extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
-        removeButtons: '',
-        enterMode: CKEDITOR.ENTER_P,
-        shiftEnterMode: CKEDITOR.ENTER_BR,
-        copyFormatting_allowedContexts: true,
-        indentBlock: {
-          offset: 40,
-          unit: 'px'
-        },
-        format_tags: 'p;h1;h2;h3',
-        bodyClass: 'notesContent',
-        dialog_noConfirmCancel: true,
-        colorButton_enableMore: true,
-        isImagePasteBlocked: this.webPageNote,
-        hideUploadImageLink: this.webPageNote,
-        isImageDragBlocked: this.webPageNote,
-        sharedSpaces: {
-          top: 'notesTop'
-        },
-        on: {
-          instanceReady: function (evt) {
-            self.editor = evt.editor;
-            self.actualNote.content = self.editor.getData();
-            $(self.editor.document.$)
-              .find('.atwho-inserted')
-              .each(function() {
-                $(this).on('click', '.remove', function() {
-                  $(this).closest('[data-atwho-at-query]').remove();
-                });
-              });
-
-            const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
-            if ( treeviewParentWrapper ) {
-              treeviewParentWrapper.contentEditable='false';
-            }
-
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if ( removeTreeviewBtn ) {
-              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  treeviewParentWrapper.remove();
-                  self.note.content = evt.editor.getData();
-                }
-                self.setFocus();
-              });
-            }
-            window.setTimeout(() => self.setFocus(), 50);
-            self.$root.$applicationLoaded();
-            self.instanceReady = true;
-          },
-          change: function (evt) {
-            if (!self.initialized) {
-              // First time setting data
-              self.initialized = true;
-              return;
-            }
-            self.note.content = evt.editor.getData();
-            self.autoSave();
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if (removeTreeviewBtn) {
-              evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  const newLine = treeviewParentWrapper.getNext();
-                  treeviewParentWrapper.remove();
-                  if ( newLine.$.innerText.trim().length === 0) {
-                    newLine.remove();
-                  }
-                  self.note.content = evt.editor.getData();
-                }
-              });
-            }
-          },
-          fileUploadResponse: function() {
-            /*add plugin fileUploadResponse to handle file upload response ,
-              in this method we can get the response from server and update the editor content
-              this method is called when file upload is finished*/
-            self.editor.once('afterInsertHtml', ()=> {
-              window.setTimeout(() => {
-                self.editor.fire('mode');
-              }, 2000);
-            });
-          },
-          doubleclick: function(evt) {
-            const element = evt.data.element;
-            if ( element && element.is('a')) {
-              const noteId = element.getAttribute( 'href' );
-              self.$notesService.getNoteById(noteId,this.selectedLanguage).then(data => {
-                const note = data;
-                self.$refs.noteTreeview.open(note, 'includePages', 'no-arrow');
-              });
-            }
-          }
-        }
-      });
-    },
-    setToolBarEffect() {
-      const elementNewTop = document.getElementById('notesTop');
-      if (this.editor){
-        this.editor.on('contentDom', function () {
-          this.document.on('click', function(){
-            elementNewTop.classList.add('darkComposerEffect');
-          });
-        });
-        this.editor.on('contentDom', function () {
-          this.document.on('keyup', function(){
-            elementNewTop.classList.add('darkComposerEffect');
-          });
-        });
-      }
-      $('#notesEditor').parent().click(() => {
-        elementNewTop.classList.remove('darkComposerEffect');
-        elementNewTop.classList.add('greyComposerEffect');
-      });
-      $('#notesEditor').parent().keyup(() => {
-        elementNewTop.classList.remove('darkComposerEffect');
-        elementNewTop.classList.add('greyComposerEffect');
-      });
-    },
-    setFocus() {
-      if (!this.noteId) {
-        this.$refs.noteTitle.focus();
-      } else if (this.editor) {
-        window.setTimeout(() => {
-          this.$nextTick().then(() => this.editor.focus());
-        }, 200);
-      }
-    },
-    validateForm() {
-      if (!this.note.title) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingTitle')
-        });
-        return false;
-      }
-      if (!isNaN(this.note.title)) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.numericTitle')
-        });
-        return false;
-      } else if (this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length < 3 || this.note.title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length > this.titleMaxLength) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingLengthTitle')
-        });
-        return false;
-      } else {
-        return true;
       }
     },
     displayDraftMessage() {
@@ -964,16 +660,6 @@ export default {
       this.postingNote = false;
       this.postKey++;
     },
-    showTranslations() {
-      if (this.noteId){
-        this.showTranslationBar=true;
-        this.$refs.translationsEditBar.show(this.selectedLanguage);
-      }
-    },
-    hideTranslations() {
-      this.showTranslationBar=false;
-      this.$refs.translationsEditBar.hide();
-    },
     isDefaultContent(noteContent) {
       const div = document.createElement('div');
       div.innerHTML = noteContent;
@@ -1028,7 +714,8 @@ export default {
       const language = this.allLanguages.find(item => item.value === lang);
       return language?language.text:lang;
     },
-    deleteTranslation(translation,noteId){
+    deleteTranslation(translation){
+      const noteId = !this.note?.draftPage && this.note?.id || this.note?.targetPageId;
       return this.$notesService.deleteNoteTranslation(noteId,translation.value).then(() => {
         this.translations=this.translations.filter(item => item.value !== translation.value);
         const messageObject = {
@@ -1059,20 +746,13 @@ export default {
       }
       this.note.content = '';
       this.note.lang = this.selectedLanguage;
-      this.newDraft=true;
-      this.initCKEditor();
+      this.newDraft = true;
+      this.$refs.editor.resetEditorData();
       document.dispatchEvent(new CustomEvent('translation-added',{ detail: originNoteContent }));
-    },
-    updateNoteTitle(title) {
-      this.note.title = title;
     },
     updateNoteContent(content) {
       this.note.content = content;
-      if (this.editor) {
-        this.editor.setData(content);
-      } else {
-        this.$refs.notesContent.value = content;
-      }
+      this.$refs.editor.setEditorData(content);
     },
     changeTranslation(lang){
       this.closeAlertMessage();

@@ -17,7 +17,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import * as noteUtils from '../notes-editor/js/Utils.js';
+import * as noteUtils from '../notes-rich-editor/js/Utils.js';
 
 if (!Vue.prototype.$noteUtils) {
   window.Object.defineProperty(Vue.prototype, '$noteUtils', {
