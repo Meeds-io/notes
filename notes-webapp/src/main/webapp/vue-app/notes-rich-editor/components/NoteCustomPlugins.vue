@@ -113,18 +113,15 @@ export default {
         });
       }
     },
-    openPlugin(id){
-      if (id==='table'){
-        this.$root.$emit('note-table-plugins');
-      } else if ( id === 'note') {
+    openPlugin(id) {
+      if (id === 'note') {
         this.$root.$emit('display-treeview-items', 'published');
 
-      } else if ( id === 'Navigation') {
+      } else if (id === 'Navigation') {
         this.instance.execCommand('ToC');
         this.treeviewInserted = true;
         this.close();
-      }
-      else {
+      } else {
         this.instance.execCommand(id);
         this.close();
       }
