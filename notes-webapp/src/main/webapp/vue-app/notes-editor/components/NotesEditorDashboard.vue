@@ -38,8 +38,9 @@
       :lang-button-tooltip-text="langButtonTooltipText"
       :publish-and-post-button-text="publishAndPostButtonText"
       :publish-button-text="publishButtonText"
+      :editor-icon="editorIcon"
       :space-group-id="`/spaces/${this.spaceGroupId}`"
-      :enable-publish-and-post="true"
+      :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :editor-body-input-ref="'notesContent'"
       :editor-title-input-ref="'noteTitle'"
@@ -47,7 +48,8 @@
       @post-note="postNote"
       @auto-save="autoSave"
       @editor-ready="editorReady"
-      @update-data="updateNoteData" />
+      @update-data="updateNoteData"
+      @editor-closed="editorClosed" />
     <note-treeview-drawer
       ref="noteTreeview"
       @closed="closePluginsDrawer()" />
@@ -119,6 +121,8 @@ export default {
       draftNote: null,
       instanceReady: false,
       initialized: false,
+      editorIcon: 'fas fa-clipboard',
+      saveButtonIcon: 'fas fa-save'
     };
   },
   computed: {
@@ -156,7 +160,7 @@ export default {
       return this.urlParams?.get?.('webPageUrl');
     },
     isMobile() {
-      return this.$vuetify.breakpoint.width < 1280;
+      return this.$vuetify.breakpoint.width < 960;
     }
   },
   watch: {
@@ -216,7 +220,7 @@ export default {
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
-    this.displayFormTitle();
+    this.displayFormTitle(urlParams);
     this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
@@ -239,6 +243,9 @@ export default {
     });
   },
   methods: {
+    editorClosed() {
+      // TO DO
+    },
     closePluginsDrawer() {
       this.$refs.editor.closePluginsDrawer();
     },
@@ -590,19 +597,12 @@ export default {
     closeAlertMessage() {
       document.dispatchEvent(new CustomEvent('close-alert-message'));
     },
-    displayFormTitle() {
-      const urlParams = new URLSearchParams(window.location.search);
+    displayFormTitle(urlParams) {
       const webPageName = urlParams.get('pageName');
-      if (webPageName) {
-        this.noteFormTitle = this.$t('notes.edit.editTextFor', {
-          0: webPageName,
-        });
-      } else if (this.noteId) {
+      if (webPageName || this.noteId) {
         this.noteFormTitle = this.$t('notes.edit.editNotes');
       } else {
-        return this.$spaceService.getSpaceById(this.spaceId).then(space => {
-          this.noteFormTitle = this.$t('notes.composer.createNotes').replace('{0}', space.displayName);
-        });
+        this.noteFormTitle = this.$t('notes.composer.createNotes');
       }
     },
     dropDraft() {

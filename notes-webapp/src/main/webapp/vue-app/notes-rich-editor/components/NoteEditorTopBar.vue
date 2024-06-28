@@ -24,9 +24,10 @@
       class="notesActions white">
       <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
         <div class="notesFormLeftActions d-inline-flex align-center me-10">
-          <img
-            :src="srcImageNote"
-            :alt="formTitle">
+          <v-icon
+            size="24">
+            {{ editorIcon }}
+          </v-icon>
           <span class="notesFormTitle ps-2">{{ formTitle }}</span>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
@@ -49,41 +50,43 @@
         <div class="notesFormRightActions pr-7">
           <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
           <button
+            v-if="!isMobile"
             id="notesUpdateAndPost"
             class="btn btn-primary primary px-2 py-0"
             :key="postKey"
             :aria-label="publishButtonText"
             @click.once="postNote(false)">
             {{ publishButtonText }}
-            <v-icon
-              v-if="!webPageNote && enablePublishAndPost"
-              id="notesPublichAndPost"
-              dark
-              @click.stop.prevent="openPublishAndPost">
-              mdi-menu-down
-            </v-icon>
           </button>
-          <v-menu
-            v-if="!webPageNote"
-            v-model="publishAndPost"
-            :attach="'#notesUpdateAndPost'"
-            transition="scroll-y-transition"
-            content-class="publish-and-post-btn width-full"
-            offset-y
-            left>
-            <v-list-item
-              @click.stop="postNote(true)"
-              class="px-2">
+          <div
+            v-else>
+            <v-btn
+              class="btn-primary primary pa-0 me-4"
+              width="42"
+              height="36"
+              min-width="42"
+              text
+              :key="postKey"
+              :aria-label="publishButtonText"
+              @click.once="postNote(false)">
               <v-icon
-                size="16"
-                class="primary--text clickable pr-2">
-                mdi-arrow-collapse-up
+                class="text--white"
+                size="20">
+                {{ saveButtonIcon }}
               </v-icon>
-              <span class="body-2 text-color">
-                {{ publishAndPostButtonText }}
-              </span>
-            </v-list-item>
-          </v-menu>
+            </v-btn>
+            <v-btn
+              width="14"
+              min-width="14"
+              height="21"
+              icon
+              @click="closeEditor">
+              <v-icon
+                size="20">
+                fas fa-times
+              </v-icon>
+            </v-btn>
+          </div>
         </div>
       </div>
     </div>
@@ -102,16 +105,21 @@
 export default {
   data() {
     return {
-      srcImageNote: '/notes/images/wiki.png',
       showTranslationBar: false,
-      publishAndPost: false,
-      waitTimeUntilCloseMenu: 200
     };
   },
   props: {
     note: {
       type: Object,
       default: null
+    },
+    editorIcon: {
+      type: String,
+      default: 'fas fa-clipboard'
+    },
+    saveButtonIcon: {
+      type: String,
+      default: 'fas fa-save'
     },
     noteIdParam: {
       type: String,
@@ -149,10 +157,6 @@ export default {
       type: String,
       default: null
     },
-    publishAndPostButtonText: {
-      type: String,
-      default: null
-    },
     publishButtonText: {
       type: String,
       default: null
@@ -165,10 +169,6 @@ export default {
       type: Boolean,
       default: false
     },
-    enablePublishAndPost: {
-      type: Boolean,
-      default: false
-    }
   },
   computed: {
     langButtonColor(){
@@ -180,20 +180,10 @@ export default {
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
-    this.initPublishAndPost();
   },
   methods: {
-    initPublishAndPost() {
-      $(document).on('mousedown', () => {
-        if (this.publishAndPost) {
-          window.setTimeout(() => {
-            this.publishAndPost = false;
-          }, this.waitTimeUntilCloseMenu);
-        }
-      });
-    },
-    openPublishAndPost() {
-      this.publishAndPost = !this.publishAndPost;
+    closeEditor() {
+      this.$emit('editor-closed');
     },
     postNote(toPublish) {
       this.$emit('post-note', toPublish);
