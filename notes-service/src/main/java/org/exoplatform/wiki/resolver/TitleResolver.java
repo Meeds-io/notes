@@ -18,6 +18,8 @@ package org.exoplatform.wiki.resolver;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class TitleResolver {
 
@@ -32,7 +34,7 @@ public class TitleResolver {
     if (isEncoded) {
       title = URLDecoder.decode(title, StandardCharsets.UTF_8);
     }
-    return title.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+    return title.replaceAll("[^a-zA-Z0-9_\\-]", "_") + "_" + new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(System.currentTimeMillis()));
   }
 
 }

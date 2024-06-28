@@ -77,9 +77,9 @@ public class TestNoteService extends BaseTest {
 
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "Home")) ;
 
-    noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
+    Page notePage = noteService.createNote(wiki, "Home", new Page("testGetGroupPageById-101", "testGetGroupPageById-101"),root);
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", "testGetGroupPageById-101")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "platform/users", notePage.getName())) ;
     assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, "unknown", "Home"));
   }
 
@@ -88,40 +88,40 @@ public class TestNoteService extends BaseTest {
     Identity john = new Identity("john");
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "john", "Home")) ;
 
-    noteService.createNote(wiki, "Home", new Page("testGetUserPageById-101", "testGetUserPageById-101"), john);
+    Page notePage = noteService.createNote(wiki, "Home", new Page("testGetUserPageById-101", "testGetUserPageById-101"), john);
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "john", "testGetUserPageById-101")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "john", notePage.getName())) ;
     assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "unknown", "Home"));
   }
 
   public void testCreatePageAndSubNote() throws WikiException, IllegalAccessException {
     Wiki wiki = new Wiki(PortalConfig.PORTAL_TYPE, "classic");
     Identity root = new Identity("root");
-    noteService.createNote(wiki, "Home", new Page("parentPage_", "parentPage_"), root) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "parentPage_", root)) ;
-    noteService.createNote(wiki, "parentPage_", new Page("childPage_", "childPage_"),root) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "childPage_", root)) ;
+    Page parentNotePage = noteService.createNote(wiki, "Home", new Page("parentPage_", "parentPage_"), root) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", parentNotePage.getName(), root)) ;
+    Page childNotePage = noteService.createNote(wiki, parentNotePage.getName(), new Page("childPage_", "childPage_"),root) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", childNotePage.getName(), root)) ;
   }
 
   public void testGetBreadcumb() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    noteService.createNote(portalWiki, "Home", new Page("Breadcumb1_", "Breadcumb1_"),root) ;
-    noteService.createNote(portalWiki, "Breadcumb1_", new Page("Breadcumb2_", "Breadcumb2_"),root) ;
-    noteService.createNote(portalWiki, "Breadcumb2_", new Page("Breadcumb3_", "Breadcumb3_"),root) ;
-    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3_", false);
+    Page breadcrumb1NotPage = noteService.createNote(portalWiki, "Home", new Page("Breadcrumb1_", "Breadcrumb1_"),root) ;
+    Page breadcrumb2NotPage = noteService.createNote(portalWiki, breadcrumb1NotPage.getName(), new Page("Breadcrumb2_", "Breadcrumb2_"),root) ;
+    Page breadcrumb3NotPage = noteService.createNote(portalWiki, breadcrumb2NotPage.getName(), new Page("Breadcrumb3_", "Breadcrumb3_"),root) ;
+    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", breadcrumb3NotPage.getName(), false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
-    assertEquals("Breadcumb1_", breadCumbs.get(1).getId());
-    assertEquals("Breadcumb2_", breadCumbs.get(2).getId());
-    assertEquals("Breadcumb3_", breadCumbs.get(3).getId());
+    assertEquals(breadcrumb1NotPage.getName(), breadCumbs.get(1).getId());
+    assertEquals(breadcrumb2NotPage.getName(), breadCumbs.get(2).getId());
+    assertEquals(breadcrumb3NotPage.getName(), breadCumbs.get(3).getId());
   }
   public void testGetBreadcumbWithLanguage() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
     Page note1 = noteService.createNote(portalWiki, "Home", new Page("Breadcumb1", "Breadcumb1"),root) ;
-    Page note2 = noteService.createNote(portalWiki, "Breadcumb1", new Page("Breadcumb2", "Breadcumb2"),root) ;
-    Page note3 = noteService.createNote(portalWiki, "Breadcumb2", new Page("Breadcumb3", "Breadcumb3"),root) ;
+    Page note2 = noteService.createNote(portalWiki, note1.getName(), new Page("Breadcumb2", "Breadcumb2"),root) ;
+    Page note3 = noteService.createNote(portalWiki, note2.getName(), new Page("Breadcumb3", "Breadcumb3"),root) ;
 
     note1.setLang("fr");
     note1.setTitle("Breadcumb1_fr");
@@ -132,13 +132,13 @@ public class TestNoteService extends BaseTest {
     note3.setLang("fr");
     note3.setTitle("Breadcumb3_fr");
     noteService.createVersionOfNote(note3, "root");
-    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3", false);
+    List<BreadcrumbData> breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", note3.getName(), false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
     assertEquals("Breadcumb1", breadCumbs.get(1).getTitle());
     assertEquals("Breadcumb2", breadCumbs.get(2).getTitle());
     assertEquals("Breadcumb3", breadCumbs.get(3).getTitle());
-    breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", "Breadcumb3", "fr", root, false);
+    breadCumbs = noteService.getBreadCrumb(PortalConfig.PORTAL_TYPE, "classic", note3.getName(), "fr", root, false);
     assertEquals(4, breadCumbs.size());
     assertEquals("Home", breadCumbs.get(0).getId());
     assertEquals("Breadcumb1_fr", breadCumbs.get(1).getTitle());
@@ -150,45 +150,45 @@ public class TestNoteService extends BaseTest {
     //moving page in same space
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    noteService.createNote(portalWiki, "Home", new Page("oldParent_", "oldParent_"),root) ;
-    noteService.createNote(portalWiki, "oldParent_", new Page("child_", "child_"),root) ;
-    noteService.createNote(portalWiki, "Home", new Page("newParent_", "newParent_"),root) ;
+    Page oldParentNotePage = noteService.createNote(portalWiki, "Home", new Page("oldParent_", "oldParent_"), root) ;
+    Page childNotePage = noteService.createNote(portalWiki, oldParentNotePage.getName(), new Page("child_", "child_"), root) ;
+    Page newsParentNotPage = noteService.createNote(portalWiki, "Home", new Page("newParent_", "newParent_"), root) ;
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "oldParent_")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "child_")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "newParent_")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", oldParentNotePage.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", childNotePage.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", newsParentNotPage.getName())) ;
 
     WikiPageParams currentLocationParams= new WikiPageParams();
     WikiPageParams newLocationParams= new WikiPageParams();
-    currentLocationParams.setPageName("child_");
+    currentLocationParams.setPageName(childNotePage.getName());
     currentLocationParams.setType(PortalConfig.PORTAL_TYPE);
     currentLocationParams.setOwner("classic");
-    newLocationParams.setPageName("newParent_");
+    newLocationParams.setPageName(newsParentNotPage.getName());
     newLocationParams.setType(PortalConfig.PORTAL_TYPE);
     newLocationParams.setOwner("classic");
 
-    assertTrue(noteService.moveNote(currentLocationParams,newLocationParams,root)) ;
+    assertTrue(noteService.moveNote(currentLocationParams, newLocationParams, root)) ;
 
     //moving page from different spaces
     Wiki userWiki = getOrCreateWiki(wService, PortalConfig.USER_TYPE, "root");
-    noteService.createNote(userWiki, "Home", new Page("acmePage_", "acmePage_"),root) ;
-    noteService.createNote(portalWiki, "Home", new Page("classicPage_", "classicPage_"),root) ;
+    Page acmeNotePage = noteService.createNote(userWiki, "Home", new Page("acmePage_", "acmePage_"), root) ;
+    Page classicNotePage = noteService.createNote(portalWiki, "Home", new Page("classicPage_", "classicPage_"), root) ;
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", "acmePage_",root)) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "classicPage_",root)) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", acmeNotePage.getName(), root)) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", classicNotePage.getName(), root)) ;
 
-    currentLocationParams.setPageName("acmePage_");
+    currentLocationParams.setPageName(acmeNotePage.getName());
     currentLocationParams.setType(PortalConfig.USER_TYPE);
     currentLocationParams.setOwner("root");
-    newLocationParams.setPageName("classicPage_");
+    newLocationParams.setPageName(classicNotePage.getName());
     newLocationParams.setType(PortalConfig.PORTAL_TYPE);
     newLocationParams.setOwner("classic");
-    assertTrue(noteService.moveNote(currentLocationParams,newLocationParams,root)) ;
+    assertTrue(noteService.moveNote(currentLocationParams, newLocationParams, root)) ;
 
     // moving a page to another read-only page
     Wiki demoWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "root");
-    noteService.createNote(demoWiki, "Home", new Page("toMovedPage_", "toMovedPage_"),root);
-    Page page = noteService.createNote(userWiki, "Home", new Page("privatePage_", "privatePage_"),root);
+    Page toMovedNotePage = noteService.createNote(demoWiki, "Home", new Page("toMovedPage_", "toMovedPage_"), root);
+    Page privateNotePage = noteService.createNote(userWiki, "Home", new Page("privatePage_", "privatePage_"), root);
     HashMap<String, String[]> permissionMap = new HashMap<>();
     permissionMap.put("any", new String[] {PermissionType.VIEWPAGE.toString(), PermissionType.EDITPAGE.toString()});
     List<PermissionEntry> permissionEntries = new ArrayList<>();
@@ -197,15 +197,15 @@ public class TestNoteService extends BaseTest {
             new Permission(PermissionType.EDITPAGE, true)
     });
     permissionEntries.add(permissionEntry);
-    page.setPermissions(permissionEntries);
+    privateNotePage.setPermissions(permissionEntries);
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "root", "toMovedPage_"));
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", "privatePage_"));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "root", toMovedNotePage.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", privateNotePage.getName()));
 
-    currentLocationParams.setPageName("toMovedPage_");
+    currentLocationParams.setPageName(toMovedNotePage.getName());
     currentLocationParams.setType(PortalConfig.PORTAL_TYPE);
     currentLocationParams.setOwner("root");
-    newLocationParams.setPageName("privatePage_");
+    newLocationParams.setPageName(privateNotePage.getName());
     newLocationParams.setType(PortalConfig.USER_TYPE);
     newLocationParams.setOwner("root");
   }
@@ -213,37 +213,37 @@ public class TestNoteService extends BaseTest {
   public void testDeleteNote() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    noteService.createNote(portalWiki, "Home", new Page("deletePage_", "deletePage_"),root) ;
-    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", "deletePage_")) ;
-    //wait(10) ;
-    noteService.createNote(portalWiki, "Home", new Page("deletePage_", "deletePage_"),root) ;
-    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", "deletePage_")) ;
-    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "deletePage_")) ;
-    assertFalse(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", "Home")) ;
+    Page notePage1 = noteService.createNote(portalWiki, "Home", new Page("deletePage_", "deletePage_"), root);
+    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", notePage1.getName()));
+    // wait(10) ;
+    Page notePage2 = noteService.createNote(portalWiki, "Home", new Page("deletePage_", "deletePage_"), root);
+    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", notePage2.getName()));
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", notePage2.getName()));
+    assertFalse(noteService.deleteNote(PortalConfig.PORTAL_TYPE, "classic", "Home"));
   }
 
 
   public void testRenameNote() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    noteService.createNote(portalWiki, "Home", new Page("currentPage_", "currentPage_"),root) ;
-    assertTrue(noteService.renameNote(PortalConfig.PORTAL_TYPE, "classic", "currentPage_", "renamedPage_", "renamedPage_")) ;
+    Page currentNotePage = noteService.createNote(portalWiki, "Home", new Page("currentPage_", "currentPage_"),root);
+    assertTrue(noteService.renameNote(PortalConfig.PORTAL_TYPE, "classic", currentNotePage.getName(), "renamedPage_", "renamedPage_")) ;
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "renamedPage_")) ;
   }
 
   public void testRenamePageToExistingNote() throws WikiException, IllegalAccessException  {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
-    noteService.createNote(portalWiki, "Home", new Page("currentPage_", "currentPage_"),root) ;
-    noteService.createNote(portalWiki, "Home", new Page("currentPage2_", "currentPage2_"),root) ;
+    Page currentNotePage = noteService.createNote(portalWiki, "Home", new Page("currentPage_", "currentPage_"), root) ;
+    Page currentNotePage2 = noteService.createNote(portalWiki, "Home", new Page("currentPage2_", "currentPage2_"), root) ;
     try {
-      noteService.renameNote(PortalConfig.PORTAL_TYPE, "classic", "currentPage_", "currentPage2_", "renamedPage2_");
-      fail("Renaming page currentPage to the existing page currentPage2_ should throw an exception");
+      noteService.renameNote(PortalConfig.PORTAL_TYPE, "classic", currentNotePage.getName(), currentNotePage2.getName(), "renamedPage2_");
+      fail("Renaming page currentPage to the existing page " + currentNotePage2.getName() + " should throw an exception");
     } catch (WikiException e) {
-      assertEquals("Note portal:classic:currentPage2_ already exists, cannot rename it.", e.getMessage());
+      assertEquals("Note portal:classic:" + currentNotePage2.getName() + " already exists, cannot rename it.", e.getMessage());
     }
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage_")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", "currentPage2_")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", currentNotePage.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "classic", currentNotePage2.getName())) ;
   }
   
   public void testHasPermisionOnSystemPage() throws WikiException, IllegalAccessException, ObjectAlreadyExistsException {
@@ -387,7 +387,7 @@ public class TestNoteService extends BaseTest {
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
     Page note1 = noteService.createNote(portalWiki, "Home", new Page("exported1", "exported1"),root) ;
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "exported1")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", note1.getName())) ;
 
     Page note = noteService.getNoteById(note1.getId(),root,"");
 
@@ -406,21 +406,21 @@ public class TestNoteService extends BaseTest {
   public void testGetNoteByIdAndLang() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
-    Page note1 = noteService.createNote(portalWiki, "Home", new Page("testPage", "testPage"), root) ;
+    Page note1 = noteService.createNote(portalWiki, "Home", new Page("testPage", "testPage"), root);
     note1.setLang("en");
     noteService.createVersionOfNote(note1, "root");
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "testPage")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", note1.getName()));
 
-    Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()),root,"", "en");
+    Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
 
     assertNotNull(note);
-    assertEquals(note.getName(),note1.getName());
+    assertEquals(note.getName(), note1.getName());
 
     assertFalse(note.isDeleted());
 
     noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), note.getName());
-    Page deletedNote = noteService.getNoteById(note1.getId(),root,"");
+    Page deletedNote = noteService.getNoteById(note1.getId(), root, "");
 
     assertNotNull(deletedNote);
     assertTrue(deletedNote.isDeleted());
@@ -488,20 +488,19 @@ public class TestNoteService extends BaseTest {
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "exportPortal");
     Page page1 = new Page("exported1", "exported1");
     page1.setContent("<figure class=\"image\"><img src=\"/portal/rest/wiki/attachments/group/space//spaces/base_de_connaissances/page/4.01-_Profil_et_paramètres/Navigation paramètres.png\"></figure>");
-    Page note1 = noteService.createNote(portalWiki, "Home",page1,root) ;
+    Page note1 = noteService.createNote(portalWiki, "Home", page1, root);
 
     Page page2 = new Page("exported2", "exported2");
     page2.setContent("<a class=\"noteLink\" href=\"exported1\" target=\"_blank\">Règles de rédaction des tutoriels </a>");
-    Page note2 = noteService.createNote(portalWiki, "Home",page2,root) ;
-
+    Page note2 = noteService.createNote(portalWiki, "Home", page2, root);
 
     Page page3 = new Page("exported3", "exported3");
-    page3.setContent("<a class=\"noteLink\" href=\""+note2.getId()+"\">Home</a>");
-    Page note3 = noteService.createNote(portalWiki, "Home",page3,root) ;
+    page3.setContent("<a class=\"noteLink\" href=\"" + note2.getId() + "\">Home</a>");
+    Page note3 = noteService.createNote(portalWiki, "Home", page3, root);
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported1")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported2")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", "exported3")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note1.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note2.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note3.getName()));
 
     String[] notes = new String[3];
     notes[0] = note1.getId();
@@ -509,9 +508,9 @@ public class TestNoteService extends BaseTest {
     notes[2] = note3.getId();
 
     notesExportService.startExportNotes(200231, notes, true, root);
-    boolean exportDone= false;
-    while (!exportDone){
-      if(notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")){
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200231).getStatus().equals("ZIP_CREATED")) {
         exportDone = true;
       }
     }
@@ -526,9 +525,9 @@ public class TestNoteService extends BaseTest {
     Page note2 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
     Page note3 = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported1")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported2")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", "to_be_imported3")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", note1.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", note2.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "importPortal", note3.getName())) ;
 
     String[] notes = new String[3];
     notes[0] = note1.getId();
@@ -557,13 +556,13 @@ public class TestNoteService extends BaseTest {
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal1");
-    noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
-    noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
-    noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
+    Page toBeImported1NotPage = noteService.createNote(portalWiki, "Home", new Page("to_be_imported1", "to_be_imported1"),user) ;
+    Page toBeImported2NotPage = noteService.createNote(portalWiki, "Home", new Page("to_be_imported2", "to_be_imported2"),user) ;
+    Page toBeImported3NotPage = noteService.createNote(portalWiki, "Home", new Page("to_be_imported3", "to_be_imported3"),user) ;
 
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported1")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported2")) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", "to_be_imported3")) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", toBeImported1NotPage.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", toBeImported2NotPage.getName())) ;
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal1", toBeImported3NotPage.getName())) ;
 
     List<Page> pages = noteService.getNotesOfWiki(portalWiki.getType(),portalWiki.getOwner());
 
@@ -573,18 +572,18 @@ public class TestNoteService extends BaseTest {
   public void testDeleteNote1() throws WikiException, IllegalAccessException {
     Identity user = new Identity("user");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal2");
-    noteService.createNote(portalWiki, "Home", new Page("note1", "note1"),user) ;
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", "note1")) ;
-    noteService.deleteNote(PortalConfig.PORTAL_TYPE, "testPortal2", "note1",user);
+    Page notePage = noteService.createNote(portalWiki, "Home", new Page("note1", "note1"), user);
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", notePage.getName()));
+    noteService.deleteNote(PortalConfig.PORTAL_TYPE, "testPortal2", notePage.getName(), user);
 
-    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", "note1")) ;
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal2", notePage.getName()));
   }
 
   public void testDeleteVersionsByNoteIdAndLang() throws WikiException, IllegalAccessException {
     Identity root = new Identity("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
     Page note1 = noteService.createNote(portalWiki, "Home", new Page("testPage1", "testPage1"), root);
-    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", "testPage1"));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "testPortal", note1.getName()));
     note1 = noteService.getNoteById(note1.getId());
     note1.setLang("en");
     note1.setTitle("englishTitle");

@@ -502,7 +502,7 @@ public class NotesRestService implements ResourceContainer {
       note.setAuthor(currentUser);
       note.setOwner(currentUser);
       note.setSyntax(syntaxId);
-      note.setName(TitleResolver.getId(note.getTitle(), false));
+      note.setName(note.getTitle());
       note.setUrl("");
       Page createdNote = noteService.createNote(noteBook, note.getParentPageName(), note, identity);
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
