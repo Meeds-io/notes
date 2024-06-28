@@ -33,10 +33,11 @@
       :post-key="postKey"
       :draft-saving-status="draftSavingStatus"
       :publish-button-text="publishButtonText"
-      :publish-and-post-button-text="publishAndPostButtonText"
       :lang-button-tooltip-text="langButtonTooltipText"
-      :enable-publish-and-post="enablePublishAndPost"
       :web-page-url="webPageUrl"
+      :editor-icon="editorIcon"
+      :save-button-icon="saveButtonIcon"
+      @editor-closed="editorClosed"
       @post-note="postNote" />
     <form class="notes-content">
       <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
@@ -129,10 +130,6 @@ export default {
       type: Boolean,
       default: false
     },
-    publishAndPostButtonText: {
-      type: String,
-      default: null
-    },
     publishButtonText: {
       type: String,
       default: null
@@ -153,15 +150,19 @@ export default {
       type: String,
       default: 'noteTitle'
     },
-    enablePublishAndPost: {
-      type: Boolean,
-      default: false
-    },
     spaceUrl: {
       type: String,
       default: null
     },
     spaceGroupId: {
+      type: String,
+      default: null
+    },
+    editorIcon: {
+      type: String,
+      default: null
+    },
+    saveButtonIcon: {
       type: String,
       default: null
     }
@@ -182,6 +183,9 @@ export default {
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
   },
   methods: {
+    editorClosed(){
+      this.$emit('editor-closed');
+    },
     updateTranslatedNoteTitle(title) {
       this.noteObject.title = title;
     },
