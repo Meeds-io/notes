@@ -55,6 +55,22 @@ CKEDITOR.editorConfig = function (config) {
       items: blocksToolbarGroup
     },
   ];
+  const mobileToolbar = [
+    {
+      name: 'basicstyles',
+      groups: ['basicstyles', 'cleanup'],
+      items: ['Bold', 'Italic']
+    },
+    {
+      name: 'paragraph',
+      groups: ['list'],
+      items: ['BulletedList','NumberedList'],
+    },
+    {
+      name: 'blocks',
+      items: ['Blockquote']
+    },
+  ];
   let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
@@ -86,9 +102,13 @@ CKEDITOR.editorConfig = function (config) {
     }
   });
 
+  if (window.innerWidth < 960) {
+    config.toolbar = mobileToolbar;
+  } else {
+    config.toolbar = toolbar;
+  }
   config.extraPlugins = extraPlugins;
   config.removePlugins = removePlugins;
-  config.toolbar = toolbar;
   config.toolbarGroups = [
     { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
     { name: 'paragraph', groups: ['align', 'list', 'indent', ] },
