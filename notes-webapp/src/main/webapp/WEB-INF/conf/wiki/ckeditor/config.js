@@ -71,7 +71,7 @@ CKEDITOR.editorConfig = function (config) {
       items: ['Blockquote']
     },
   ];
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester`;
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
@@ -102,7 +102,7 @@ CKEDITOR.editorConfig = function (config) {
     }
   });
 
-  if (window.innerWidth < 600) {
+  if (window.innerWidth < 960) {
     config.toolbar = mobileToolbar;
   } else {
     config.toolbar = toolbar;

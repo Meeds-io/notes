@@ -38,8 +38,9 @@
       :lang-button-tooltip-text="langButtonTooltipText"
       :publish-and-post-button-text="publishAndPostButtonText"
       :publish-button-text="publishButtonText"
+      :editor-icon="editorIcon"
       :space-group-id="`/spaces/${this.spaceGroupId}`"
-      :enable-publish-and-post="true"
+      :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :editor-body-input-ref="'notesContent'"
       :editor-title-input-ref="'noteTitle'"
@@ -47,7 +48,8 @@
       @post-note="postNote"
       @auto-save="autoSave"
       @editor-ready="editorReady"
-      @update-data="updateNoteData" />
+      @update-data="updateNoteData"
+      @editor-closed="editorClosed" />
     <note-treeview-drawer
       ref="noteTreeview"
       @closed="closePluginsDrawer()" />
@@ -123,9 +125,7 @@ export default {
       instanceReady: false,
       initialized: false,
       editorIcon: 'fas fa-clipboard',
-      saveButtonIcon: 'fas fa-save',
-      translationSwitch: false,
-      newTranslation: false,
+      saveButtonIcon: 'fas fa-save'
     };
   },
   computed: {
@@ -163,7 +163,7 @@ export default {
       return this.urlParams?.get?.('webPageUrl');
     },
     isMobile() {
-      return this.$vuetify.breakpoint.width < 1280;
+      return this.$vuetify.breakpoint.width < 960;
     }
   },
   watch: {
@@ -226,7 +226,7 @@ export default {
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
-    this.displayFormTitle();
+    this.displayFormTitle(urlParams);
     this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
@@ -249,6 +249,9 @@ export default {
     });
   },
   methods: {
+    editorClosed() {
+      window.close();
+    },
     closePluginsDrawer() {
       this.$refs.editor.closePluginsDrawer();
     },
