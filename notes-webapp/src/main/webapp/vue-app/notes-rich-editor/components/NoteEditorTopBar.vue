@@ -64,6 +64,7 @@
             class="btn btn-primary primary px-2 py-0 me-5"
             height="34"
             :key="postKey"
+            :disabled="saveButtonDisabled"
             :aria-label="publishButtonText"
             @click.once="postNote(false)">
             {{ publishButtonText }}
@@ -77,6 +78,7 @@
               min-width="42"
               text
               :key="postKey"
+              :disabled="saveButtonDisabled"
               :aria-label="publishButtonText"
               @click.once="postNote(false)">
               <v-icon
@@ -180,6 +182,10 @@ export default {
       type: Boolean,
       default: false
     },
+    saveButtonDisabled: {
+      type: Boolean,
+      default: true
+    }
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
