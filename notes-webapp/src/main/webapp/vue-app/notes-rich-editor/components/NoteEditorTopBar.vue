@@ -25,30 +25,39 @@
       <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
         <div class="notesFormLeftActions d-inline-flex align-center me-10">
           <v-icon
+            class="icon-default-color editor-icon"
             size="24">
             {{ editorIcon }}
           </v-icon>
-          <span class="notesFormTitle ps-2">{{ formTitle }}</span>
+          <span class="notesFormTitle my-auto ms-3 me-4">{{ formTitle }}</span>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-icon
-                :aria-label="$t('notes.label.button.translations.options')"
-                size="22"
-                class="clickable pa-2"
-                :class="langButtonColor"
+              <v-btn
                 v-on="on"
                 v-bind="attrs"
+                width="36"
+                min-width="36"
+                height="36"
+                class="pa-0 my-auto"
+                text
                 @click="showTranslations">
-                fa-language
-              </v-icon>
+                <v-icon
+                  :class="{'primary--text': !!selectedLanguage}"
+                  :disabled="!noteIdParam"
+                  :aria-label="$t('notes.label.button.translations.options')"
+                  size="20"
+                  class="pa-0 translation-button-icon my-auto icon-default-color">
+                  fa-language
+                </v-icon>
+              </v-btn>
             </template>
             <span class="caption">
               {{ langButtonTooltipText }}
             </span>
           </v-tooltip>
         </div>
-        <div class="notesFormRightActions pr-7">
-          <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
+        <div class="notesFormRightActions pe-7">
+          <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
           <button
             v-if="!isMobile"
             id="notesUpdateAndPost"
@@ -72,18 +81,19 @@
               :aria-label="publishButtonText"
               @click.once="postNote(false)">
               <v-icon
-                class="text--white"
+                class="text--white save-button-icon"
                 size="20">
                 {{ saveButtonIcon }}
               </v-icon>
             </v-btn>
             <v-btn
-              width="14"
-              min-width="14"
-              height="21"
+              width="36"
+              min-width="36"
+              height="36"
               icon
               @click="closeEditor">
               <v-icon
+                class="icon-default-color"
                 size="20">
                 fas fa-times
               </v-icon>
@@ -98,7 +108,7 @@
       :languages="languages"
       :translations="translations"
       :is-mobile="isMobile"
-      @translations-hidden="showTranslationBar = false"/>
+      @translations-hidden="showTranslationBar = false" />
     <div id="notesTop" class="width-full darkComposerEffect"></div>
   </div>
 </template>
@@ -175,14 +185,6 @@ export default {
       type: Boolean,
       default: true
     }
-  },
-  computed: {
-    langButtonColor(){
-      if (!this.noteIdParam){
-        return 'disabled--text not-clickable remove-focus';
-      }
-      return this.selectedLanguage ? 'primary--text':'';
-    },
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
