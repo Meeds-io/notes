@@ -22,13 +22,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.exoplatform.addons.notes</groupId>
+    <groupId>io.meeds.notes</groupId>
     <artifactId>notes</artifactId>
     <version>7.0.x-exo-SNAPSHOT</version>
   </parent>
   <artifactId>notes-packaging</artifactId>
   <packaging>pom</packaging>
-  <name>eXo PLF:: Notes - Addon Packaging</name>
+  <name>Meeds:: PLF:: Notes - Addon Packaging</name>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

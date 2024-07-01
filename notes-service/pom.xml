@@ -22,12 +22,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>notes</artifactId>
-    <groupId>org.exoplatform.addons.notes</groupId>
+    <groupId>io.meeds.notes</groupId>
     <version>7.0.x-exo-SNAPSHOT</version>
   </parent>
   <artifactId>notes-service</artifactId>
   <packaging>jar</packaging>
-  <name>eXo PLF:: Notes Service</name>
+  <name>Meeds:: PLF:: Notes Service</name>
 
   <properties>
     <rest.api.doc.title>Notes Rest Api</rest.api.doc.title>
@@ -39,12 +39,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.exoplatform.social</groupId>
+      <groupId>io.meeds.social</groupId>
       <artifactId>social-component-service</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.social</groupId>
+      <groupId>io.meeds.social</groupId>
       <artifactId>social-component-notification</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -66,13 +66,13 @@
 
     <!-- Tests -->
     <dependency>
-      <groupId>org.exoplatform.social</groupId>
+      <groupId>io.meeds.social</groupId>
       <artifactId>social-component-service</artifactId>
       <scope>test</scope>
       <type>test-jar</type>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.social</groupId>
+      <groupId>io.meeds.social</groupId>
       <artifactId>social-component-notification</artifactId>
       <scope>test</scope>
       <type>test-jar</type>
