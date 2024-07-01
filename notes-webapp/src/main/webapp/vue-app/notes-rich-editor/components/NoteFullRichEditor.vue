@@ -37,6 +37,7 @@
       :web-page-url="webPageUrl"
       :editor-icon="editorIcon"
       :save-button-icon="saveButtonIcon"
+      :save-button-disabled="saveButtonDisabled"
       @editor-closed="editorClosed"
       @post-note="postNote" />
     <form class="notes-content">
@@ -165,6 +166,10 @@ export default {
     saveButtonIcon: {
       type: String,
       default: null
+    },
+    saveButtonDisabled: {
+      type: Boolean,
+      default: true
     }
   },
   watch: {

@@ -39,9 +39,10 @@
       :publish-and-post-button-text="publishAndPostButtonText"
       :publish-button-text="publishButtonText"
       :editor-icon="editorIcon"
-      :space-group-id="`/spaces/${this.spaceGroupId}`"
+      :space-group-id="`/spaces/${spaceGroupId}`"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
+      :save-button-disabled="saveOrUpdateDisabled"
       :editor-body-input-ref="'notesContent'"
       :editor-title-input-ref="'noteTitle'"
       @open-treeview="openTreeView"
@@ -74,6 +75,7 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       },
+      originalNote: {},
       note: {
         id: '',
         title: '',
@@ -126,6 +128,14 @@ export default {
     };
   },
   computed: {
+    saveOrUpdateDisabled() {
+      return !this.note?.title || this.note?.title?.length < 3
+                               || this.note?.title?.length > this.titleMaxLength
+                               || this.noteNotModified;
+    },
+    noteNotModified() {
+      return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
+    },
     publishAndPostButtonText() {
       if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
         return this.$t('notes.button.updateAndPost');
@@ -277,81 +287,60 @@ export default {
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
-      if (this.validateForm()) {
-        const note = {
-          id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
-          title: this.note.title,
-          name: this.note.name,
-          lang: this.note.lang,
-          wikiType: this.note.wikiType,
-          wikiOwner: this.note.wikiOwner,
-          content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
-          parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
-          toBePublished: toPublish,
-          appName: this.appName,
-        };
-        if (note.id) {
-          this.updateNote(note);
-        } else {
-          this.createNote(note);
-        }
-      }
-    },
-    validateForm() {
-      if (!this.note.title) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingTitle')
-        });
-        return false;
-      }
-      if (!isNaN(this.note.title)) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.numericTitle')
-        });
-        return false;
+      const note = {
+        id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
+        title: this.note.title,
+        name: this.note.name,
+        lang: this.note.lang,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
+        parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
+        toBePublished: toPublish,
+        appName: this.appName,
+      };
+      if (note.id) {
+        this.updateNote(note);
       } else {
-        const cleanedTitle = this.note.title.replace(/<[^>]*>|&nbsp;/g, '').trim();
-        if (cleanedTitle.length < 3 || cleanedTitle.length > this.titleMaxLength) {
-          this.enableClickOnce();
-          this.$root.$emit('show-alert', {
-            type: 'error',
-            message: this.$t('notes.message.missingLengthTitle')
-          });
-          return false;
-        }
+        this.createNote(note);
       }
-      return true;
     },
     updateNote(note) {
       return this.$notesService.updateNoteById(note).then(data => {
+        this.originalNote = structuredClone(data);
         this.removeLocalStorageCurrentDraft();
-        this.redirectAfterSave(data || note);
+        this.displayMessage({
+          type: 'success',
+          message: this.$t('notes.update.success.message'),
+          linkText: this.$t('notes.view.label'),
+          alertLink: this.redirectAfterSaveLink(data || note)
+        });
       }).catch(e => {
-        this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
-      });
+      }).finally(() => this.enableClickOnce());
     },
     createNote(note) {
       return this.$notesService.createNote(note).then(data => {
+        this.originalNote = structuredClone(data);
         const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
         // delete draft note
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
         this.deleteDraftNote(draftNote, notePath);
-        this.redirectAfterSave(data || note);
+        this.displayMessage({
+          type: 'success',
+          message: this.$t('notes.update.success.message'),
+          linkText: this.$t('notes.view.label'),
+          alertLink: this.redirectAfterSaveLink(data || note)
+        });
       }).catch(e => {
-        this.enableClickOnce();
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
-      });
+      }).finally(() => this.enableClickOnce());
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -438,6 +427,7 @@ export default {
         this.note = data;
         this.selectedLanguage = data.lang;
         this.getNoteLanguages();
+        this.originalNote = structuredClone(this.note);
         this.actualNote = {
           id: this.note.id,
           name: this.note.name,
@@ -489,19 +479,13 @@ export default {
       }
       return draftNote;
     },
-    redirectAfterSave(note) {
+    redirectAfterSaveLink(note) {
       if (this.webPageUrl) {
-        window.location.href = this.webPageUrl;
+        return this.webPageUrl;
       } else {
         const notePath = this.$notesService.getPathByNoteOwner(note, this.appName).replace(/ /g, '_');
         this.draftSavingStatus = '';
-        let translation = '';
-        if (this.selectedLanguage){
-          translation = `?translation=${this.selectedLanguage}`;
-        } else {
-          translation = '?translation=original';
-        }
-        window.location.href = `${notePath}${translation}`;
+        return `${notePath}?translation=${this.selectedLanguage || 'original'}`;
       }
     },
     saveNoteDraft(update) {
@@ -592,6 +576,7 @@ export default {
         alertType: message?.type,
         alertLinkText: message?.linkText,
         alertLinkCallback: message?.linkCallback,
+        alertLink: message.alertLink
       }}));
     },
     closeAlertMessage() {
