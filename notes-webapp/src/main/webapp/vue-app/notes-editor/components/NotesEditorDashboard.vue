@@ -37,7 +37,7 @@
       :selected-language="selectedLanguage"
       :lang-button-tooltip-text="langButtonTooltipText"
       :publish-and-post-button-text="publishAndPostButtonText"
-      :publish-button-text="publishButtonText"
+      :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
       :save-button-icon="saveButtonIcon"
@@ -141,13 +141,6 @@ export default {
         return this.$t('notes.button.updateAndPost');
       } else {
         return this.$t('notes.button.publishAndPost');
-      }
-    },
-    publishButtonText() {
-      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
-        return this.$t('notes.button.update');
-      } else {
-        return this.$t('notes.button.publish');
       }
     },
     langButtonTooltipText() {
@@ -311,7 +304,7 @@ export default {
         this.removeLocalStorageCurrentDraft();
         this.displayMessage({
           type: 'success',
-          message: this.$t('notes.update.success.message'),
+          message: this.$t('notes.save.success.message'),
           linkText: this.$t('notes.view.label'),
           alertLink: this.redirectAfterSaveLink(data || note)
         });
