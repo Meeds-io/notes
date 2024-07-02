@@ -22,101 +22,68 @@
     <div
       v-if="!showTranslationBar"
       class="notesActions white">
-      <div class="notesFormButtons d-inline-flex flex-wrap width-full py-3 px-5 ma-0">
+      <div class="notesFormButtons d-inline-flex flex-wrap width-full pa-3 ma-0">
         <div class="notesFormLeftActions d-inline-flex align-center me-10">
-          <v-icon
-            class="icon-default-color editor-icon"
-            size="24">
-            {{ editorIcon }}
-          </v-icon>
-          <span class="notesFormTitle my-auto ms-3 me-5">{{ formTitle }}</span>
+          <img
+            :src="srcImageNote"
+            :alt="formTitle">
+          <span class="notesFormTitle ps-2">{{ formTitle }}</span>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn
+              <v-icon
+                :aria-label="$t('notes.label.button.translations.options')"
+                size="22"
+                class="clickable pa-2"
+                :class="langButtonColor"
                 v-on="on"
                 v-bind="attrs"
-                width="36"
-                min-width="36"
-                height="36"
-                class="pa-0 my-auto"
-                icon
-                :disabled="!noteIdParam || !editorReady"
                 @click="showTranslations">
-                <v-icon
-                  :class="{'primary--text': !!selectedLanguage}"
-                  :aria-label="$t('notes.label.button.translations.options')"
-                  size="20"
-                  class="pa-0 translation-button-icon my-auto icon-default-color">
-                  fa-language
-                </v-icon>
-              </v-btn>
+                fa-language
+              </v-icon>
             </template>
             <span class="caption">
               {{ langButtonTooltipText }}
             </span>
           </v-tooltip>
-          <v-btn
-            v-if="editorMetadataDrawerEnabled"
-            width="36"
-            min-width="36"
-            height="36"
-            class="pa-0 my-auto "
-            :aria-label="$t('notes.metadata.open.drawer')"
-            :disabled="!editorReady"
-            icon
-            @click="openMetadataDrawer">
-            <v-icon
-              size="20"
-              class="pa-0 metadata-button-icon my-auto icon-default-color">
-              fas fa-th-list
-            </v-icon>
-          </v-btn>
         </div>
-        <div class="notesFormRightActions pe-5">
-          <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
-          <v-btn
-            v-if="!isMobile"
+        <div class="notesFormRightActions pr-7">
+          <p class="draftSavingStatus mr-7">{{ draftSavingStatus }}</p>
+          <button
             id="notesUpdateAndPost"
-            class="btn btn-primary primary px-2 py-0 me-5"
-            height="34"
+            class="btn btn-primary primary px-2 py-0"
             :key="postKey"
-            :disabled="saveButtonDisabled"
             :aria-label="publishButtonText"
             @click.once="postNote(false)">
             {{ publishButtonText }}
-          </v-btn>
-          <div
-            v-else>
-            <v-btn
-              class="btn-primary primary pa-0 me-2"
-              width="42"
-              height="36"
-              min-width="42"
-              text
-              :key="postKey"
-              :disabled="saveButtonDisabled"
-              :aria-label="publishButtonText"
-              @click.once="postNote(false)">
+            <v-icon
+              v-if="!webPageNote && enablePublishAndPost"
+              id="notesPublichAndPost"
+              dark
+              @click.stop.prevent="openPublishAndPost">
+              mdi-menu-down
+            </v-icon>
+          </button>
+          <v-menu
+            v-if="!webPageNote"
+            v-model="publishAndPost"
+            :attach="'#notesUpdateAndPost'"
+            transition="scroll-y-transition"
+            content-class="publish-and-post-btn width-full"
+            offset-y
+            left>
+            <v-list-item
+              @click.stop="postNote(true)"
+              class="px-2">
               <v-icon
-                class="text--white save-button-icon"
-                size="20">
-                {{ saveButtonIcon }}
+                size="16"
+                class="primary--text clickable pr-2">
+                mdi-arrow-collapse-up
               </v-icon>
-            </v-btn>
-            <v-btn
-              class="me-2"
-              width="36"
-              min-width="36"
-              height="36"
-              icon
-              @click="closeEditor">
-              <v-icon
-                class="icon-default-color"
-                size="20">
-                fas fa-times
-              </v-icon>
-            </v-btn>
-          </div>
+              <span class="body-2 text-color">
+                {{ publishAndPostButtonText }}
+              </span>
+            </v-list-item>
+          </v-menu>
         </div>
       </div>
     </div>
@@ -126,7 +93,7 @@
       :languages="languages"
       :translations="translations"
       :is-mobile="isMobile"
-      @translations-hidden="showTranslationBar = false" />
+      @translations-hidden="showTranslationBar = false"/>
     <div id="notesTop" class="width-full darkComposerEffect"></div>
   </div>
 </template>
@@ -135,21 +102,16 @@
 export default {
   data() {
     return {
+      srcImageNote: '/notes/images/wiki.png',
       showTranslationBar: false,
+      publishAndPost: false,
+      waitTimeUntilCloseMenu: 200
     };
   },
   props: {
     note: {
       type: Object,
       default: null
-    },
-    editorIcon: {
-      type: String,
-      default: 'fas fa-clipboard'
-    },
-    saveButtonIcon: {
-      type: String,
-      default: 'fas fa-save'
     },
     noteIdParam: {
       type: String,
@@ -187,6 +149,10 @@ export default {
       type: String,
       default: null
     },
+    publishAndPostButtonText: {
+      type: String,
+      default: null
+    },
     publishButtonText: {
       type: String,
       default: null
@@ -199,26 +165,35 @@ export default {
       type: Boolean,
       default: false
     },
-    saveButtonDisabled: {
-      type: Boolean,
-      default: true
-    },
-    editorReady: {
+    enablePublishAndPost: {
       type: Boolean,
       default: false
-    },
+    }
   },
   computed: {
-    editorMetadataDrawerEnabled() {
-      return !this.isMobile && !this.webPageNote;
-    }
+    langButtonColor(){
+      if (!this.noteIdParam){
+        return 'disabled--text not-clickable remove-focus';
+      }
+      return this.selectedLanguage ? 'primary--text':'';
+    },
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
+    this.initPublishAndPost();
   },
   methods: {
-    closeEditor() {
-      this.$emit('editor-closed');
+    initPublishAndPost() {
+      $(document).on('mousedown', () => {
+        if (this.publishAndPost) {
+          window.setTimeout(() => {
+            this.publishAndPost = false;
+          }, this.waitTimeUntilCloseMenu);
+        }
+      });
+    },
+    openPublishAndPost() {
+      this.publishAndPost = !this.publishAndPost;
     },
     postNote(toPublish) {
       this.$emit('post-note', toPublish);
@@ -233,9 +208,6 @@ export default {
       this.showTranslationBar = false;
       this.$refs.translationsEditBar.hide();
     },
-    openMetadataDrawer() {
-      this.$emit('open-metadata-drawer');
-    }
   }
 };
 </script>

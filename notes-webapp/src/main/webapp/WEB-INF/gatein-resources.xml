@@ -105,9 +105,6 @@
       <module>eXoVueI18n</module>
     </depends>
     <depends>
-      <module>imageCropper</module>
-    </depends>
-    <depends>
       <module>jquery</module>
       <as>$</as>
     </depends>

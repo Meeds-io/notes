@@ -33,15 +33,11 @@
       :post-key="postKey"
       :draft-saving-status="draftSavingStatus"
       :publish-button-text="publishButtonText"
+      :publish-and-post-button-text="publishAndPostButtonText"
       :lang-button-tooltip-text="langButtonTooltipText"
+      :enable-publish-and-post="enablePublishAndPost"
       :web-page-url="webPageUrl"
-      :editor-icon="editorIcon"
-      :save-button-icon="saveButtonIcon"
-      :save-button-disabled="saveButtonDisabled"
-      :editor-ready="!!editor"
-      @editor-closed="editorClosed"
-      @post-note="postNote"
-      @open-metadata-drawer="openMetadataDrawer" />
+      @post-note="postNote" />
     <form class="notes-content">
       <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
         <div
@@ -53,7 +49,6 @@
             v-model="noteObject.title"
             :placeholder="titlePlaceholder"
             type="text"
-            :maxlength="noteTitleMaxLength"
             class="py-0 px-1 mt-5 mb-0">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
@@ -70,14 +65,6 @@
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
-    <note-editor-metadata-drawer
-      ref="editorMetadataDrawer"
-      :has-featured-image="hasFeaturedImage"
-      @metadata-updated="metadataUpdated" />
-    <note-editor-featured-image-drawer
-      ref="featuredImageDrawer"
-      :note="noteObject"
-      :has-featured-image="hasFeaturedImage" />
   </div>
 </template>
 
@@ -87,9 +74,6 @@ export default {
     return {
       noteObject: null,
       editor: null,
-      initialized: false,
-      instanceReady: false,
-      noteTitleMaxLength: 500
     };
   },
   props: {
@@ -145,6 +129,10 @@ export default {
       type: Boolean,
       default: false
     },
+    publishAndPostButtonText: {
+      type: String,
+      default: null
+    },
     publishButtonText: {
       type: String,
       default: null
@@ -165,96 +153,37 @@ export default {
       type: String,
       default: 'noteTitle'
     },
-    suggesterSpaceUrl: {
+    enablePublishAndPost: {
+      type: Boolean,
+      default: false
+    },
+    spaceUrl: {
       type: String,
       default: null
     },
     spaceGroupId: {
       type: String,
       default: null
-    },
-    editorIcon: {
-      type: String,
-      default: null
-    },
-    saveButtonIcon: {
-      type: String,
-      default: null
-    },
-    saveButtonDisabled: {
-      type: Boolean,
-      default: true
-    },
-    imagesDownloadFolder: {
-      type: String,
-      default: 'DRIVE_ROOT_NODE/notes/images'
     }
   },
   watch: {
     'noteObject.title': function() {
-      if (this.noteObject.title.length >= this.noteTitleMaxLength) {
-        const messageObject = {
-          type: 'warning',
-          message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
-        };
-        this.displayAlert(messageObject);
-      }
       this.updateData();
     },
-    'noteObject.content': function () {
-      if (this.initialized) {
-        this.updateData();
-      }
-    },
-    'note.properties': function () {
-      this.cloneNoteObject();
-    },
-    'note.id': function () {
-      this.cloneNoteObject();
-    },
-    'note.lang': function() {
-      this.cloneNoteObject();
-    },
-    'note.title': function() {
+    'note.title': function () {
       this.noteObject.title = this.note?.title;
-    },
-    instanceReady() {
-      if (this.instanceReady) {
-        this.$emit('editor-ready', this.editor);
-      }
     }
-  },
-  computed: {
-    hasFeaturedImage() {
-      return !!this.noteObject?.properties?.featuredImage?.id;
-    },
   },
   created() {
     this.cloneNoteObject();
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
-    this.$root.$on('update-note-summary', this.updateTranslatedNoteSummary);
-    this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
-
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
   },
   methods: {
-    metadataUpdated(properties) {
-      this.noteObject.properties = properties;
-      this.updateData();
-      if (this.noteObject?.title?.length) {
-        this.autoSave();
-      }
-    },
-    editorClosed(){
-      this.$emit('editor-closed');
-    },
     updateTranslatedNoteTitle(title) {
       this.noteObject.title = title;
-    },
-    updateTranslatedNoteSummary(summary) {
-      this.noteObject.properties.summary = summary;
     },
     updateTranslatedNoteContent(content) {
       this.noteObject.content = content;
@@ -264,21 +193,6 @@ export default {
       this.$root.$emit('hide-translations');
     },
     setEditorData(content) {
-      if (content) {
-        const tempdiv = $('<div class=\'temp\'/>').html(content);
-        tempdiv.find('a[href*="/profile"]')
-          .each(function() {
-            $(this).replaceWith(function() {
-              return $('<span/>', {
-                class: 'atwho-inserted',
-                html: `<span class="exo-mention">${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
-              }).attr('data-atwho-at-query',`@${  $(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1)}`)
-                .attr('data-atwho-at-value',$(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1))
-                .attr('contenteditable','false');
-            });
-          });
-        content = `${tempdiv.html()}&nbsp;`;
-      }
       if (this.editor) {
         this.editor.setData(content);
       } else {
@@ -289,10 +203,8 @@ export default {
       this.noteObject = structuredClone(this.note);
     },
     updateData() {
-      if (this.instanceReady) {
-        this.$emit('update-data', this.noteObject);
-        this.hideTranslationsBar();
-      }
+      this.$emit('update-data', this.noteObject);
+      this.hideTranslationsBar();
     },
     autoSave() {
       this.$emit('auto-save', this.noteObject);
@@ -306,19 +218,19 @@ export default {
         if (editorSelectedElement.is('a')) {
           if (editorSelectedElement?.getAttribute('class') === 'noteLink') {
             this.editor.getSelection()?.getStartElement()?.remove();
-            this.editor.insertHtml(this.createLinkElement(note.url, note.name, 'noteLink'));
+            this.editor.insertHtml(this.createLinkElement(note.noteId, note.name, 'noteLink'));
           }
           if (editorSelectedElement.getAttribute('class') === 'labelLink') {
             const linkText = editorSelectedElement.getHtml();
             this.editor.getSelection().getStartElement().remove();
-            this.editor.insertHtml(this.createLinkElement(note.url, linkText, 'noteLink'));
+            this.editor.insertHtml(this.createLinkElement(note.noteId, linkText, 'noteLink'));
           }
         } else {
           const linkText = this.editor?.getSelection()?.getSelectedText();
-          this.editor.insertHtml(this.createLinkElement(note.url, linkText, 'labelLink'));
+          this.editor.insertHtml(this.createLinkElement(note.noteId, linkText, 'labelLink'));
         }
       } else {
-        this.editor.insertHtml(this.createLinkElement(note.url, note.name, 'noteLink'));
+        this.editor.insertHtml(this.createLinkElement(note.noteId, note.name, 'noteLink'));
       }
     },
     setFocus() {
@@ -335,9 +247,6 @@ export default {
     },
     resetEditorData() {
       this.noteObject.title = null;
-      if (this.noteObject?.properties) {
-        this.noteObject.properties.summary = '';
-      }
       this.editor.setData('');
     },
     initCKEditor: function() {
@@ -363,10 +272,9 @@ export default {
       $(this.$refs[this.editorBodyInputRef]).ckeditor({
         customConfig: `${eXo?.env?.portal.context}/${eXo?.env?.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
         allowedContent: true,
-        typeOfRelation: 'mention_activity_stream',
-        spaceURL: self.suggesterSpaceUrl,
+        spaceURL: self.spaceURL,
         spaceGroupId: self.spaceGroupId,
-        imagesDownloadFolder: self.imagesDownloadFolder,
+        imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',
         extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
@@ -390,6 +298,7 @@ export default {
         on: {
           instanceReady: function (evt) {
             self.editor = evt.editor;
+            self.$emit('editor-ready', self.editor);
             $(self.editor.document.$)
               .find('.atwho-inserted')
               .each(function() {
@@ -441,6 +350,7 @@ export default {
                 }
               });
             }
+            self.updateData();
           },
           fileUploadResponse: function() {
             /*add plugin fileUploadResponse to handle file upload response ,
@@ -491,25 +401,6 @@ export default {
         elementNewTop.classList.remove('darkComposerEffect');
         elementNewTop.classList.add('greyComposerEffect');
       });
-    },
-    closeFeaturedImageDrawerByOverlay() {
-      if (!this.isImageDrawerClosed()) {
-        this.$refs.featuredImageDrawer.close();
-        return;
-      }
-      this.$refs.editorMetadataDrawer.close();
-    },
-    isImageDrawerClosed() {
-      return this.$refs.featuredImageDrawer.isClosed();
-    },
-    openMetadataDrawer() {
-      this.$refs.editorMetadataDrawer.open(this.noteObject);
-    },
-    displayAlert(detail) {
-      document.dispatchEvent(new CustomEvent('alert-message', {detail: {
-        alertType: detail?.type,
-        alertMessage: detail?.message,
-      }}));
     },
   }
 };
