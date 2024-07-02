@@ -21,7 +21,7 @@
               class="notes-header-icons text-right">
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="!isMobile && !hasDraft && isManager">
+                <v-tooltip bottom v-if="!hasDraft && isManager">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       v-on="on"
@@ -41,7 +41,7 @@
               </div>
               <div
                 class="d-inline-flex">
-                <v-tooltip bottom v-if="isManager && !isMobile">
+                <v-tooltip bottom v-if="isManager">
                   <template #activator="{ on, attrs }">
                     <v-btn
                       icon
@@ -137,7 +137,7 @@
               contain
               eager />
             <div>
-              <p v-if="!isMobile" class="notes-welcome-patragraph">
+              <p class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
                   <template #activator="{ on, attrs }">
@@ -469,7 +469,6 @@ export default {
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
     },
-
     isAvailableNote() {
       return this.existingNote;
     },
