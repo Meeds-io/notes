@@ -620,9 +620,6 @@ export default {
           }
         }).then(() => {
           this.draftSavingStatus = '';
-          if (notePath) {
-            window.location.href = notePath;
-          }
         }).catch(e => {
           console.error('Error when deleting draft note', e);
         });
