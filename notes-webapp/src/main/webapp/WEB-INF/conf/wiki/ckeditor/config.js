@@ -102,7 +102,7 @@ CKEDITOR.editorConfig = function (config) {
     }
   });
 
-  if (window.innerWidth < 960) {
+  if (window.innerWidth < 600) {
     config.toolbar = mobileToolbar;
   } else {
     config.toolbar = toolbar;
