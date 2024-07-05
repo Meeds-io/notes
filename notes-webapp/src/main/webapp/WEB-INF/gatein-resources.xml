@@ -20,7 +20,6 @@
     <skin-name>Enterprise</skin-name>
     <skin-module>Notes</skin-module>
     <css-path>/skin/css/notes/notes.css</css-path>
-    <filtered>true</filtered>
   </portal-skin>
 
   <portlet-skin>
