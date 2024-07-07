@@ -24,7 +24,7 @@
   <parent>
     <groupId>io.meeds.notes</groupId>
     <artifactId>notes</artifactId>
-    <version>7.0.x-meed-SNAPSHOT</version>
+    <version>7.0.0-meed-20240707</version>
   </parent>
   <artifactId>notes-packaging</artifactId>
   <packaging>pom</packaging>
