@@ -39,8 +39,10 @@
       :save-button-icon="saveButtonIcon"
       :save-button-disabled="saveButtonDisabled"
       :translation-option-enabled="translationOptionEnabled"
+      :editor-ready="!!editor"
       @editor-closed="editorClosed"
-      @post-note="postNote" />
+      @post-note="postNote"
+      @open-metadata-drawer="openMetadataDrawer" />
     <form class="notes-content">
       <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
         <div
@@ -68,6 +70,13 @@
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
+    <note-editor-metadata-drawer
+      :has-featured-image="hasFeaturedImage"
+      ref="editorMetadataDrawer" />
+    <note-editor-featured-image-drawer
+      :note="noteObject"
+      :has-featured-image="hasFeaturedImage"
+      ref="featuredImageDrawer" />
   </div>
 </template>
 
@@ -77,6 +86,8 @@ export default {
     return {
       noteObject: null,
       editor: null,
+      initialized: false,
+      instanceReady: false
     };
   },
   props: {
@@ -181,8 +192,27 @@ export default {
     'noteObject.title': function() {
       this.updateData();
     },
+    'noteObject.content': function () {
+      this.updateData();
+    },
+    'note.id': function () {
+      this.cloneNoteObject();
+    },
     'note.title': function () {
       this.noteObject.title = this.note?.title;
+    },
+    instanceReady() {
+      if (this.instanceReady) {
+        this.$emit('editor-ready', this.editor);
+      }
+    }
+  },
+  computed: {
+    featuredImageId() {
+      return this.note?.properties?.featuredImageId;
+    },
+    hasFeaturedImage() {
+      return !!this.featuredImageId && this.featuredImageId !== 'null';
     }
   },
   created() {
@@ -190,6 +220,8 @@ export default {
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
+    this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
+
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
   },
   methods: {
@@ -328,7 +360,6 @@ export default {
         on: {
           instanceReady: function (evt) {
             self.editor = evt.editor;
-            self.$emit('editor-ready', self.editor);
             $(self.editor.document.$)
               .find('.atwho-inserted')
               .each(function() {
@@ -380,7 +411,6 @@ export default {
                 }
               });
             }
-            self.updateData();
           },
           fileUploadResponse: function() {
             /*add plugin fileUploadResponse to handle file upload response ,
@@ -431,6 +461,19 @@ export default {
         elementNewTop.classList.remove('darkComposerEffect');
         elementNewTop.classList.add('greyComposerEffect');
       });
+    },
+    closeFeaturedImageDrawerByOverlay() {
+      if (!this.isImageDrawerClosed()) {
+        this.$refs.featuredImageDrawer.close();
+        return;
+      }
+      this.$refs.editorMetadataDrawer.close();
+    },
+    isImageDrawerClosed() {
+      return this.$refs.featuredImageDrawer.isClosed();
+    },
+    openMetadataDrawer() {
+      this.$refs.editorMetadataDrawer.open(this.noteObject);
     },
   }
 };

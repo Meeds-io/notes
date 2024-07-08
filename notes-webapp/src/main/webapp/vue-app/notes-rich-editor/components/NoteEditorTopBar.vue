@@ -40,10 +40,10 @@
                 height="36"
                 class="pa-0 my-auto"
                 icon
+                :disabled="!noteIdParam || !editorReady"
                 @click="showTranslations">
                 <v-icon
                   :class="{'primary--text': !!selectedLanguage}"
-                  :disabled="!noteIdParam"
                   :aria-label="$t('notes.label.button.translations.options')"
                   size="20"
                   class="pa-0 translation-button-icon my-auto icon-default-color">
@@ -55,6 +55,21 @@
               {{ langButtonTooltipText }}
             </span>
           </v-tooltip>
+          <v-btn
+            v-if="editorMetadataDrawerEnabled"
+            width="36"
+            min-width="36"
+            height="36"
+            class="pa-0 my-auto"
+            text
+            :disabled="!noteIdParam || !editorReady"
+            @click="openMetadataDrawer">
+            <v-icon
+              size="20"
+              class="pa-0 metadata-button-icon my-auto icon-default-color">
+              fas fa-th-list
+            </v-icon>
+          </v-btn>
         </div>
         <div class="notesFormRightActions pe-5">
           <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
@@ -189,6 +204,15 @@ export default {
     translationOptionEnabled: {
       type: Boolean,
       default: true
+    },
+    editorReady: {
+      type: Boolean,
+      default: false
+    },
+  },
+  computed: {
+    editorMetadataDrawerEnabled() {
+      return eXo?.env?.portal?.notesEditorMetadataDrawerEnabled &&!this.isMobile && !this.webPageNote;
     }
   },
   created() {
@@ -211,6 +235,9 @@ export default {
       this.showTranslationBar = false;
       this.$refs.translationsEditBar.hide();
     },
+    openMetadataDrawer() {
+      this.$emit('open-metadata-drawer');
+    }
   }
 };
 </script>

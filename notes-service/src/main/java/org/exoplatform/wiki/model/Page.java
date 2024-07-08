@@ -101,6 +101,8 @@ public class Page {
 
   private String                          lang;
 
+  private Map<String, String>             properties;
+
   public Page(String name) {
     this.name = name;
   }

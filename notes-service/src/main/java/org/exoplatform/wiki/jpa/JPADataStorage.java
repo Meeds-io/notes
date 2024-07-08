@@ -1144,7 +1144,7 @@ public class JPADataStorage implements DataStorage {
 
   @Override
   @ExoTransactional
-  public void addPageVersion(Page page , String userName) throws WikiException {
+  public PageVersion addPageVersion(Page page , String userName) throws WikiException {
     if(page != null) {
       PageEntity pageEntity = fetchPageEntity(page);
 
@@ -1154,7 +1154,6 @@ public class JPADataStorage implements DataStorage {
       }
 
       PageVersionEntity pageVersionEntity = new PageVersionEntity();
-
       Long versionNumber = pageVersionDAO.getLastversionNumberOfPage(pageEntity.getId());
       if(versionNumber == null) {
         versionNumber = 1L;
@@ -1191,13 +1190,15 @@ public class JPADataStorage implements DataStorage {
       pageEntity.setVersions(pageVersionEntities);
 
       pageDAO.update(pageEntity);
+
+      return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionEntity);
     } else {
       throw new WikiException("Cannot create version of a page null");
     }
   }
 
   @Override
-  public void restoreVersionOfPage(String versionName, Page page) throws WikiException {
+  public PageVersion restoreVersionOfPage(String versionName, Page page) throws WikiException {
     if(page != null) {
       PageEntity pageEntity = fetchPageEntity(page);
 
@@ -1211,6 +1212,7 @@ public class JPADataStorage implements DataStorage {
         pageEntity.setContent(versionToRestore.getContent());
         pageEntity.setUpdatedDate(Calendar.getInstance().getTime());
         pageDAO.update(pageEntity);
+        return EntityConverter.convertPageVersionEntityToPageVersion(versionToRestore);
       } else {
         throw new WikiException("Cannot restore version " + versionName + " of a page " + page.getWikiType() + ":"
             + page.getWikiOwner() + ":" + page.getName() + " because version does not exist.");

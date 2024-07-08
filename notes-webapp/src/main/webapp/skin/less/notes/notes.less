@@ -124,6 +124,11 @@
         height: 21px;
       }
 
+      .metadata-button-icon {
+        width: 20px;
+        height: 21px;
+      }
+
       .notesActions {
         .notesFormButtons {
           .notesFormLeftActions {
@@ -205,6 +210,57 @@
   .notes-application-content {
     overflow: auto;
     min-height: calc(~"100vh - 350px");
+  }
+}
+
+#editorMetadataDrawer {
+  .add-image-area {
+    background-color: @primaryBackground !important;
+  }
+
+  .cke_bottom {
+    height: auto;
+    opacity: 0.4;
+    background: transparent;
+  }
+
+  .featured-image-controls {
+    margin-top: -42px !important;
+  }
+
+  .feature-image-trash-icon {
+    width: 18px;
+    height: 21px;
+  }
+
+  .feature-image-file-icon {
+    width: 15px;
+    height: 21px;
+  }
+
+  .feature-image-button {
+    background: @greyColorLighten1Default;
+    opacity: 0.75;
+  }
+
+  .summary-metadata-input {
+    .v-input__slot {
+      padding: 0;
+
+      fieldset {
+        padding: 0;
+      }
+
+      .v-text-field__slot {
+        margin: 0;
+
+        textarea {
+          border: 0;
+          margin: 0 auto;
+          padding: 12px;
+        }
+      }
+    }
   }
 }
 
