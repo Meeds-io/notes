@@ -441,9 +441,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       List<PageHistory> pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, identity.getUserId(), lang);
-      pageHistories.forEach((pageHistory) -> {
-        pageHistory.setContent(sanitizeAndSubstituteMentions(pageHistory.getContent(), lang));
-      });
+      pageHistories.forEach(pageHistory -> pageHistory.setContent(sanitizeAndSubstituteMentions(pageHistory.getContent(), lang)));
       return Response.ok(pageHistories)
                      .build();
     } catch (IllegalAccessException e) {
@@ -1566,7 +1564,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Locale locale = local == null ? null : Locale.forLanguageTag(local);
       String sanitizedBody = HTMLSanitizer.sanitize(content);
-      sanitizedBody = sanitizedBody.replaceAll("&#64;", "@");
+      sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);
     } catch (Exception e) {
       return content;

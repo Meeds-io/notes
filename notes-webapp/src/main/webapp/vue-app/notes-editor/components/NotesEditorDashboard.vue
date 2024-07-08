@@ -40,7 +40,7 @@
       :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
-      :space-url="spaceDisplayName"
+      :suggester-space-url="suggesterSpaceURL"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :save-button-disabled="saveOrUpdateDisabled"
@@ -165,6 +165,9 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
+    },
+    suggesterSpaceURL() {
+      return this.spaceGroupId || this.urlParams?.get?.('spaceGroupId');
     }
   },
   watch: {

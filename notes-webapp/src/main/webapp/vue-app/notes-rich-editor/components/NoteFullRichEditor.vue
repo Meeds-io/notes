@@ -151,7 +151,7 @@ export default {
       type: String,
       default: 'noteTitle'
     },
-    spaceUrl: {
+    suggesterSpaceUrl: {
       type: String,
       default: null
     },
@@ -215,7 +215,7 @@ export default {
                 .attr('contenteditable','false');
             });
           });
-        content = `${tempdiv.html()  }&nbsp;`;
+        content = `${tempdiv.html()}&nbsp;`;
       }
       if (this.editor) {
         this.editor.setData(content);
@@ -297,7 +297,7 @@ export default {
         customConfig: `${eXo?.env?.portal.context}/${eXo?.env?.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
         allowedContent: true,
         typeOfRelation: 'mention_activity_stream',
-        spaceURL: self.spaceUrl,
+        spaceURL: self.suggesterSpaceUrl,
         spaceGroupId: self.spaceGroupId,
         imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',
