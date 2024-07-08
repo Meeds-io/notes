@@ -32,5 +32,6 @@
   <import>war:/conf/wiki/search-configuration.xml</import>
   <import>war:/conf/wiki/ckeditor-configuration.xml</import>
   <import>war:/conf/wiki/metadata-configuration.xml</import>
+  <import>war:/conf/wiki/feature-flags-configuration.xml</import>
 
 </configuration>

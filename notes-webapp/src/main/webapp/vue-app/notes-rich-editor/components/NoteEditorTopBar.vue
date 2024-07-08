@@ -55,6 +55,20 @@
               {{ langButtonTooltipText }}
             </span>
           </v-tooltip>
+          <v-btn
+            v-if="editorMetadataDrawerEnabled && !isMobile"
+            width="36"
+            min-width="36"
+            height="36"
+            class="pa-0 my-auto"
+            text
+            @click="openMetadataDrawer">
+            <v-icon
+              size="20"
+              class="pa-0 metadata-button-icon my-auto icon-default-color">
+              fas fa-th-list
+            </v-icon>
+          </v-btn>
         </div>
         <div class="notesFormRightActions pe-5">
           <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
@@ -187,6 +201,11 @@ export default {
       default: true
     }
   },
+  computed: {
+    editorMetadataDrawerEnabled() {
+      return eXo?.env?.portal?.notesEditorMetadataDrawerEnabled;
+    }
+  },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
   },
@@ -207,6 +226,9 @@ export default {
       this.showTranslationBar = false;
       this.$refs.translationsEditBar.hide();
     },
+    openMetadataDrawer() {
+      this.$emit('open-metadata-drawer');
+    }
   }
 };
 </script>
