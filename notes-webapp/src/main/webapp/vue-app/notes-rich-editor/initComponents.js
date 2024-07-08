@@ -3,17 +3,13 @@ import TranslationsEditBar from '../notes-rich-editor/components/TranslationsEdi
 import NoteTreeviewDrawer from '../notes/components/NoteTreeviewDrawer.vue';
 import NoteEditorTopBar from '../notes-rich-editor/components/NoteEditorTopBar.vue';
 import NoteFullRichEditor from './components/NoteFullRichEditor.vue';
-import NoteEditorMetadataDrawer from './components/NoteEditorMetadataDrawer.vue';
-import NoteRichEditorInput from './components/NoteRichEditorInput.vue';
 
 const components = {
   'note-custom-plugins': NoteCustomPlugins,
   'note-treeview-drawer': NoteTreeviewDrawer,
   'note-translation-edit-bar': TranslationsEditBar,
   'note-editor-top-bar': NoteEditorTopBar,
-  'note-full-rich-editor': NoteFullRichEditor,
-  'note-editor-metadata-drawer': NoteEditorMetadataDrawer,
-  'note-rich-editor-input': NoteRichEditorInput,
+  'note-full-rich-editor': NoteFullRichEditor
 };
 
 for (const key in components) {

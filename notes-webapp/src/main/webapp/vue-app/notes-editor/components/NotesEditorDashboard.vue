@@ -36,6 +36,7 @@
       :translations="translations"
       :selected-language="selectedLanguage"
       :lang-button-tooltip-text="langButtonTooltipText"
+      :publish-and-post-button-text="publishAndPostButtonText"
       :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
@@ -134,6 +135,13 @@ export default {
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
+    },
+    publishAndPostButtonText() {
+      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
+        return this.$t('notes.button.updateAndPost');
+      } else {
+        return this.$t('notes.button.publishAndPost');
+      }
     },
     langButtonTooltipText() {
       if (this.noteId) {
