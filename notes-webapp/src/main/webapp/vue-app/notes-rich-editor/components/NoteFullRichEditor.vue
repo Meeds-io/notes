@@ -202,6 +202,21 @@ export default {
       this.$root.$emit('hide-translations');
     },
     setEditorData(content) {
+      if (content) {
+        const tempdiv = $('<div class=\'temp\'/>').html(content);
+        tempdiv.find('a[href*="/profile"]')
+          .each(function() {
+            $(this).replaceWith(function() {
+              return $('<span/>', {
+                class: 'atwho-inserted',
+                html: `<span class="exo-mention">${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
+              }).attr('data-atwho-at-query',`@${  $(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1)}`)
+                .attr('data-atwho-at-value',$(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1))
+                .attr('contenteditable','false');
+            });
+          });
+        content = `${tempdiv.html()  }&nbsp;`;
+      }
       if (this.editor) {
         this.editor.setData(content);
       } else {
@@ -281,7 +296,8 @@ export default {
       $(this.$refs[this.editorBodyInputRef]).ckeditor({
         customConfig: `${eXo?.env?.portal.context}/${eXo?.env?.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
         allowedContent: true,
-        spaceURL: self.spaceURL,
+        typeOfRelation: 'mention_activity_stream',
+        spaceURL: self.spaceUrl,
         spaceGroupId: self.spaceGroupId,
         imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
         toolbarLocation: 'top',

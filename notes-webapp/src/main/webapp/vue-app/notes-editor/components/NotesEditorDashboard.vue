@@ -40,6 +40,7 @@
       :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
+      :space-url="spaceDisplayName"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :save-button-disabled="saveOrUpdateDisabled"

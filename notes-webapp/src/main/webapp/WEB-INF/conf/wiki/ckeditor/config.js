@@ -71,7 +71,7 @@ CKEDITOR.editorConfig = function (config) {
       items: ['Blockquote']
     },
   ];
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon`;
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
