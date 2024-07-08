@@ -39,7 +39,8 @@
       :save-button-icon="saveButtonIcon"
       :save-button-disabled="saveButtonDisabled"
       @editor-closed="editorClosed"
-      @post-note="postNote" />
+      @post-note="postNote"
+      @open-metadata-drawer="openMetadataDrawer" />
     <form class="notes-content">
       <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
         <div
@@ -54,19 +55,27 @@
             class="py-0 px-1 mt-5 mb-0">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
-          <textarea
-            :id="editorBodyInputRef"
-            :ref="editorBodyInputRef"
+          <note-rich-editor-input
+            ref="richEditor"
+            toolbar-location="top"
+            :editor-input-ref="editorBodyInputRef"
+            :space-group-id="spaceGroupId"
+            :space-url="spaceUrl"
             :placeholder="bodyPlaceholder"
-            :name="editorBodyInputRef"
-            class="notesFormInput">
-            </textarea>
+            :is-web-page-note="webPageNote"
+            :custom-config-url="customConfigUrl"
+            :editor-events-callback="editorEventsCallback"
+            @editor-ready="editorReady"
+            @update-data="updateData"
+            @open-treeview="openTreeView" />
         </div>
       </div>
     </form>
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
+    <note-editor-metadata-drawer
+      ref="editorMetadataDrawer" />
   </div>
 </template>
 
@@ -76,6 +85,8 @@ export default {
     return {
       noteObject: null,
       editor: null,
+      initialized: false,
+      customConfigUrl: `${eXo?.env?.portal.context}/${eXo?.env?.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`
     };
   },
   props: {
@@ -174,7 +185,7 @@ export default {
   },
   watch: {
     'noteObject.title': function() {
-      this.updateData();
+      this.emitDataUpdate();
     },
     'note.title': function () {
       this.noteObject.title = this.note?.title;
@@ -188,6 +199,9 @@ export default {
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
   },
   methods: {
+    openMetadataDrawer() {
+      this.$refs.editorMetadataDrawer.open(this.noteObject);
+    },
     editorClosed(){
       this.$emit('editor-closed');
     },
@@ -201,19 +215,28 @@ export default {
     hideTranslationsBar() {
       this.$root.$emit('hide-translations');
     },
-    setEditorData(content) {
-      if (this.editor) {
-        this.editor.setData(content);
-      } else {
-        this.$refs[this.editorBodyInputRef].value = content;
-      }
-    },
     cloneNoteObject() {
       this.noteObject = structuredClone(this.note);
     },
-    updateData() {
+    postNote(toPublish) {
+      this.$emit('post-note', toPublish);
+    },
+    editorReady(editor) {
+      this.editor = editor;
+      this.$emit('editor-ready', this.editor);
+      this.setFocus();
+      this.setToolBarEffect();
+    },
+    setEditorData(content) {
+      this.$refs.richEditor.setEditorData(content);
+    },
+    emitDataUpdate() {
       this.$emit('update-data', this.noteObject);
       this.hideTranslationsBar();
+    },
+    updateData(content) {
+      this.noteObject.content = content;
+      this.emitDataUpdate();
     },
     autoSave() {
       this.$emit('auto-save', this.noteObject);
@@ -246,140 +269,91 @@ export default {
       if (!this.noteIdParam) {
         this.$refs[this.editorTitleInputRef].focus();
       } else if (this.editor) {
-        window.setTimeout(() => {
-          this.$nextTick().then(() => this.editor.focus());
-        }, 200);
+        this.$refs.richEditor.setFocus();
       }
-    },
-    postNote(toPublish) {
-      this.$emit('post-note', toPublish);
     },
     resetEditorData() {
       this.noteObject.title = null;
-      this.editor.setData('');
+      this.$refs.richEditor.resetEditorData();
     },
     initCKEditor: function() {
-      if (this.editor?.destroy) {
-        this.editor.destroy(true);
-      }
-
-      CKEDITOR.dtd.$removeEmpty['i'] = false;
-
-      CKEDITOR.on('dialogDefinition', function (e) {
-        if (e.data.name === 'link') {
-          const informationTab = e.data.definition.getContents('target');
-          const targetField = informationTab.get('linkTargetType');
-          targetField['default'] = '_self';
-          targetField.items = targetField.items.filter(t => ['_self', '_blank'].includes(t[1]));
-        }
-      });
-
-      // this line is mandatory when a custom skin is defined
-      CKEDITOR.basePath = '/commons-extension/ckeditor/';
+      this.$refs.richEditor.initCKEditor();
+    },
+    editorEventsCallback(component) {
       const self = this;
-
-      $(this.$refs[this.editorBodyInputRef]).ckeditor({
-        customConfig: `${eXo?.env?.portal.context}/${eXo?.env?.portal.rest}/richeditor/configuration?type=notes&v=${eXo.env.client.assetsVersion}`,
-        allowedContent: true,
-        spaceURL: self.spaceURL,
-        spaceGroupId: self.spaceGroupId,
-        imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
-        toolbarLocation: 'top',
-        extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
-        removeButtons: '',
-        enterMode: CKEDITOR.ENTER_P,
-        shiftEnterMode: CKEDITOR.ENTER_BR,
-        copyFormatting_allowedContexts: true,
-        indentBlock: {
-          offset: 40,
-          unit: 'px'
-        },
-        format_tags: 'p;h1;h2;h3',
-        bodyClass: 'notesContent',
-        dialog_noConfirmCancel: true,
-        colorButton_enableMore: true,
-        isImagePasteBlocked: this.webPageNote,
-        hideUploadImageLink: this.webPageNote,
-        isImageDragBlocked: this.webPageNote,
-        sharedSpaces: {
-          top: 'notesTop'
-        },
-        on: {
-          instanceReady: function (evt) {
-            self.editor = evt.editor;
-            self.$emit('editor-ready', self.editor);
-            $(self.editor.document.$)
-              .find('.atwho-inserted')
-              .each(function() {
-                $(this).on('click', '.remove', function() {
-                  $(this).closest('[data-atwho-at-query]').remove();
-                });
+      return {
+        instanceReady: function (evt) {
+          component.editor = evt.editor;
+          $(component.editor.document.$)
+            .find('.atwho-inserted')
+            .each(function() {
+              $(this).on('click', '.remove', function() {
+                $(this).closest('[data-atwho-at-query]').remove();
               });
-
-            const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
-            if ( treeviewParentWrapper ) {
-              treeviewParentWrapper.contentEditable='false';
-            }
-
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if ( removeTreeviewBtn ) {
-              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  treeviewParentWrapper.remove();
-                  self.noteObject.content = evt.editor.getData();
-                }
-                self.setFocus();
-              });
-            }
-            window.setTimeout(() => self.setFocus(), 50);
-            self.$root.$applicationLoaded();
-            self.instanceReady = true;
-            self.setToolBarEffect();
-          },
-          change: function (evt) {
-            if (!self.initialized) {
-              // First time setting data
-              self.initialized = true;
-              return;
-            }
-            self.noteObject.content = evt.editor.getData();
-            self.autoSave();
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if (removeTreeviewBtn) {
-              evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  const newLine = treeviewParentWrapper.getNext();
-                  treeviewParentWrapper.remove();
-                  if ( newLine.$.innerText.trim().length === 0) {
-                    newLine.remove();
-                  }
-                  self.noteObject.content = evt.editor.getData();
-                }
-              });
-            }
-            self.updateData();
-          },
-          fileUploadResponse: function() {
-            /*add plugin fileUploadResponse to handle file upload response ,
-              in this method we can get the response from server and update the editor content
-              this method is called when file upload is finished*/
-            self.editor.once('afterInsertHtml', ()=> {
-              window.setTimeout(() => {
-                self.editor.fire('mode');
-              }, 2000);
             });
-          },
-          doubleclick: function(evt) {
-            const element = evt.data.element;
-            if ( element && element.is('a')) {
-              const noteId = element.getAttribute('href');
-              self.$emit('open-treeview', noteId, 'includePages', 'no-arrow');
-            }
+
+          const treeviewParentWrapper =  component.editor.window.$.document.getElementById('note-children-container');
+          if ( treeviewParentWrapper ) {
+            treeviewParentWrapper.contentEditable='false';
+          }
+
+          const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+          if ( removeTreeviewBtn ) {
+            evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
+              const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+              if ( treeviewParentWrapper) {
+                treeviewParentWrapper.remove();
+                component.content = evt.editor.getData();
+              }
+            });
+          }
+          component.$root.$applicationLoaded();
+          component.instanceReady = true;
+        },
+        change: function (evt) {
+          if (!self.initialized) {
+            // First time setting data
+            self.initialized = true;
+            return;
+          }
+          component.content = evt.editor.getData();
+          self.autoSave();
+          const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
+          if (removeTreeviewBtn) {
+            evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
+              const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
+              if ( treeviewParentWrapper) {
+                const newLine = treeviewParentWrapper.getNext();
+                treeviewParentWrapper.remove();
+                if ( newLine.$.innerText.trim().length === 0) {
+                  newLine.remove();
+                }
+                component.content = evt.editor.getData();
+              }
+            });
+          }
+        },
+        fileUploadResponse: function() {
+          /*add plugin fileUploadResponse to handle file upload response ,
+            in this method we can get the response from server and update the editor content
+            this method is called when file upload is finished*/
+          component.editor.once('afterInsertHtml', ()=> {
+            window.setTimeout(() => {
+              component.editor.fire('mode');
+            }, 2000);
+          });
+        },
+        doubleclick: function(evt) {
+          const element = evt.data.element;
+          if ( element && element.is('a')) {
+            const noteId = element.getAttribute('href');
+            self.openTreeView(noteId);
           }
         }
-      });
+      };
+    },
+    openTreeView(noteId) {
+      this.$emit('open-treeview', noteId, 'includePages', 'no-arrow');
     },
     openCustomPluginsDrawer() {
       this.$refs.noteCustomPlugins.open();

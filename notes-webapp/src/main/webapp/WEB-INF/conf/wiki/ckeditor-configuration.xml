@@ -61,6 +61,24 @@
         </object-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>NotesSummaryMetadataInputEditorConfiguration</name>
+      <set-method>addPlugin</set-method>
+      <type>io.meeds.social.core.richeditor.RichEditorConfigurationPlugin</type>
+      <init-params>
+        <object-param>
+          <name>BaseCKEditorConfiguration</name>
+          <object type="io.meeds.social.core.richeditor.RichEditorConfiguration">
+            <field name="instanceType">
+              <string>notesSummaryInput</string>
+            </field>
+            <field name="filePath">
+              <string>war:/conf/wiki/ckeditor/summary-input-config.js</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
 </configuration>
