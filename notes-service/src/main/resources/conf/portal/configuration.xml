@@ -22,11 +22,6 @@
    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
-   
-  <component>
-    <key>org.exoplatform.wiki.service.impl.SessionManager</key>
-    <type>org.exoplatform.wiki.service.impl.SessionManager</type>
-  </component>
 
   <component>
     <type>io.meeds.notes.service.NotePageViewService</type>
@@ -58,10 +53,6 @@
         <property name="defaultSyntax" value="xhtml/1.0"/>
       </properties-param> 
     </init-params>
-  </component>
-  <component>
-    <key>org.exoplatform.wiki.service.impl.SessionManager</key>
-    <type>org.exoplatform.wiki.service.impl.SessionManager</type>
   </component>
 
   <component>
@@ -236,22 +227,6 @@
           <property name="description" value="wiki application files"/>
         </properties-param>
       </init-params>
-    </component-plugin>
-  </external-component-plugins>
-
-  <external-component-plugins>
-    <target-component>org.exoplatform.services.listener.ListenerService</target-component>
-    <component-plugin>
-      <name>org.exoplatform.web.GenericHttpListener.sessionCreated</name>
-      <set-method>addListener</set-method>
-      <type>org.exoplatform.wiki.service.impl.SessionCreatedListener</type>
-      <description>description</description>
-    </component-plugin>
-    <component-plugin>
-      <name>org.exoplatform.web.GenericHttpListener.sessionDestroyed</name>
-      <set-method>addListener</set-method>
-      <type>org.exoplatform.wiki.service.impl.SessionDestroyedListener</type>
-      <description>description</description>
     </component-plugin>
   </external-component-plugins>
 

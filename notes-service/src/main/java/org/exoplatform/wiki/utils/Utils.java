@@ -298,26 +298,6 @@ public class Utils {
     return fillPortalName(sb.toString());
   }
 
-  public static String getPageNameForAddingPage() {
-    return Utils.getPageNameForAddingPage(null);
-  }
-
-  public static String getPageNameForAddingPage(String sessionId) {
-    if(sessionId == null || sessionId.isEmpty()) {
-      sessionId = StringUtils.EMPTY;
-      PortalRequestContext portalRequestContext = Util.getPortalRequestContext();
-      if(portalRequestContext != null) {
-        HttpServletRequest request = portalRequestContext.getRequest();
-        if(request != null && request.getSession(false) != null) {
-          sessionId = request.getSession(false).getId();
-        }
-      }
-
-    }
-    String username = Utils.getCurrentUser();
-    return username + SPLIT_TEXT_OF_DRAFT_FOR_NEW_PAGE + sessionId;
-  }
-  
   private static String getDomainUrl() {
     PortalRequestContext portalRequestContext = Util.getPortalRequestContext();
     StringBuilder domainUrl = new StringBuilder();
