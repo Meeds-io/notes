@@ -53,6 +53,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.social.core.utils.MentionUtils;
+import org.exoplatform.wiki.model.PageHistory;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -275,7 +278,7 @@ public class NotesRestService implements ResourceContainer {
       if (note.getContent().contains("wiki-children-pages ck-widget")) {
         note = updateChildrenContainer(note);
       }
-      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
+      note.setContent(sanitizeAndSubstituteMentions(note.getContent(), lang));
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(),
                                                    note.getWikiOwner(),
                                                    note.getName(),
@@ -371,7 +374,7 @@ public class NotesRestService implements ResourceContainer {
       if (parentPage == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      draftNote.setContent(HTMLSanitizer.sanitize(draftNote.getContent()));
+      draftNote.setContent(sanitizeAndSubstituteMentions(draftNote.getContent(), lang));
       draftNote.setBreadcrumb(noteService.getBreadCrumb(parentPage.getWikiType(),
                                                         parentPage.getWikiOwner(),
                                                         draftNote.getId(),
@@ -410,6 +413,9 @@ public class NotesRestService implements ResourceContainer {
       }
       DraftPage draftNote = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      lang);
+      if (draftNote != null) {
+        draftNote.setContent(sanitizeAndSubstituteMentions(draftNote.getContent(), lang));
+      }
       return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
     } catch (Exception e) {
       log.error("Can't get draft note {}", noteId, e);
@@ -436,7 +442,9 @@ public class NotesRestService implements ResourceContainer {
       if (note == null) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      return Response.ok(noteService.getVersionsHistoryOfNoteByLang(note, identity.getUserId(), lang))
+      List<PageHistory> pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, identity.getUserId(), lang);
+      pageHistories.forEach(pageHistory -> pageHistory.setContent(sanitizeAndSubstituteMentions(pageHistory.getContent(), lang)));
+      return Response.ok(pageHistories)
                      .build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
@@ -1552,6 +1560,17 @@ public class NotesRestService implements ResourceContainer {
       wikiOwner = wikiOwner.substring(0, wikiOwner.length() - 1);
     }
     return wikiOwner;
+  }
+
+  private String sanitizeAndSubstituteMentions(String content, String local) {
+    try {
+      Locale locale = local == null ? null : Locale.forLanguageTag(local);
+      String sanitizedBody = HTMLSanitizer.sanitize(content);
+      sanitizedBody = sanitizedBody.replace("&#64;", "@");
+      return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);
+    } catch (Exception e) {
+      return content;
+    }
   }
 
 }
