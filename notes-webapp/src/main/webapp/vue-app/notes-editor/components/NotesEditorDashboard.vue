@@ -39,7 +39,8 @@
       :publish-and-post-button-text="publishAndPostButtonText"
       :publish-button-text="publishButtonText"
       :editor-icon="editorIcon"
-      :space-group-id="`/spaces/${this.spaceGroupId}`"
+      :space-group-id="`/spaces/${spaceGroupId}`"
+      :suggester-space-url="suggesterSpaceURL"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :editor-body-input-ref="'notesContent'"
@@ -164,6 +165,9 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
+    },
+    suggesterSpaceURL() {
+      return this.spaceGroupId || this.urlParams?.get?.('spaceGroupId');
     }
   },
   watch: {
