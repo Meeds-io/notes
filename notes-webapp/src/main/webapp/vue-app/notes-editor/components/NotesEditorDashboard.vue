@@ -175,6 +175,9 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
+    },
+    suggesterSpaceURL() {
+      return this.spaceGroupId || this.urlParams?.get?.('spaceGroupId');
     }
   },
   watch: {
