@@ -321,6 +321,7 @@ export default {
     },
     createNote(note) {
       return this.$notesService.createNote(note).then(data => {
+        this.note = data;
         this.originalNote = structuredClone(data);
         const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
         // delete draft note
