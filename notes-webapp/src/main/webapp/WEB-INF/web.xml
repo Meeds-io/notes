@@ -10,13 +10,6 @@
   <display-name>notes</display-name>
   <absolute-ordering />
 
-  <jsp-config>
-    <taglib>
-      <taglib-uri>http://java.sun.com/portlet_2_0</taglib-uri>
-      <taglib-location>/tld/portlet_2_0.tld</taglib-location>
-    </taglib>
-  </jsp-config>
-
   <listener>
     <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
   </listener>
@@ -34,20 +27,4 @@
     <url-pattern>/images/*</url-pattern>
   </filter-mapping>
 
-  <!-- ============To override UIMaskWorkspace template for Preview wiki page============== -->
-  <listener>
-    <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
-  </listener>
-
-  <servlet>
-    <servlet-name>GateInServlet</servlet-name>
-    <servlet-class>org.gatein.wci.api.GateInServlet</servlet-class>
-    <load-on-startup>0</load-on-startup>
-  </servlet>
-  
-  <servlet-mapping>
-    <servlet-name>GateInServlet</servlet-name>
-    <url-pattern>/gateinservlet</url-pattern>
-  </servlet-mapping>
-   
 </web-app>
