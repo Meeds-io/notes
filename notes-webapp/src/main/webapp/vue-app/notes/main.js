@@ -28,7 +28,7 @@ const appId = 'notesOverviewApplication';
 const lang = eXo?.env.portal.language || 'en';
 
 //should expose the locale ressources as REST API
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.notes.notesPortlet-${lang}.json`;
+const url = `/notes/i18n/locale.portlet.notes.notesPortlet?lang=${lang}`;
 
 if (!Vue.prototype.$notesService) {
   window.Object.defineProperty(Vue.prototype, '$notesService', {
