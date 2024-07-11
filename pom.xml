@@ -9,7 +9,7 @@
   </parent>
   <groupId>io.meeds.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.0.x-meed-SNAPSHOT</version>
+  <version>7.0.0-meed-20240711</version>
   <packaging>pom</packaging>
   <name>Meeds:: PLF:: Notes</name>
   <description>Meeds Notes</description>
@@ -22,7 +22,7 @@
   <scm>
     <connection>scm:git:git://github.com/meeds-io/notes.git</connection>
     <developerConnection>scm:git:git@github.com:meeds-io/notes.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>7.0.0-meed-20240711</tag>
     <url>https://github.com/meeds-io/notes</url>
   </scm>
   <properties>
