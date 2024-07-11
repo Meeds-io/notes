@@ -13,7 +13,7 @@ if (extensionRegistry) {
 
 const appId = 'notesEditorApplication';
 const lang = window.eXo?.env?.portal?.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.portlet.notes.notesPortlet-${lang}.json`;
+const url = `/notes/i18n/locale.portlet.notes.notesPortlet?lang=${lang}`;
 
 export function init() {
   exoi18n.loadLanguageAsync(lang, url)
