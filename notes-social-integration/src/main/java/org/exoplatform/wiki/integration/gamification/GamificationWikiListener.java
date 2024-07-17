@@ -18,22 +18,22 @@
  */
 package org.exoplatform.wiki.integration.gamification;
 
-import static io.meeds.gamification.constant.GamificationConstant.EVENT_NAME;
-import static io.meeds.gamification.constant.GamificationConstant.OBJECT_ID_PARAM;
-import static io.meeds.gamification.constant.GamificationConstant.OBJECT_TYPE_PARAM;
-import static io.meeds.gamification.constant.GamificationConstant.RECEIVER_ID;
-import static io.meeds.gamification.constant.GamificationConstant.SENDER_ID;
+import static io.meeds.gamification.constant.GamificationConstant.*;
 import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.services.listener.Asynchronous;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 import org.exoplatform.wiki.utils.NoteConstants;
@@ -51,10 +51,14 @@ public class GamificationWikiListener extends PageWikiListener {
 
   protected ListenerService  listenerService;
 
+  protected SpaceService      spaceService;
+
   public GamificationWikiListener(IdentityManager identityManager,
-                                  ListenerService listenerService) {
+                                  ListenerService listenerService,
+                                  SpaceService      spaceService) {
     this.identityManager = identityManager;
     this.listenerService = listenerService;
+    this.spaceService = spaceService;
   }
 
   @Override
@@ -70,7 +74,7 @@ public class GamificationWikiListener extends PageWikiListener {
       String actorUsername = ConversationState.getCurrent().getIdentity().getUserId();
       // Compute user id
       String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
-      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_ADD_PAGE, page.getId());
+      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_ADD_PAGE, page.getId(), wikiOwner, wikiType);
     }
   }
 
@@ -106,15 +110,21 @@ public class GamificationWikiListener extends PageWikiListener {
 
       // Compute user id
       String actorId = identityManager.getOrCreateUserIdentity(actorUsername).getId();
-
-      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_UPDATE_PAGE, page.getId());
+      createGamificationRealization(actorId, actorId, GAMIFICATION_WIKI_UPDATE_PAGE, page.getId(), wikiOwner, wikiType);
     }
   }
 
   private void createGamificationRealization(String earnerIdentityId,
                                              String receiverId,
                                              String gamificationEventName,
-                                             String pageId) {
+                                             String pageId,
+                                             String wikiOwner,
+                                             String wikiType) {
+    String eventDetails = "";
+    if (StringUtils.isNotBlank(wikiOwner) && StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+      Space space = spaceService.getSpaceByGroupId(wikiOwner);
+      eventDetails = "{spaceId: " + space.getId() + "}";
+    }
     Map<String, String> gam = new HashMap<>();
     try {
       gam.put(EVENT_NAME, gamificationEventName);
@@ -122,10 +132,12 @@ public class GamificationWikiListener extends PageWikiListener {
       gam.put(OBJECT_TYPE_PARAM, NOTES_OBJECT_TYPE);
       gam.put(SENDER_ID, earnerIdentityId);
       gam.put(RECEIVER_ID, receiverId);
+      gam.put(EVENT_DETAILS_PARAM, eventDetails);
       listenerService.broadcast(GENERIC_EVENT_NAME, gam, null);
     } catch (Exception e) {
       throw new IllegalStateException("Error triggering Gamification Listener Event: " + gam, e);
     }
   }
+
 
 }

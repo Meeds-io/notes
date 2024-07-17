@@ -63,6 +63,11 @@
       <artifactId>layout-service</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>io.meeds.gamification</groupId>
+      <artifactId>gamification-services</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- Tests -->
     <dependency>
