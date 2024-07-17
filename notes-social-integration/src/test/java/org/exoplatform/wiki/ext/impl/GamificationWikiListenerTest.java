@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.StringUtils;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -68,6 +69,9 @@ public class GamificationWikiListenerTest {
   IdentityManager                                     identityManager;
 
   @Mock
+  SpaceService                                        spaceService;
+
+  @Mock
   Page                                                page;
 
   @Mock
@@ -75,7 +79,7 @@ public class GamificationWikiListenerTest {
 
   @Test
   public void testCreatePageEvent() throws Exception {
-    GamificationWikiListener gamificationListener = new GamificationWikiListener(identityManager, listenerService);
+    GamificationWikiListener gamificationListener = new GamificationWikiListener(identityManager, listenerService, spaceService);
 
     when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(userIdentity);
     when(userIdentity.getId()).thenReturn(USER_IDENTITY_ID);
@@ -98,7 +102,7 @@ public class GamificationWikiListenerTest {
 
   @Test
   public void testUpdatePageEvent() throws Exception {
-    GamificationWikiListener gamificationListener = new GamificationWikiListener(identityManager, listenerService);
+    GamificationWikiListener gamificationListener = new GamificationWikiListener(identityManager, listenerService, spaceService);
 
     when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(userIdentity);
     when(userIdentity.getId()).thenReturn(USER_IDENTITY_ID);
