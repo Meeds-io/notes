@@ -128,3 +128,30 @@ function preserveHighlightedCode(body, documentElement) {
     });
   }
 }
+export function isSameContent(content, originalContent) {
+  // check if content composed only by text and then compare only the text content
+  const containOnlyText = Array.from(new DOMParser().parseFromString(content, 'text/html').body.childNodes).every(node => (node.nodeName === 'P' && node.textContent.trim()) || node.nodeType === Node.TEXT_NODE)
+      && Array.from(new DOMParser().parseFromString(originalContent, 'text/html').body.childNodes).every(node => (node.nodeName === 'P' && node.textContent.trim()) || node.nodeType === Node.TEXT_NODE);
+  if (containOnlyText) {
+    return getString(content) === getString(originalContent);
+  }
+  // get nodes and remove all empty paragraph elements then compare.
+  const originalContentNode = Array.from(new DOMParser().parseFromString(originalContent, 'text/html').body.childNodes).filter(node => !(node.nodeName === 'P' && !node.textContent.trim() && !node.children.length > 0));
+  let index = originalContentNode.length - 1;
+  //remove all empty text nodes at the end.
+  while (index >= 0 && originalContentNode[index].nodeType === Node.TEXT_NODE && !originalContentNode[index].textContent.trim() ) {
+    originalContentNode.pop();
+    index--;
+  }
+  const currentContentNode = Array.from(new DOMParser().parseFromString(content, 'text/html').body.childNodes).filter(node => !(node.nodeName === 'P' && !node.textContent.trim() && !node.children.length > 0));
+  index = currentContentNode.length - 1;
+  while (index >= 0 && currentContentNode[index].nodeType === Node.TEXT_NODE && !currentContentNode[index].textContent.trim() ) {
+    currentContentNode.pop();
+    index--;
+  }
+  // isEqualNode : Two nodes are equal when they have the same type and the same content.
+  return  originalContentNode.length === currentContentNode.length && originalContentNode.every((node, index) => node.isEqualNode(currentContentNode[index]));
+}
+function getString(body) {
+  return new DOMParser().parseFromString(body, 'text/html').documentElement.textContent.replace(/&nbsp;/g, '').trim();
+}
