@@ -9,4 +9,5 @@ if (extensionRegistry) {
     });
   }
 }
+Vue.prototype.$utils.includeExtensions('WYSIWYGPluginsExtensions');
 
