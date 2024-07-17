@@ -24,6 +24,7 @@ export function init() {
             }) || null;
         }
       },
+      isExtensible: true
     },
   });
 }

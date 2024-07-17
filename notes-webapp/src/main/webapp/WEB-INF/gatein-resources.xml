@@ -284,5 +284,28 @@
       <module>extensionRegistry</module>
     </depends>
   </module>
+
+  <module>
+    <name>engagementCenterConnectorEventsNotesExtensions</name>
+    <load-group>engagement-center-connector-event-extensions</load-group>
+    <script>
+      <path>/javascript/connectorEventExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
   
 </gatein-resources>
