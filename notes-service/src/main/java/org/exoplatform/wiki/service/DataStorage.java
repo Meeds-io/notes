@@ -197,9 +197,25 @@ public interface DataStorage {
 
   public List<PageHistory> getHistoryOfPage(Page page) throws WikiException;
 
-  public void addPageVersion(Page page, String userName) throws WikiException;
+  /**
+   * Creates a new page version
+   *
+   * @param page target note page
+   * @param userName current username
+   * @return {@link PageVersion}
+   * @throws WikiException
+   */
+  PageVersion addPageVersion(Page page, String userName) throws WikiException;
 
-  public void restoreVersionOfPage(String versionName, Page page) throws WikiException;
+  /**
+   * Restore a note from given version
+   *
+   * @param versionName version name
+   * @param page target note page
+   * @return {@link PageVersion}
+   * @throws WikiException
+   */
+  PageVersion restoreVersionOfPage(String versionName, Page page) throws WikiException;
 
   public Page updatePage(Page page) throws WikiException;
 

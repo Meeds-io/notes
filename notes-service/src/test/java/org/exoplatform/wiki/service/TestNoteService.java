@@ -23,16 +23,20 @@ package org.exoplatform.wiki.service;
 
 import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
 import org.apache.commons.io.FileUtils;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 import org.junit.Assert;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
@@ -66,7 +70,7 @@ public class TestNoteService extends BaseTest {
     super.setUp() ;
     wService = getContainer().getComponentInstanceOfType(WikiService.class) ;
     noteService = getContainer().getComponentInstanceOfType(NoteService.class) ;
-    notesExportService = getContainer().getComponentInstanceOfType(NotesExportService.class) ;
+    notesExportService = getContainer().getComponentInstanceOfType(NotesExportService.class);
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
   }
   
@@ -309,6 +313,10 @@ public class TestNoteService extends BaseTest {
 
     // update content of page
     page.setContent("Page content updated_");
+    DraftPage draftPage = new DraftPage();
+    draftPage.setContent("test");
+    draftPage.setTitle("test");
+    noteService.createDraftForExistPage(draftPage, page, "", new Date().getTime(), "root");
     noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT,root);
     assertNotNull(page);
     assertEquals("Page content updated_", page.getContent());
@@ -693,5 +701,98 @@ public class TestNoteService extends BaseTest {
     noteService.removeOrphanDraftPagesByParentPage(Long.parseLong(homePage.getId()));
     persist();
     assertNull(noteService.getDraftNoteById(draft.getId(), "root"));
+  }
+  
+  private Page createTestNoteWithVersionLang(String name, String lang, Identity user) throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page(name, name), user);
+    note.setLang(lang);
+    note.setTitle("language title");
+    note.setContent("language content");
+    noteService.createVersionOfNote(note, user.getUserId());
+    return note;
+  } 
+
+  private void bindMockedUploadService() throws Exception {
+    UploadService uploadService = mock(UploadService.class);
+    UploadResource uploadResource = mock(UploadResource.class);
+    when(uploadResource.getUploadedSize()).thenReturn(12548d);
+    when(uploadService.getUploadResource(anyString())).thenReturn(uploadResource);
+    Field field = noteService.getClass().getDeclaredField("uploadService");
+    field.setAccessible(true);
+    field.set(noteService, uploadService);
+  }
+
+  private NotePageProperties createNotePageProperties(long noteId, String altText, String summary) {
+    NotePageProperties notePageProperties = new NotePageProperties();
+    NoteFeaturedImage featuredImage = new NoteFeaturedImage();
+    featuredImage.setBase64Data("data:image/png;base64,++dhPs679jlDMhAIYFDUu0+SNTDnnL33+e+P33");
+    featuredImage.setMimeType("image/png");
+    featuredImage.setUploadId("123");
+    featuredImage.setAltText(altText);
+    notePageProperties.setFeaturedImage(featuredImage);
+    notePageProperties.setNoteId(noteId);
+    notePageProperties.setSummary(summary);
+    return notePageProperties;
+  }
+
+  public void testSaveNoteFeaturedImage() throws Exception {
+    Identity user = new Identity("user");
+    Page note = createTestNoteWithVersionLang("testMetadata", "en", user);
+    
+    this.bindMockedUploadService();
+
+    NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    assertEquals(4, properties.size());
+    assertEquals("summary test", properties.get("summary"));
+
+    notePageProperties.setSummary("version language summary");
+    properties = noteService.saveNoteMetadata(notePageProperties, "en", 1L);
+    assertEquals(4, properties.size());
+    assertEquals("version language summary", properties.get("summary"));
+  }
+  
+  public void testRemoveNoteFeaturedImage() throws Exception {
+    Identity user = new Identity("user");
+    Page note = createTestNoteWithVersionLang("testMetadataRemove", "fr", user);
+
+    this.bindMockedUploadService();
+
+    NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    noteService.saveNoteMetadata(notePageProperties, "fr", 1L);
+
+    assertEquals(4, properties.size());
+    assertNotNull(properties.get("featuredImageId"));
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L));
+
+    noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                                        Long.parseLong(properties.get("featuredImageId")),
+                                        null,
+                                        false,
+                                        1L);
+
+    NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
+    assertNull(savedFeaturedImage);
+
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, 1L));
+  }
+
+  public void testGetNoteFeaturedImageInfo() throws Exception {
+    Identity user = new Identity("user");
+    Page note = createTestNoteWithVersionLang("testGetMetadataInfo", "ar", user);
+
+    this.bindMockedUploadService();
+
+    NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary Test");
+    noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    noteService.saveNoteMetadata(notePageProperties, "ar", 1L);
+    NoteFeaturedImage featuredImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
+    NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "ar", false, 1L);
+
+    assertNotNull(featuredImage);
+    assertTrue(featuredImage.getLastUpdated() > 0L);
+    assertNotSame(featuredImage.getId(), versionLanguageFeaturedImage.getId());
   }
 }
