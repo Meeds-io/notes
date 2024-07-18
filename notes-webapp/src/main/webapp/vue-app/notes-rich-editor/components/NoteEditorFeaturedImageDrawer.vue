@@ -51,7 +51,11 @@ export default {
   },
   props: {
     note: {
+<<<<<<< HEAD
       type: Object,
+=======
+      type: Number,
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       default: null
     },
     hasFeaturedImage: {
@@ -62,7 +66,11 @@ export default {
   watch: {
     imageData() {
       if (this.imageData?.length) {
+<<<<<<< HEAD
         this.$root.$emit('image-data', this.imageData, this.getMimeType(this.imageData));
+=======
+        this.$root.$emit('image-data', this.imageData, this.mimeType);
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       }
     },
     uploadId() {
@@ -78,18 +86,35 @@ export default {
     }
   },
   computed: {
+<<<<<<< HEAD
     langParam() {
       return this.note?.lang && `&lang=${this.note.lang}` || '';
+=======
+    lang() {
+      return this.note?.lang || '';
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     },
     isDraft() {
       return this.note?.draftPage;
     },
     noteFeatureImageUpdatedDate() {
+<<<<<<< HEAD
       return this.note?.properties.featuredImage?.lastUpdated;
     },
     featuredImageLink() {
       return this.imageData || this.hasFeaturedImageValue
                             && `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
+=======
+      return this.note?.properties?.featuredImageUpdatedDate;
+    },
+    featuredImageLink() {
+      const langParam = this.lang && `&lang=${this.lang}` || '';
+      return this.imageData || this.hasFeaturedImageValue
+                            && `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${langParam}` || '';
+    },
+    mimeType() {
+      return this.getMimeType(this.imageData);
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     }
   },
   created() {

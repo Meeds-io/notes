@@ -38,6 +38,10 @@
       :editor-icon="editorIcon"
       :save-button-icon="saveButtonIcon"
       :save-button-disabled="saveButtonDisabled"
+<<<<<<< HEAD
+=======
+      :translation-option-enabled="translationOptionEnabled"
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       :editor-ready="!!editor"
       @editor-closed="editorClosed"
       @post-note="postNote"
@@ -71,6 +75,7 @@
       ref="noteCustomPlugins"
       :instance="editor" />
     <note-editor-metadata-drawer
+<<<<<<< HEAD
       ref="editorMetadataDrawer"
       :has-featured-image="hasFeaturedImage"
       @metadata-updated="metadataUpdated" />
@@ -78,6 +83,14 @@
       ref="featuredImageDrawer"
       :note="noteObject"
       :has-featured-image="hasFeaturedImage" />
+=======
+      :has-featured-image="hasFeaturedImage"
+      ref="editorMetadataDrawer" />
+    <note-editor-featured-image-drawer
+      :note="noteObject"
+      :has-featured-image="hasFeaturedImage"
+      ref="featuredImageDrawer" />
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   </div>
 </template>
 
@@ -88,8 +101,12 @@ export default {
       noteObject: null,
       editor: null,
       initialized: false,
+<<<<<<< HEAD
       instanceReady: false,
       noteTitleMaxLength: 500
+=======
+      instanceReady: false
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     };
   },
   props: {
@@ -202,26 +219,48 @@ export default {
       this.updateData();
     },
     'noteObject.content': function () {
+<<<<<<< HEAD
       if (this.initialized) {
         this.updateData();
       }
     },
     'note.properties': function () {
       this.cloneNoteObject();
+=======
+      this.updateData();
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     },
     'note.id': function () {
       this.cloneNoteObject();
     },
+<<<<<<< HEAD
     'note.lang': function() {
       this.cloneNoteObject();
     },
     'note.title': function() {
+=======
+    'note.properties': function () {
+      this.cloneNoteObject();
+    },
+    'note.title': function () {
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       this.noteObject.title = this.note?.title;
     },
     instanceReady() {
       if (this.instanceReady) {
         this.$emit('editor-ready', this.editor);
       }
+<<<<<<< HEAD
+=======
+    }
+  },
+  computed: {
+    featuredImageId() {
+      return this.noteObject?.properties?.featuredImageId;
+    },
+    hasFeaturedImage() {
+      return !!this.featuredImageId && this.featuredImageId !== 'null';
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     }
   },
   computed: {
@@ -234,7 +273,10 @@ export default {
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
+<<<<<<< HEAD
     this.$root.$on('update-note-summary', this.updateTranslatedNoteSummary);
+=======
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
@@ -505,12 +547,15 @@ export default {
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);
     },
+<<<<<<< HEAD
     displayAlert(detail) {
       document.dispatchEvent(new CustomEvent('alert-message', {detail: {
         alertType: detail?.type,
         alertMessage: detail?.message,
       }}));
     },
+=======
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   }
 };
 </script>

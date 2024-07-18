@@ -22,6 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+<<<<<<< HEAD
 import java.io.Serializable;
 
 @Data
@@ -40,4 +41,18 @@ public class FeaturedImageEntity implements Serializable {
   private Long    lastUpdated;
 
   private boolean toDelete;
+=======
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class FeaturedImageEntity {
+
+  private String base64Data;
+
+  private String mimeType;
+
+  private String uploadId;
+
+  private String altText;
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 }

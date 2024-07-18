@@ -23,11 +23,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.InputStream;
+<<<<<<< HEAD
 import java.io.Serializable;
+=======
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+<<<<<<< HEAD
 public class NoteFeaturedImage implements Serializable {
 
   private Long                  id;
@@ -47,6 +51,27 @@ public class NoteFeaturedImage implements Serializable {
   private transient InputStream fileInputStream;
 
   private boolean               toDelete;
+=======
+public class NoteFeaturedImage {
+
+  private Long        id;
+
+  private String      fileName;
+
+  private String      mimeType;
+
+  private long        fileSize;
+
+  private Long        lastUpdated;
+
+  private String      base64Data;
+
+  private String      uploadId;
+  
+  private String      altText;
+
+  private InputStream fileInputStream;
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   public NoteFeaturedImage(Long id,
                            String fileName,
@@ -62,6 +87,7 @@ public class NoteFeaturedImage implements Serializable {
     this.fileInputStream = fileInputStream;
   }
 
+<<<<<<< HEAD
   public NoteFeaturedImage(Long id,
                            String mimeType,
                            String uploadId,
@@ -74,5 +100,12 @@ public class NoteFeaturedImage implements Serializable {
     this.altText = altText;
     this.lastUpdated = lastUpdated;
     this.toDelete = toDelete;
+=======
+  public NoteFeaturedImage(String base64Data, String mimeType, String uploadId, String altText) {
+    this.base64Data = base64Data;
+    this.mimeType = mimeType;
+    this.uploadId = uploadId;
+    this.altText = altText;
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   }
 }

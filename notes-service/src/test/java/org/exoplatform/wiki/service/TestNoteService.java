@@ -35,6 +35,7 @@ import java.util.*;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import org.apache.commons.io.FileUtils;
+<<<<<<< HEAD
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -42,6 +43,10 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.model.*;
+=======
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 import org.junit.Assert;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
@@ -71,9 +76,12 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     wService = getContainer().getComponentInstanceOfType(WikiService.class) ;
     noteService = getContainer().getComponentInstanceOfType(NoteService.class) ;
     notesExportService = getContainer().getComponentInstanceOfType(NotesExportService.class);
+<<<<<<< HEAD
     identityManager = getContainer().getComponentInstanceOfType(IdentityManager.class) ;
     fileService = getContainer().getComponentInstanceOfType(FileService.class) ;
     spaceService = getContainer().getComponentInstanceOfType(SpaceService.class) ;
+=======
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
   }
   
@@ -739,8 +747,11 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     UploadResource uploadResource = mock(UploadResource.class);
     when(uploadResource.getUploadedSize()).thenReturn(12548d);
     when(uploadService.getUploadResource(anyString())).thenReturn(uploadResource);
+<<<<<<< HEAD
     String location = getClass().getResource("/images/John.png").getPath();
     when(uploadResource.getStoreLocation()).thenReturn(location);
+=======
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     Field field = noteService.getClass().getDeclaredField("uploadService");
     field.setAccessible(true);
     field.set(noteService, uploadService);
@@ -749,6 +760,10 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
   private NotePageProperties createNotePageProperties(long noteId, String altText, String summary) {
     NotePageProperties notePageProperties = new NotePageProperties();
     NoteFeaturedImage featuredImage = new NoteFeaturedImage();
+<<<<<<< HEAD
+=======
+    featuredImage.setBase64Data("data:image/png;base64,++dhPs679jlDMhAIYFDUu0+SNTDnnL33+e+P33");
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     featuredImage.setMimeType("image/png");
     featuredImage.setUploadId("123");
     featuredImage.setAltText(altText);
@@ -765,12 +780,23 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     this.bindMockedUploadService();
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+<<<<<<< HEAD
     NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
     assertEquals("summary test", properties.getSummary());
 
     notePageProperties.setSummary("version language summary");
     properties = noteService.saveNoteMetadata(notePageProperties, "en", 1L);
     assertEquals("version language summary", properties.getSummary());
+=======
+    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    assertEquals(4, properties.size());
+    assertEquals("summary test", properties.get("summary"));
+
+    notePageProperties.setSummary("version language summary");
+    properties = noteService.saveNoteMetadata(notePageProperties, "en", 1L);
+    assertEquals(4, properties.size());
+    assertEquals("version language summary", properties.get("summary"));
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   }
   
   public void testRemoveNoteFeaturedImage() throws Exception {
@@ -780,6 +806,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     this.bindMockedUploadService();
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+<<<<<<< HEAD
     NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
     noteService.saveNoteMetadata(notePageProperties, "fr", 1L);
 
@@ -788,10 +815,22 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
 
     noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
                                         properties.getFeaturedImage().getId(),
+=======
+    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    noteService.saveNoteMetadata(notePageProperties, "fr", 1L);
+
+    assertEquals(4, properties.size());
+    assertNotNull(properties.get("featuredImageId"));
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L));
+
+    noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                                        Long.parseLong(properties.get("featuredImageId")),
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
                                         null,
                                         false,
                                         1L);
 
+<<<<<<< HEAD
     NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
                                                                                 null,
                                                                                 false,
@@ -800,6 +839,12 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     assertNull(savedFeaturedImage);
 
     assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, 1L));
+=======
+    NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
+    assertNull(savedFeaturedImage);
+
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, 1L));
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   }
 
   public void testGetNoteFeaturedImageInfo() throws Exception {
@@ -810,15 +855,22 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary Test");
     noteService.saveNoteMetadata(notePageProperties, null, 1L);
+<<<<<<< HEAD
     notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary Test");
     noteService.saveNoteMetadata(notePageProperties, "ar", 1L);
     NoteFeaturedImage featuredImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, "150x150", 1L);
     NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "ar", false, "150x150", 1L);
+=======
+    noteService.saveNoteMetadata(notePageProperties, "ar", 1L);
+    NoteFeaturedImage featuredImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
+    NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "ar", false, 1L);
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
     assertNotNull(featuredImage);
     assertTrue(featuredImage.getLastUpdated() > 0L);
     assertNotSame(featuredImage.getId(), versionLanguageFeaturedImage.getId());
   }
+<<<<<<< HEAD
 
   public void testCreatePageWithProperties() throws Exception {
     Identity user = new Identity("user");
@@ -970,3 +1022,6 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
      assertTrue(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
    }
  }
+=======
+}
+>>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
