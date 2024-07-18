@@ -22,7 +22,10 @@ package org.exoplatform.wiki.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
 import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.commons.utils.PageList;
@@ -772,4 +775,45 @@ public interface NoteService {
    * @param parentPageId Note parent page id
    */
   void removeOrphanDraftPagesByParentPage(long parentPageId);
+
+  /**
+   * Saves Note featured Image
+   *
+   * @param note target note page
+   * @param featuredImage Note featured image
+   * @return saved featured image ID
+   */
+  Long saveNoteFeaturedImage(Page note, NoteFeaturedImage featuredImage) throws Exception;
+
+  /**
+   * Get Note featured Image by its given id
+   *
+   * @param noteId Note id
+   * @param lang note version language
+   * @param isDraft is target not a draft
+   * @param userIdentityId user identity id
+   * @return {@link NoteFeaturedImage}
+   */
+  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, long userIdentityId) throws Exception;
+
+  /**
+   * Save note metadata properties
+   *
+   * @param pageProperties note metadata properties to save
+   * @param lang target version language
+   * @param userIdentityId user identity id
+   */
+  Map<String, String> saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
+
+  /**
+   * Removes note featured image and its related metadata property
+   *
+   * @param noteId target note id
+   * @param featuredImageId featured image id
+   * @param lang target version language
+   * @param isDraft is the target note a draft
+   * @param userIdentityId user identity id
+   * @throws Exception
+   */
+  void removeNoteFeaturedImage(Long noteId, Long featuredImageId, String lang, boolean isDraft, Long userIdentityId) throws Exception;
 }
