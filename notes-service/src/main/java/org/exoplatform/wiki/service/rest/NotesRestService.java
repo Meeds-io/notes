@@ -20,18 +20,10 @@
 
 package org.exoplatform.wiki.service.rest;
 
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -43,16 +35,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.core.utils.MentionUtils;
 import org.exoplatform.wiki.model.PageHistory;
@@ -130,6 +121,17 @@ public class NotesRestService implements ResourceContainer {
   private final ResourceBundleService resourceBundleService;
 
   private final CacheControl          cc;
+
+  private static final int            CACHE_DURATION_SECONDS      = 31536000;
+
+  private static final long           CACHE_DURATION_MILLISECONDS = CACHE_DURATION_SECONDS * 1000L;
+
+  private static final CacheControl   ILLUSTRATION_CACHE_CONTROL  = new CacheControl();
+
+  static {
+    ILLUSTRATION_CACHE_CONTROL.setMaxAge(CACHE_DURATION_SECONDS);
+  }
+  
 
   public NotesRestService(NoteService noteService,
                           WikiService noteBookService,
@@ -719,10 +721,10 @@ public class NotesRestService implements ResourceContainer {
           }
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         } else {
+          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
-          note_.setLang(note.getLang());
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
@@ -1490,6 +1492,126 @@ public class NotesRestService implements ResourceContainer {
       }
       return Response.ok(localesJSON, MediaType.APPLICATION_JSON).build();
     } catch (Exception e) {
+      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
+    }
+  }
+
+  @POST
+  @Path("/metadata")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @Operation(
+          summary = "Saves a note metadata properties",
+          description = "Saves a note metadata properties",
+          method = "POST")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "500", description = "Internal server error"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response saveNoteMetadata(@RequestBody(description = "note metadata properties") PagePropertiesEntity pageProperties,
+                                   @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang) {
+    if (pageProperties == null ) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("notePageProperties object is mandatory").build();
+    }
+    try {
+      Map<String, String> noteProperties =
+                                         noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pageProperties),
+                                                                      lang,
+                                                                      RestUtils.getCurrentUserIdentityId());
+      return Response.ok(noteProperties, MediaType.APPLICATION_JSON_TYPE).build();
+    } catch (ObjectNotFoundException e) {
+      log.warn("target note not found", e);
+      return Response.status(HTTPStatus.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Error occurred while saving note metadata properties", e);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
+    }
+  }
+
+  @GET
+  @Path( "/illustration/{noteId}")
+  @RolesAllowed("users")
+  @Operation(
+          summary = "Gets a note featured image illustration by note Id",
+          description = "Gets a note featured image illustration by note Id",
+          method = "GET")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "500", description = "Internal server error"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response getFeaturedImageIllustration(@Context Request request,
+                                       @Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
+                                       @Parameter(description = "target version language", required = true) @QueryParam("isDraft") boolean isDraft,
+                                       @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang,
+                                       @Parameter(description = "Optional last modified parameter") @QueryParam("v") long lastModified) {
+
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
+    }
+    try {
+      NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
+                                                                                 lang,
+                                                                                 isDraft,
+                                                                                 RestUtils.getCurrentUserIdentityId());
+      if (noteFeaturedImage == null) {
+        return Response.status(HTTPStatus.NOT_FOUND).build();
+      }
+      Long lastUpdated = noteFeaturedImage.getLastUpdated();
+      EntityTag eTag = new EntityTag(lastUpdated + noteId + lang, true);
+      Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
+      if (builder == null) {
+        InputStream stream = noteFeaturedImage.getFileInputStream();
+        builder = Response.ok(stream, noteFeaturedImage.getMimeType());
+        builder.tag(eTag);
+        if (lastModified > 0) {
+          builder.lastModified(new Date(lastUpdated));
+          builder.expires(new Date(System.currentTimeMillis() + CACHE_DURATION_MILLISECONDS));
+          builder.cacheControl(ILLUSTRATION_CACHE_CONTROL);
+        }
+      }
+      return builder.build();
+    } catch (ObjectNotFoundException e) {
+      log.warn("target note not found", e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("An error occurred while getting featured image illustration", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @DELETE
+  @Path("/metadata/featured-image/{noteId}")
+  @RolesAllowed("users")
+  @Operation(
+          summary = "delete a note featured image",
+          description = "Deletes note featured image and its related metadata property",
+          method = "DELETE")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "500", description = "Internal server error"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response removeNoteFeaturedImage(@Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
+                                          @Parameter(description = "draft note", required = true) @QueryParam("isDraft") boolean isDraft,
+                                          @Parameter(description = "Note version language", required = true) @QueryParam("lang") String lang) 
+  {
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
+    }
+    try {
+      NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
+                                                                                 lang,
+                                                                                 isDraft,
+                                                                                 RestUtils.getCurrentUserIdentityId());
+      if (noteFeaturedImage == null) {
+        return Response.status(HTTPStatus.NOT_FOUND).build();
+      }
+      noteService.removeNoteFeaturedImage(noteId, noteFeaturedImage.getId(), lang, isDraft, RestUtils.getCurrentUserIdentityId());
+      return Response.status(HTTPStatus.OK).build();
+    } catch (ObjectNotFoundException e) {
+      log.warn("target note not found", e);
+      return Response.status(HTTPStatus.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Error occurred while removing note featured image", e);
       return Response.status(HTTPStatus.INTERNAL_ERROR).build();
     }
   }

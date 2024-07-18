@@ -24,5 +24,6 @@
         xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <import>jar:/conf/notes-service-configuration.xml</import>
+  <import>jar:/conf/metadata-configuration.xml</import>
 
 </configuration>

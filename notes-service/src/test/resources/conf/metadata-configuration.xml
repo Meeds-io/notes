@@ -24,29 +24,6 @@
         xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
     <external-component-plugins>
-        <target-component>org.exoplatform.services.listener.ListenerService</target-component>
-        <component-plugin>
-            <name>note.posted</name>
-            <set-method>addListener</set-method>
-            <type>io.meeds.notes.listener.NotesMetadataListener</type>
-        </component-plugin>
-        <component-plugin>
-            <name>note.updated</name>
-            <set-method>addListener</set-method>
-            <type>io.meeds.notes.listener.NotesMetadataListener</type>
-        </component-plugin>
-    </external-component-plugins>
-
-    <external-component-plugins>
-        <target-component>org.exoplatform.services.listener.ListenerService</target-component>
-        <component-plugin>
-            <name>metadata.tag.added</name>
-            <set-method>addListener</set-method>
-            <type>io.meeds.notes.listener.AnalyticsAddTagListener</type>
-        </component-plugin>
-    </external-component-plugins>
-
-    <external-component-plugins>
         <target-component>org.exoplatform.social.metadata.MetadataService</target-component>
         <component-plugin>
             <name>NotesMetadataTypePlugin</name>
