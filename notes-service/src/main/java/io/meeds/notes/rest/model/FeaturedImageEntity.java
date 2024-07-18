@@ -22,22 +22,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeaturedImageEntity implements Serializable {
+public class FeaturedImageEntity {
 
-  private Long    id;
+  private String base64Data;
 
-  private String  mimeType;
+  private String mimeType;
 
-  private String  uploadId;
+  private String uploadId;
 
-  private String  altText;
-
-  private Long    lastUpdated;
-
-  private boolean toDelete;
+  private String altText;
 }

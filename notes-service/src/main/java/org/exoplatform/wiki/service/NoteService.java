@@ -795,11 +795,10 @@ public interface NoteService {
    * @param noteId Note id
    * @param lang note version language
    * @param isDraft is target not a draft
-   * @param thumbnailSize featured image thumbnail size
    * @param userIdentityId user identity id
    * @return {@link NoteFeaturedImage}
    */
-  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception;
+  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, long userIdentityId) throws Exception;
 
   /**
    * Save note metadata properties
@@ -807,9 +806,8 @@ public interface NoteService {
    * @param pageProperties note metadata properties to save
    * @param lang target version language
    * @param userIdentityId user identity id
-   * @return {@link NotePageProperties}                      
    */
-  NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
+  Map<String, String> saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
 
   /**
    * Removes note featured image and its related metadata property
@@ -822,17 +820,4 @@ public interface NoteService {
    * @throws Exception
    */
   void removeNoteFeaturedImage(Long noteId, Long featuredImageId, String lang, boolean isDraft, Long userIdentityId) throws Exception;
-
-  /**
-   * Gets page version by its given id
-   *
-   * @param versionId page version id
-   * @return {@link PageVersion}
-   */
-  PageVersion getPageVersionById(Long versionId);
-
-  /**
-   * {@inheritDoc}
-   */
-  DraftPage getDraftOfPageByLang(WikiPageParams param, String lang) throws WikiException;
 }

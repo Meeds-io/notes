@@ -21,22 +21,29 @@
 package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.rest.model.FeaturedImageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-import jakarta.persistence.EntityManager;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +52,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
@@ -53,6 +61,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.rest.api.EntityBuilder;
@@ -75,6 +84,9 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.rest.model.FeaturedImageEntity;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
@@ -439,11 +451,67 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>());
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
+  
+  @Test
+  public void saveNoteMetadata() throws Exception {
+    PagePropertiesEntity pagePropertiesEntity = new PagePropertiesEntity();
+    pagePropertiesEntity.setNoteId(1L);
+    pagePropertiesEntity.setSummary("summary");
+    pagePropertiesEntity.setFeaturedImage(new FeaturedImageEntity());
+    Response response = notesRestService.saveNoteMetadata(null, null);
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+    REST_UTILS.when(RestUtils::getCurrentUserIdentityId).thenReturn(1L);
+    when(noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pagePropertiesEntity),
+                                      null,
+                                      1L)).thenReturn(new HashMap<>());
+    response = notesRestService.saveNoteMetadata(pagePropertiesEntity, null);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+
+    when(noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pagePropertiesEntity),
+                                      null,
+                                      1L)).thenThrow(new ObjectNotFoundException("note not found"));
+    response = notesRestService.saveNoteMetadata(pagePropertiesEntity, null);
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+
+    reset(noteService);
+
+    when(noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pagePropertiesEntity),
+                                      null,
+                                      1L)).thenThrow(new RuntimeException());
+    response = notesRestService.saveNoteMetadata(pagePropertiesEntity, null);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  public void removeNoteFeaturedImage() throws Exception {
+    Response response = notesRestService.removeNoteFeaturedImage(null, false,null);
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    REST_UTILS.when(RestUtils::getCurrentUserIdentityId).thenReturn(1L);
+
+    NoteFeaturedImage noteFeaturedImage = new NoteFeaturedImage();
+    noteFeaturedImage.setId(123L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false,1L)).thenReturn(noteFeaturedImage);
+
+    doNothing().when(noteService).removeNoteFeaturedImage(1L, 123L, null, false, 1L);
+    response = notesRestService.removeNoteFeaturedImage(1L, false, null);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+
+    doThrow(new ObjectNotFoundException("note not found")).when(noteService).removeNoteFeaturedImage(1L, 123L, null, false, 1L);
+    response = notesRestService.removeNoteFeaturedImage(1L, false, null);
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+
+    reset(noteService);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, 1L)).thenReturn(noteFeaturedImage);
+    doThrow(new RuntimeException()).when(noteService).removeNoteFeaturedImage(1L, 123L, null, false, 1L);
+    response = notesRestService.removeNoteFeaturedImage(1L, false, null);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
 
   @Test
   public void getFeaturedImageIllustration() throws Exception {
     Request request = mock(Request.class);
-    Response response = notesRestService.getFeaturedImageIllustration(request, null, false, null, null,0L);
+    Response response = notesRestService.getFeaturedImageIllustration(request, null, false, null, 0L);
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     REST_UTILS.when(RestUtils::getCurrentUserIdentityId).thenReturn(1L);
 
@@ -451,17 +519,17 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     noteFeaturedImage.setId(123L);
     noteFeaturedImage.setLastUpdated(new Date().getTime());
     noteFeaturedImage.setMimeType("image/png");
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenReturn(noteFeaturedImage);
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, 1L)).thenReturn(noteFeaturedImage);
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, 12359547L);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenThrow(new ObjectNotFoundException("note not found"));
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, 1L)).thenThrow(new ObjectNotFoundException("note not found"));
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, 12359547L);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
 
     reset(noteService);
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenThrow(new RuntimeException());
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, 1L)).thenThrow(new RuntimeException());
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, 12359547L);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
 }

@@ -19,11 +19,7 @@
 
 package org.exoplatform.wiki.jpa;
 
-import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
-import io.meeds.notes.model.NotePageProperties;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.file.model.FileInfo;
@@ -148,7 +144,7 @@ public class EntityConverter {
     return page;
   }
 
-  public static void buildNotePageMetadata(Page note, boolean isDraft) {
+  private static void buildNotePageMetadata(Page note, boolean isDraft) {
     if (note == null) {
       return;
     }
@@ -165,26 +161,9 @@ public class EntityConverter {
       getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
                           .stream()
                           .findFirst()
-                          .ifPresent(metadataItem -> {
-                            if (!MapUtils.isEmpty(metadataItem.getProperties())) {
-                              buildPageProperties(metadataItem.getProperties(), note);
-                            }
-                          });
+                          .ifPresent(metadataItem -> note.setProperties(metadataItem.getProperties()));
 
     }
-  }
-  
-  private static void buildPageProperties(Map<String, String> properties, Page note) {
-    NotePageProperties notePageProperties = new NotePageProperties();
-    NoteFeaturedImage noteFeaturedImage = new NoteFeaturedImage();
-    notePageProperties.setNoteId(Long.parseLong(note.getId()));
-    notePageProperties.setSummary(properties.get(NoteServiceImpl.SUMMARY_PROP));
-    noteFeaturedImage.setId(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_ID, "0")));
-    noteFeaturedImage.setLastUpdated(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_UPDATED_DATE, "0")));
-    noteFeaturedImage.setAltText(properties.get(NoteServiceImpl.FEATURED_IMAGE_ALT_TEXT));
-    notePageProperties.setDraft(note.isDraftPage());
-    notePageProperties.setFeaturedImage(noteFeaturedImage);
-    note.setProperties(notePageProperties);
   }
 
   private static SpaceService getSpaceService() {
@@ -538,7 +517,6 @@ public class EntityConverter {
       pageVersion.setOwner(pageVersionEntity.getAuthor());
       pageVersion.setParent(convertPageEntityToPage(pageVersionEntity.getPage()));
       pageVersion.setLang(pageVersionEntity.getLang());
-      pageVersion.setWikiOwner(pageVersionEntity.getPage().getWiki().getOwner());
       buildNotePageMetadata(pageVersion, pageVersion.isDraftPage());
     }
     return pageVersion;

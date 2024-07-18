@@ -23,7 +23,17 @@ package org.exoplatform.wiki.service.rest;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -35,7 +45,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
@@ -51,6 +67,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.common.http.HTTPStatus;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
@@ -97,6 +114,8 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -745,7 +764,6 @@ public class NotesRestService implements ResourceContainer {
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
-          note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
@@ -1544,6 +1562,38 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  @POST
+  @Path("/metadata")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @Operation(
+          summary = "Saves a note metadata properties",
+          description = "Saves a note metadata properties",
+          method = "POST")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "500", description = "Internal server error"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response saveNoteMetadata(@RequestBody(description = "note metadata properties") PagePropertiesEntity pageProperties,
+                                   @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang) {
+    if (pageProperties == null ) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("notePageProperties object is mandatory").build();
+    }
+    try {
+      Map<String, String> noteProperties =
+                                         noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pageProperties),
+                                                                      lang,
+                                                                      RestUtils.getCurrentUserIdentityId());
+      return Response.ok(noteProperties, MediaType.APPLICATION_JSON_TYPE).build();
+    } catch (ObjectNotFoundException e) {
+      log.warn("target note not found", e);
+      return Response.status(HTTPStatus.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Error occurred while saving note metadata properties", e);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
+    }
+  }
+
   @GET
   @Path( "/illustration/{noteId}")
   @RolesAllowed("users")
@@ -1559,7 +1609,6 @@ public class NotesRestService implements ResourceContainer {
                                        @Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
                                        @Parameter(description = "target version language", required = true) @QueryParam("isDraft") boolean isDraft,
                                        @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang,
-                                       @Parameter(description = "Optional size parameter", required = true) @QueryParam("size") String size,
                                        @Parameter(description = "Optional last modified parameter") @QueryParam("v") long lastModified) {
 
     if (noteId == null) {
@@ -1569,13 +1618,12 @@ public class NotesRestService implements ResourceContainer {
       NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
                                                                                  lang,
                                                                                  isDraft,
-                                                                                 size,
                                                                                  RestUtils.getCurrentUserIdentityId());
       if (noteFeaturedImage == null) {
         return Response.status(HTTPStatus.NOT_FOUND).build();
       }
       Long lastUpdated = noteFeaturedImage.getLastUpdated();
-      EntityTag eTag = new EntityTag(lastUpdated + noteId + lang + size, true);
+      EntityTag eTag = new EntityTag(lastUpdated + noteId + lang, true);
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
       if (builder == null) {
         InputStream stream = noteFeaturedImage.getFileInputStream();
@@ -1594,6 +1642,43 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception e) {
       log.error("An error occurred while getting featured image illustration", e);
       return Response.serverError().build();
+    }
+  }
+
+  @DELETE
+  @Path("/metadata/featured-image/{noteId}")
+  @RolesAllowed("users")
+  @Operation(
+          summary = "delete a note featured image",
+          description = "Deletes note featured image and its related metadata property",
+          method = "DELETE")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "500", description = "Internal server error"),
+          @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response removeNoteFeaturedImage(@Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
+                                          @Parameter(description = "draft note", required = true) @QueryParam("isDraft") boolean isDraft,
+                                          @Parameter(description = "Note version language", required = true) @QueryParam("lang") String lang) 
+  {
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
+    }
+    try {
+      NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
+                                                                                 lang,
+                                                                                 isDraft,
+                                                                                 RestUtils.getCurrentUserIdentityId());
+      if (noteFeaturedImage == null) {
+        return Response.status(HTTPStatus.NOT_FOUND).build();
+      }
+      noteService.removeNoteFeaturedImage(noteId, noteFeaturedImage.getId(), lang, isDraft, RestUtils.getCurrentUserIdentityId());
+      return Response.status(HTTPStatus.OK).build();
+    } catch (ObjectNotFoundException e) {
+      log.warn("target note not found", e);
+      return Response.status(HTTPStatus.NOT_FOUND).build();
+    } catch (Exception e) {
+      log.error("Error occurred while removing note featured image", e);
+      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
     }
   }
 

@@ -51,7 +51,7 @@ export default {
   },
   props: {
     note: {
-      type: Object,
+      type: Number,
       default: null
     },
     hasFeaturedImage: {
@@ -62,7 +62,7 @@ export default {
   watch: {
     imageData() {
       if (this.imageData?.length) {
-        this.$root.$emit('image-data', this.imageData, this.getMimeType(this.imageData));
+        this.$root.$emit('image-data', this.imageData, this.mimeType);
       }
     },
     uploadId() {
@@ -78,18 +78,22 @@ export default {
     }
   },
   computed: {
-    langParam() {
-      return this.note?.lang && `&lang=${this.note.lang}` || '';
+    lang() {
+      return this.note?.lang || '';
     },
     isDraft() {
       return this.note?.draftPage;
     },
     noteFeatureImageUpdatedDate() {
-      return this.note?.properties.featuredImage?.lastUpdated;
+      return this.note?.properties?.featuredImageUpdatedDate;
     },
     featuredImageLink() {
+      const langParam = this.lang && `&lang=${this.lang}` || '';
       return this.imageData || this.hasFeaturedImageValue
-                            && `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
+                            && `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${langParam}` || '';
+    },
+    mimeType() {
+      return this.getMimeType(this.imageData);
     }
   },
   created() {

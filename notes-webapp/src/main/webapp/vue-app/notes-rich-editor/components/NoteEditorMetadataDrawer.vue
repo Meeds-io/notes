@@ -32,7 +32,7 @@
       right
       @closed="resetProperties">
       <template slot="title">
-        <div class="d-flex my-auto text-header font-weight-bold text-color">
+        <div class="d-flex my-auto font-weight-bold text-color">
           {{ $t('notes.metadata.properties.label') }}
         </div>
       </template>
@@ -40,23 +40,17 @@
         <div class="pa-5">
           <v-form>
             <label for="image-area">
-              <p class="text-color text-body mb-3">
+              <p class="text-color xlarge-font-size mb-3">
                 {{ $t('notes.metadata.featuredImage.label') }}
               </p>
-              <v-file-input
-                id="featuredImageInput"
-                ref="featuredImageInput"
-                accept="image/*"
-                class="position-absolute hidden"
-                @change="handleUpload" />
               <v-btn
                 v-if="!canShowFeaturedImagePreview"
                 name="image-area"
                 class="btn add-image-area d-flex"
-                height="206"
+                height="95"
                 width="100%"
                 text
-                @click="uploadFeaturedImage">
+                @click="openFeaturedImageDrawer">
                 <div class="d-flex width-fit-content mx-auto">
                   <v-icon
                     class="me-15 icon-default-color"
@@ -70,65 +64,52 @@
               </v-btn>
               <v-sheet
                 v-else
-                height="206"
-                min-width="48"
-                class="card-border-radius image-preview">
+                height="48">
                 <v-hover v-slot="{ hover }">
-                  <div class="d-flex full-height">
+                  <div>
                     <v-img
-                      width="100%"
-                      contain
-                      :class="{'image-pre-upload': isUploading}"
+                      height="48"
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
-                      :src="featuredImageLink">
-                      <v-row
-                        v-if="isUploading"
-                        class="fill-height ma-0"
-                        align="center"
-                        justify="center">
-                        <v-progress-circular
-                          indeterminate
-                          color="grey lighten-5" />
-                      </v-row>
-                      <div
-                        v-if="hover && canShowFeaturedImagePreview"
-                        class="width-fit-content full-height ms-auto d-flex me-2">
-                        <v-btn
-                          class="feature-image-button me-1 mt-2 mb-auto"
-                          icon
-                          @click.stop="removeNoteFeaturedImage">
-                          <v-icon
-                            class="feature-image-trash-icon"
-                            size="20">
-                            fa-solid fa-trash
-                          </v-icon>
-                        </v-btn>
-                        <v-btn
-                          class="feature-image-button mt-2 mb-auto"
-                          icon
-                          @click="uploadFeaturedImage">
-                          <v-icon
-                            class="feature-image-file-icon"
-                            size="20">
-                            fa-regular fa-file-image
-                          </v-icon>
-                        </v-btn>
-                      </div>
-                    </v-img>
+                      :src="featuredImageLink" />
+                    <div
+                      v-if="hover && canShowFeaturedImagePreview"
+                      class="width-fit-content ms-auto featured-image-controls me-2">
+                      <v-btn
+                        :loading="isRemovingFeaturedImage"
+                        class="feature-image-button me-1"
+                        icon
+                        @click.stop="removeNoteFeaturedImage">
+                        <v-icon
+                          class="feature-image-trash-icon white--text"
+                          size="20">
+                          fa-solid fa-trash
+                        </v-icon>
+                      </v-btn>
+                      <v-btn
+                        class="feature-image-button"
+                        icon
+                        @click="openFeaturedImageDrawer">
+                        <v-icon
+                          class="feature-image-file-icon white--text"
+                          size="20">
+                          fa-regular fa-file-image
+                        </v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </v-hover>
               </v-sheet>
             </label>
             <label for="summaryInputEditor">
               <div class="mt-5">
-                <p class="text-color text-body mb-3">
+                <p class="text-color xlarge-font-size mb-3">
                   {{ $t('notes.metadata.summary.label') }}
                 </p>
                 <v-textarea
                   v-model="summaryContent"
                   name="summaryInputEditor"
-                  class="summary-metadata-input pt-0 overflow-auto"
+                  class="summary-metadata-input pt-0"
                   :placeholder="$t('notes.metadata.add.summary.placeholder')"
                   rows="17"
                   row-height="8"
@@ -144,11 +125,12 @@
         <div class="d-flex width-fit-content ms-auto">
           <v-btn
             class="btn me-5"
-            @click="cancelChanges">
+            @click="close">
             {{ $t('notes.button.cancel') }}
           </v-btn>
           <v-btn
             :disabled="saveDisabled"
+            :loading="isSaving"
             class="btn btn-primary"
             @click="save">
             {{ $t('notes.button.publish') }}
@@ -164,7 +146,6 @@
 export default {
   data() {
     return {
-      maxFileSize: 20 * 1024 * 1024,
       noteObject: null,
       drawer: false,
       summaryContent: null,
@@ -176,8 +157,8 @@ export default {
       featureImageUpdated: false,
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       currentNoteProperties: {},
-      removeFeaturedImage: false,
-      isUploading: false
+      isSaving: false,
+      isRemovingFeaturedImage: false
     };
   },
   props: {
@@ -193,10 +174,10 @@ export default {
   },
   computed: {
     savedFeaturedImageAltText() {
-      return this.noteObject?.properties.featuredImage?.featuredImageAltText;
+      return this.noteObject?.properties?.featuredImageAltText;
     },
     saveDisabled() {
-      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage) || this.isUploading;
+      return !this.propertiesChanged && !this.imageData;
     },
     propertiesChanged() {
       return JSON.stringify(this.noteObject?.properties || {}) !== JSON.stringify(this.currentNoteProperties || {});
@@ -207,24 +188,22 @@ export default {
     notedId() {
       return this.noteObject?.id;
     },
-    langParam() {
-      return this.noteObject?.lang && `&lang=${this.noteObject?.lang}` || '';
+    lang() {
+      return this.noteObject?.lang || '';
     },
     isDraft() {
       return this.noteObject?.draftPage;
     },
     noteFeatureImageUpdatedDate() {
-      return this.noteObject?.properties?.featuredImage?.lastUpdated || 0;
+      return this.noteObject?.properties?.featuredImageUpdatedDate || 0;
     },
     featuredImageLink() {
+      const langParam = this.lang && `&lang=${this.lang}` || '';
       return this.imageData || this.hasFeaturedImageValue
-                            && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
-    }
+                            && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${langParam}` || '';
+    },
   },
   watch: {
-    'noteObject.lang': function () {
-      this.imageData = null;
-    },
     hasFeaturedImage() {
       this.hasFeaturedImageValue = this.hasFeaturedImage;
     },
@@ -242,57 +221,9 @@ export default {
     }
   },
   methods: {
-    displayMessage(message) {
-      document.dispatchEvent(new CustomEvent('alert-message', {
-        detail: {
-          alertType: message.type,
-          alertMessage: message.text
-        }
-      }));
-    },
-    uploadFeaturedImage() {
-      document.getElementById('featuredImageInput').click();
-    },
-    handleUpload(image) {
-      if (!image) {
-        return;
-      }
-      if (image.size > this.maxFileSize) {
-        this.displayMessage({
-          type: 'error',
-          text: this.$t('notes.featuredImage.size.error.message')
-        });
-        return;
-      }
-      this.isUploading = true;
-      const reader = new FileReader();
-      reader.onload = e => {
-        this.imageData = e.target.result
-                        && e.target.result.length > 23
-                        && e.target.result || null;
-        this.mimeType = image.type;
-      };
-      reader.readAsDataURL(image);
-      this.$uploadService.upload(image).then(uploadId => {
-        this.uploadId = uploadId;
-        this.removeFeaturedImage = false;
-        this.controlUploadStatus(uploadId);
-      });
-    },
-    controlUploadStatus(uploadId) {
-      window.setTimeout(() => {
-        this.$uploadService.getUploadProgress(uploadId).then(percent => {
-          if (Number(percent) < 100) {
-            this.controlUploadStatus(uploadId);
-          } else {
-            this.isUploading = false;
-          }
-        });
-      }, 200);
-    },
     resetProperties() {
+      this.noteObject.properties = this.currentNoteProperties;
       this.featureImageUpdated = false;
-      this.cancelChanges();
     },
     imageDataUpdated(data, mimeType) {
       this.imageData = data;
@@ -311,43 +242,73 @@ export default {
       this.noteObject = note;
       this.currentNoteProperties = structuredClone(this.noteObject?.properties || {});
       this.summaryContent = this.currentNoteProperties?.summary || '';
-      this.removeFeaturedImage = false;
       this.$refs.metadataDrawer.open();
-    },
-    cancelChanges() {
-      this.close();
-      this.noteObject.properties = structuredClone(this.currentNoteProperties || {});
-      this.summaryContent = this.currentNoteProperties?.summary || '';
-      this.hasFeaturedImageValue = this.hasFeaturedImage;
-      this.imageData = null;
-      this.uploadId = null;
     },
     close() {
       this.$refs.metadataDrawer.close();
     },
+    displayMessage(message) {
+      document.dispatchEvent(new CustomEvent('alert-message', {
+        detail: {
+          alertType: message.type,
+          alertMessage: message.text
+        }
+      }));
+    },
     save() {
-      const savedFeaturedImageId = this.noteObject?.properties?.featuredImage?.id;
       const properties = {
-        noteId: this.noteObject?.id,
+        noteId: this.isDraft && this.noteObject?.targetPageId
+                             || this.noteObject?.id,
         summary: this.summaryContent,
         featuredImage: {
-          id: savedFeaturedImageId,
           uploadId: this.uploadId,
+          base64Data: this.imageData,
           mimeType: this.mimeType,
-          altText: this.featuredImageAltText,
-          toDelete: this.removeFeaturedImage || (!this.uploadId && !savedFeaturedImageId)
+          altText: this.featuredImageAltText
         },
-        draft: this.isDraft || !this.notedId
+        draft: this.isDraft
       };
-      this.$emit('metadata-updated', properties);
-      this.close();
+      this.isSaving = true;
+      return this.$notesService.saveNoteMetadata(properties, this.lang).then((properties) => {
+        this.hasFeaturedImageValue = !!properties?.featuredImageId;
+        this.noteObject.properties = properties;
+        this.currentNoteProperties = structuredClone(properties);
+        this.$emit('metadata-updated');
+        this.displayMessage({
+          type: 'success',
+          text: this.$t('notes.metadata.saved.success.message')
+        });
+      }).catch(() => {
+        this.displayMessage({
+          type: 'error',
+          text: this.$t('notes.metadata.saved.error.message')
+        });
+      }).finally(() => {
+        this.isSaving = false;
+        this.close();
+      });
     },
     removeNoteFeaturedImage() {
-      this.featuredImage = null;
-      this.removeFeaturedImage = true;
-      this.hasFeaturedImageValue = false;
-      this.imageData = null;
-      this.$root.$emit('reset-featured-image-data');
+      if (!this.hasFeaturedImage) {
+        this.imageData = null;
+        this.hasFeaturedImageValue = false;
+        return;
+      }
+      this.isRemovingFeaturedImage = true;
+      return this.$notesService.removeNoteFeaturedImage(this.notedId, this.noteObject?.draftPage, this.lang).then(() => {
+        this.hasFeaturedImageValue = false;
+        this.imageData = null;
+        this.$root.$emit('reset-featured-image-data');
+        this.displayMessage({
+          type: 'success',
+          text: this.$t('notes.featuredImage.remove.success.message')
+        });
+      }).catch(() => {
+        this.displayMessage({
+          type: 'error',
+          text: this.$t('notes.featuredImage.remove.error.message')
+        });
+      }).finally(() => this.isRemovingFeaturedImage = false);
     }
   }
 };

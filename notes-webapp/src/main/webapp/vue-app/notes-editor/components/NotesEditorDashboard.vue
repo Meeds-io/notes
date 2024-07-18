@@ -36,11 +36,10 @@
       :translations="translations"
       :selected-language="selectedLanguage"
       :lang-button-tooltip-text="langButtonTooltipText"
-      :publish-and-post-button-text="publishAndPostButtonText"
-      :publish-button-text="publishButtonText"
+      :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
-      :suggester-space-url="suggesterSpaceURL"
+      :suggester-space-url="spaceGroupId"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
       :editor-body-input-ref="'notesContent'"
@@ -130,19 +129,13 @@ export default {
     };
   },
   computed: {
-    publishAndPostButtonText() {
-      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
-        return this.$t('notes.button.updateAndPost');
-      } else {
-        return this.$t('notes.button.publishAndPost');
-      }
+    saveOrUpdateDisabled() {
+      return !this.note?.title || this.note?.title?.length < 3
+                               || this.note?.title?.length > this.titleMaxLength
+                               || this.noteNotModified && !this.draftNote;
     },
-    publishButtonText() {
-      if (this.note?.id && (this.note?.targetPageId || !this.note?.draftPage)) {
-        return this.$t('notes.button.update');
-      } else {
-        return this.$t('notes.message.firstVersionShouldBeCreated');
-      }
+    noteNotModified() {
+      return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
     },
     langButtonTooltipText() {
       if (this.noteId) {
@@ -165,9 +158,6 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
-    },
-    suggesterSpaceURL() {
-      return this.spaceGroupId || this.urlParams?.get?.('spaceGroupId');
     }
   },
   watch: {
@@ -176,16 +166,16 @@ export default {
         this.autoSave();
       }
     },
-    'note.content'() {
-      if (this.note.content && this.note.content !== this.actualNote.content) {
-        this.autoSave();
-      }
-    },
     draftNote() {
       if (!this.draftNote) {
         this.$root.$emit('close-alert-message');
       }
-    }
+    },
+    'note.content'() {
+      if (!this.$noteUtils.isSameContent(this.note?.content, this.actualNote?.content)) {
+        this.autoSave();
+      }
+    },
   },
   mounted() {
     this.init();
@@ -307,37 +297,15 @@ export default {
         }
       }
     },
-    validateForm() {
-      if (!this.note.title) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.missingTitle')
-        });
-        return false;
-      }
-      if (!isNaN(this.note.title)) {
-        this.enableClickOnce();
-        this.$root.$emit('show-alert', {
-          type: 'error',
-          message: this.$t('notes.message.numericTitle')
-        });
-        return false;
-      } else {
-        const cleanedTitle = this.note.title.replace(/<[^>]*>|&nbsp;/g, '').trim();
-        if (cleanedTitle.length < 3 || cleanedTitle.length > this.titleMaxLength) {
-          this.enableClickOnce();
-          this.$root.$emit('show-alert', {
-            type: 'error',
-            message: this.$t('notes.message.missingLengthTitle')
-          });
-          return false;
-        }
-      }
-      return true;
+    addParamToUrl(paramName, paramValue) {
+      const url = new URL(window.location.href);
+      url.searchParams.set(paramName, paramValue);
+      history.pushState({}, null, url.toString());
     },
     updateNote(note) {
       return this.$notesService.updateNoteById(note).then(data => {
+        this.note = data;
+        this.originalNote = structuredClone(data);
         this.removeLocalStorageCurrentDraft();
         this.redirectAfterSave(data || note);
       }).catch(e => {
@@ -350,6 +318,10 @@ export default {
     },
     createNote(note) {
       return this.$notesService.createNote(note).then(data => {
+        this.note = data;
+        this.noteId = data.id;
+        this.addParamToUrl('noteId', this.noteId);
+        this.originalNote = structuredClone(data);
         const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
         // delete draft note
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.slectedLanguage}`));
@@ -524,7 +496,7 @@ export default {
       const draftNote = this.fillDraftNote();
       if (this.note.title || this.note.content) {
         // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated) {
+        if (this.note.draftPage && this.note.id && !this.note?.lang) {
           this.note.parentPageId = this.parentPageId;
           localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
           this.actualNote = {
