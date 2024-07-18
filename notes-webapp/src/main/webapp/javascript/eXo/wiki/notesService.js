@@ -405,3 +405,44 @@ export function deleteNoteTranslation(noteId, translation) {
   });
 }
 
+export function saveNoteMetadata(properties, lang) {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  const params = new URLSearchParams(formData).toString();
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/metadata?${params}`, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify(properties),
+    credentials: 'include',
+  }).then((resp) => {
+    if (!resp?.ok) {
+      throw new Error('Error while saving note metadata');
+    } else {
+      return resp.json();
+    }
+  });
+}
+
+export function removeNoteFeaturedImage(noteId, isDraft, lang) {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  formData.append('isDraft', isDraft);
+  const params = new URLSearchParams(formData).toString();
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/metadata/featured-image/${noteId}?${params}`, {
+    credentials: 'include',
+    method: 'DELETE',
+  }).then((resp) => {
+    if (resp?.ok) {
+      return resp;
+    } else {
+      throw new Error('Error when deleting note featured image');
+    }
+  });
+}

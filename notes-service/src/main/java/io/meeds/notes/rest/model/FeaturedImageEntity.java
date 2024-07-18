@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2022 Meeds Association contact@meeds.io
+ * Copyright (C) 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -9,32 +9,29 @@
  * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
+package io.meeds.notes.rest.model;
 
-package org.exoplatform.wiki.model;
-
-import org.exoplatform.commons.diff.DiffResult;
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class DraftPage extends Page {
-  private String              targetPageId;
+@NoArgsConstructor
+@AllArgsConstructor
+public class FeaturedImageEntity {
 
-  private String              targetPageRevision;
+  private String base64Data;
 
-  private boolean             newPage;
+  private String mimeType;
 
-  private DiffResult          changes;
+  private String uploadId;
 
-  @Override
-  public boolean isDraftPage() {
-    return true;
-  }
+  private String altText;
 }
