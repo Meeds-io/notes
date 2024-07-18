@@ -58,6 +58,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.common.http.HTTPStatus;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
@@ -104,6 +105,8 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;

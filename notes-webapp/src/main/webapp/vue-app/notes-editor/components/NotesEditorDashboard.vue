@@ -175,9 +175,6 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
-    },
-    suggesterSpaceURL() {
-      return this.spaceGroupId || this.urlParams?.get?.('spaceGroupId');
     }
   },
   watch: {
@@ -317,6 +314,11 @@ export default {
         this.createNote(note);
       }
       this.draftNote = null;
+    },
+    addParamToUrl(paramName, paramValue) {
+      const url = new URL(window.location.href);
+      url.searchParams.set(paramName, paramValue);
+      history.pushState({}, null, url.toString());
     },
     addParamToUrl(paramName, paramValue) {
       const url = new URL(window.location.href);
