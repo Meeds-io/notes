@@ -186,6 +186,10 @@ export default {
     translationOptionEnabled: {
       type: Boolean,
       default: true
+    },
+    imagesDownloadFolder: {
+      type: String,
+      default: 'DRIVE_ROOT_NODE/notes/images'
     }
   },
   watch: {
@@ -339,7 +343,7 @@ export default {
         typeOfRelation: 'mention_activity_stream',
         spaceURL: self.suggesterSpaceUrl,
         spaceGroupId: self.spaceGroupId,
-        imagesDownloadFolder: 'DRIVE_ROOT_NODE/notes/images',
+        imagesDownloadFolder: self.imagesDownloadFolder,
         toolbarLocation: 'top',
         extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
         removeButtons: '',
