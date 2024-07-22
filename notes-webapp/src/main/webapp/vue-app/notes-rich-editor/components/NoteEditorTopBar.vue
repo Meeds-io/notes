@@ -30,7 +30,7 @@
             {{ editorIcon }}
           </v-icon>
           <span class="notesFormTitle my-auto ms-3 me-5">{{ formTitle }}</span>
-          <v-tooltip bottom>
+          <v-tooltip bottom v-if="translationOptionEnabled">
             <template #activator="{ on, attrs }">
               <v-btn
                 v-on="on"
@@ -183,6 +183,10 @@ export default {
       default: false
     },
     saveButtonDisabled: {
+      type: Boolean,
+      default: true
+    },
+    translationOptionEnabled: {
       type: Boolean,
       default: true
     }
