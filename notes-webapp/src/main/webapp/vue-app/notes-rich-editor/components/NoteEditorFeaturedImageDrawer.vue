@@ -85,7 +85,7 @@ export default {
       return this.note?.draftPage;
     },
     noteFeatureImageUpdatedDate() {
-      return this.note?.properties?.featuredImageUpdatedDate;
+      return this.note?.properties.featuredImage?.lastUpdated;
     },
     featuredImageLink() {
       const langParam = this.lang && `&lang=${this.lang}` || '';
@@ -115,10 +115,7 @@ export default {
     },
     close() {
       this.$refs.featuredImageDrawer.close();
-    },
-    isClosed() {
-      return this.$refs.featuredImageDrawer.$el.classList.contains('v-navigation-drawer--close');
-    },
+    }
   }
 };
 </script>

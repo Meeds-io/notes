@@ -22,10 +22,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PagePropertiesEntity {
+public class PagePropertiesEntity implements Serializable {
 
   private long                noteId;
 

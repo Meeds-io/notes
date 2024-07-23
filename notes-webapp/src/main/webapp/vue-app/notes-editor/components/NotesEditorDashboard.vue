@@ -81,12 +81,14 @@ export default {
         title: '',
         content: '',
         parentPageId: '',
+        properties: {}
       },
       actualNote: {
         id: '',
         title: '',
         content: '',
         parentPageId: '',
+        properties: {}
       },
       alert: false,
       alertType: '',
@@ -124,17 +126,22 @@ export default {
       instanceReady: false,
       initialized: false,
       editorIcon: 'fas fa-clipboard',
-      saveButtonIcon: 'fas fa-save'
+      saveButtonIcon: 'fas fa-save',
+      translationSwitch: false,
     };
   },
   computed: {
     saveOrUpdateDisabled() {
-      return !this.note?.title || this.note?.title?.length < 3
-                               || this.note?.title?.length > this.titleMaxLength
-                               || this.noteNotModified && !this.draftNote;
+      return (!this.note?.title || this.note?.title?.length < 3
+                                || this.note?.title?.length > this.titleMaxLength)
+                                || (this.noteNotModified
+                                && !this.propertiesModified && !this.draftNote);
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
+    },
+    propertiesModified() {
+      return JSON.stringify(this.note?.properties) !== JSON.stringify(this.originalNote?.properties);
     },
     langButtonTooltipText() {
       if (this.noteId) {
@@ -161,7 +168,7 @@ export default {
   },
   watch: {
     'note.title'() {
-      if (this.note.title && this.note.title !== this.actualNote.title ) {
+      if (this.note?.title !== this.actualNote.title ) {
         this.autoSave();
       }
     },
@@ -267,8 +274,10 @@ export default {
       }
     },
     updateNoteData(noteObject) {
+      this.translationSwitch = this.note?.lang !== noteObject?.lang;
       this.note.title = noteObject.title;
       this.note.content = noteObject.content;
+      this.note.properties = noteObject.properties;
     },
     postNote(toPublish) {
       this.postingNote = true;
@@ -284,12 +293,14 @@ export default {
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
         toBePublished: toPublish,
         appName: this.appName,
+        properties: this.note?.properties
       };
       if (note.id) {
         this.updateNote(note);
       } else {
         this.createNote(note);
       }
+      this.draftNote = null;
     },
     addParamToUrl(paramName, paramValue) {
       const url = new URL(window.location.href);
@@ -338,6 +349,9 @@ export default {
       }).finally(() => this.enableClickOnce());
     },
     autoSave() {
+      if (this.translationSwitch) {
+        return;
+      }
       // No draft saving if init not done or in edit mode for the moment
       if (!this.initCompleted || !this.initActualNoteDone) {
         return;
@@ -348,7 +362,8 @@ export default {
       }
 
       // if the Note is not updated, no need to autosave anymore
-      if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)) {
+      if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)
+          && (JSON.stringify(this.note?.properties) === JSON.stringify(this.actualNote?.properties))) {
         return;
       }
 
@@ -433,6 +448,7 @@ export default {
           owner: this.note.owner,
           breadcrumb: this.note.breadcrumb,
           toBePublished: this.note.toBePublished,
+          properties: this.note?.properties
         };
         const childContainer = '<div id="note-children-container" class="navigation-img-wrapper" contenteditable="false"><figure class="image-navigation" contenteditable="false">'
         +'<img src="/notes/images/children.png" role="presentation"/><img src="/notes/images/trash.png" id="remove-treeview" alt="remove treeview"/>'
@@ -466,6 +482,7 @@ export default {
         wikiType: this.note.wikiType,
         wikiOwner: this.note.wikiOwner,
         parentPageId: this.parentPageId,
+        properties: this.note?.properties
       };
       if (this.note.draftPage && this.note.id) {
         draftNote.targetPageId = this.note.targetPageId;
@@ -494,6 +511,7 @@ export default {
             name: draftNote.name,
             title: draftNote.title,
             content: draftNote.content,
+            properties: draftNote.properties
           };
           setTimeout(() => {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
@@ -513,7 +531,11 @@ export default {
       draftNote.lang = this.selectedLanguage;
       if (this.note.title || this.note.content) {
         if (this.newDraft){
-          draftNote.id=null;
+          draftNote.id = null;
+        }
+        if (draftNote.properties) {
+          draftNote.properties.draft = true;
+          draftNote.properties.noteId = this.note?.targetPageId || this.note?.id;
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
           if (update){
@@ -524,6 +546,7 @@ export default {
               content: savedDraftNote.content,
               author: savedDraftNote.author,
               owner: savedDraftNote.owner,
+              properties: savedDraftNote.properties
             };
             this.newDraft=false;
             savedDraftNote.parentPageId = this.parentPageId;
@@ -711,6 +734,7 @@ export default {
       const originNoteContent = {
         title: this.note.title,
         content: this.note.content,
+        properties: structuredClone(this.note?.properties),
         lang: lang?.value
       };
       this.languages = this.languages.filter(item => item.value !== lang?.value);

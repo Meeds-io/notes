@@ -534,10 +534,11 @@ public interface NoteService {
    *
    * @param draftNoteToUpdate the draft note to be updated
    * @param currentTimeMillis
+   * @param userIdentityId user identity id
    * @return Updated draft
    * @throws WikiException
    */
-  DraftPage updateDraftForNewPage(DraftPage draftNoteToUpdate, long currentTimeMillis) throws WikiException;
+  DraftPage updateDraftForNewPage(DraftPage draftNoteToUpdate, long currentTimeMillis, long userIdentityId) throws WikiException;
 
   /**
    * Creates a draft for an existing page
@@ -562,10 +563,11 @@ public interface NoteService {
    *
    * @param draftNoteToSave The draft note to be created
    * @param currentTimeMillis
+   * @param userIdentityId user identity id
    * @return Created draft
    * @throws WikiException
    */
-  DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis) throws WikiException;
+  DraftPage createDraftForNewPage(DraftPage draftNoteToSave, long currentTimeMillis, long userIdentityId) throws WikiException;
 
   /**
    * Return the list of children of the note to export
@@ -791,10 +793,11 @@ public interface NoteService {
    * @param noteId Note id
    * @param lang note version language
    * @param isDraft is target not a draft
+   * @param thumbnailSize featured image thumbnail size
    * @param userIdentityId user identity id
    * @return {@link NoteFeaturedImage}
    */
-  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, long userIdentityId) throws Exception;
+  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception;
 
   /**
    * Save note metadata properties
@@ -802,8 +805,9 @@ public interface NoteService {
    * @param pageProperties note metadata properties to save
    * @param lang target version language
    * @param userIdentityId user identity id
+   * @return {@link NotePageProperties}                      
    */
-  Map<String, String> saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
+  NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
 
   /**
    * Removes note featured image and its related metadata property
