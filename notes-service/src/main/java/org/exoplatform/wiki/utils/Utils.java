@@ -27,12 +27,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -40,6 +45,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.utils.MentionUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
@@ -755,5 +763,34 @@ public class Utils {
       }
     }
     return aclIdentity;
+  }
+
+  public static Set<String> processMentions(String content, Space space) {
+    Set<String> mentions = new HashSet<>();
+    mentions.addAll(MentionUtils.getMentionedUsernames(content));
+
+    if (space != null) {
+      IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
+      String spaceIdentityId = identityStorage.findIdentityId(SpaceIdentityProvider.NAME, space.getPrettyName());
+      Set<String> mentionedRoles = MentionUtils.getMentionedRoles(content, spaceIdentityId);
+      mentionedRoles.forEach(role -> {
+        if (StringUtils.equals("member", role) && space.getMembers() != null) {
+          mentions.addAll(Arrays.asList(space.getMembers()));
+        } else if (StringUtils.equals("manager", role) && space.getManagers() != null) {
+          mentions.addAll(Arrays.asList(space.getManagers()));
+        } else if (StringUtils.equals("redactor", role) && space.getRedactors() != null) {
+          mentions.addAll(Arrays.asList(space.getRedactors()));
+        } else if (StringUtils.equals("publisher", role) && space.getPublishers() != null) {
+          mentions.addAll(Arrays.asList(space.getPublishers()));
+        }
+      });
+    }
+
+    return mentions.stream().map(remoteId -> {
+      IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
+
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      return identity == null ? null : identity.getId();
+    }).filter(Objects::nonNull).collect(Collectors.toSet());
   }
 }
