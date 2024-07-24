@@ -106,7 +106,9 @@ import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
+import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.rest.model.DraftPageEntity;
+import io.meeds.notes.rest.model.PageEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;

@@ -78,8 +78,6 @@ import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.rest.model.FeaturedImageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)

@@ -154,6 +154,9 @@ export default {
         return this.$t('notes.message.firstVersionShouldBeCreated');
       }
     },
+    propertiesModified() {
+      return JSON.stringify(this.note?.properties) !== JSON.stringify(this.originalNote?.properties);
+    },
     langButtonTooltipText() {
       if (this.noteId) {
         return this.$t('notes.label.button.translations.options');
