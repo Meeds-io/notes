@@ -24,6 +24,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.wiki.service.BreadcrumbData;
 
@@ -101,7 +103,7 @@ public class Page {
 
   private String                          lang;
 
-  private Map<String, String>             properties;
+  private NotePageProperties              properties;
 
   public Page(String name) {
     this.name = name;

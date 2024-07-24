@@ -32,7 +32,7 @@
       right
       @closed="resetProperties">
       <template slot="title">
-        <div class="d-flex my-auto font-weight-bold text-color">
+        <div class="d-flex my-auto text-header font-weight-bold text-color">
           {{ $t('notes.metadata.properties.label') }}
         </div>
       </template>
@@ -40,7 +40,7 @@
         <div class="pa-5">
           <v-form>
             <label for="image-area">
-              <p class="text-color xlarge-font-size mb-3">
+              <p class="text-color text-body mb-3">
                 {{ $t('notes.metadata.featuredImage.label') }}
               </p>
               <v-btn
@@ -64,52 +64,54 @@
               </v-btn>
               <v-sheet
                 v-else
-                height="48">
+                min-width="48">
                 <v-hover v-slot="{ hover }">
-                  <div>
+                  <div class="d-flex">
                     <v-img
-                      height="48"
+                      width="100%"
+                      min-height="48"
+                      aspect-ratio="8"
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
-                      :src="featuredImageLink" />
-                    <div
-                      v-if="hover && canShowFeaturedImagePreview"
-                      class="width-fit-content ms-auto featured-image-controls me-2">
-                      <v-btn
-                        :loading="isRemovingFeaturedImage"
-                        class="feature-image-button me-1"
-                        icon
-                        @click.stop="removeNoteFeaturedImage">
-                        <v-icon
-                          class="feature-image-trash-icon white--text"
-                          size="20">
-                          fa-solid fa-trash
-                        </v-icon>
-                      </v-btn>
-                      <v-btn
-                        class="feature-image-button"
-                        icon
-                        @click="openFeaturedImageDrawer">
-                        <v-icon
-                          class="feature-image-file-icon white--text"
-                          size="20">
-                          fa-regular fa-file-image
-                        </v-icon>
-                      </v-btn>
-                    </div>
+                      :src="featuredImageLink">
+                      <div
+                        v-if="hover && canShowFeaturedImagePreview"
+                        class="width-fit-content full-height ms-auto d-flex me-2">
+                        <v-btn
+                          class="feature-image-button me-1 my-auto"
+                          icon
+                          @click.stop="removeNoteFeaturedImage">
+                          <v-icon
+                            class="feature-image-trash-icon"
+                            size="20">
+                            fa-solid fa-trash
+                          </v-icon>
+                        </v-btn>
+                        <v-btn
+                          class="feature-image-button my-auto"
+                          icon
+                          @click="openFeaturedImageDrawer">
+                          <v-icon
+                            class="feature-image-file-icon"
+                            size="20">
+                            fa-regular fa-file-image
+                          </v-icon>
+                        </v-btn>
+                      </div>
+                    </v-img>
                   </div>
                 </v-hover>
               </v-sheet>
             </label>
             <label for="summaryInputEditor">
               <div class="mt-5">
-                <p class="text-color xlarge-font-size mb-3">
+                <p class="text-color text-body mb-3">
                   {{ $t('notes.metadata.summary.label') }}
                 </p>
                 <v-textarea
                   v-model="summaryContent"
                   name="summaryInputEditor"
-                  class="summary-metadata-input pt-0"
+                  class="summary-metadata-input pt-0 overflow-auto"
                   :placeholder="$t('notes.metadata.add.summary.placeholder')"
                   rows="17"
                   row-height="8"
@@ -129,8 +131,7 @@
             {{ $t('notes.button.cancel') }}
           </v-btn>
           <v-btn
-            :disabled="saveDisabled"
-            :loading="isSaving"
+            :disabled="saveDisabled && !enableSave"
             class="btn btn-primary"
             @click="save">
             {{ $t('notes.button.publish') }}
@@ -157,8 +158,8 @@ export default {
       featureImageUpdated: false,
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       currentNoteProperties: {},
-      isSaving: false,
-      isRemovingFeaturedImage: false
+      removeFeaturedImage: false,
+      enableSave: false
     };
   },
   props: {
@@ -174,7 +175,7 @@ export default {
   },
   computed: {
     savedFeaturedImageAltText() {
-      return this.noteObject?.properties?.featuredImageAltText;
+      return this.noteObject?.properties.featuredImage?.featuredImageAltText;
     },
     saveDisabled() {
       return !this.propertiesChanged && !this.imageData;
@@ -188,22 +189,24 @@ export default {
     notedId() {
       return this.noteObject?.id;
     },
-    lang() {
-      return this.noteObject?.lang || '';
+    langParam() {
+      return this.noteObject?.lang && `&lang=${this.noteObject?.lang}` || '';
     },
     isDraft() {
       return this.noteObject?.draftPage;
     },
     noteFeatureImageUpdatedDate() {
-      return this.noteObject?.properties?.featuredImageUpdatedDate || 0;
+      return this.noteObject?.properties?.featuredImage?.lastUpdated || 0;
     },
     featuredImageLink() {
-      const langParam = this.lang && `&lang=${this.lang}` || '';
       return this.imageData || this.hasFeaturedImageValue
-                            && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${langParam}` || '';
-    },
+                            && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
+    }
   },
   watch: {
+    'noteObject.lang': function () {
+      this.imageData = null;
+    },
     hasFeaturedImage() {
       this.hasFeaturedImageValue = this.hasFeaturedImage;
     },
@@ -222,7 +225,6 @@ export default {
   },
   methods: {
     resetProperties() {
-      this.noteObject.properties = this.currentNoteProperties;
       this.featureImageUpdated = false;
     },
     imageDataUpdated(data, mimeType) {
@@ -242,73 +244,35 @@ export default {
       this.noteObject = note;
       this.currentNoteProperties = structuredClone(this.noteObject?.properties || {});
       this.summaryContent = this.currentNoteProperties?.summary || '';
+      this.removeFeaturedImage = false;
       this.$refs.metadataDrawer.open();
     },
     close() {
       this.$refs.metadataDrawer.close();
     },
-    displayMessage(message) {
-      document.dispatchEvent(new CustomEvent('alert-message', {
-        detail: {
-          alertType: message.type,
-          alertMessage: message.text
-        }
-      }));
-    },
     save() {
       const properties = {
         noteId: this.isDraft && this.noteObject?.targetPageId
-                             || this.noteObject?.id,
+            || this.noteObject?.id,
         summary: this.summaryContent,
         featuredImage: {
           uploadId: this.uploadId,
           base64Data: this.imageData,
           mimeType: this.mimeType,
-          altText: this.featuredImageAltText
+          altText: this.featuredImageAltText,
+          toDelete: this.removeFeaturedImage
         },
-        draft: this.isDraft
+        draft: this.isDraft || !this.notedId
       };
-      this.isSaving = true;
-      return this.$notesService.saveNoteMetadata(properties, this.lang).then((properties) => {
-        this.hasFeaturedImageValue = !!properties?.featuredImageId;
-        this.noteObject.properties = properties;
-        this.currentNoteProperties = structuredClone(properties);
-        this.$emit('metadata-updated');
-        this.displayMessage({
-          type: 'success',
-          text: this.$t('notes.metadata.saved.success.message')
-        });
-      }).catch(() => {
-        this.displayMessage({
-          type: 'error',
-          text: this.$t('notes.metadata.saved.error.message')
-        });
-      }).finally(() => {
-        this.isSaving = false;
-        this.close();
-      });
+      this.$emit('metadata-updated', properties);
+      this.close();
     },
     removeNoteFeaturedImage() {
-      if (!this.hasFeaturedImage) {
-        this.imageData = null;
-        this.hasFeaturedImageValue = false;
-        return;
-      }
-      this.isRemovingFeaturedImage = true;
-      return this.$notesService.removeNoteFeaturedImage(this.notedId, this.noteObject?.draftPage, this.lang).then(() => {
-        this.hasFeaturedImageValue = false;
-        this.imageData = null;
-        this.$root.$emit('reset-featured-image-data');
-        this.displayMessage({
-          type: 'success',
-          text: this.$t('notes.featuredImage.remove.success.message')
-        });
-      }).catch(() => {
-        this.displayMessage({
-          type: 'error',
-          text: this.$t('notes.featuredImage.remove.error.message')
-        });
-      }).finally(() => this.isRemovingFeaturedImage = false);
+      this.hasFeaturedImageValue = false;
+      this.imageData = null;
+      this.removeFeaturedImage = true;
+      this.enableSave = true;
+      this.$root.$emit('reset-featured-image-data');
     }
   }
 };
