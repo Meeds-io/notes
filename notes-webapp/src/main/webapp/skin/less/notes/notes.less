@@ -215,10 +215,6 @@
 
 #editorMetadataDrawer {
 
-  .xlarge-font-size {
-    font-size: @fontSizeLarge
-  }
-
   .add-image-area {
     background-color: @primaryBackground !important;
   }
@@ -227,10 +223,6 @@
     height: auto;
     opacity: 0.4;
     background: transparent;
-  }
-
-  .featured-image-controls {
-    margin-top: -42px !important;
   }
 
   .feature-image-trash-icon {
@@ -245,7 +237,9 @@
 
   .feature-image-button {
     background: @greyColorLighten1Default;
-    opacity: 0.75;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid @whiteColorDefault;
+    color: @whiteColorDefault
   }
 
   .summary-metadata-input {
@@ -260,6 +254,7 @@
         margin: 0;
 
         textarea {
+          overflow: auto;
           border: 0;
           margin: 0 auto;
           padding: 12px;
