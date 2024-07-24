@@ -71,12 +71,13 @@
       ref="noteCustomPlugins"
       :instance="editor" />
     <note-editor-metadata-drawer
+      ref="editorMetadataDrawer"
       :has-featured-image="hasFeaturedImage"
-      ref="editorMetadataDrawer" />
+      @metadata-updated="metadataUpdated" />
     <note-editor-featured-image-drawer
+      ref="featuredImageDrawer"
       :note="noteObject"
-      :has-featured-image="hasFeaturedImage"
-      ref="featuredImageDrawer" />
+      :has-featured-image="hasFeaturedImage" />
   </div>
 </template>
 
@@ -197,15 +198,17 @@ export default {
       this.updateData();
     },
     'noteObject.content': function () {
-      this.updateData();
+      if (this.initialized) {
+        this.updateData();
+      }
     },
     'note.id': function () {
       this.cloneNoteObject();
     },
-    'note.properties': function () {
+    'note.lang': function() {
       this.cloneNoteObject();
     },
-    'note.title': function () {
+    'note.title': function() {
       this.noteObject.title = this.note?.title;
     },
     instanceReady() {
@@ -216,10 +219,10 @@ export default {
   },
   computed: {
     featuredImageId() {
-      return this.noteObject?.properties?.featuredImageId;
+      return this.noteObject?.properties?.featuredImage?.id;
     },
     hasFeaturedImage() {
-      return !!this.featuredImageId && this.featuredImageId !== 'null';
+      return !!this.featuredImageId;
     }
   },
   created() {
@@ -227,16 +230,27 @@ export default {
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
+    this.$root.$on('update-note-summary', this.updateTranslatedNoteSummary);
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
   },
   methods: {
+    metadataUpdated(properties) {
+      this.noteObject.properties = properties;
+      this.updateData();
+      if (this.noteObject?.title?.length) {
+        this.autoSave();
+      }
+    },
     editorClosed(){
       this.$emit('editor-closed');
     },
     updateTranslatedNoteTitle(title) {
       this.noteObject.title = title;
+    },
+    updateTranslatedNoteSummary(summary) {
+      this.noteObject.properties.summary = summary;
     },
     updateTranslatedNoteContent(content) {
       this.noteObject.content = content;
@@ -271,8 +285,10 @@ export default {
       this.noteObject = structuredClone(this.note);
     },
     updateData() {
-      this.$emit('update-data', this.noteObject);
-      this.hideTranslationsBar();
+      if (this.instanceReady) {
+        this.$emit('update-data', this.noteObject);
+        this.hideTranslationsBar();
+      }
     },
     autoSave() {
       this.$emit('auto-save', this.noteObject);
@@ -315,6 +331,9 @@ export default {
     },
     resetEditorData() {
       this.noteObject.title = null;
+      if (this.noteObject?.properties) {
+        this.noteObject.properties.summary = '';
+      }
       this.editor.setData('');
     },
     initCKEditor: function() {

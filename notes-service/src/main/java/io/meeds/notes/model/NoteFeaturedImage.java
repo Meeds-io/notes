@@ -23,29 +23,32 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.InputStream;
+import java.io.Serializable;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class NoteFeaturedImage {
+public class NoteFeaturedImage implements Serializable {
 
-  private Long        id;
+  private Long                  id;
 
-  private String      fileName;
+  private String                fileName;
 
-  private String      mimeType;
+  private String                mimeType;
 
-  private long        fileSize;
+  private long                  fileSize;
 
-  private Long        lastUpdated;
+  private Long                  lastUpdated;
 
-  private String      base64Data;
+  private String                base64Data;
 
-  private String      uploadId;
-  
-  private String      altText;
+  private String                uploadId;
 
-  private InputStream fileInputStream;
+  private String                altText;
+
+  private transient InputStream fileInputStream;
+
+  private boolean               toDelete;
 
   public NoteFeaturedImage(Long id,
                            String fileName,
@@ -61,10 +64,19 @@ public class NoteFeaturedImage {
     this.fileInputStream = fileInputStream;
   }
 
-  public NoteFeaturedImage(String base64Data, String mimeType, String uploadId, String altText) {
+  public NoteFeaturedImage(Long id,
+                           String base64Data,
+                           String mimeType,
+                           String uploadId,
+                           String altText,
+                           Long lastUpdated,
+                           boolean toDelete) {
+    this.id = id;
     this.base64Data = base64Data;
     this.mimeType = mimeType;
     this.uploadId = uploadId;
     this.altText = altText;
+    this.lastUpdated = lastUpdated;
+    this.toDelete = toDelete;
   }
 }

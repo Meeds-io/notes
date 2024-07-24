@@ -38,6 +38,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.*;
 
 import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.rest.model.DraftPageEntity;
+import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -466,7 +469,7 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
           @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response createNote(@Parameter(description = "note object to be created", required = true)
-  Page note) {
+                             PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -506,7 +509,10 @@ public class NotesRestService implements ResourceContainer {
       note.setSyntax(syntaxId);
       note.setName(note.getTitle());
       note.setUrl("");
-      Page createdNote = noteService.createNote(noteBook, note.getParentPageName(), note, identity);
+      Page createdNote = noteService.createNote(noteBook,
+                                                note.getParentPageName(),
+                                                io.meeds.notes.rest.utils.EntityBuilder.toPage(note),
+                                                identity);
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", note.getName(), e);
@@ -525,7 +531,7 @@ public class NotesRestService implements ResourceContainer {
       @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
       @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response saveDraft(@RequestBody(description = "Note draft page object to be created", required = true)
-  DraftPage draftNoteToSave) {
+                            DraftPageEntity draftNoteToSave) {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -538,6 +544,7 @@ public class NotesRestService implements ResourceContainer {
     String noteBookOwner = draftNoteToSave.getWikiOwner();
     Page parentNote = null;
     Page targetNote = null;
+    DraftPage savedDraftPage = null;
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNoneEmpty(draftNoteToSave.getParentPageId())) {
@@ -572,28 +579,31 @@ public class NotesRestService implements ResourceContainer {
           draftNoteToSave.setId(draftPage.getId());
         }
       }
-
       if (StringUtils.isNoneEmpty(draftNoteToSave.getId())) {
-        draftNoteToSave = targetNote != null
-                                             ? noteService.updateDraftForExistPage(draftNoteToSave,
+        savedDraftPage = targetNote != null
+                                             ? noteService.updateDraftForExistPage(io.meeds.notes.rest.utils.EntityBuilder.toDraftPage(draftNoteToSave),
                                                                                    targetNote,
                                                                                    null,
                                                                                    System.currentTimeMillis(),
                                                                                    currentUser)
-                                             : noteService.updateDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+                                             : noteService.updateDraftForNewPage(io.meeds.notes.rest.utils.EntityBuilder.toDraftPage(draftNoteToSave),
+                                                                                 System.currentTimeMillis(),
+                                                                                 RestUtils.getCurrentUserIdentityId());
       } else {
-        draftNoteToSave = targetNote != null
-                                             ? noteService.createDraftForExistPage(draftNoteToSave,
+        savedDraftPage = targetNote != null
+                                             ? noteService.createDraftForExistPage(io.meeds.notes.rest.utils.EntityBuilder.toDraftPage(draftNoteToSave),
                                                                                    targetNote,
                                                                                    null,
                                                                                    System.currentTimeMillis(),
                                                                                    currentUser)
-                                             : noteService.createDraftForNewPage(draftNoteToSave, System.currentTimeMillis());
+                                             : noteService.createDraftForNewPage(io.meeds.notes.rest.utils.EntityBuilder.toDraftPage(draftNoteToSave),
+                                                                                 System.currentTimeMillis(),
+                                                                                 RestUtils.getCurrentUserIdentityId());
       }
 
-      return Response.ok(draftNoteToSave, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      return Response.ok(savedDraftPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform save noteBook draft note {}:{}:{}", noteBookType, noteBookOwner, draftNoteToSave.getId(), ex);
+      log.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -615,7 +625,7 @@ public class NotesRestService implements ResourceContainer {
                              @PathParam("noteId")
                              String noteId,
                              @RequestBody(description = "note object to be updated", required = true)
-                             Page note) {
+                             PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -683,10 +693,8 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
       @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
       @ApiResponse(responseCode = "404", description = "Resource not found") })
-    public Response updateNoteById(@Parameter(description = "Note id", required = true)
-  @PathParam("noteId")
-  String noteId, @RequestBody(description = "note object to be updated", required = true)
-  Page note) {
+    public Response updateNoteById(@Parameter(description = "Note id", required = true) @PathParam("noteId") String noteId, 
+                                   @RequestBody(description = "note object to be updated", required = true) PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -725,6 +733,9 @@ public class NotesRestService implements ResourceContainer {
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
+          NotePageProperties notePageProperties =
+                                                io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties());
+          note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
@@ -769,7 +780,7 @@ public class NotesRestService implements ResourceContainer {
       } else {
         // in this case, the note didnt change on title nor content. As we need the page
         // url in front side, we compute it here
-        note_.setUrl(Utils.getPageUrl(note));
+        note_.setUrl(Utils.getPageUrl(io.meeds.notes.rest.utils.EntityBuilder.toPage(note)));
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -1496,38 +1507,6 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  @POST
-  @Path("/metadata")
-  @Produces(MediaType.APPLICATION_JSON)
-  @RolesAllowed("users")
-  @Operation(
-          summary = "Saves a note metadata properties",
-          description = "Saves a note metadata properties",
-          method = "POST")
-  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-          @ApiResponse(responseCode = "500", description = "Internal server error"),
-          @ApiResponse(responseCode = "400", description = "Invalid query input"),
-          @ApiResponse(responseCode = "404", description = "Resource not found") })
-  public Response saveNoteMetadata(@RequestBody(description = "note metadata properties") PagePropertiesEntity pageProperties,
-                                   @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang) {
-    if (pageProperties == null ) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("notePageProperties object is mandatory").build();
-    }
-    try {
-      Map<String, String> noteProperties =
-                                         noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(pageProperties),
-                                                                      lang,
-                                                                      RestUtils.getCurrentUserIdentityId());
-      return Response.ok(noteProperties, MediaType.APPLICATION_JSON_TYPE).build();
-    } catch (ObjectNotFoundException e) {
-      log.warn("target note not found", e);
-      return Response.status(HTTPStatus.NOT_FOUND).build();
-    } catch (Exception e) {
-      log.error("Error occurred while saving note metadata properties", e);
-      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
-    }
-  }
-
   @GET
   @Path( "/illustration/{noteId}")
   @RolesAllowed("users")
@@ -1543,6 +1522,7 @@ public class NotesRestService implements ResourceContainer {
                                        @Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
                                        @Parameter(description = "target version language", required = true) @QueryParam("isDraft") boolean isDraft,
                                        @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang,
+                                       @Parameter(description = "Optional size parameter", required = true) @QueryParam("size") String size,
                                        @Parameter(description = "Optional last modified parameter") @QueryParam("v") long lastModified) {
 
     if (noteId == null) {
@@ -1552,12 +1532,13 @@ public class NotesRestService implements ResourceContainer {
       NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
                                                                                  lang,
                                                                                  isDraft,
+                                                                                 size,
                                                                                  RestUtils.getCurrentUserIdentityId());
       if (noteFeaturedImage == null) {
         return Response.status(HTTPStatus.NOT_FOUND).build();
       }
       Long lastUpdated = noteFeaturedImage.getLastUpdated();
-      EntityTag eTag = new EntityTag(lastUpdated + noteId + lang, true);
+      EntityTag eTag = new EntityTag(lastUpdated + noteId + lang + size, true);
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
       if (builder == null) {
         InputStream stream = noteFeaturedImage.getFileInputStream();
@@ -1576,43 +1557,6 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception e) {
       log.error("An error occurred while getting featured image illustration", e);
       return Response.serverError().build();
-    }
-  }
-
-  @DELETE
-  @Path("/metadata/featured-image/{noteId}")
-  @RolesAllowed("users")
-  @Operation(
-          summary = "delete a note featured image",
-          description = "Deletes note featured image and its related metadata property",
-          method = "DELETE")
-  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-          @ApiResponse(responseCode = "500", description = "Internal server error"),
-          @ApiResponse(responseCode = "400", description = "Invalid query input"),
-          @ApiResponse(responseCode = "404", description = "Resource not found") })
-  public Response removeNoteFeaturedImage(@Parameter(description = "target note id", required = true) @PathParam("noteId") Long noteId,
-                                          @Parameter(description = "draft note", required = true) @QueryParam("isDraft") boolean isDraft,
-                                          @Parameter(description = "Note version language", required = true) @QueryParam("lang") String lang) 
-  {
-    if (noteId == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
-    }
-    try {
-      NoteFeaturedImage noteFeaturedImage = noteService.getNoteFeaturedImageInfo(noteId,
-                                                                                 lang,
-                                                                                 isDraft,
-                                                                                 RestUtils.getCurrentUserIdentityId());
-      if (noteFeaturedImage == null) {
-        return Response.status(HTTPStatus.NOT_FOUND).build();
-      }
-      noteService.removeNoteFeaturedImage(noteId, noteFeaturedImage.getId(), lang, isDraft, RestUtils.getCurrentUserIdentityId());
-      return Response.status(HTTPStatus.OK).build();
-    } catch (ObjectNotFoundException e) {
-      log.warn("target note not found", e);
-      return Response.status(HTTPStatus.NOT_FOUND).build();
-    } catch (Exception e) {
-      log.error("Error occurred while removing note featured image", e);
-      return Response.status(HTTPStatus.INTERNAL_ERROR).build();
     }
   }
 
