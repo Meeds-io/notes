@@ -361,7 +361,7 @@ public class NoteServiceImpl implements NoteService {
 
     Matcher mentionsMatcher = MentionInNoteNotificationPlugin.MENTION_PATTERN.matcher(note.getContent());
     if (mentionsMatcher.find()) {
-      sendMentionInNoteNotification(note, existingNote, userIdentity.getUserId());
+      sendMentionInNoteNotification(note, existingNote, userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
     }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);

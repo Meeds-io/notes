@@ -1,13 +1,12 @@
-/**
+/*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2024 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
- *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -40,7 +39,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.webui.utils.TimeConvertUtils;
 
 @TemplateConfigs(templates = {
     @TemplateConfig(pluginId = MentionInNoteNotificationPlugin.ID, template = "war:/notification/templates/push/MentionInNoteNotificationPlugin.gtmpl") })
@@ -67,8 +65,8 @@ public class PushTemplateProvider extends TemplateProvider {
       HTMLEntityEncoder encoder = HTMLEntityEncoder.getInstance();
       templateContext.put(MentionInNoteNotificationPlugin.NOTE_TITLE.getKey(),
                           encoder.encode(notification.getValueOwnerParameter(MentionInNoteNotificationPlugin.NOTE_TITLE.getKey())));
-      templateContext.put(MentionInNoteNotificationPlugin.ACTIVITY_LINK.getKey(),
-                          encoder.encode(notification.getValueOwnerParameter(MentionInNoteNotificationPlugin.ACTIVITY_LINK.getKey())));
+      templateContext.put(MentionInNoteNotificationPlugin.CURRENT_USER.getKey(),
+              encoder.encode(notification.getValueOwnerParameter(MentionInNoteNotificationPlugin.CURRENT_USER.getKey())));
       // Receiver
       Identity receiver = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, notification.getTo());
       if (receiver == null || receiver.getRemoteId().equals(notification.getFrom())) {
