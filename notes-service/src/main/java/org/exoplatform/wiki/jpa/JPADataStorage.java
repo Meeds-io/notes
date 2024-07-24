@@ -1525,7 +1525,16 @@ public class JPADataStorage implements DataStorage {
     if (pageId == null) {
       throw new IllegalArgumentException("targetPageId argument is null");
     }
-    return convertPageVersionEntityToPageVersion(pageVersionDAO.findLatestVersionByPageIdAndLang(pageId, lang));
+    PageVersion pageVersion =
+                            convertPageVersionEntityToPageVersion(pageVersionDAO.findLatestVersionByPageIdAndLang(pageId, lang));
+    if (pageVersion != null) {
+      Page page = pageVersion.getParent();
+      page.setLang(lang);
+      EntityConverter.buildNotePageMetadata(page, false);
+      pageVersion.setProperties(page.getProperties());
+      return pageVersion;
+    }
+    return null;
   }
 
   /**
