@@ -103,7 +103,7 @@ public class Page {
 
   private String                          lang;
 
-  private Map<String, String>             properties;
+  private NotePageProperties              properties;
 
   public Page(String name) {
     this.name = name;

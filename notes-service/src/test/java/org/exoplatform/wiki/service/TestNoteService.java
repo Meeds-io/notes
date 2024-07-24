@@ -756,14 +756,12 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     this.bindMockedUploadService();
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
-    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
-    assertEquals(4, properties.size());
-    assertEquals("summary test", properties.get("summary"));
+    NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    assertEquals("summary test", properties.getSummary());
 
     notePageProperties.setSummary("version language summary");
     properties = noteService.saveNoteMetadata(notePageProperties, "en", 1L);
-    assertEquals(4, properties.size());
-    assertEquals("version language summary", properties.get("summary"));
+    assertEquals("version language summary", properties.getSummary());
   }
   
   public void testRemoveNoteFeaturedImage() throws Exception {
@@ -773,23 +771,26 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     this.bindMockedUploadService();
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
-    Map<String, String> properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
     noteService.saveNoteMetadata(notePageProperties, "fr", 1L);
 
-    assertEquals(4, properties.size());
-    assertNotNull(properties.get("featuredImageId"));
-    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L));
+    assertNotNull(properties.getFeaturedImage().getId());
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, 1L));
 
     noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
-                                        Long.parseLong(properties.get("featuredImageId")),
+                                        properties.getFeaturedImage().getId(),
                                         null,
                                         false,
                                         1L);
 
-    NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
+    NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
+                                                                                null,
+                                                                                false,
+                                                                                null,
+                                                                                1L);
     assertNull(savedFeaturedImage);
 
-    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, 1L));
+    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, 1L));
   }
 
   public void testGetNoteFeaturedImageInfo() throws Exception {
@@ -800,12 +801,86 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
 
     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary Test");
     noteService.saveNoteMetadata(notePageProperties, null, 1L);
+    notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary Test");
     noteService.saveNoteMetadata(notePageProperties, "ar", 1L);
-    NoteFeaturedImage featuredImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, 1L);
-    NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "ar", false, 1L);
+    NoteFeaturedImage featuredImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, "150x150", 1L);
+    NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "ar", false, "150x150", 1L);
 
     assertNotNull(featuredImage);
     assertTrue(featuredImage.getLastUpdated() > 0L);
     assertNotSame(featuredImage.getId(), versionLanguageFeaturedImage.getId());
+  }
+
+  public void testCreatePageWithProperties() throws Exception {
+    Identity user = new Identity("user");
+    this.bindMockedUploadService();
+    NotePageProperties notePageProperties = createNotePageProperties(0L, "alt text", "summary Test");
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("test");
+    draftPage.setContent("test");
+    draftPage.setProperties(notePageProperties);
+    draftPage = noteService.createDraftForNewPage(draftPage, new Date().getTime(), 1L);
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+
+    // case save properties of new page from new page draft
+    Page page = new Page();
+    page.setTitle("testSaveProperties1");
+    page.setName("testSaveProperties1");
+    page.setContent("test");
+    page.setProperties(draftPage.getProperties());
+    Page note = noteService.createNote(portalWiki, "Home", page , user);
+    assertNotNull(note);
+    assertNotNull(note.getProperties());
+
+    notePageProperties.setFeaturedImage(null);
+    page.setTitle("testSaveProperties2");
+    page.setName("testSaveProperties2");
+    page.setProperties(notePageProperties);
+    note = noteService.createNote(portalWiki, "Home", page , user);
+    assertNotNull(note);
+    assertNotNull(note.getProperties());
+  }
+
+  public void testCreateDraftForNewPageWithProperties() throws Exception {
+    Identity user = new Identity("user");
+    this.bindMockedUploadService();
+    NotePageProperties notePageProperties = createNotePageProperties(0L, "alt text", "summary Test");
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("test");
+    draftPage.setContent("test");
+    draftPage.setProperties(notePageProperties);
+    draftPage = noteService.createDraftForNewPage(draftPage, new Date().getTime(), 1L);
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    assertNotNull(draftPage);
+    assertNotNull(draftPage.getProperties());
+  }
+
+  public void testCreateDraftForExistPageWithProperties() throws Exception {
+    Identity user = new Identity("user");
+    this.bindMockedUploadService();
+    NotePageProperties notePageProperties = createNotePageProperties(0L, "alt text", "summary Test");
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("test");
+    draftPage.setContent("test");
+    draftPage.setProperties(notePageProperties);
+    Page page = new Page();
+    page.setTitle("testSaveProperties3");
+    page.setName("testSaveProperties3");
+    page.setContent("test");
+    page.setProperties(draftPage.getProperties());
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", page , user);
+    // Case copy from target page
+    draftPage = noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+    assertNotNull(draftPage);
+    assertNotNull(draftPage.getProperties());
+
+    // Case save from the draft page
+    draftPage.setId("0");
+    notePageProperties.getFeaturedImage().setId(0L);
+    draftPage.setProperties(notePageProperties);
+    draftPage = noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+    assertNotNull(draftPage);
+    assertNotNull(draftPage.getProperties());
   }
 }

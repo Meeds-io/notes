@@ -125,17 +125,22 @@ export default {
       instanceReady: false,
       initialized: false,
       editorIcon: 'fas fa-clipboard',
-      saveButtonIcon: 'fas fa-save'
+      saveButtonIcon: 'fas fa-save',
+      translationSwitch: false,
     };
   },
   computed: {
     saveOrUpdateDisabled() {
-      return !this.note?.title || this.note?.title?.length < 3
-                               || this.note?.title?.length > this.titleMaxLength
-                               || this.noteNotModified && !this.draftNote;
+      return (!this.note?.title || this.note?.title?.length < 3
+                                || this.note?.title?.length > this.titleMaxLength)
+                                || (this.noteNotModified
+                                && !this.propertiesModified && !this.draftNote);
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
+    },
+    propertiesModified() {
+      return JSON.stringify(this.note?.properties) !== JSON.stringify(this.originalNote?.properties);
     },
     langButtonTooltipText() {
       if (this.noteId) {
@@ -271,31 +276,33 @@ export default {
       }
     },
     updateNoteData(noteObject) {
+      this.translationSwitch = this.note?.lang !== noteObject?.lang;
       this.note.title = noteObject.title;
       this.note.content = noteObject.content;
+      this.note.properties = noteObject.properties;
     },
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
-      if (this.validateForm()) {
-        const note = {
-          id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
-          title: this.note.title,
-          name: this.note.name,
-          lang: this.note.lang,
-          wikiType: this.note.wikiType,
-          wikiOwner: this.note.wikiOwner,
-          content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
-          parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
-          toBePublished: toPublish,
-          appName: this.appName,
-        };
-        if (note.id) {
-          this.updateNote(note);
-        } else {
-          this.createNote(note);
-        }
+      const note = {
+        id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
+        title: this.note.title,
+        name: this.note.name,
+        lang: this.note.lang,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
+        parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
+        toBePublished: toPublish,
+        appName: this.appName,
+        properties: this.note?.properties
+      };
+      if (note.id) {
+        this.updateNote(note);
+      } else {
+        this.createNote(note);
       }
+      this.draftNote = null;
     },
     addParamToUrl(paramName, paramValue) {
       const url = new URL(window.location.href);
@@ -349,7 +356,8 @@ export default {
       }
 
       // if the Note is not updated, no need to autosave anymore
-      if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)) {
+      if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)
+          && (JSON.stringify(this.note?.properties) === JSON.stringify(this.actualNote?.properties))) {
         return;
       }
 
@@ -528,9 +536,7 @@ export default {
         }
         if (draftNote.properties) {
           draftNote.properties.draft = true;
-          if (this.newTranslation) {
-            draftNote.properties.featuredImage = null;
-          }
+          draftNote.properties.noteId = this.note?.targetPageId || this.note?.id;
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
           if (update){

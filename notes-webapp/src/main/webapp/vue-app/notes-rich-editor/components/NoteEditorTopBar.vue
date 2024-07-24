@@ -60,9 +60,9 @@
             width="36"
             min-width="36"
             height="36"
-            class="pa-0 my-auto"
-            text
-            :disabled="!noteIdParam || !editorReady"
+            class="pa-0 my-auto "
+            icon
+            :disabled="!editorReady"
             @click="openMetadataDrawer">
             <v-icon
               size="20"

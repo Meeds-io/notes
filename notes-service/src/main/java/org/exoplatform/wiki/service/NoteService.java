@@ -795,10 +795,11 @@ public interface NoteService {
    * @param noteId Note id
    * @param lang note version language
    * @param isDraft is target not a draft
+   * @param thumbnailSize featured image thumbnail size
    * @param userIdentityId user identity id
    * @return {@link NoteFeaturedImage}
    */
-  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, long userIdentityId) throws Exception;
+  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception;
 
   /**
    * Save note metadata properties
@@ -806,8 +807,9 @@ public interface NoteService {
    * @param pageProperties note metadata properties to save
    * @param lang target version language
    * @param userIdentityId user identity id
+   * @return {@link NotePageProperties}                      
    */
-  Map<String, String> saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
+  NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
 
   /**
    * Removes note featured image and its related metadata property
