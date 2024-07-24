@@ -2104,7 +2104,7 @@ public class NoteServiceImpl implements NoteService {
                                       String newObjectType,
                                       String username) {
     if (note == null || oldNote == null) {
-      return;
+      return null;
     }
       if (username != null) {
       org.exoplatform.social.core.identity.model.Identity identity =
@@ -2130,6 +2130,7 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
+    return properties;
   }
   
   private boolean isOriginalFeaturedImage(Page draftPage, Page targetPage) {
@@ -2154,6 +2155,9 @@ public class NoteServiceImpl implements NoteService {
                                       String lang,
                                       boolean isDraft,
                                       Long userIdentityId) throws Exception {
+    if (featuredImageId == null || featuredImageId <= 0) {
+      return;
+    }
     boolean removeFeaturedImageFile = true;
     Page note;
     if (isDraft) {
