@@ -220,11 +220,9 @@ export default {
     this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('display-treeview-items', filter => {
       if ( urlParams.has('noteId') ) {
-        this.$refs.noteTreeview.open(this.note, 'includePages', null, filter);
+        this.openTreeView(urlParams.get('noteId'), 'includePages', null, filter);
       } else if (urlParams.has('parentNoteId')) {
-        this.$notesService.getNoteById(this.parentPageId).then(note => {
-          this.openTreeView(note, 'includePages', null, filter);
-        });
+        this.openTreeView(urlParams.get('parentNoteId'), 'includePages', null, filter);
       }
     });
     this.$root.$on('add-translation', this.addTranslation);

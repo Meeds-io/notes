@@ -286,19 +286,19 @@ export default {
         if (editorSelectedElement.is('a')) {
           if (editorSelectedElement?.getAttribute('class') === 'noteLink') {
             this.editor.getSelection()?.getStartElement()?.remove();
-            this.editor.insertHtml(this.createLinkElement(note.noteId, note.name, 'noteLink'));
+            this.editor.insertHtml(this.createLinkElement(note.url, note.name, 'noteLink'));
           }
           if (editorSelectedElement.getAttribute('class') === 'labelLink') {
             const linkText = editorSelectedElement.getHtml();
             this.editor.getSelection().getStartElement().remove();
-            this.editor.insertHtml(this.createLinkElement(note.noteId, linkText, 'noteLink'));
+            this.editor.insertHtml(this.createLinkElement(note.url, linkText, 'noteLink'));
           }
         } else {
           const linkText = this.editor?.getSelection()?.getSelectedText();
-          this.editor.insertHtml(this.createLinkElement(note.noteId, linkText, 'labelLink'));
+          this.editor.insertHtml(this.createLinkElement(note.url, linkText, 'labelLink'));
         }
       } else {
-        this.editor.insertHtml(this.createLinkElement(note.noteId, note.name, 'noteLink'));
+        this.editor.insertHtml(this.createLinkElement(note.url, note.name, 'noteLink'));
       }
     },
     setFocus() {

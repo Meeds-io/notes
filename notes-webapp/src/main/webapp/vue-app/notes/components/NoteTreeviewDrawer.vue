@@ -553,7 +553,7 @@ export default {
         this.render = true;
         this.$refs.breadcrumbDrawer.open();
       });
-      if (this.note.canManage && !this.filterOptions.includes(this.$t('notes.filter.label.drafts'))) {
+      if (this.note.canManage || note.canManage && !this.filterOptions.includes(this.$t('notes.filter.label.drafts'))) {
         this.filterOptions.push(this.$t('notes.filter.label.drafts'));
       }
     },
