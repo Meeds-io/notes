@@ -218,11 +218,8 @@ export default {
     }
   },
   computed: {
-    featuredImageId() {
-      return this.noteObject?.properties?.featuredImage?.id;
-    },
     hasFeaturedImage() {
-      return !!this.featuredImageId;
+      return !!this.noteObject?.properties?.featuredImage?.id;
     }
   },
   created() {
