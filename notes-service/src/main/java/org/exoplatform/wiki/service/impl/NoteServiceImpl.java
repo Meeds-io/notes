@@ -327,6 +327,12 @@ public class NoteServiceImpl implements NoteService {
                                    NOTE_METADATA_PAGE_OBJECT_TYPE,
                                    userIdentity.getUserId(),
                                    true);
+      NotePageProperties notePageProperties = draftPage.getProperties();
+      if (notePageProperties != null) {
+        notePageProperties.setNoteId(Long.parseLong(updatedPage.getId()));
+        notePageProperties.setDraft(false);
+        updatedPage.setProperties(notePageProperties);
+      }
     }
 
     invalidateCache(note);
