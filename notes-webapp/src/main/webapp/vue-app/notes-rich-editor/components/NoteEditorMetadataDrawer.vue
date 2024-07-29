@@ -43,6 +43,12 @@
               <p class="text-color text-body mb-3">
                 {{ $t('notes.metadata.featuredImage.label') }}
               </p>
+              <v-file-input
+                id="featuredImageInput"
+                ref="featuredImageInput"
+                accept="image/*"
+                class="position-absolute hidden"
+                @change="handleUpload" />
               <v-btn
                 v-if="!canShowFeaturedImagePreview"
                 name="image-area"
@@ -50,7 +56,7 @@
                 height="95"
                 width="100%"
                 text
-                @click="openFeaturedImageDrawer">
+                @click="uploadFeaturedImage">
                 <div class="d-flex width-fit-content mx-auto">
                   <v-icon
                     class="me-15 icon-default-color"
@@ -90,7 +96,7 @@
                         <v-btn
                           class="feature-image-button my-auto"
                           icon
-                          @click="openFeaturedImageDrawer">
+                          @click="uploadFeaturedImage">
                           <v-icon
                             class="feature-image-file-icon"
                             size="20">
@@ -147,6 +153,7 @@
 export default {
   data() {
     return {
+      maxFileSize: 20 * 1024 * 1024,
       noteObject: null,
       drawer: false,
       summaryContent: null,
@@ -224,6 +231,40 @@ export default {
     }
   },
   methods: {
+    displayMessage(message) {
+      document.dispatchEvent(new CustomEvent('alert-message', {
+        detail: {
+          alertType: message.type,
+          alertMessage: message.text
+        }
+      }));
+    },
+    uploadFeaturedImage() {
+      document.getElementById('featuredImageInput').click();
+    },
+    handleUpload(image) {
+      if (!image) {
+        return;
+      }
+      if (image.size > this.maxFileSize) {
+        this.displayMessage({
+          type: 'error',
+          text: this.$t('notes.featuredImage.size.error.message')
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        this.imageData = e.target.result
+                        && e.target.result.length > 23
+                        && e.target.result || null;
+        this.mimeType = image.type;
+      };
+      reader.readAsDataURL(image);
+      this.$uploadService.upload(image).then(uploadId => {
+        this.uploadId = uploadId;
+      });
+    },
     resetProperties() {
       this.featureImageUpdated = false;
     },
@@ -268,9 +309,10 @@ export default {
       this.close();
     },
     removeNoteFeaturedImage() {
+      this.featuredImage = null;
+      this.removeFeaturedImage = true;
       this.hasFeaturedImageValue = false;
       this.imageData = null;
-      this.removeFeaturedImage = true;
       this.enableSave = true;
       this.$root.$emit('reset-featured-image-data');
     }
