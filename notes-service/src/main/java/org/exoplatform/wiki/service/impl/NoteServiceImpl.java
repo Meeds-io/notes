@@ -30,12 +30,18 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import org.exoplatform.commons.api.notification.NotificationContext;
+import org.exoplatform.commons.api.notification.model.PluginKey;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
@@ -43,6 +49,8 @@ import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataType;
 import org.exoplatform.social.metadata.thumbnail.ImageThumbnailService;
+import org.exoplatform.commons.notification.impl.NotificationContextImpl;
+import org.exoplatform.social.notification.LinkProviderUtils;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.gatein.api.EntityNotFoundException;
@@ -283,6 +291,10 @@ public class NoteServiceImpl implements NoteService {
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
+    Matcher mentionMatcher = Utils.MENTION_PATTERN.matcher(createdPage.getContent());
+    if (mentionMatcher.find()) {
+      Utils.sendMentionInNoteNotification(createdPage, null, createdPage.getAuthor());
+    }
     return createdPage;
   }
 
@@ -345,6 +357,11 @@ public class NoteServiceImpl implements NoteService {
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
       updatedPage.setMetadatas(metadata);
       note.setAuthor(userIdentity.getUserId());
+    }
+
+    Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
+    if (mentionsMatcher.find()) {
+      Utils.sendMentionInNoteNotification(note, existingNote, userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
     }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
