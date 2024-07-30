@@ -291,9 +291,9 @@ public class NoteServiceImpl implements NoteService {
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
-    Matcher mentionMatcher = MentionInNoteNotificationPlugin.MENTION_PATTERN.matcher(createdPage.getContent());
+    Matcher mentionMatcher = Utils.MENTION_PATTERN.matcher(createdPage.getContent());
     if (mentionMatcher.find()) {
-      sendMentionInNoteNotification(createdPage, null, createdPage.getAuthor());
+      Utils.sendMentionInNoteNotification(createdPage, null, createdPage.getAuthor());
     }
     return createdPage;
   }
@@ -359,9 +359,9 @@ public class NoteServiceImpl implements NoteService {
       note.setAuthor(userIdentity.getUserId());
     }
 
-    Matcher mentionsMatcher = MentionInNoteNotificationPlugin.MENTION_PATTERN.matcher(note.getContent());
+    Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
     if (mentionsMatcher.find()) {
-      sendMentionInNoteNotification(note, existingNote, userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
+      Utils.sendMentionInNoteNotification(note, existingNote, userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
     }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
@@ -2214,38 +2214,5 @@ public class NoteServiceImpl implements NoteService {
       notePageProperties.setFeaturedImage(featuredImage);
     }
     return notePageProperties;
-  }
-
-  private void sendMentionInNoteNotification(Page note, Page originalNote, String currentUser) {
-    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getOrCreateUserIdentity(note.getAuthor());
-    String authorAvatarUrl = LinkProviderUtils.getUserAvatarUrl(identity.getProfile());
-    String authorProfileUrl = identity.getProfile().getUrl();
-    Set<String> mentionedIds = Utils.processMentions(note.getContent(), space);
-    if (originalNote != null) {
-      Set<String> previousMentionedIds = Utils.processMentions(originalNote.getContent(), space);
-      mentionedIds = mentionedIds.stream().filter(id -> !previousMentionedIds.contains(id)).collect(Collectors.toSet());
-    }
-    NotificationContext mentionNotificationCtx =
-                                               NotificationContextImpl.cloneInstance()
-                                                                      .append(MentionInNoteNotificationPlugin.CURRENT_USER,
-                                                                              currentUser)
-                                                                      .append(MentionInNoteNotificationPlugin.NOTE_AUTHOR,
-                                                                              note.getAuthor())
-                                                                      .append(MentionInNoteNotificationPlugin.SPACE_ID,
-                                                                              space.getId())
-                                                                      .append(MentionInNoteNotificationPlugin.NOTE_TITLE,
-                                                                              note.getTitle())
-                                                                      .append(MentionInNoteNotificationPlugin.AUTHOR_AVATAR_URL,
-                                                                              authorAvatarUrl)
-                                                                      .append(MentionInNoteNotificationPlugin.AUTHOR_PROFILE_URL,
-                                                                              authorProfileUrl)
-                                                                      .append(MentionInNoteNotificationPlugin.ACTIVITY_LINK,
-                                                                              note.getUrl())
-                                                                      .append(MentionInNoteNotificationPlugin.MENTIONED_IDS,
-                                                                              mentionedIds);
-    mentionNotificationCtx.getNotificationExecutor()
-                          .with(mentionNotificationCtx.makeCommand(PluginKey.key(MentionInNoteNotificationPlugin.ID)))
-                          .execute(mentionNotificationCtx);
   }
 }

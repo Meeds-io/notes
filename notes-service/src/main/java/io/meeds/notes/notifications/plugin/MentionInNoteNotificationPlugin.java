@@ -59,8 +59,6 @@ public class MentionInNoteNotificationPlugin extends BaseNotificationPlugin {
 
   public static final ArgumentLiteral<String> SPACE_ID           = new ArgumentLiteral<>(String.class, "SPACE_ID");
 
-  public static final Pattern                 MENTION_PATTERN    = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
-
   public MentionInNoteNotificationPlugin(InitParams initParams) {
     super(initParams);
   }
