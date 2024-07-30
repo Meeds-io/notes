@@ -53,7 +53,7 @@
                 v-if="!canShowFeaturedImagePreview"
                 name="image-area"
                 class="btn add-image-area d-flex"
-                height="95"
+                height="206"
                 width="100%"
                 text
                 @click="uploadFeaturedImage">
@@ -70,13 +70,14 @@
               </v-btn>
               <v-sheet
                 v-else
-                min-width="48">
+                height="206"
+                min-width="48"
+                class="card-border-radius image-preview">
                 <v-hover v-slot="{ hover }">
-                  <div class="d-flex">
+                  <div class="d-flex full-height">
                     <v-img
                       width="100%"
-                      min-height="48"
-                      aspect-ratio="8"
+                      contain
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
                       :src="featuredImageLink">
@@ -84,7 +85,7 @@
                         v-if="hover && canShowFeaturedImagePreview"
                         class="width-fit-content full-height ms-auto d-flex me-2">
                         <v-btn
-                          class="feature-image-button me-1 my-auto"
+                          class="feature-image-button me-1 mt-2 mb-auto"
                           icon
                           @click.stop="removeNoteFeaturedImage">
                           <v-icon
@@ -94,7 +95,7 @@
                           </v-icon>
                         </v-btn>
                         <v-btn
-                          class="feature-image-button my-auto"
+                          class="feature-image-button mt-2 mb-auto"
                           icon
                           @click="uploadFeaturedImage">
                           <v-icon
