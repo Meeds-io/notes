@@ -70,13 +70,14 @@
               </v-btn>
               <v-sheet
                 v-else
+                max-height="380"
                 min-width="48">
                 <v-hover v-slot="{ hover }">
-                  <div class="d-flex">
+                  <div class="d-flex full-height">
                     <v-img
                       width="100%"
                       min-height="48"
-                      aspect-ratio="8"
+                      max-height="380"
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
                       :src="featuredImageLink">
