@@ -27,19 +27,33 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.commons.api.notification.NotificationContext;
+import org.exoplatform.commons.api.notification.model.PluginKey;
+import org.exoplatform.commons.notification.impl.NotificationContextImpl;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.utils.MentionUtils;
+import org.exoplatform.social.notification.LinkProviderUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
@@ -148,6 +162,9 @@ public class Utils {
   public static final String                                     PAGE_TYPE_KEY                    = "page_type";
 
   public static final String                                     PAGE_OWNER_KEY                   = "page_owner";
+
+  public static final Pattern                                    MENTION_PATTERN                  =
+                                                                                 Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
 
   public static String normalizeUploadedFilename(String name) {
     name = name.replace("%22", "\"");  // Fix the bug in Chrome which a double quotes is encoded to %22
@@ -756,4 +773,69 @@ public class Utils {
     }
     return aclIdentity;
   }
+
+  public static Set<String> processMentions(String content, Space space) {
+    Set<String> mentions = new HashSet<>();
+    mentions.addAll(MentionUtils.getMentionedUsernames(content));
+
+    if (space != null) {
+      IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
+      String spaceIdentityId = identityStorage.findIdentityId(SpaceIdentityProvider.NAME, space.getPrettyName());
+      Set<String> mentionedRoles = MentionUtils.getMentionedRoles(content, spaceIdentityId);
+      mentionedRoles.forEach(role -> {
+        if (StringUtils.equals("member", role) && space.getMembers() != null) {
+          mentions.addAll(Arrays.asList(space.getMembers()));
+        } else if (StringUtils.equals("manager", role) && space.getManagers() != null) {
+          mentions.addAll(Arrays.asList(space.getManagers()));
+        } else if (StringUtils.equals("redactor", role) && space.getRedactors() != null) {
+          mentions.addAll(Arrays.asList(space.getRedactors()));
+        } else if (StringUtils.equals("publisher", role) && space.getPublishers() != null) {
+          mentions.addAll(Arrays.asList(space.getPublishers()));
+        }
+      });
+    }
+
+    return mentions.stream().map(remoteId -> {
+      IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
+
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      return identity == null ? null : identity.getId();
+    }).filter(Objects::nonNull).collect(Collectors.toSet());
+  }
+
+  public static void sendMentionInNoteNotification(Page note, Page originalNote, String currentUser) {
+    SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+    IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
+    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getOrCreateUserIdentity(note.getAuthor());
+    String authorAvatarUrl = LinkProviderUtils.getUserAvatarUrl(identity.getProfile());
+    String authorProfileUrl = identity.getProfile().getUrl();
+    Set<String> mentionedIds = Utils.processMentions(note.getContent(), space);
+    if (originalNote != null) {
+      Set<String> previousMentionedIds = Utils.processMentions(originalNote.getContent(), space);
+      mentionedIds = mentionedIds.stream().filter(id -> !previousMentionedIds.contains(id)).collect(Collectors.toSet());
+    }
+    NotificationContext mentionNotificationCtx =
+            NotificationContextImpl.cloneInstance()
+                    .append(MentionInNoteNotificationPlugin.CURRENT_USER,
+                            currentUser)
+                    .append(MentionInNoteNotificationPlugin.NOTE_AUTHOR,
+                            note.getAuthor())
+                    .append(MentionInNoteNotificationPlugin.SPACE_ID,
+                            space.getId())
+                    .append(MentionInNoteNotificationPlugin.NOTE_TITLE,
+                            note.getTitle())
+                    .append(MentionInNoteNotificationPlugin.AUTHOR_AVATAR_URL,
+                            authorAvatarUrl)
+                    .append(MentionInNoteNotificationPlugin.AUTHOR_PROFILE_URL,
+                            authorProfileUrl)
+                    .append(MentionInNoteNotificationPlugin.ACTIVITY_LINK,
+                            note.getUrl())
+                    .append(MentionInNoteNotificationPlugin.MENTIONED_IDS,
+                            mentionedIds);
+    mentionNotificationCtx.getNotificationExecutor()
+            .with(mentionNotificationCtx.makeCommand(PluginKey.key(MentionInNoteNotificationPlugin.ID)))
+            .execute(mentionNotificationCtx);
+  }
+
 }
