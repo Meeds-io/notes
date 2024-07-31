@@ -286,4 +286,12 @@ public interface DataStorage {
    * @param parentPageId Note parent page id
    */
   void deleteOrphanDraftPagesByParentPage(long parentPageId);
+
+  /**
+   * Gets page version by its given id
+   *
+   * @param versionId page version id
+   * @return {@link PageVersion}
+   */
+  PageVersion getPageVersionById(long versionId);
 }

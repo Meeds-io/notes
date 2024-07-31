@@ -37,6 +37,7 @@ import io.meeds.notes.model.NotePageProperties;
 import org.apache.commons.io.FileUtils;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.wiki.model.*;
 import org.junit.Assert;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
@@ -48,16 +49,8 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.jpa.JPADataStorage;
-import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.wiki.model.NoteToExport;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PageHistory;
-import org.exoplatform.wiki.model.Permission;
-import org.exoplatform.wiki.model.PermissionEntry;
-import org.exoplatform.wiki.model.PermissionType;
-import org.exoplatform.wiki.model.Wiki;
 
-public class TestNoteService extends BaseTest {
+ public class TestNoteService extends BaseTest {
   private WikiService wService;
   private NoteService noteService;
   private NotesExportService notesExportService;
@@ -869,5 +862,17 @@ public class TestNoteService extends BaseTest {
     draftPage = noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
     assertNotNull(draftPage);
     assertNotNull(draftPage.getProperties());
+  }
+
+  public void testGetVersionById() throws Exception {
+    Identity user = new Identity("user");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    Page note = noteService.createNote(portalWiki, "Home", new Page("testGetVersionById", "testGetVersionById"), user);
+    note.setLang("en");
+    note.setTitle("english title");
+    note.setContent("english content");
+    noteService.createVersionOfNote(note, user.getUserId());
+    PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), "en");
+    assertNotNull(noteService.getPageVersionById(Long.valueOf(pageVersion.getId())));
   }
 }
