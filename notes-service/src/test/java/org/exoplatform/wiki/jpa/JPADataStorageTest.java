@@ -1164,6 +1164,28 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     persist();
     assertNull(draftPageDAO.find(draft.getId()));
   }
+  
+  public void testGetVersionById() throws Exception {
+    // Given
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("wiki1");
+    wiki = storage.createWiki(wiki);
+
+    Page page = new Page();
+    page.setWikiId(wiki.getId());
+    page.setWikiType(wiki.getType());
+    page.setWikiOwner(wiki.getOwner());
+    page.setName("testGetVersionById");
+    page.setTitle("testGetVersionById");
+    page.setContent("content");
+    Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+    org.exoplatform.social.core.identity.model.Identity identity =
+                                                                 Mockito.mock(org.exoplatform.social.core.identity.model.Identity.class);
+    // When
+    PageVersion pageVersion = storage.addPageVersion(createdPage, identity.getId());
+    assertNotNull(storage.getPageVersionById(Long.parseLong(pageVersion.getId())));
+  }
 
   protected void startSessionAs(String user) {
     startSessionAs(user, new HashSet<MembershipEntry>());

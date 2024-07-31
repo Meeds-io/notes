@@ -2215,4 +2215,15 @@ public class NoteServiceImpl implements NoteService {
     }
     return notePageProperties;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public PageVersion getPageVersionById(Long versionId) {
+    if (versionId == null) {
+      throw new IllegalArgumentException("version id is mandatory");
+    }
+    return dataStorage.getPageVersionById(versionId);
+  }
 }
