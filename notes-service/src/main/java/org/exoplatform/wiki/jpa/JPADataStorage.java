@@ -1580,4 +1580,12 @@ public class JPADataStorage implements DataStorage {
   public void deleteOrphanDraftPagesByParentPage(long parentPageId) {
     draftPageDAO.deleteOrphanDraftPagesByParentPage(parentPageId);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public PageVersion getPageVersionById(long versionId) {
+    return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.find(versionId));
+  }
 }

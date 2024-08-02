@@ -820,4 +820,12 @@ public interface NoteService {
    * @throws Exception
    */
   void removeNoteFeaturedImage(Long noteId, Long featuredImageId, String lang, boolean isDraft, Long userIdentityId) throws Exception;
+
+  /**
+   * Gets page version by its given id
+   *
+   * @param versionId page version id
+   * @return {@link PageVersion}
+   */
+  PageVersion getPageVersionById(Long versionId);
 }
