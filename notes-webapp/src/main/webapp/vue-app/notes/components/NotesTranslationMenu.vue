@@ -26,8 +26,10 @@
     offset-y
     bottom>
     <template #activator="{ on, attrs }">
-      <v-btn
-        v-on="on"
+      <v-icon
+        size="22"
+        :class="langButtonColor"
+        class="remove-focus mt-n2 pa-0  ms-5"
         v-bind="attrs"
         width="36"
         min-width="36"
