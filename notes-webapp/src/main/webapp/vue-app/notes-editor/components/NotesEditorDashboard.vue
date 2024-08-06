@@ -135,7 +135,7 @@ export default {
       return (!this.note?.title || this.note?.title?.length < 3
                                 || this.note?.title?.length > this.titleMaxLength)
                                 || (this.noteNotModified
-                                && !this.propertiesModified && !this.draftNote);
+                                && !this.propertiesModified && !this.draftNote) || this.savingDraft;
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
@@ -513,6 +513,7 @@ export default {
           };
           setTimeout(() => {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+            this.savingDraft = false;
           }, this.autoSaveDelay/2);
         } else {
           if (!this.isDefaultContent(this.note.content)) {
