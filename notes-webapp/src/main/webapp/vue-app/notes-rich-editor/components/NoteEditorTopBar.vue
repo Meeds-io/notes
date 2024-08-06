@@ -87,7 +87,7 @@
           <div
             v-else>
             <v-btn
-              class="btn-primary primary pa-0 me-4"
+              class="btn-primary primary pa-0 me-2"
               width="42"
               height="36"
               min-width="42"
@@ -103,6 +103,7 @@
               </v-icon>
             </v-btn>
             <v-btn
+              class="me-2"
               width="36"
               min-width="36"
               height="36"
