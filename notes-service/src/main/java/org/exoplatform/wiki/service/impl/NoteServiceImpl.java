@@ -2160,11 +2160,22 @@ public class NoteServiceImpl implements NoteService {
     }
     Page note;
     Long featuredImageId = null;
+    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
     if (notePageProperties.isDraft()) {
         note = getLatestDraftPageByTargetPageAndLang(notePageProperties.getNoteId(), lang);
         if (note == null) {
           note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
                                   identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+        }
+        else {
+          if (!featuredImage.isToDelete() && featuredImage.getUploadId() == null) {
+            MetadataItem metadataItem = getNoteMetadataItem(getNoteByIdAndLang(notePageProperties.getNoteId(), lang), lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
+            if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
+              String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
+              featuredImageId = featuredImageIdProp != null
+                  && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
+            }
+          }
         }
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
@@ -2172,14 +2183,15 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("note not found");
     }
-    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
+
     if (featuredImage != null && featuredImage.isToDelete()) {
       removeNoteFeaturedImage(Long.valueOf(note.getId()),
                               featuredImage.getId(),
                               lang,
                               notePageProperties.isDraft(),
                               userIdentityId);
-    } else {
+    } 
+    else if (featuredImageId == null) {
       featuredImageId = saveNoteFeaturedImage(note, featuredImage);
     }
     MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
