@@ -1647,7 +1647,7 @@ public class NoteServiceImpl implements NoteService {
     if (parent_ == null) {
       parent_ = wiki.getWikiHome();
     }
-    String imagesSubLocationPath = "Documents/notes/images";
+    String imagesSubLocationPath = "notes/images";
     Page note_ = note;
     if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName())) {
       note.setId(null);
