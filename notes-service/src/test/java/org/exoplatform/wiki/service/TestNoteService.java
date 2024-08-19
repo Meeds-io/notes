@@ -291,7 +291,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
                  () -> noteService.getNoteById(storedSystemPermissionPage.getId(), userAclIdentity));
   }
 
-  public void testUpdateNote() throws WikiException, IllegalAccessException {
+  public void testUpdateNote() throws WikiException, IllegalAccessException, Exception {
     Identity root = new Identity("root");
     // Get Home
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic").getWikiHome();
@@ -626,7 +626,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     assertEquals(eXportCildren,childern);
   }
 
-  public void testRemoveDraftOfNote() throws WikiException, IllegalAccessException {
+  public void testRemoveDraftOfNote() throws Exception {
     Identity root = new Identity("root");
     startSessionAs("root");
     long now = new Date().getTime();

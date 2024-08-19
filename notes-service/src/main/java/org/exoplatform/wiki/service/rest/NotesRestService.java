@@ -717,6 +717,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
+      note_.setProperties(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties()));
       String newNoteName = note_.getName();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
