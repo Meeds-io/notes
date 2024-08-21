@@ -2194,7 +2194,7 @@ public class NoteServiceImpl implements NoteService {
                                   identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
         }
         else {
-          if (!featuredImage.isToDelete() && featuredImage.getUploadId() == null) {
+          if (featuredImage!= null && !featuredImage.isToDelete() && featuredImage.getUploadId() == null) {
             MetadataItem metadataItem = getNoteMetadataItem(getNoteByIdAndLang(notePageProperties.getNoteId(), lang), lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
             if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
               String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
