@@ -402,7 +402,7 @@ export default {
       return this.note?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.noteId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false${this.langParam}&size=0x400`;
+      return `${this.illustrationBaseUrl}${this.noteId || this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x400`;
     },
     notesContentProcessor() {
       return {

@@ -280,6 +280,8 @@ export default {
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
+      const properties = this.note?.properties;
+      properties.draft = this.note?.draftPage;
       const note = {
         id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
         title: this.note.title,
@@ -291,7 +293,7 @@ export default {
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
         toBePublished: toPublish,
         appName: this.appName,
-        properties: this.note?.properties
+        properties: properties
       };
       if (note.id) {
         this.updateNote(note);
@@ -309,7 +311,6 @@ export default {
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
         this.originalNote = structuredClone(data);
-        this.removeLocalStorageCurrentDraft();
         this.displayMessage({
           type: 'success',
           message: this.$t('notes.save.success.message'),
@@ -321,7 +322,7 @@ export default {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
-      }).finally(() => this.enableClickOnce());
+      }).finally(() => this.enableClickOnce(),this.removeLocalStorageCurrentDraft());
     },
     createNote(note) {
       return this.$notesService.createNote(note).then(data => {
@@ -344,7 +345,7 @@ export default {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
-      }).finally(() => this.enableClickOnce());
+      }).finally(() => this.enableClickOnce(),this.removeLocalStorageCurrentDraft());
     },
     autoSave() {
       if (this.translationSwitch) {

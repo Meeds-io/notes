@@ -717,12 +717,15 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.CONFLICT).entity(NOTE_NAME_EXISTS).build();
       }
       note_.setToBePublished(note.isToBePublished());
+      NotePageProperties notePageProperties = io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties());
+      NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
       String newNoteName = note_.getName();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
           newNoteName = TitleResolver.getId(note.getTitle(), false);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
+          note_.setProperties(notePageProperties);
           if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
             noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
             note_.setName(newNoteName);
@@ -733,8 +736,6 @@ public class NotesRestService implements ResourceContainer {
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
-          NotePageProperties notePageProperties =
-                                                io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties());
           note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
@@ -750,11 +751,13 @@ public class NotesRestService implements ResourceContainer {
             note_.setName(newNoteName);
           }
           note_.setTitle(note.getTitle());
+          note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         } else {
+          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
           note_.setTitle(note.getTitle());
-          note_.setLang(note.getLang());
+          note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
@@ -764,11 +767,28 @@ public class NotesRestService implements ResourceContainer {
       } else if (!note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
           note_.setContent(note.getContent());
+          note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         } else {
+          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
           note_.setContent(note.getContent());
+          note_.setProperties(notePageProperties);
+        }
+        noteService.createVersionOfNote(note_, identity.getUserId());
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
+        }
+      } else if ((featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null))
+          || !notePageProperties.getSummary().equals(note_.getProperties().getSummary())) {
+        if (StringUtils.isBlank(note.getLang())) {
+          note_.setProperties(notePageProperties);
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
+        } else {
           note_.setLang(note.getLang());
+          note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
+          note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {

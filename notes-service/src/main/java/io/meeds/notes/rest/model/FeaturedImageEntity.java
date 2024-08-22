@@ -31,8 +31,6 @@ public class FeaturedImageEntity implements Serializable {
 
   private Long    id;
 
-  private String  base64Data;
-
   private String  mimeType;
 
   private String  uploadId;
