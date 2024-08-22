@@ -71,6 +71,8 @@ public interface DataStorage {
   public Page getPageById(String id) throws WikiException;
 
   public DraftPage getDraftPageById(String id) throws WikiException;
+  
+  public DraftPage getDraftOfPageByLang(Page page, String lang) throws WikiException;
 
   public Page getParentPageOf(Page page) throws WikiException;
   

@@ -48,7 +48,6 @@ public class EntityBuilder {
       return null;
     }
     return new NoteFeaturedImage(featuredImageEntity.getId(),
-                                 featuredImageEntity.getBase64Data(),
                                  featuredImageEntity.getMimeType(),
                                  featuredImageEntity.getUploadId(),
                                  featuredImageEntity.getAltText(),

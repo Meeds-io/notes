@@ -264,6 +264,7 @@ export default {
       reader.readAsDataURL(image);
       this.$uploadService.upload(image).then(uploadId => {
         this.uploadId = uploadId;
+        this.removeFeaturedImage = false;
       });
     },
     resetProperties() {
@@ -293,16 +294,17 @@ export default {
       this.$refs.metadataDrawer.close();
     },
     save() {
+      const savedFeaturedImageId = this.noteObject?.properties?.featuredImage?.id;
       const properties = {
         noteId: this.isDraft && this.noteObject?.targetPageId
             || this.noteObject?.id,
         summary: this.summaryContent,
         featuredImage: {
+          id: savedFeaturedImageId,
           uploadId: this.uploadId,
-          base64Data: this.imageData,
           mimeType: this.mimeType,
           altText: this.featuredImageAltText,
-          toDelete: this.removeFeaturedImage
+          toDelete: this.removeFeaturedImage || (!this.uploadId && !savedFeaturedImageId)
         },
         draft: this.isDraft || !this.notedId
       };

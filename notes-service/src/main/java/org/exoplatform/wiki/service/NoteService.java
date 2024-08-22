@@ -363,9 +363,9 @@ public interface NoteService {
    *
    * @param param Note location params.
    * @param lang draft lang.
-   * @throws WikiException if an error occured
+   * @throws Exception if an error occured
    */
-  void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException;
+  void removeDraftOfNote(WikiPageParams param, String lang) throws Exception;
 
   /**
    * Remove the Drafts of a note
@@ -399,8 +399,9 @@ public interface NoteService {
    *
    * @param draftId Technical Id of the draft page.
    * @throws WikiException if an error occured
+   * @throws Exception 
    */
-  void removeDraftById(String draftId) throws WikiException;
+  void removeDraftById(String draftId) throws Exception;
 
   /**
    * Gets all the Histories of the given note
@@ -468,7 +469,8 @@ public interface NoteService {
    */
   Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
                                                                          IllegalAccessException,
-                                                                         EntityNotFoundException;
+                                                                         EntityNotFoundException,
+                                                                         Exception;
 
   /**
    * Update the given note. This does not automatically create a new version. If
@@ -622,7 +624,7 @@ public interface NoteService {
    */
   void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
                                                                                             IllegalAccessException,
-                                                                                            IOException;
+                                                                                            IOException, Exception;
 
   /**
    * Import Notes from a list of files
@@ -639,7 +641,7 @@ public interface NoteService {
    */
   void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
                                                                                             IllegalAccessException,
-                                                                                            IOException;
+                                                                                            IOException, Exception;
 
   /**
    * Searches in all wiki pages.
@@ -828,4 +830,9 @@ public interface NoteService {
    * @return {@link PageVersion}
    */
   PageVersion getPageVersionById(Long versionId);
+
+  /**
+   * {@inheritDoc}
+   */
+  DraftPage getDraftOfPageByLang(WikiPageParams param, String lang) throws WikiException;
 }
