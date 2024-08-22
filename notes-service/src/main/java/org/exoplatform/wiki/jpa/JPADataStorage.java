@@ -670,6 +670,17 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
+  public DraftPage getDraftOfPageByLang(Page page, String lang) throws WikiException {
+    List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByTargetPage(Long.parseLong(page.getId()));
+    for (DraftPageEntity draftPage : draftPages) {
+      if (draftPage != null && StringUtils.equals(draftPage.getLang(), lang)) {
+        return convertDraftPageEntityToDraftPage(draftPage);
+      }
+    }
+    return null;
+  }
+  
+  @Override
   public List<DraftPage> getDraftsOfPage(Long pageId) {
     List<DraftPage> draftPages = new ArrayList<>();
     List<DraftPageEntity> draftPagesOfUser = draftPageDAO.findDraftPagesByTargetPage(pageId);
@@ -679,6 +690,7 @@ public class JPADataStorage implements DataStorage {
 
     return draftPages;
   }
+  
   @Override
   public DraftPage getDraft(WikiPageParams wikiPageParams) throws WikiException {
     DraftPage latestDraft = null;

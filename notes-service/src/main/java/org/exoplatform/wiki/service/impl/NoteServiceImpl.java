@@ -318,7 +318,8 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
                                                                                 IllegalAccessException,
-                                                                                EntityNotFoundException {
+                                                                                EntityNotFoundException,
+                                                                                Exception {
     Page existingNote = getNoteById(note.getId());
     if (existingNote == null) {
       throw new EntityNotFoundException("Note to update not found");
@@ -332,24 +333,14 @@ public class NoteServiceImpl implements NoteService {
     }
     note.setContent(note.getContent());
     Page updatedPage = dataStorage.updatePage(note);
-    DraftPage draftPage = getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
-    if (userIdentity != null && draftPage != null) {
-      moveOrCopyNotePageProperties(draftPage,
-                                   note,
-                                   draftPage.getLang(),
-                                   note.getLang(),
-                                   NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE,
-                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                   userIdentity.getUserId(),
-                                   true);
-      NotePageProperties notePageProperties = draftPage.getProperties();
-      if (notePageProperties != null) {
-        notePageProperties.setNoteId(Long.parseLong(updatedPage.getId()));
-        notePageProperties.setDraft(false);
-        updatedPage.setProperties(notePageProperties);
-      }
+    NotePageProperties notePageProperties = note.getProperties();
+    if (notePageProperties != null) {
+      notePageProperties.setDraft(false);
+      org.exoplatform.social.core.identity.model.Identity identity =
+                                                                   identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+                                                                                                       userIdentity.getUserId());
+      saveNoteMetadata(note.getProperties(), note.getLang(), Long.valueOf(identity.getId()));
     }
-
     invalidateCache(note);
 
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
@@ -912,14 +903,25 @@ public class NoteServiceImpl implements NoteService {
   public void removeDraftOfNote(Page page) throws WikiException {
     dataStorage.deleteDraftOfPage(page);
   }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DraftPage getDraftOfPageByLang(WikiPageParams param, String lang) throws WikiException {
+    Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
+    return dataStorage.getDraftOfPageByLang(page, lang);
+  }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void removeDraftOfNote(WikiPageParams param, String lang) throws WikiException {
-    Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
-    dataStorage.deleteDraftOfPage(page, lang);
+  public void removeDraftOfNote(WikiPageParams param, String lang) throws Exception {
+    DraftPage draftPage = getDraftOfPageByLang(param, lang);
+    if (draftPage != null) {
+      removeDraftById(draftPage.getId());
+    }
   }
 
   /**
@@ -934,8 +936,14 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public void removeDraftById(String draftId) throws WikiException {
+  public void removeDraftById(String draftId) throws Exception {
+    Page draftNote = dataStorage.getDraftPageById(draftId);
     dataStorage.deleteDraftById(draftId);
+    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(draftNote, null, NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
+    if (draftNoteMetadataItem != null) {
+      MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
+      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
+    }
   }
   
   /**
@@ -945,7 +953,16 @@ public class NoteServiceImpl implements NoteService {
   public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
     List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
     if (versionsHistory == null || versionsHistory.isEmpty()) {
-      dataStorage.addPageVersion(note, userName);
+      PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
+      pageVersion.setId(note.getId() + "-" + pageVersion.getName());
+      moveOrCopyNotePageProperties(note,
+                                   pageVersion,
+                                   note.getLang(),
+                                   null,
+                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
+                                   NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                                   userName,
+                                   false);
       versionsHistory = dataStorage.getHistoryOfPage(note);
     }
     for (PageHistory version : versionsHistory) {
@@ -1258,7 +1275,7 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
           IllegalAccessException,
-          IOException {
+          IOException, Exception {
     List<String> files = Utils.unzip(zipLocation, System.getProperty(TEMP_DIRECTORY_PATH));
     importNotes(files, parent, conflict, userIdentity);
   }
@@ -1269,7 +1286,7 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
           IllegalAccessException,
-          IOException {
+          IOException, Exception {
 
     String notesFilePath = "";
     for (String file : files) {
@@ -1424,7 +1441,16 @@ public class NoteServiceImpl implements NoteService {
   public List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException {
     List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
     if (lang == null && pageHistories.isEmpty()) {
-      dataStorage.addPageVersion(note, userName);
+      PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
+      pageVersion.setId(note.getId() + "-" + pageVersion.getName());
+      moveOrCopyNotePageProperties(note,
+                                   pageVersion,
+                                   note.getLang(),
+                                   null,
+                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
+                                   NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                                   userName,
+                                   false);
       pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), null);
     }
     return pageHistories;
@@ -1644,7 +1670,7 @@ public class NoteServiceImpl implements NoteService {
   /******* Private methods *******/
   
   private void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                    IllegalAccessException {
+                                                                                                    IllegalAccessException, Exception {
 
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
@@ -2163,11 +2189,22 @@ public class NoteServiceImpl implements NoteService {
     }
     Page note;
     Long featuredImageId = null;
+    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
     if (notePageProperties.isDraft()) {
         note = getLatestDraftPageByTargetPageAndLang(notePageProperties.getNoteId(), lang);
         if (note == null) {
           note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
                                   identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+        }
+        else {
+          if (featuredImage!= null && !featuredImage.isToDelete() && featuredImage.getUploadId() == null) {
+            MetadataItem metadataItem = getNoteMetadataItem(getNoteByIdAndLang(notePageProperties.getNoteId(), lang), lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
+            if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
+              String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
+              featuredImageId = featuredImageIdProp != null
+                  && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
+            }
+          }
         }
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
@@ -2175,14 +2212,15 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("note not found");
     }
-    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
+
     if (featuredImage != null && featuredImage.isToDelete()) {
       removeNoteFeaturedImage(Long.valueOf(note.getId()),
                               featuredImage.getId(),
                               lang,
                               notePageProperties.isDraft(),
                               userIdentityId);
-    } else {
+    } 
+    else if (featuredImageId == null) {
       featuredImageId = saveNoteFeaturedImage(note, featuredImage);
     }
     MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
