@@ -28,36 +28,31 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NoteMetadataObject;
-import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import org.exoplatform.commons.api.notification.NotificationContext;
-import org.exoplatform.commons.api.notification.model.PluginKey;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-import org.exoplatform.commons.file.model.FileInfo;
-import org.exoplatform.commons.file.model.FileItem;
-import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.social.metadata.model.MetadataKey;
-import org.exoplatform.social.metadata.model.MetadataType;
-import org.exoplatform.social.metadata.thumbnail.ImageThumbnailService;
-import org.exoplatform.commons.notification.impl.NotificationContextImpl;
-import org.exoplatform.social.notification.LinkProviderUtils;
-import org.exoplatform.upload.UploadResource;
-import org.exoplatform.upload.UploadService;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.model.FileInfo;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
@@ -75,7 +70,12 @@ import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataObject;
+import org.exoplatform.social.metadata.model.MetadataType;
+import org.exoplatform.services.thumbnail.ImageThumbnailService;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.ImportList;
@@ -102,6 +102,9 @@ import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NoteMetadataObject;
+import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
 import lombok.SneakyThrows;
@@ -2014,7 +2017,7 @@ public class NoteServiceImpl implements NoteService {
         if (thumbnailSize != null) {
           ImageThumbnailService thumbnailService = CommonsUtils.getService(ImageThumbnailService.class);
           int[] dimension = org.exoplatform.social.common.Utils.parseDimension(thumbnailSize);
-          fileItem = thumbnailService.getOrCreateThumbnail(fileItem, identity, dimension[0], dimension[1]);
+          fileItem = thumbnailService.getOrCreateThumbnail(fileItem, dimension[0], dimension[1]);
         }
         return new NoteFeaturedImage(fileInfo.getId(),
                                      fileInfo.getName(),
