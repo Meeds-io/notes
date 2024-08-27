@@ -718,7 +718,10 @@ public class NotesRestService implements ResourceContainer {
       }
       note_.setToBePublished(note.isToBePublished());
       NotePageProperties notePageProperties = io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties());
-      NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
+      NoteFeaturedImage featuredImage = null;
+      if (notePageProperties != null) {
+        featuredImage = notePageProperties.getFeaturedImage();
+      }
       String newNoteName = note_.getName();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {

@@ -989,9 +989,11 @@ public class NoteServiceImpl implements NoteService {
     PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
     if (note.getLang() != null) {
       try {
-        saveNoteMetadata(note.getProperties(),
-                         note.getLang(),
-                         Long.valueOf(identityManager.getOrCreateUserIdentity(userName).getId()));
+        NotePageProperties properties = note.getProperties();
+        if (properties != null) {
+          properties.setDraft(false);
+          saveNoteMetadata(properties, note.getLang(), Long.valueOf(identityManager.getOrCreateUserIdentity(userName).getId()));
+        }
       } catch (Exception e) {
         log.error("Error while saving note version language metadata", e);
       }
