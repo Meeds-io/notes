@@ -132,7 +132,7 @@
             class="mb-5"
             width="100%"
             max-height="400" />
-          <div class="notes-title mb-3">
+          <div class="notes-title">
             <span
               ref="noteTitle"
               class="title text-color">
@@ -146,11 +146,11 @@
           </div>
           <p
             v-if="hasSummary"
-            class="note-summary text-sub-title mb-8">
-            {{ note?.properties?.summary }}
+            class="note-summary text-sub-title mt-4 mb-0">
+            {{ noteSummary }}
           </p>
         </div>
-        <div class="note-content my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
+        <div class="note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
             class="notes-application-content text-color">
             <component :is="notesContentProcessor" />
@@ -339,6 +339,7 @@ export default {
       noteChildren: [],
       isDraft: false,
       noteTitle: '',
+      noteSummary: '',
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
       childNodes: [],
       exportStatus: '',
@@ -365,6 +366,7 @@ export default {
       }
       this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
       this.noteContent = this.note.content;
+      this.noteSummary = this.note?.properties?.summary;
       this.retrieveNoteTreeById();
     },
     actualVersion() {
@@ -573,6 +575,7 @@ export default {
     });
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
+    this.$root.$on('update-note-summary', this.updateNoteSummary);
     this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
     window.addEventListener('message', (event) => {
       if (this.iframelyOriginRegex.exec(event.origin)) {
@@ -582,9 +585,6 @@ export default {
         }
       }
     });
-    this.$root.$on('update-note-title', this.updateNoteTitle);
-    this.$root.$on('update-note-content', this.updateNoteContent);
-    this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
 
     this.$root.$on('open-note-treeview', this.openNoteTreeView);
     this.$root.$on('note-export-pdf', this.createPDF);
@@ -618,6 +618,9 @@ export default {
     },
     updateNoteContent(content) {
       this.noteContent = content;
+    },
+    updateNoteSummary(summary) {
+      this.noteSummary = summary;
     },
     updateSelectedTranslation(translation) {
       this.selectedTranslation = translation;
