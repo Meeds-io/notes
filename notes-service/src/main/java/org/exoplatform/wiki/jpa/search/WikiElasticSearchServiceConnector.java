@@ -19,13 +19,10 @@ package org.exoplatform.wiki.jpa.search;
 import java.io.InputStream;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.social.metadata.favorite.FavoriteService;
-import org.exoplatform.wiki.utils.Utils;
-
-import io.meeds.notes.legacy.search.es.ElasticSearchServiceConnector;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -48,8 +45,12 @@ import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.favorite.FavoriteService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
+import org.exoplatform.wiki.utils.Utils;
+
+import io.meeds.notes.legacy.search.es.ElasticSearchServiceConnector;
 
 /**
  * Created by The eXo Platform SAS Author : Thibault Clement
@@ -133,24 +134,25 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   }
 
   private String buildTagsQueryStatement(List<String> values) {
-    if (values == null || values.isEmpty()) {
+    if (CollectionUtils.isEmpty(values)) {
       return "";
     }
     List<String> tagsQueryParts = values.stream()
-            .map(value -> """
-                               {"term": {
-                               "metadatas.tags.metadataName.keyword": {
-                                 "value":""" + value + """
-                                 ,"case_insensitive":true
-                                } 
-                               }}
-                               """)
-            .toList();
-    return """
-            ,"should": ["""+
-                         StringUtils.join(tagsQueryParts, ",") + """
-                       ],
-             "minimum_should_match": 1""";
+            .map(value -> new StringBuilder().append("{\"term\": {\n")
+                    .append("            \"metadatas.tags.metadataName.keyword\": {\n")
+                    .append("              \"value\": \"")
+                    .append(value)
+                    .append("\",\n")
+                    .append("              \"case_insensitive\":true\n")
+                    .append("            }\n")
+                    .append("          }}")
+                    .toString())
+            .collect(Collectors.toList());
+    return new StringBuilder().append(",\"should\": [\n")
+            .append(StringUtils.join(tagsQueryParts, ","))
+            .append("      ],\n")
+            .append("      \"minimum_should_match\": 1")
+            .toString();
   }
 
   private String buildTermQuery(String termQuery) {
