@@ -284,6 +284,10 @@ export default {
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
+      const properties = this.note?.properties;
+      if (properties) {
+        properties.draft = this.note?.draftPage;
+      }
       const note = {
         id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
         title: this.note.title,

@@ -132,7 +132,7 @@
             class="mb-5"
             width="100%"
             max-height="400" />
-          <div class="notes-title mb-3">
+          <div class="notes-title">
             <span
               ref="noteTitle"
               class="title text-color">
@@ -146,11 +146,11 @@
           </div>
           <p
             v-if="hasSummary"
-            class="note-summary text-sub-title mb-8">
-            {{ note?.properties?.summary }}
+            class="note-summary text-sub-title mt-4 mb-0">
+            {{ noteSummary }}
           </p>
         </div>
-        <div class="note-content my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
+        <div class="note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
             class="notes-application-content text-color">
             <component :is="notesContentProcessor" />
@@ -585,12 +585,6 @@ export default {
         }
       }
     });
-
-    this.$root.$on('open-note-treeview', this.openNoteTreeView);
-    this.$root.$on('note-export-pdf', this.createPDF);
-    this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
-    this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
-    this.$root.$on('open-note-import-drawer', this.openImportDrawer);
 
     this.$root.$on('open-note-treeview', this.openNoteTreeView);
     this.$root.$on('note-export-pdf', this.createPDF);
