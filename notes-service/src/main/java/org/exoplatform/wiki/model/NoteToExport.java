@@ -22,6 +22,7 @@ package org.exoplatform.wiki.model;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.meeds.notes.model.NotePageProperties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -56,6 +57,8 @@ public class NoteToExport {
   private NoteToExport       parent;
 
   private LinkedList<String> ancestors;
+
+  private NotePageProperties properties;
 
   public NoteToExport() {
   }
