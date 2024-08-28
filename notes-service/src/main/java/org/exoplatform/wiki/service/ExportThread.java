@@ -228,6 +228,7 @@ public class ExportThread implements Runnable {
                                                          note.getWikiId(),
                                                          note.getWikiType(),
                                                          note.getWikiOwner());
+            noteToExport.setProperties(note.getProperties());
             noteToExport.setContent(processImagesForExport(note));
             noteToExport.setContent(processNotesLinkForExport(noteToExport));
             LinkedList<String> ancestors = getNoteAncestorsIds(noteToExport.getId());
@@ -411,8 +412,13 @@ public class ExportThread implements Runnable {
   public NoteToExport getNoteToExport(NoteToExport note, int exportId) throws WikiException,
                                                                                           IOException,
                                                                                           InterruptedException {
+
     try {
-      note.setContent(processImagesForExport(noteService.getNoteById(note.getId())));
+      Page page = noteService.getNoteById(note.getId());
+      if (page != null) {
+        note.setProperties(page.getProperties());
+        note.setContent(processImagesForExport(page));
+      }
     } catch (Exception e) {
       log.warn("Cannot process images for note {}", note.getId());
     }
