@@ -280,6 +280,8 @@ export default {
     postNote(toPublish) {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
+      const properties = this.note?.properties;
+      properties.draft = this.note?.draftPage;
       const note = {
         id: this.note?.draftPage? this.note.targetPageId || null : this.note?.id,
         title: this.note.title,
@@ -291,7 +293,7 @@ export default {
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
         toBePublished: toPublish,
         appName: this.appName,
-        properties: this.note?.properties
+        properties: properties
       };
       if (note.id) {
         this.updateNote(note);
