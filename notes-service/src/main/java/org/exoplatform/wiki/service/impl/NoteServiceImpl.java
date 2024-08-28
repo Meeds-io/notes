@@ -167,6 +167,10 @@ public class NoteServiceImpl implements NoteService {
   private final FileService                               fileService;
 
   private final UploadService                             uploadService;
+  
+  private final MetadataService                           metadataService;
+  
+  private final ImageThumbnailService                     imageThumbnailService;
 
   private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
 
@@ -176,7 +180,11 @@ public class NoteServiceImpl implements NoteService {
                          IdentityManager identityManager,
                          SpaceService spaceService,
                          CMSService cmsService,
-                         ListenerService listenerService, FileService fileService, UploadService uploadService) {
+                         ListenerService listenerService,
+                         FileService fileService,
+                         UploadService uploadService,
+                         MetadataService metadataService,
+                         ImageThumbnailService imageThumbnailService) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
@@ -187,6 +195,8 @@ public class NoteServiceImpl implements NoteService {
     this.cmsService = cmsService;
     this.fileService = fileService;
     this.uploadService = uploadService;
+    this.metadataService = metadataService;
+    this.imageThumbnailService = imageThumbnailService;
     this.htmlUploadImageProcessor = null;
   }
 
@@ -196,7 +206,11 @@ public class NoteServiceImpl implements NoteService {
                          IdentityManager identityManager,
                          SpaceService spaceService,
                          CMSService cmsService,
-                         ListenerService listenerService, FileService fileService, UploadService uploadService,
+                         ListenerService listenerService,
+                         FileService fileService,
+                         UploadService uploadService,
+                         MetadataService metadataService,
+                         ImageThumbnailService imageThumbnailService,
                          HTMLUploadImageProcessor htmlUploadImageProcessor) {
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
@@ -208,6 +222,8 @@ public class NoteServiceImpl implements NoteService {
     this.cmsService = cmsService;
     this.fileService = fileService;
     this.uploadService = uploadService;
+    this.metadataService = metadataService;
+    this.imageThumbnailService = imageThumbnailService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
   }
 
@@ -238,26 +254,14 @@ public class NoteServiceImpl implements NoteService {
       NotePageProperties properties = note.getProperties();
       try {
         if (properties != null) {
+          properties.setNoteId(Long.parseLong(createdPage.getId()));
+          properties.setDraft(false);
+          properties =
+                  saveNoteMetadata(properties,
+                          note.getLang(),
+                          Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
           DraftPage draftPage = getDraftNoteById(String.valueOf(properties.getNoteId()), userIdentity.getUserId());
           if (draftPage != null) {
-            NoteFeaturedImage featuredImage = properties.getFeaturedImage();
-            if (featuredImage != null && featuredImage.getId() != null && featuredImage.getId() > 0) {
-              moveOrCopyNotePageProperties(draftPage,
-                                           createdPage,
-                                           draftPage.getLang(),
-                                           note.getLang(),
-                                           NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE,
-                                           NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                           userIdentity.getUserId(),
-                                           true);
-            } else {
-              properties.setNoteId(Long.parseLong(createdPage.getId()));
-              properties.setDraft(false);
-              properties = saveNoteMetadata(properties,
-                                            note.getLang(),
-                                            Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
-                                                                        .getId()));
-            }
             removeDraftById(draftPage.getId());
             invalidateCache(draftPage);
           }
@@ -328,18 +332,24 @@ public class NoteServiceImpl implements NoteService {
     if (userIdentity != null && !Utils.canManageNotes(userIdentity.getUserId(), space, existingNote)) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
-    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)) {
+    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
+        || PageUpdateType.EDIT_PAGE_PROPERTIES.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
     note.setContent(note.getContent());
     Page updatedPage = dataStorage.updatePage(note);
-    NotePageProperties notePageProperties = note.getProperties();
-    if (notePageProperties != null) {
-      notePageProperties.setDraft(false);
-      org.exoplatform.social.core.identity.model.Identity identity =
-                                                                   identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                                                                       userIdentity.getUserId());
-      saveNoteMetadata(note.getProperties(), note.getLang(), Long.valueOf(identity.getId()));
+    NotePageProperties properties = note.getProperties();
+    if (userIdentity != null && properties != null) {
+      try {
+        properties.setNoteId(Long.parseLong(updatedPage.getId()));
+        properties.setDraft(false);
+        properties = saveNoteMetadata(note.getProperties(),
+                                      note.getLang(),
+                                      Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
+        updatedPage.setProperties(properties);
+      } catch (Exception e) {
+        log.error("Error while updating note metadata properties", e);
+      }
     }
     invalidateCache(note);
 
@@ -939,9 +949,9 @@ public class NoteServiceImpl implements NoteService {
   public void removeDraftById(String draftId) throws Exception {
     Page draftNote = dataStorage.getDraftPageById(draftId);
     dataStorage.deleteDraftById(draftId);
-    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(draftNote, null, NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
+    MetadataItem draftNoteMetadataItem =
+                                       getNoteMetadataItem(draftNote, draftNote.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
     if (draftNoteMetadataItem != null) {
-      MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
       metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
     }
   }
@@ -955,14 +965,13 @@ public class NoteServiceImpl implements NoteService {
     if (versionsHistory == null || versionsHistory.isEmpty()) {
       PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-      moveOrCopyNotePageProperties(note,
-                                   pageVersion,
-                                   note.getLang(),
-                                   null,
-                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                   NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                                   userName,
-                                   false);
+      copyNotePageProperties(note,
+                             pageVersion,
+                             note.getLang(),
+                             null,
+                             NOTE_METADATA_PAGE_OBJECT_TYPE,
+                             NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                             userName);
       versionsHistory = dataStorage.getHistoryOfPage(note);
     }
     for (PageHistory version : versionsHistory) {
@@ -994,14 +1003,14 @@ public class NoteServiceImpl implements NoteService {
       postUpdatePageVersionLanguage(versionLangId);
     } else {
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-      moveOrCopyNotePageProperties(note,
-                                   pageVersion,
-                                   note.getLang(),
-                                   null,
-                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                   NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                                   userName,
-                                   false);
+      copyNotePageProperties(note,
+                             pageVersion,
+                             note.getLang(),
+                             null,
+                             NOTE_METADATA_PAGE_OBJECT_TYPE,
+                             NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                             userName
+      );
     }
   }
 
@@ -1012,14 +1021,13 @@ public class NoteServiceImpl implements NoteService {
   public void restoreVersionOfNote(String versionName, Page note, String userName) throws WikiException {
     PageVersion pageVersion = dataStorage.restoreVersionOfPage(versionName, note);
     pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-    moveOrCopyNotePageProperties(pageVersion,
-                                 note,
-                                 null,
-                                 null,
-                                 NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                                 NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                 userName,
-                                 false);
+    copyNotePageProperties(pageVersion,
+                           note,
+                           null,
+                           null,
+                           NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                           NOTE_METADATA_PAGE_OBJECT_TYPE,
+                           userName);
     createVersionOfNote(note, userName);
     invalidateCache(note);
   }
@@ -1166,24 +1174,9 @@ public class NoteServiceImpl implements NoteService {
     NotePageProperties properties = draftPage.getProperties();
     try {
       if (properties != null) {
-        NoteFeaturedImage featuredImage = properties.getFeaturedImage();
-        if (featuredImage != null && featuredImage.getId() != null && featuredImage.getId() > 0) {
-          Map<String, String> props = moveOrCopyNotePageProperties(targetPage,
-                                                                   newDraftPage,
-                                                                   targetPage.getLang(),
-                                                                   newDraftPage.getLang(),
-                                                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                                                   NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE,
-                                                                   username,
-                                                                   false);
-          if (props != null && props.getOrDefault(FEATURED_IMAGE_ID, null) == null) {
-            properties.setFeaturedImage(null);
-          }
-        } else {
-          properties = saveNoteMetadata(properties,
-                                        draftPage.getLang(),
-                                        Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId()));
-        }
+        properties = saveNoteMetadata(properties,
+                                      draftPage.getLang(),
+                                      Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId()));
       }
     } catch (Exception e) {
       log.error("Failed to save draft note metadata", e);
@@ -1443,14 +1436,13 @@ public class NoteServiceImpl implements NoteService {
     if (lang == null && pageHistories.isEmpty()) {
       PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-      moveOrCopyNotePageProperties(note,
-                                   pageVersion,
-                                   note.getLang(),
-                                   null,
-                                   NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                   NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                                   userName,
-                                   false);
+      copyNotePageProperties(note,
+                             pageVersion,
+                             note.getLang(),
+                             null,
+                             NOTE_METADATA_PAGE_OBJECT_TYPE,
+                             NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+                             userName);
       pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), null);
     }
     return pageHistories;
@@ -1951,7 +1943,6 @@ public class NoteServiceImpl implements NoteService {
                                                                         identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
                                                                                                             username);
     long currentUserId = Long.parseLong(currentIdentity.getId());
-    MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
     MetadataObject metadataObject = new MetadataObject(Utils.NOTES_METADATA_OBJECT_TYPE, noteId);
     List<MetadataItem> metadataItems = metadataService.getMetadataItemsByObject(metadataObject);
     Map<String, List<MetadataItem>> metadata = new HashMap<>();
@@ -2006,9 +1997,10 @@ public class NoteServiceImpl implements NoteService {
         if (fileItem != null && fileItem.getFileInfo() != null) {
           return fileItem.getFileInfo().getId();
         }
+        uploadService.removeUploadResource(uploadId);
       }
     }
-    return null;
+    return featuredImageId;
   }
 
   /**
@@ -2041,9 +2033,8 @@ public class NoteServiceImpl implements NoteService {
       if (fileItem != null && fileItem.getFileInfo() != null) {
         FileInfo fileInfo = fileItem.getFileInfo();
         if (thumbnailSize != null) {
-          ImageThumbnailService thumbnailService = CommonsUtils.getService(ImageThumbnailService.class);
           int[] dimension = org.exoplatform.social.common.Utils.parseDimension(thumbnailSize);
-          fileItem = thumbnailService.getOrCreateThumbnail(fileItem, dimension[0], dimension[1]);
+          fileItem = imageThumbnailService.getOrCreateThumbnail(fileItem, dimension[0], dimension[1]);
         }
         return new NoteFeaturedImage(fileInfo.getId(),
                                      fileInfo.getName(),
@@ -2066,21 +2057,19 @@ public class NoteServiceImpl implements NoteService {
 
   private MetadataItem getNoteMetadataItem(Page note, String lang, String objectType) {
     NoteMetadataObject noteMetadataObject = buildNoteMetadataObject(note, lang, objectType);
-    MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
     return metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
                           .stream()
                           .findFirst()
                           .orElse(null);
   }
 
-  private Map<String, String> moveOrCopyNotePageProperties(Page oldNote,
-                                                           Page note,
-                                                           String oldLang,
-                                                           String lang,
-                                                           String oldObjectType,
-                                                           String newObjectType,
-                                                           String username,
-                                                           boolean move) {
+  private Map<String, String> copyNotePageProperties(Page oldNote,
+                                                     Page note,
+                                                     String oldLang,
+                                                     String lang,
+                                                     String oldObjectType,
+                                                     String newObjectType,
+                                                     String username) {
     if (note == null || oldNote == null) {
       return null;
     }
@@ -2093,7 +2082,6 @@ public class NoteServiceImpl implements NoteService {
       MetadataItem oldNoteMetadataItem = getNoteMetadataItem(oldNote, oldLang, oldObjectType);
       MetadataItem newNoteMetadataItem = getNoteMetadataItem(note, lang, newObjectType);
       if (oldNoteMetadataItem != null && oldNoteMetadataItem.getProperties() != null) {
-        MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
         properties = oldNoteMetadataItem.getProperties();
         if (properties != null && oldLang == null && lang != null) {
           properties.remove(FEATURED_IMAGE_ID);
@@ -2112,9 +2100,6 @@ public class NoteServiceImpl implements NoteService {
           } catch (Exception e) {
             log.error("Error while creating note metadata item", e);
           }
-        }
-        if (move) {
-          metadataService.deleteMetadataById(oldNoteMetadataItem.getId());
         }
       }
     }
@@ -2143,9 +2128,6 @@ public class NoteServiceImpl implements NoteService {
                                       String lang,
                                       boolean isDraft,
                                       Long userIdentityId) throws Exception {
-    if (featuredImageId == null || featuredImageId <= 0) {
-      return;
-    }
     boolean removeFeaturedImageFile = true;
     Page note;
     if (isDraft) {
@@ -2161,8 +2143,7 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("note not found");
     }
-    MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
-    if (removeFeaturedImageFile) {
+    if (removeFeaturedImageFile && featuredImageId != null && featuredImageId > 0) {
       fileService.deleteFile(featuredImageId);
     }
     MetadataItem metadataItem = getNoteMetadataItem(note,
@@ -2196,16 +2177,6 @@ public class NoteServiceImpl implements NoteService {
           note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
                                   identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
         }
-        else {
-          if (featuredImage!= null && !featuredImage.isToDelete() && featuredImage.getUploadId() == null) {
-            MetadataItem metadataItem = getNoteMetadataItem(getNoteByIdAndLang(notePageProperties.getNoteId(), lang), lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
-            if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
-              String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
-              featuredImageId = featuredImageIdProp != null
-                  && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
-            }
-          }
-        }
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
     }
@@ -2219,12 +2190,9 @@ public class NoteServiceImpl implements NoteService {
                               lang,
                               notePageProperties.isDraft(),
                               userIdentityId);
-    } 
-    else if (featuredImageId == null) {
+    } else {
       featuredImageId = saveNoteFeaturedImage(note, featuredImage);
     }
-    MetadataService metadataService = CommonsUtils.getService(MetadataService.class);
-
     NoteMetadataObject noteMetadataObject =
                                           buildNoteMetadataObject(note,
                                                                   lang,
