@@ -223,17 +223,14 @@ export default {
   methods: {
     show(lang) {
       this.selectedTranslation = {value: lang};
-      if (this.translations){
+      if (this.translations) {
         const translation = this.translations.find(item => item.value === lang);
         if (translation) {
           this.selectedTranslation = translation;
         }
       }
       this.selectedLang = {value: '', text: this.$t('notes.label.chooseLangage')};
-      if (!this.translations && this.note && this.noteId) {
-        this.getNoteLanguages(this.noteId);
-      }
-      this.showTranslationbar=true;
+      this.showTranslationbar = true;
     },
     hide() {
       this.showTranslationbar = false;

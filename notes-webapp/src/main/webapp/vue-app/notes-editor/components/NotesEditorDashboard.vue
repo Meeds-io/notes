@@ -678,37 +678,36 @@ export default {
         return false;
       }
     },
-    getNoteLanguages(){
-      const noteId= !this.note.draftPage?this.note.id:this.note.targetPageId;
-      return this.$notesService.getNoteLanguages(noteId,true).then(data => {
-        this.translations =  data || [];
-        if (this.translations.length>0) {
-          this.translations = this.allLanguages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+    getNoteLanguages() {
+      const noteId = !this.note.draftPage ? this.note.id : this.note.targetPageId;
+      return this.$notesService.getNoteLanguages(noteId, true).then(data => {
+        this.translations ??= [];
+        this.translations = this.translations.map(translation => translation.value);
+        this.translations.push(...data);
+        if (this.translations.length > 0) {
+          this.translations = this.allLanguages.filter(lang => this.translations.includes(lang.value));
           this.translations.sort((a, b) => a.text.localeCompare(b.text));
-          this.languages = this.allLanguages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+          this.languages = this.allLanguages.filter(lang => !this.translations.includes(lang.value));
         }
         if (this.isMobile) {
-          this.translations.unshift({value: null,text: this.$t('notes.label.translation.originalVersion')});
+          this.translations.unshift({value: null, text: this.$t('notes.label.translation.originalVersion')});
         }
-        if (!this.selectedLanguage){
+        if (!this.selectedLanguage) {
           const lang = this.translations.find(item => item.value === this.selectedLanguage);
-          if (lang){
-            this.translations=this.translations.filter(item => item.value !== lang.value);
+          if (lang) {
+            this.translations = this.translations.filter(item => item.value !== lang.value);
             this.translations.unshift(lang);
           }
         }
       });
     },
-    getAvailableLanguages(){
-      return this.$notesService.getAvailableLanguages().then(data => {
-        this.languages = data || [];
-        this.languages.sort((a, b) => a.text.localeCompare(b.text));
-        this.allLanguages=this.languages;
-        this.languages.unshift({value: '',text: this.$t('notes.label.chooseLangage')});
-        if (this.translations){
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
-        }
-      });
+    getAvailableLanguages() {
+      this.languages = this.allLanguages = JSON.parse(eXo?.env?.portal?.availableLanguages)
+        ?.sort((a, b) => a.text.localeCompare(b.text));
+      this.languages.unshift({value: '', text: this.$t('notes.label.chooseLangage')});
+      if (this.translations) {
+        this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+      }
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);
@@ -727,6 +726,9 @@ export default {
 
     },
     addTranslation(lang){
+      if (!this.translations && this.note?.id) {
+        this.getNoteLanguages(this.note.id);
+      }
       this.closeAlertMessage();
       if (!this.postingNote && this.note.draftPage && this.note.id) {
         this.saveDraftFromLocalStorage();
@@ -739,6 +741,7 @@ export default {
       };
       this.languages = this.languages.filter(item => item.value !== lang?.value);
       this.selectedLanguage = lang?.value;
+      this.translations ??= [];
       this.translations.unshift(lang);
       if (this.webPageNote) {
         this.note.title = this.selectedLanguage && `${this.note.title}_${this.selectedLanguage}` || this.note.title;
