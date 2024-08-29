@@ -40,8 +40,6 @@ public class NoteFeaturedImage implements Serializable {
 
   private Long                  lastUpdated;
 
-  private String                base64Data;
-
   private String                uploadId;
 
   private String                altText;
@@ -65,14 +63,12 @@ public class NoteFeaturedImage implements Serializable {
   }
 
   public NoteFeaturedImage(Long id,
-                           String base64Data,
                            String mimeType,
                            String uploadId,
                            String altText,
                            Long lastUpdated,
                            boolean toDelete) {
     this.id = id;
-    this.base64Data = base64Data;
     this.mimeType = mimeType;
     this.uploadId = uploadId;
     this.altText = altText;

@@ -301,7 +301,6 @@ export default {
         featuredImage: {
           id: savedFeaturedImageId,
           uploadId: this.uploadId,
-          base64Data: this.imageData,
           mimeType: this.mimeType,
           altText: this.featuredImageAltText,
           toDelete: this.removeFeaturedImage || (!this.uploadId && !savedFeaturedImageId)

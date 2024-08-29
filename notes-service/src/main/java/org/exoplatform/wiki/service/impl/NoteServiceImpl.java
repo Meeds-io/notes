@@ -20,16 +20,12 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -1975,29 +1971,32 @@ public class NoteServiceImpl implements NoteService {
     }
     long featuredImageId = featuredImage.getId() != null ? featuredImage.getId(): 0L;
     String uploadId = featuredImage.getUploadId();
-    if (uploadId != null && featuredImage.getBase64Data() != null) {
+    if (uploadId != null) {
       UploadResource uploadResource = uploadService.getUploadResource(uploadId);
       if (uploadResource != null) {
-        String data = featuredImage.getBase64Data().split("base64,")[1];
-        byte[] bytes = Base64.getDecoder().decode(data.getBytes(Charset.defaultCharset()));
-        FileItem fileItem = new FileItem(featuredImageId,
-                                         note.getName(),
-                                         featuredImage.getMimeType(),
-                                         FILE_NAME_SPACE,
-                                         (long) uploadResource.getUploadedSize(),
-                                         new Date(),
-                                         null,
-                                         false,
-                                         new ByteArrayInputStream(bytes));
-        if (featuredImageId == 0) {
-          fileItem = fileService.writeFile(fileItem);
-        } else {
-          fileItem = fileService.updateFile(fileItem);
+        String fileDiskLocation = uploadResource.getStoreLocation();
+        try (InputStream inputStream = new FileInputStream(fileDiskLocation);) {
+          FileItem fileItem = new FileItem(featuredImageId,
+                                           note.getName(),
+                                           featuredImage.getMimeType(),
+                                           FILE_NAME_SPACE,
+                                           inputStream.available(),
+                                           new Date(),
+                                           null,
+                                           false,
+                                           inputStream);
+          if (featuredImageId == 0) {
+            fileItem = fileService.writeFile(fileItem);
+          } else {
+            fileItem = fileService.updateFile(fileItem);
+          }
+          if (fileItem != null && fileItem.getFileInfo() != null) {
+            return fileItem.getFileInfo().getId();
+          }
+          uploadService.removeUploadResource(uploadId);
+        } catch (Exception e) {
+          log.error("Error while saving note featured image", e);
         }
-        if (fileItem != null && fileItem.getFileInfo() != null) {
-          return fileItem.getFileInfo().getId();
-        }
-        uploadService.removeUploadResource(uploadId);
       }
     }
     return featuredImageId;
@@ -2224,7 +2223,6 @@ public class NoteServiceImpl implements NoteService {
       featuredImage.setId(featuredImageId);
       featuredImage.setLastUpdated(Long.valueOf(properties.getOrDefault(FEATURED_IMAGE_UPDATED_DATE, "0")));
       featuredImage.setUploadId(null);
-      featuredImage.setBase64Data(null);
       notePageProperties.setFeaturedImage(featuredImage);
     }
     return notePageProperties;

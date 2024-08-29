@@ -711,6 +711,8 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     UploadResource uploadResource = mock(UploadResource.class);
     when(uploadResource.getUploadedSize()).thenReturn(12548d);
     when(uploadService.getUploadResource(anyString())).thenReturn(uploadResource);
+    String location = getClass().getResource("/images/John.png").getPath();
+    when(uploadResource.getStoreLocation()).thenReturn(location);
     Field field = noteService.getClass().getDeclaredField("uploadService");
     field.setAccessible(true);
     field.set(noteService, uploadService);
@@ -719,7 +721,6 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
   private NotePageProperties createNotePageProperties(long noteId, String altText, String summary) {
     NotePageProperties notePageProperties = new NotePageProperties();
     NoteFeaturedImage featuredImage = new NoteFeaturedImage();
-    featuredImage.setBase64Data("data:image/png;base64,++dhPs679jlDMhAIYFDUu0+SNTDnnL33+e+P33");
     featuredImage.setMimeType("image/png");
     featuredImage.setUploadId("123");
     featuredImage.setAltText(altText);
