@@ -61,8 +61,9 @@
             min-width="36"
             height="36"
             class="pa-0 my-auto "
-            icon
+            :aria-label="$t('notes.metadata.open.drawer')"
             :disabled="!editorReady"
+            icon
             @click="openMetadataDrawer">
             <v-icon
               size="20"
