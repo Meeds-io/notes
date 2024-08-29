@@ -691,9 +691,9 @@ export default {
         this.translations = this.translations.map(translation => translation.value);
         this.translations.push(...data);
         if (this.translations.length > 0) {
-          this.translations = this.allLanguages.filter(lang => this.translations.some(translation => translation === lang.value));
+          this.translations = this.allLanguages.filter(lang => this.translations.includes(lang.value));
           this.translations.sort((a, b) => a.text.localeCompare(b.text));
-          this.languages = this.allLanguages.filter(lang => !this.translations.some(translation => translation.value === lang.value));
+          this.languages = this.allLanguages.filter(lang => !this.translations.includes(lang.value));
         }
         if (this.isMobile) {
           this.translations.unshift({value: null, text: this.$t('notes.label.translation.originalVersion')});
@@ -708,15 +708,12 @@ export default {
       });
     },
     getAvailableLanguages() {
-      return this.$notesService.getAvailableLanguages().then(data => {
-        this.languages = data || [];
-        this.languages.sort((a, b) => a.text.localeCompare(b.text));
-        this.allLanguages = this.languages;
-        this.languages.unshift({value: '', text: this.$t('notes.label.chooseLangage')});
-        if (this.translations) {
-          this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
-        }
-      });
+      this.languages = this.allLanguages = JSON.parse(eXo?.env?.portal?.availableLanguages)
+        ?.sort((a, b) => a.text.localeCompare(b.text));
+      this.languages.unshift({value: '', text: this.$t('notes.label.chooseLangage')});
+      if (this.translations) {
+        this.languages = this.languages.filter(item1 => !this.translations.some(item2 => item2.value === item1.value));
+      }
     },
     getLanguageName(lang){
       const language = this.allLanguages.find(item => item.value === lang);
@@ -735,7 +732,6 @@ export default {
 
     },
     addTranslation(lang){
-      this.newTranslation = true;
       if (!this.translations && this.note?.id) {
         this.getNoteLanguages(this.note.id);
       }
