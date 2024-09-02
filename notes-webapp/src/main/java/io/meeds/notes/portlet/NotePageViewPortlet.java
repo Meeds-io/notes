@@ -18,6 +18,9 @@
  */
 package io.meeds.notes.portlet;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.portlet.PortletPreferences;
 
 import org.apache.commons.lang3.StringUtils;
@@ -35,14 +38,23 @@ public class NotePageViewPortlet extends CMSPortlet {
 
   private static NotePageViewService notePageViewService;
 
+  private static ReentrantLock       dataInitLock = new ReentrantLock();
+
   @Override
   @SneakyThrows
   protected void postSettingInit(PortletPreferences preferences, String name) {
-    String data = preferences.getValue(DATA_INIT_PREFERENCE_NAME, null);
-    if (StringUtils.isNotBlank(data)) {
-      NotePageData pageData = JsonUtils.fromJsonString(data, NotePageData.class);
-      getNotePageViewService().savePageData(name, pageData);
-      savePreference(DATA_INIT_PREFERENCE_NAME, null);
+    boolean locked = dataInitLock.tryLock(10, TimeUnit.SECONDS);
+    try {
+      String data = preferences.getValue(DATA_INIT_PREFERENCE_NAME, null);
+      if (StringUtils.isNotBlank(data)) {
+        NotePageData pageData = JsonUtils.fromJsonString(data, NotePageData.class);
+        getNotePageViewService().savePageData(name, pageData);
+        savePreference(DATA_INIT_PREFERENCE_NAME, null);
+      }
+    } finally {
+      if (locked) {
+        dataInitLock.unlock();
+      }
     }
   }
 
