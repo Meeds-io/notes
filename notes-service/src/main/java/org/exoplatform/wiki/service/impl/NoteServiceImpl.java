@@ -229,7 +229,8 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
                                                                                                  IllegalAccessException {
-
+    log.info("Start create note");
+    long startTime = System.currentTimeMillis();
     String pageName = TitleResolver.getId(note.getName(), false);
     if (pageName == null) {
       pageName = TitleResolver.getId(note.getTitle(), false);
@@ -258,8 +259,12 @@ public class NoteServiceImpl implements NoteService {
                           Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
           DraftPage draftPage = getDraftNoteById(String.valueOf(properties.getNoteId()), userIdentity.getUserId());
           if (draftPage != null) {
+            log.info("Start remove draft after note create");
             removeDraftById(draftPage.getId());
+            log.info("End remove draft after note create");
+            log.info("Start invalidate cache");
             invalidateCache(draftPage);
+            log.info("End invalidate cache");
           }
         }
       } catch (Exception e) {
@@ -272,6 +277,7 @@ public class NoteServiceImpl implements NoteService {
         createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
         createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
       }
+      log.info("End create note, it took: {}ms", System.currentTimeMillis() - startTime);
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not found");
@@ -2057,11 +2063,15 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private MetadataItem getNoteMetadataItem(Page note, String lang, String objectType) {
+    log.info("Start get metadata properties to save/update");
+    long startTime = System.currentTimeMillis();
     NoteMetadataObject noteMetadataObject = buildNoteMetadataObject(note, lang, objectType);
-    return metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
+    MetadataItem item = metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
                           .stream()
                           .findFirst()
                           .orElse(null);
+    log.info("End get metadata properties to save/update, it took: {}ms", System.currentTimeMillis() - startTime);
+    return item;
   }
 
   private Map<String, String> copyNotePageProperties(Page oldNote,
@@ -2167,7 +2177,10 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties, String lang, Long userIdentityId) throws Exception {
-    if (notePageProperties == null) {
+    log.info("Start save note metadata");
+    long gStartTime = System.currentTimeMillis();
+    if (notePageProperties == null
+        || (notePageProperties.getFeaturedImage() == null && notePageProperties.getSummary() == null)) {
       return null;
     }
     Page note;
@@ -2193,7 +2206,9 @@ public class NoteServiceImpl implements NoteService {
                               notePageProperties.isDraft(),
                               userIdentityId);
     } else {
+      log.info("Start save featured image");
       featuredImageId = saveNoteFeaturedImage(note, featuredImage);
+      log.info("End save featured image");
     }
     NoteMetadataObject noteMetadataObject =
                                           buildNoteMetadataObject(note,
@@ -2216,10 +2231,16 @@ public class NoteServiceImpl implements NoteService {
       properties.put(FEATURED_IMAGE_ALT_TEXT, notePageProperties.getFeaturedImage().getAltText());
     }
     if (metadataItem == null) {
+      log.info("start create note metadata");
+      long startTime = System.currentTimeMillis();
       metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId);
+      log.info("End create note metadata, it took: {}ms", (System.currentTimeMillis() - startTime));
     } else {
+      log.info("start update note metadata");
+      long startTime = System.currentTimeMillis();
       metadataItem.setProperties(properties);
       metadataService.updateMetadataItem(metadataItem, userIdentityId);
+      log.info("End update note metadata, it took: {}ms", (System.currentTimeMillis() - startTime));
     }
     if (featuredImage != null) {
       featuredImage.setId(featuredImageId);
@@ -2227,6 +2248,7 @@ public class NoteServiceImpl implements NoteService {
       featuredImage.setUploadId(null);
       notePageProperties.setFeaturedImage(featuredImage);
     }
+    log.info("End save note metadata, it took: {}", System.currentTimeMillis() - gStartTime);
     return notePageProperties;
   }
 
