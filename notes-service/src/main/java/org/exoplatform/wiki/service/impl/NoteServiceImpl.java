@@ -20,7 +20,10 @@
 
 package org.exoplatform.wiki.service.impl;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -49,7 +52,6 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.cache.CacheService;
@@ -59,6 +61,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -69,7 +72,6 @@ import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.social.metadata.model.MetadataType;
-import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
@@ -229,7 +231,6 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
                                                                                                  IllegalAccessException {
-
     String pageName = TitleResolver.getId(note.getName(), false);
     if (pageName == null) {
       pageName = TitleResolver.getId(note.getTitle(), false);
@@ -2050,11 +2051,9 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private NoteMetadataObject buildNoteMetadataObject(Page note, String lang, String objectType) {
-    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    long spaceId = space != null ? Long.parseLong(space.getId()) : 0L;
     String noteId = String.valueOf(note.getId());
     noteId = lang != null ? noteId + "-" + lang : noteId;
-    return new NoteMetadataObject(objectType, noteId, note.getParentPageId(), spaceId);
+    return new NoteMetadataObject(objectType, noteId, note.getParentPageId());
   }
 
   private MetadataItem getNoteMetadataItem(Page note, String lang, String objectType) {
@@ -2168,7 +2167,8 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties, String lang, Long userIdentityId) throws Exception {
-    if (notePageProperties == null) {
+    if (notePageProperties == null
+        || (notePageProperties.getFeaturedImage() == null && notePageProperties.getSummary() == null)) {
       return null;
     }
     Page note;

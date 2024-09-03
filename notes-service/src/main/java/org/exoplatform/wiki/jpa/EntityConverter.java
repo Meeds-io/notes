@@ -19,22 +19,27 @@
 
 package org.exoplatform.wiki.jpa;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NoteMetadataObject;
-import io.meeds.notes.model.NotePageProperties;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataKey;
@@ -42,21 +47,37 @@ import org.exoplatform.social.metadata.model.MetadataType;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
-import org.exoplatform.wiki.jpa.entity.*;
-import org.exoplatform.wiki.model.*;
+import org.exoplatform.wiki.jpa.entity.AttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
+import org.exoplatform.wiki.jpa.entity.PageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
+import org.exoplatform.wiki.jpa.entity.PermissionEntity;
+import org.exoplatform.wiki.jpa.entity.WikiEntity;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.Permission;
+import org.exoplatform.wiki.model.PermissionEntry;
+import org.exoplatform.wiki.model.PermissionType;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiPreferences;
+import org.exoplatform.wiki.model.WikiPreferencesSyntax;
 import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.impl.NoteServiceImpl;
 import org.exoplatform.wiki.utils.Utils;
 
-import java.io.ByteArrayInputStream;
-import java.util.*;
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NoteMetadataObject;
+import io.meeds.notes.model.NotePageProperties;
 
 /**
  * Utility class to convert JPA entity objects
  */
 public class EntityConverter {
-
-  private static final Log       LOG = ExoLogger.getLogger(EntityConverter.class);
 
   private static SpaceService    spaceService;
 
@@ -151,26 +172,22 @@ public class EntityConverter {
     if (note == null) {
       return;
     }
-    Space space = getSpaceService().getSpaceByGroupId(note.getWikiOwner());
-    if (space != null) {
-      String noteId = note.getId();
-      if (note.getLang() != null) {
-        noteId = noteId + "-" + note.getLang();
-      }
-      NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
-                                                                     noteId,
-                                                                     note.getParentPageId(),
-                                                                     Long.parseLong(space.getId()));
-      getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
-                          .stream()
-                          .findFirst()
-                          .ifPresent(metadataItem -> {
-                            if (!MapUtils.isEmpty(metadataItem.getProperties())) {
-                              buildPageProperties(metadataItem.getProperties(), note);
-                            }
-                          });
-
+    String noteId = note.getId();
+    if (note.getLang() != null) {
+      noteId = noteId + "-" + note.getLang();
     }
+    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
+                                                                   noteId,
+                                                                   note.getParentPageId());
+    getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
+                        .stream()
+                        .findFirst()
+                        .ifPresent(metadataItem -> {
+                          if (!MapUtils.isEmpty(metadataItem.getProperties())) {
+                            buildPageProperties(metadataItem.getProperties(), note);
+                          }
+                        });
+
   }
   
   private static void buildPageProperties(Map<String, String> properties, Page note) {

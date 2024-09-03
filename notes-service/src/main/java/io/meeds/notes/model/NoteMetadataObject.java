@@ -23,7 +23,7 @@ import org.exoplatform.social.metadata.model.MetadataObject;
 
 public class NoteMetadataObject extends MetadataObject {
 
-  public NoteMetadataObject(String type, String id, String parentId, long spaceId) {
-    super(type, id, parentId, spaceId);
+  public NoteMetadataObject(String type, String id, String parentId) {
+    super(type, id, parentId);
   }
 }
