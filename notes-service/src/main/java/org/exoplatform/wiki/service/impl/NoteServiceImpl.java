@@ -229,7 +229,8 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
                                                                                                  IllegalAccessException {
-
+    log.info("Start create note");
+    long startTime = System.currentTimeMillis();
     String pageName = TitleResolver.getId(note.getName(), false);
     if (pageName == null) {
       pageName = TitleResolver.getId(note.getTitle(), false);
@@ -272,6 +273,7 @@ public class NoteServiceImpl implements NoteService {
         createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
         createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
       }
+      log.info("End create note, it took: {} ms", System.currentTimeMillis() - startTime);
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not found");
@@ -2050,19 +2052,18 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private NoteMetadataObject buildNoteMetadataObject(Page note, String lang, String objectType) {
-    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    long spaceId = space != null ? Long.parseLong(space.getId()) : 0L;
     String noteId = String.valueOf(note.getId());
     noteId = lang != null ? noteId + "-" + lang : noteId;
-    return new NoteMetadataObject(objectType, noteId, note.getParentPageId(), spaceId);
+    return new NoteMetadataObject(objectType, noteId, note.getParentPageId());
   }
 
   private MetadataItem getNoteMetadataItem(Page note, String lang, String objectType) {
     NoteMetadataObject noteMetadataObject = buildNoteMetadataObject(note, lang, objectType);
-    return metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
+    MetadataItem item = metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
                           .stream()
                           .findFirst()
                           .orElse(null);
+    return item;
   }
 
   private Map<String, String> copyNotePageProperties(Page oldNote,
@@ -2168,7 +2169,8 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties, String lang, Long userIdentityId) throws Exception {
-    if (notePageProperties == null) {
+    if (notePageProperties == null
+        || (notePageProperties.getFeaturedImage() == null && notePageProperties.getSummary() == null)) {
       return null;
     }
     Page note;

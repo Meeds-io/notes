@@ -151,17 +151,14 @@ public class EntityConverter {
     if (note == null) {
       return;
     }
-    Space space = getSpaceService().getSpaceByGroupId(note.getWikiOwner());
-    if (space != null) {
-      String noteId = note.getId();
-      if (note.getLang() != null) {
-        noteId = noteId + "-" + note.getLang();
-      }
-      NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
+    String noteId = note.getId();
+    if (note.getLang() != null) {
+      noteId = noteId + "-" + note.getLang();
+    }
+    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
                                                                      noteId,
-                                                                     note.getParentPageId(),
-                                                                     Long.parseLong(space.getId()));
-      getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
+                                                                     note.getParentPageId());
+      getMetadataService().getMetadataItemsByObject(noteMetadataObject)
                           .stream()
                           .findFirst()
                           .ifPresent(metadataItem -> {
@@ -170,7 +167,6 @@ public class EntityConverter {
                             }
                           });
 
-    }
   }
   
   private static void buildPageProperties(Map<String, String> properties, Page note) {
