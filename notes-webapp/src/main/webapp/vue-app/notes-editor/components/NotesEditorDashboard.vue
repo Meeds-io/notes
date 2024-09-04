@@ -505,7 +505,8 @@ export default {
       const draftNote = this.fillDraftNote();
       if (this.note.title || this.note.content) {
         // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang) {
+        if (this.note.draftPage && this.note.id && !this.note?.lang
+            && !this.note?.properties?.featuredImage?.uploadId) {
           this.note.parentPageId = this.parentPageId;
           localStorage.setItem(`draftNoteId-${this.note.id}`, JSON.stringify(draftNote));
           this.actualNote = {

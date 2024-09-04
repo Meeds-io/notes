@@ -78,9 +78,19 @@
                     <v-img
                       width="100%"
                       contain
+                      :class="{'image-pre-upload': isUploading}"
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
                       :src="featuredImageLink">
+                      <v-row
+                        v-if="isUploading"
+                        class="fill-height ma-0"
+                        align="center"
+                        justify="center">
+                        <v-progress-circular
+                          indeterminate
+                          color="grey lighten-5" />
+                      </v-row>
                       <div
                         v-if="hover && canShowFeaturedImagePreview"
                         class="width-fit-content full-height ms-auto d-flex me-2">
@@ -134,11 +144,11 @@
         <div class="d-flex width-fit-content ms-auto">
           <v-btn
             class="btn me-5"
-            @click="close">
+            @click="cancelChanges">
             {{ $t('notes.button.cancel') }}
           </v-btn>
           <v-btn
-            :disabled="saveDisabled && !enableSave"
+            :disabled="saveDisabled"
             class="btn btn-primary"
             @click="save">
             {{ $t('notes.button.publish') }}
@@ -167,7 +177,7 @@ export default {
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       currentNoteProperties: {},
       removeFeaturedImage: false,
-      enableSave: false
+      isUploading: false
     };
   },
   props: {
@@ -186,7 +196,7 @@ export default {
       return this.noteObject?.properties.featuredImage?.featuredImageAltText;
     },
     saveDisabled() {
-      return !this.propertiesChanged && !this.imageData;
+      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage) || this.isUploading;
     },
     propertiesChanged() {
       return JSON.stringify(this.noteObject?.properties || {}) !== JSON.stringify(this.currentNoteProperties || {});
@@ -254,6 +264,7 @@ export default {
         });
         return;
       }
+      this.isUploading = true;
       const reader = new FileReader();
       reader.onload = e => {
         this.imageData = e.target.result
@@ -265,10 +276,23 @@ export default {
       this.$uploadService.upload(image).then(uploadId => {
         this.uploadId = uploadId;
         this.removeFeaturedImage = false;
+        this.controlUploadStatus(uploadId);
       });
+    },
+    controlUploadStatus(uploadId) {
+      window.setTimeout(() => {
+        this.$uploadService.getUploadProgress(uploadId).then(percent => {
+          if (Number(percent) < 100) {
+            this.controlUploadStatus(uploadId);
+          } else {
+            this.isUploading = false;
+          }
+        });
+      }, 200);
     },
     resetProperties() {
       this.featureImageUpdated = false;
+      this.cancelChanges();
     },
     imageDataUpdated(data, mimeType) {
       this.imageData = data;
@@ -289,6 +313,14 @@ export default {
       this.summaryContent = this.currentNoteProperties?.summary || '';
       this.removeFeaturedImage = false;
       this.$refs.metadataDrawer.open();
+    },
+    cancelChanges() {
+      this.noteObject.properties = structuredClone(this.currentNoteProperties || {});
+      console.log(this.noteObject?.properties);
+      this.summaryContent = this.currentNoteProperties?.summary || '';
+      this.hasFeaturedImageValue = this.hasFeaturedImage;
+      this.imageData = null;
+      this.close();
     },
     close() {
       this.$refs.metadataDrawer.close();
@@ -316,7 +348,6 @@ export default {
       this.removeFeaturedImage = true;
       this.hasFeaturedImageValue = false;
       this.imageData = null;
-      this.enableSave = true;
       this.$root.$emit('reset-featured-image-data');
     }
   }
