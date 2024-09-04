@@ -148,8 +148,6 @@ public class EntityConverter {
   }
 
   public static void buildNotePageMetadata(Page note, boolean isDraft) {
-    LOG.info("start build metadata properties");
-    long startTime = System.currentTimeMillis();
     if (note == null) {
       return;
     }
@@ -173,7 +171,6 @@ public class EntityConverter {
                           });
 
     }
-    LOG.info("End build metadata properties, it took: {}ms", System.currentTimeMillis() - startTime);
   }
   
   private static void buildPageProperties(Map<String, String> properties, Page note) {
