@@ -1995,9 +1995,10 @@ public class NoteServiceImpl implements NoteService {
           if (fileItem != null && fileItem.getFileInfo() != null) {
             return fileItem.getFileInfo().getId();
           }
-          uploadService.removeUploadResource(uploadId);
         } catch (Exception e) {
           log.error("Error while saving note featured image", e);
+        } finally {
+          uploadService.removeUploadResource(uploadId);
         }
       }
     }

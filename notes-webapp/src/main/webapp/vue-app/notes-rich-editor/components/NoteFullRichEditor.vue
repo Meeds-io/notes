@@ -202,6 +202,9 @@ export default {
         this.updateData();
       }
     },
+    'note.properties': function () {
+      this.cloneNoteObject();
+    },
     'note.id': function () {
       this.cloneNoteObject();
     },

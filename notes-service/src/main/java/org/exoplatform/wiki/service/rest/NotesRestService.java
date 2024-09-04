@@ -784,7 +784,7 @@ public class NotesRestService implements ResourceContainer {
           noteService.removeDraftOfNote(noteParams, note.getLang());
         }
       } else if ((featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null))
-          || !notePageProperties.getSummary().equals(note_.getProperties().getSummary())) {
+          || (note_.getProperties() != null && !notePageProperties.getSummary().equals(note_.getProperties().getSummary()))) {
         if (StringUtils.isBlank(note.getLang())) {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
