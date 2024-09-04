@@ -823,6 +823,8 @@ public class Utils {
                             note.getAuthor())
                     .append(MentionInNoteNotificationPlugin.SPACE_ID,
                             space.getId())
+                    .append(MentionInNoteNotificationPlugin.NOTE_URL,
+                            note.getUrl())
                     .append(MentionInNoteNotificationPlugin.NOTE_TITLE,
                             note.getTitle())
                     .append(MentionInNoteNotificationPlugin.AUTHOR_AVATAR_URL,

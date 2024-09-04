@@ -18,6 +18,11 @@
  */
 package io.meeds.notes.notifications.plugin;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.exoplatform.commons.api.notification.NotificationContext;
 import org.exoplatform.commons.api.notification.model.ArgumentLiteral;
 import org.exoplatform.commons.api.notification.model.NotificationInfo;
@@ -30,12 +35,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.organization.UserHandler;
 import org.exoplatform.social.notification.Utils;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 public class MentionInNoteNotificationPlugin extends BaseNotificationPlugin {
 
@@ -54,6 +53,8 @@ public class MentionInNoteNotificationPlugin extends BaseNotificationPlugin {
   public static final ArgumentLiteral<String> ACTIVITY_LINK      = new ArgumentLiteral<>(String.class, "ACTIVITY_LINK");
 
   public static final ArgumentLiteral<Set>    MENTIONED_IDS      = new ArgumentLiteral<Set>(Set.class, "MENTIONED_IDS");
+
+  public static final ArgumentLiteral<String> NOTE_URL           = new ArgumentLiteral<>(String.class, "NOTE_URL");
 
   public static final ArgumentLiteral<String> NOTE_TITLE         = new ArgumentLiteral<>(String.class, "NOTE_TITLE");
 
@@ -91,6 +92,7 @@ public class MentionInNoteNotificationPlugin extends BaseNotificationPlugin {
                            .setFrom(currentUserName)
                            .to(new ArrayList<>(receivers))
                            .key(getKey())
+                           .with(NOTE_URL.getKey(), ctx.value(NOTE_URL))
                            .with(NOTE_TITLE.getKey(), ctx.value(NOTE_TITLE))
                            .with(NOTE_AUTHOR.getKey(), ctx.value(NOTE_AUTHOR))
                            .with(AUTHOR_AVATAR_URL.getKey(), ctx.value(AUTHOR_AVATAR_URL))
