@@ -35,6 +35,7 @@ import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +87,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Mock
   private UploadService                     uploadService;
+  @Mock
+  private IdentityManager identityManager;
 
   @Mock
   private NotesExportService                notesExportService;
@@ -134,6 +137,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     this.notesRestService = new NotesRestService(noteService,
                                                  noteBookService,
                                                  uploadService,
+            identityManager,
                                                  resourceBundleService,
                                                  notesExportService);
 

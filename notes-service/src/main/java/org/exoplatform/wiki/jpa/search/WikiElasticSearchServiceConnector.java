@@ -278,8 +278,8 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       wikiSearchResult.setUrl(url);
       wikiSearchResult.setScore(score);
 
-      if (wikiOwner != null && wikiOwner.startsWith("/spaces/")) {
-        String wikiOwnerPrettyName = wikiOwner.split("/spaces/")[1];
+      if (wikiOwner != null && wikiOwner.startsWith("spaces/")) {
+        String wikiOwnerPrettyName = wikiOwner.split("spaces/")[1];
         Identity wikiOwnerIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, wikiOwnerPrettyName, true);
         wikiSearchResult.setWikiOwnerIdentity(wikiOwnerIdentity);
       }
