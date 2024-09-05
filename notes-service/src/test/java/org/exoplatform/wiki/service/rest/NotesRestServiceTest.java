@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.rest.api.EntityBuilder;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.social.rest.entity.IdentityEntity;
@@ -71,6 +72,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Mock
   private UploadService                     uploadService;
+  @Mock
+  private IdentityManager identityManager;
 
   @Mock
   private NotesExportService                notesExportService;
@@ -118,6 +121,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     this.notesRestService = new NotesRestService(noteService,
                                                  noteBookService,
                                                  uploadService,
+            identityManager,
                                                  resourceBundleService,
                                                  notesExportService);
 
