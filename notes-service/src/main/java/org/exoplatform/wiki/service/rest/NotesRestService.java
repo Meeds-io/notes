@@ -53,6 +53,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -74,11 +77,6 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
-import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.NotesExportService;
@@ -124,6 +122,8 @@ public class NotesRestService implements ResourceContainer {
 
   private final UploadService         uploadService;
 
+  private final IdentityManager identityManager;
+
   private final ResourceBundleService resourceBundleService;
 
   private final CacheControl          cc;
@@ -131,12 +131,14 @@ public class NotesRestService implements ResourceContainer {
   public NotesRestService(NoteService noteService,
                           WikiService noteBookService,
                           UploadService uploadService,
+                          IdentityManager identityManager,
                           ResourceBundleService resourceBundleService,
                           NotesExportService notesExportService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.notesExportService = notesExportService;
     this.uploadService = uploadService;
+    this.identityManager = identityManager;
     this.resourceBundleService = resourceBundleService;
     cc = new CacheControl();
     cc.setNoCache(true);
@@ -1413,8 +1415,15 @@ public class NotesRestService implements ResourceContainer {
             titleSearchResult.setMetadatas(page.getMetadatas());
             titleSearchResult.setLang(searchResult.getLang());
             titleSearchResults.add(titleSearchResult);
-          } else if (searchResult.getPoster() != null) {
-            IdentityEntity posterIdentity = EntityBuilder.buildEntityIdentity(searchResult.getPoster(), uriInfo.getPath(), "all");
+          } else if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
+            PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
+            org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
+            if (pageVersion != null) {
+              poster = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, pageVersion.getAuthor());
+            }
+            IdentityEntity posterIdentity =
+                    poster != null ? EntityBuilder.buildEntityIdentity(poster, uriInfo.getPath(), "all")
+                            : null;
             IdentityEntity wikiOwnerIdentity =
                     searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
                             uriInfo.getPath(),
@@ -1424,7 +1433,9 @@ public class NotesRestService implements ResourceContainer {
             titleSearchResult.setTitle(searchResult.getTitle());
             titleSearchResult.setId(page.getId());
             titleSearchResult.setActivityId(page.getActivityId());
-            titleSearchResult.setPoster(posterIdentity);
+            if (posterIdentity != null) {
+              titleSearchResult.setPoster(posterIdentity);
+            }
             titleSearchResult.setWikiOwner(wikiOwnerIdentity);
             titleSearchResult.setExcerpt(searchResult.getExcerpt());
             titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
