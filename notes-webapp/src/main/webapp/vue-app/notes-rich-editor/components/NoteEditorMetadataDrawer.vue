@@ -315,11 +315,11 @@ export default {
       this.$refs.metadataDrawer.open();
     },
     cancelChanges() {
+      this.close();
       this.noteObject.properties = structuredClone(this.currentNoteProperties || {});
       this.summaryContent = this.currentNoteProperties?.summary || '';
       this.hasFeaturedImageValue = this.hasFeaturedImage;
       this.imageData = null;
-      this.close();
     },
     close() {
       this.$refs.metadataDrawer.close();
@@ -327,8 +327,7 @@ export default {
     save() {
       const savedFeaturedImageId = this.noteObject?.properties?.featuredImage?.id;
       const properties = {
-        noteId: this.isDraft && this.noteObject?.targetPageId
-            || this.noteObject?.id,
+        noteId: this.noteObject?.id,
         summary: this.summaryContent,
         featuredImage: {
           id: savedFeaturedImageId,

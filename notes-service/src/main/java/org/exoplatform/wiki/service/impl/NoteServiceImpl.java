@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -252,15 +253,9 @@ public class NoteServiceImpl implements NoteService {
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
           properties.setDraft(false);
-          properties =
-                  saveNoteMetadata(properties,
-                          note.getLang(),
-                          Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
-          DraftPage draftPage = getDraftNoteById(String.valueOf(properties.getNoteId()), userIdentity.getUserId());
-          if (draftPage != null) {
-            removeDraftById(draftPage.getId());
-            invalidateCache(draftPage);
-          }
+          properties = saveNoteMetadata(properties,
+                                        note.getLang(),
+                                        Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
         }
       } catch (Exception e) {
         log.error("Failed to save note metadata", e);
@@ -441,7 +436,6 @@ public class NoteServiceImpl implements NoteService {
         }
 
         deleteNote(noteType, noteOwner, noteName);
-
         postDeletePage(noteType, noteOwner, noteName, note);
 
         // Post delete activity for all children pages
@@ -907,6 +901,17 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public void removeDraftOfNote(Page page) throws WikiException {
+    List<DraftPage> draftPages = dataStorage.getDraftsOfPage(Long.valueOf(page.getId()));
+    for (DraftPage draftPage : draftPages) {
+      if (draftPage != null) {
+        dataStorage.deleteAttachmentsOfDraftPage(draftPage);
+        try {
+          deleteNoteMetadataProperties(draftPage, draftPage.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
+        } catch (Exception e) {
+          log.error("Error while deleting draft properties");
+        }
+      }
+    }
     dataStorage.deleteDraftOfPage(page);
   }
   
@@ -943,15 +948,11 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public void removeDraftById(String draftId) throws Exception {
-    Page draftNote = dataStorage.getDraftPageById(draftId);
+    DraftPage draftNote = dataStorage.getDraftPageById(draftId);
+    deleteNoteMetadataProperties(draftNote, draftNote.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
     dataStorage.deleteDraftById(draftId);
-    MetadataItem draftNoteMetadataItem =
-                                       getNoteMetadataItem(draftNote, draftNote.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
-    if (draftNoteMetadataItem != null) {
-      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
-    }
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -991,6 +992,7 @@ public class NoteServiceImpl implements NoteService {
       try {
         NotePageProperties properties = note.getProperties();
         if (properties != null) {
+          properties.setNoteId(Long.parseLong(note.getId()));
           properties.setDraft(false);
           saveNoteMetadata(properties, note.getLang(), Long.valueOf(identityManager.getOrCreateUserIdentity(userName).getId()));
         }
@@ -1172,6 +1174,7 @@ public class NoteServiceImpl implements NoteService {
     NotePageProperties properties = draftPage.getProperties();
     try {
       if (properties != null) {
+        properties.setNoteId(Long.parseLong(newDraftPage.getId()));
         properties = saveNoteMetadata(properties,
                                       draftPage.getLang(),
                                       Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId()));
@@ -1466,22 +1469,46 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException {
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception {
+    Page note = getNoteById(String.valueOf(noteId));
+    if (note != null) {
+      deleteNoteMetadataProperties(note, lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
+    }
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
     List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
     for (DraftPage draftPage : drafts) {
       if (StringUtils.equals(draftPage.getLang(),lang)) {
-        removeDraft(draftPage.getName());
+        removeDraftById(draftPage.getId());
       }
     }
     postDeletePageVersionLanguage(noteId + "-" + lang);
   }
 
+  private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
+    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(note, lang, objectType);
+    if (draftNoteMetadataItem != null) {
+      Map<String, String> properties = draftNoteMetadataItem.getProperties();
+      if (properties != null && properties.getOrDefault(FEATURED_IMAGE_ID, null) != null) {
+        String featuredImageId = properties.get(FEATURED_IMAGE_ID);
+        if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
+          removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                                  Long.parseLong(featuredImageId),
+                                  lang,
+                                  true,
+                                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+        } else {
+          fileService.deleteFile(Long.parseLong(featuredImageId));
+        }
+      }
+      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
+    }
+  }
+  
   /**
    * {@inheritDoc}
    */
   @Override
-  public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws WikiException {
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws Exception {
     deleteVersionsByNoteIdAndLang(noteId, lang);
   }
   
@@ -2023,6 +2050,7 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
+
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
                                                     isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
@@ -2065,18 +2093,17 @@ public class NoteServiceImpl implements NoteService {
                           .orElse(null);
   }
 
-  private Map<String, String> copyNotePageProperties(Page oldNote,
-                                                     Page note,
-                                                     String oldLang,
-                                                     String lang,
-                                                     String oldObjectType,
-                                                     String newObjectType,
-                                                     String username) {
+  private void copyNotePageProperties(Page oldNote,
+                                      Page note,
+                                      String oldLang,
+                                      String lang,
+                                      String oldObjectType,
+                                      String newObjectType,
+                                      String username) {
     if (note == null || oldNote == null) {
-      return null;
+      return;
     }
-    Map<String, String> properties = new HashMap<>();
-    if (username != null) {
+      if (username != null) {
       org.exoplatform.social.core.identity.model.Identity identity =
                                                                    identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
                                                                                                        username);
@@ -2084,20 +2111,14 @@ public class NoteServiceImpl implements NoteService {
       MetadataItem oldNoteMetadataItem = getNoteMetadataItem(oldNote, oldLang, oldObjectType);
       MetadataItem newNoteMetadataItem = getNoteMetadataItem(note, lang, newObjectType);
       if (oldNoteMetadataItem != null && oldNoteMetadataItem.getProperties() != null) {
-        properties = oldNoteMetadataItem.getProperties();
-        if (properties != null && oldLang == null && lang != null) {
-          properties.remove(FEATURED_IMAGE_ID);
-          properties.remove(FEATURED_IMAGE_ALT_TEXT);
-          properties.remove(FEATURED_IMAGE_UPDATED_DATE);
-        }
         if (newNoteMetadataItem != null) {
-          newNoteMetadataItem.setProperties(properties);
+          newNoteMetadataItem.setProperties(oldNoteMetadataItem.getProperties());
           metadataService.updateMetadataItem(newNoteMetadataItem, Long.parseLong(identity.getId()), false);
         } else {
           try {
             metadataService.createMetadataItem(newNoteMetadataObject,
                                                NOTES_METADATA_KEY,
-                                               properties,
+                                               oldNoteMetadataItem.getProperties(),
                                                Long.parseLong(identity.getId()),
                                                false);
           } catch (Exception e) {
@@ -2106,7 +2127,6 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
-    return properties;
   }
   
   private boolean isOriginalFeaturedImage(Page draftPage, Page targetPage) {
@@ -2176,11 +2196,8 @@ public class NoteServiceImpl implements NoteService {
     Long featuredImageId = null;
     NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
     if (notePageProperties.isDraft()) {
-        note = getLatestDraftPageByTargetPageAndLang(notePageProperties.getNoteId(), lang);
-        if (note == null) {
-          note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
-                                  identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
-        }
+      note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
+                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
     }
