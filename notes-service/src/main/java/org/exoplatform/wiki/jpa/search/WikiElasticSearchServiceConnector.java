@@ -61,9 +61,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   private static final Log           LOG                          = ExoLogger.getLogger(WikiElasticSearchServiceConnector.class);
 
   private static final String        SEARCH_QUERY_FILE_PATH_PARAM = "query.file.path";
-
   private final IdentityManager      identityManager;
-
   private final ConfigurationManager configurationManager;
 
   private String                     searchQuery;
@@ -278,8 +276,8 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       wikiSearchResult.setUrl(url);
       wikiSearchResult.setScore(score);
 
-      if (wikiOwner != null && wikiOwner.startsWith("/spaces/")) {
-        String wikiOwnerPrettyName = wikiOwner.split("/spaces/")[1];
+      if (wikiOwner != null && wikiOwner.startsWith("spaces/")) {
+        String wikiOwnerPrettyName = wikiOwner.split("spaces/")[1];
         Identity wikiOwnerIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, wikiOwnerPrettyName, true);
         wikiSearchResult.setWikiOwnerIdentity(wikiOwnerIdentity);
       }

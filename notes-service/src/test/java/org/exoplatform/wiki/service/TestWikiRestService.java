@@ -121,7 +121,7 @@ public class TestWikiRestService extends AbstractKernelTest { // NOSONAR
     entityBuilder.when(() -> EntityBuilder.buildEntityIdentity(nullable(Identity.class), anyString(), anyString()))
                  .thenReturn(entity);
     NotesRestService wikiRestService =
-                                     new NotesRestService(noteService, wikiService, null, new MockResourceBundleService(), null);
+                                     new NotesRestService(noteService, wikiService, null, null, new MockResourceBundleService(), null);
 
     // When
     List<String> tagNames = new ArrayList<>();
