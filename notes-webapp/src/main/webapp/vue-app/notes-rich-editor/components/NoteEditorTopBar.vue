@@ -30,7 +30,7 @@
             {{ editorIcon }}
           </v-icon>
           <span class="notesFormTitle my-auto ms-3 me-5">{{ formTitle }}</span>
-          <v-tooltip bottom v-if="translationOptionEnabled">
+          <v-tooltip bottom>
             <template #activator="{ on, attrs }">
               <v-btn
                 v-on="on"
@@ -56,7 +56,6 @@
             </span>
           </v-tooltip>
           <v-btn
-            v-if="editorMetadataDrawerEnabled"
             width="36"
             min-width="36"
             height="36"
@@ -203,19 +202,10 @@ export default {
       type: Boolean,
       default: true
     },
-    translationOptionEnabled: {
-      type: Boolean,
-      default: true
-    },
     editorReady: {
       type: Boolean,
       default: false
     },
-  },
-  computed: {
-    editorMetadataDrawerEnabled() {
-      return eXo?.env?.portal?.notesEditorMetadataDrawerEnabled &&!this.isMobile && !this.webPageNote;
-    }
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
