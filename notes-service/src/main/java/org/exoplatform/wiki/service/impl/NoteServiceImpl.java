@@ -2092,13 +2092,14 @@ public class NoteServiceImpl implements NoteService {
         }
         if (newNoteMetadataItem != null) {
           newNoteMetadataItem.setProperties(properties);
-          metadataService.updateMetadataItem(newNoteMetadataItem, Long.parseLong(identity.getId()));
+          metadataService.updateMetadataItem(newNoteMetadataItem, Long.parseLong(identity.getId()), false);
         } else {
           try {
             metadataService.createMetadataItem(newNoteMetadataObject,
                                                NOTES_METADATA_KEY,
                                                properties,
-                                               Long.parseLong(identity.getId()));
+                                               Long.parseLong(identity.getId()),
+                                               false);
           } catch (Exception e) {
             log.error("Error while creating note metadata item", e);
           }
@@ -2159,7 +2160,7 @@ public class NoteServiceImpl implements NoteService {
       properties.remove(FEATURED_IMAGE_UPDATED_DATE);
       properties.remove(FEATURED_IMAGE_ALT_TEXT);
       metadataItem.setProperties(properties);
-      metadataService.updateMetadataItem(metadataItem, userIdentityId);
+      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
     }
   }
 
@@ -2217,10 +2218,10 @@ public class NoteServiceImpl implements NoteService {
       properties.put(FEATURED_IMAGE_ALT_TEXT, notePageProperties.getFeaturedImage().getAltText());
     }
     if (metadataItem == null) {
-      metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId);
+      metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId, false);
     } else {
       metadataItem.setProperties(properties);
-      metadataService.updateMetadataItem(metadataItem, userIdentityId);
+      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
     }
     if (featuredImage != null) {
       featuredImage.setId(featuredImageId);
