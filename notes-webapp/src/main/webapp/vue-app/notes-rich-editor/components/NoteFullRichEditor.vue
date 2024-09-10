@@ -38,7 +38,6 @@
       :editor-icon="editorIcon"
       :save-button-icon="saveButtonIcon"
       :save-button-disabled="saveButtonDisabled"
-      :translation-option-enabled="translationOptionEnabled"
       :editor-ready="!!editor"
       @editor-closed="editorClosed"
       @post-note="postNote"
@@ -181,10 +180,6 @@ export default {
       default: null
     },
     saveButtonDisabled: {
-      type: Boolean,
-      default: true
-    },
-    translationOptionEnabled: {
       type: Boolean,
       default: true
     },
