@@ -56,6 +56,7 @@
             </span>
           </v-tooltip>
           <v-btn
+            v-if="editorMetadataDrawerEnabled"
             width="36"
             min-width="36"
             height="36"
@@ -206,6 +207,11 @@ export default {
       type: Boolean,
       default: false
     },
+  },
+  computed: {
+    editorMetadataDrawerEnabled() {
+      return !this.isMobile && !this.webPageNote;
+    }
   },
   created() {
     this.$root.$on('hide-translations', this.hideTranslations);
