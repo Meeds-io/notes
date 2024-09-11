@@ -22,6 +22,7 @@ package org.exoplatform.wiki.jpa;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;

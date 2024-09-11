@@ -247,13 +247,19 @@ export default {
       this.removeFeaturedImage = false;
       this.$refs.metadataDrawer.open();
     },
+    cancelChanges() {
+      this.close();
+      this.noteObject.properties = structuredClone(this.currentNoteProperties || {});
+      this.summaryContent = this.currentNoteProperties?.summary || '';
+      this.hasFeaturedImageValue = this.hasFeaturedImage;
+      this.imageData = null;
+    },
     close() {
       this.$refs.metadataDrawer.close();
     },
     save() {
       const properties = {
-        noteId: this.isDraft && this.noteObject?.targetPageId
-            || this.noteObject?.id,
+        noteId: this.noteObject?.id,
         summary: this.summaryContent,
         featuredImage: {
           uploadId: this.uploadId,
