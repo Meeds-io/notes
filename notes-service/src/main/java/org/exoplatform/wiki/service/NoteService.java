@@ -758,7 +758,7 @@ public interface NoteService {
    * @param lang language.
    * @throws WikiException if an error occured
    */
-  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws WikiException;
+  void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception;
 
   /**
    * Deletes a list of versions of note by language.
@@ -770,7 +770,7 @@ public interface NoteService {
    */
   @Deprecated
   // Use {@link deleteVersionsByNoteIdAndLang(Long noteId, String lang)} instead
-  void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws WikiException;
+  void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws Exception;
 
 
   /**

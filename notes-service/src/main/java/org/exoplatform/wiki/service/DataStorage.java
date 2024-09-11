@@ -239,6 +239,13 @@ public interface DataStorage {
   public List<Page> getPagesOfWiki(String wikiType, String wikiOwner);
 
   /**
+   * Delete attachments of target draft page
+   *
+   * @param draftPage target draft page
+   */
+  void deleteAttachmentsOfDraftPage(DraftPage draftPage);
+
+  /**
    * Retrieves list of page versions by page id and lang
    *
    * @param pageId page id
