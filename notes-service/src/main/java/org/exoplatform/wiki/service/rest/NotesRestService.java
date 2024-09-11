@@ -1270,7 +1270,9 @@ public class NotesRestService implements ResourceContainer {
       context.put(TreeNode.STACK_PARAMS, stk);
 
       List<JsonNodeData> finalTree = new ArrayList<>();
+      log.info("############# start getting the json tree ################");
       responseData = getJsonTree(noteParam, context);
+      log.info("############# end getting the json tree ################");
       JsonNodeData rootNodeData = responseData.get(0);
       rootNodeData.setHasDraftDescendant(true);
       finalTree.add(rootNodeData);
@@ -1278,7 +1280,7 @@ public class NotesRestService implements ResourceContainer {
 
       List<JsonNodeData> children = new ArrayList<>(rootNodeData.getChildren());
       List<JsonNodeData> parents = new ArrayList<>();
-
+      log.info("############# start fetching children ################");
       do {
         parents.addAll(children);
         children.clear();
@@ -1307,7 +1309,7 @@ public class NotesRestService implements ResourceContainer {
         parents.clear();
 
       } while (!children.isEmpty());
-
+      log.info("############# end fetching children ################");
       // from the bottom children nodes
       List<JsonNodeData> bottomChildren =
                                         Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
@@ -1318,6 +1320,7 @@ public class NotesRestService implements ResourceContainer {
                                                      .collect(Collectors.toList());
 
       // prepare draft note nodes tree
+      log.info("############# start  prepare draft note nodes tree ################");
       if (Boolean.TRUE.equals(withDrafts)) {
         bottomChildren = TreeUtils.cleanDraftChildren(bottomChildren,request.getLocale());
         for (JsonNodeData child : bottomChildren) {
@@ -1344,6 +1347,7 @@ public class NotesRestService implements ResourceContainer {
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
+      log.info("############# end  prepare draft note nodes tree ################");
       while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
         for (JsonNodeData bottomChild : bottomChildren) {
           String parentPageId = bottomChild.getParentPageId();
