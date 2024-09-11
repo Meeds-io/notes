@@ -946,8 +946,7 @@ public class NotesRestService implements ResourceContainer {
       if (draftNote == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
-      String draftNoteName = draftNote.getName();
-      noteService.removeDraft(draftNoteName);
+      noteService.removeDraftById(draftNote.getId());
       return Response.ok().build();
     } catch (Exception ex) {
       log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);

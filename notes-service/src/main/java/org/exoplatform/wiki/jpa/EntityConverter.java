@@ -22,6 +22,7 @@ package org.exoplatform.wiki.jpa;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -439,6 +440,13 @@ public class EntityConverter {
     return attachmentEntity;
   }
 
+  public static List<DraftPage> convertDraftPageEntitiesToDraftPages(List<DraftPageEntity> draftPageEntities) {
+    if (CollectionUtils.isEmpty(draftPageEntities)) {
+      return new ArrayList<>();
+    }
+    return draftPageEntities.stream().map(EntityConverter::convertDraftPageEntityToDraftPage).toList();
+  }
+  
   public static DraftPage convertDraftPageEntityToDraftPage(DraftPageEntity draftPageEntity) {
     DraftPage draftPage = null;
     if (draftPageEntity != null) {
