@@ -1507,6 +1507,26 @@ public class NoteServiceImpl implements NoteService {
     deleteVersionsByNoteIdAndLang(noteId, lang);
   }
 
+  private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
+    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(note, lang, objectType);
+    if (draftNoteMetadataItem != null) {
+      Map<String, String> properties = draftNoteMetadataItem.getProperties();
+      if (properties != null && properties.getOrDefault(FEATURED_IMAGE_ID, null) != null) {
+        String featuredImageId = properties.get(FEATURED_IMAGE_ID);
+        if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
+          removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                                  Long.parseLong(featuredImageId),
+                                  lang,
+                                  true,
+                                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+        } else {
+          fileService.deleteFile(Long.parseLong(featuredImageId));
+        }
+      }
+      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
+    }
+  }
+  
   /**
    * {@inheritDoc}
    */
@@ -2388,6 +2408,7 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
+
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
                                                     isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
@@ -2441,10 +2462,9 @@ public class NoteServiceImpl implements NoteService {
                                                            String username,
                                                            boolean move) {
     if (note == null || oldNote == null) {
-      return null;
+      return;
     }
-    Map<String, String> properties = new HashMap<>();
-    if (username != null) {
+      if (username != null) {
       org.exoplatform.social.core.identity.model.Identity identity =
                                                                    identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
                                                                                                        username);
@@ -2477,7 +2497,6 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
-    return properties;
   }
   
   private boolean isOriginalFeaturedImage(Page draftPage, Page targetPage) {
@@ -2549,11 +2568,8 @@ public class NoteServiceImpl implements NoteService {
     Page note;
     Long featuredImageId = null;
     if (notePageProperties.isDraft()) {
-        note = getLatestDraftPageByTargetPageAndLang(notePageProperties.getNoteId(), lang);
-        if (note == null) {
-          note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
-                                  identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
-        }
+      note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
+                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
     }

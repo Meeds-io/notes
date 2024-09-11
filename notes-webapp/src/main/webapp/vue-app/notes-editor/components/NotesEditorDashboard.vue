@@ -157,6 +157,9 @@ export default {
     propertiesModified() {
       return JSON.stringify(this.note?.properties) !== JSON.stringify(this.originalNote?.properties);
     },
+    featuredImageUpdated() {
+      return this.note?.properties?.featuredImage?.uploadId || this.note?.properties?.featuredImage?.toDelete;
+    },
     langButtonTooltipText() {
       if (this.noteId) {
         return this.$t('notes.label.button.translations.options');
