@@ -43,12 +43,6 @@
               <p class="text-color text-body mb-3">
                 {{ $t('notes.metadata.featuredImage.label') }}
               </p>
-              <v-file-input
-                id="featuredImageInput"
-                ref="featuredImageInput"
-                accept="image/*"
-                class="position-absolute hidden"
-                @change="handleUpload" />
               <v-btn
                 v-if="!canShowFeaturedImagePreview"
                 name="image-area"
@@ -56,7 +50,7 @@
                 height="206"
                 width="100%"
                 text
-                @click="uploadFeaturedImage">
+                @click="openFeaturedImageDrawer">
                 <div class="d-flex width-fit-content mx-auto">
                   <v-icon
                     class="me-15 icon-default-color"
@@ -78,19 +72,9 @@
                     <v-img
                       width="100%"
                       contain
-                      :class="{'image-pre-upload': isUploading}"
                       :lazy-src="featuredImageLink"
                       :alt="savedFeaturedImageAltText"
                       :src="featuredImageLink">
-                      <v-row
-                        v-if="isUploading"
-                        class="fill-height ma-0"
-                        align="center"
-                        justify="center">
-                        <v-progress-circular
-                          indeterminate
-                          color="grey lighten-5" />
-                      </v-row>
                       <div
                         v-if="hover && canShowFeaturedImagePreview"
                         class="width-fit-content full-height ms-auto d-flex me-2">
@@ -107,7 +91,7 @@
                         <v-btn
                           class="feature-image-button mt-2 mb-auto"
                           icon
-                          @click="uploadFeaturedImage">
+                          @click="openFeaturedImageDrawer">
                           <v-icon
                             class="feature-image-file-icon"
                             size="20">
@@ -177,7 +161,6 @@ export default {
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       currentNoteProperties: {},
       removeFeaturedImage: false,
-      isUploading: false
     };
   },
   props: {
@@ -193,10 +176,10 @@ export default {
   },
   computed: {
     savedFeaturedImageAltText() {
-      return this.noteObject?.properties.featuredImage?.featuredImageAltText;
+      return this.noteObject?.properties.featuredImage?.altText;
     },
     saveDisabled() {
-      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage) || this.isUploading;
+      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage);
     },
     propertiesChanged() {
       return JSON.stringify(this.noteObject?.properties || {}) !== JSON.stringify(this.currentNoteProperties || {});
@@ -239,57 +222,14 @@ export default {
         this.noteObject.properties = {};
       }
       this.noteObject.properties.summary = this.summaryContent;
-    }
+    },
+    uploadId() {
+      if (this.uploadId) {
+        this.removeFeaturedImage = false;
+      }
+    },
   },
   methods: {
-    displayMessage(message) {
-      document.dispatchEvent(new CustomEvent('alert-message', {
-        detail: {
-          alertType: message.type,
-          alertMessage: message.text
-        }
-      }));
-    },
-    uploadFeaturedImage() {
-      document.getElementById('featuredImageInput').click();
-    },
-    handleUpload(image) {
-      if (!image) {
-        return;
-      }
-      if (image.size > this.maxFileSize) {
-        this.displayMessage({
-          type: 'error',
-          text: this.$t('notes.featuredImage.size.error.message')
-        });
-        return;
-      }
-      this.isUploading = true;
-      const reader = new FileReader();
-      reader.onload = e => {
-        this.imageData = e.target.result
-                        && e.target.result.length > 23
-                        && e.target.result || null;
-        this.mimeType = image.type;
-      };
-      reader.readAsDataURL(image);
-      this.$uploadService.upload(image).then(uploadId => {
-        this.uploadId = uploadId;
-        this.removeFeaturedImage = false;
-        this.controlUploadStatus(uploadId);
-      });
-    },
-    controlUploadStatus(uploadId) {
-      window.setTimeout(() => {
-        this.$uploadService.getUploadProgress(uploadId).then(percent => {
-          if (Number(percent) < 100) {
-            this.controlUploadStatus(uploadId);
-          } else {
-            this.isUploading = false;
-          }
-        });
-      }, 200);
-    },
     resetProperties() {
       this.featureImageUpdated = false;
       this.cancelChanges();
