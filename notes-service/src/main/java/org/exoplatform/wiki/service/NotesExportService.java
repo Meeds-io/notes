@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
+import org.exoplatform.commons.file.services.FileService;
 import org.picocontainer.Startable;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -44,13 +45,20 @@ public class NotesExportService implements Startable {
 
   private final HTMLUploadImageProcessor    htmlUploadImageProcessor;
 
-  private final ExecutorService                   exportThreadPool;
+  private final ExecutorService             exportThreadPool;
 
-  public NotesExportService(NoteService noteService, WikiService wikiService, HTMLUploadImageProcessor htmlUploadImageProcessor) {
+  private final FileService                 fileService;
+
+  public NotesExportService(NoteService noteService,
+                            WikiService wikiService,
+                            HTMLUploadImageProcessor htmlUploadImageProcessor,
+                            FileService fileService) {
     this.noteService = noteService;
     this.wikiService = wikiService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
-    this.exportThreadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
+    this.fileService = fileService;
+    this.exportThreadPool =
+                          Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
   }
 
   @Override
@@ -82,7 +90,8 @@ public class NotesExportService implements Startable {
                                                 wikiService,
                                                 this,
                                                 htmlUploadImageProcessor,
-                                                new ExportData(exportId, notesToExportIds, exportAll, identity)),
+                                                new ExportData(exportId, notesToExportIds, exportAll, identity),
+                                                fileService),
                                exportThreadPool);
   }
 

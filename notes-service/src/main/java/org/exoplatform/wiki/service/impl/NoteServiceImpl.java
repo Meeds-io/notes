@@ -38,9 +38,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
+import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -50,7 +50,6 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.cache.CacheService;
@@ -115,6 +114,8 @@ public class NoteServiceImpl implements NoteService {
   private static final String                             UNTITLED_PREFIX                        = "Untitled_";
 
   private static final String                             TEMP_DIRECTORY_PATH                    = "java.io.tmpdir";
+  
+  private static final String                             FEATURED_IMAGE_FOLDER                  = "featuredImages";
 
   private static final String                             FILE_NAME_SPACE                        = "wiki";
 
@@ -147,10 +148,12 @@ public class NoteServiceImpl implements NoteService {
 
   private final DataStorage                               dataStorage;
 
+  @Getter
   private final ExoCache<Integer, MarkupData>             renderingCache;
 
   private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
 
+  @Getter
   private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                           = new ConcurrentHashMap<>();
 
   private final IdentityManager                           identityManager;
@@ -1277,9 +1280,7 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws WikiException,
-          IllegalAccessException,
-          IOException, Exception {
+  public void importNotes(String zipLocation, Page parent, String conflict, Identity userIdentity) throws Exception {
     List<String> files = Utils.unzip(zipLocation, System.getProperty(TEMP_DIRECTORY_PATH));
     importNotes(files, parent, conflict, userIdentity);
   }
@@ -1292,16 +1293,18 @@ public class NoteServiceImpl implements NoteService {
           IllegalAccessException,
           IOException, Exception {
 
+    Map<String, String> featuredImages = new HashMap<>();
     String notesFilePath = "";
     for (String file : files) {
       if (file.contains("notesExport_")) {
-        {
           notesFilePath = file;
-          break;
-        }
+      }
+      if (file.contains("/" + FEATURED_IMAGE_FOLDER + "/")) {
+        String imageId = file.substring(file.lastIndexOf("/") + 1);
+        featuredImages.put(imageId, file);
       }
     }
-    if (!notesFilePath.equals("")) {
+    if (!notesFilePath.isEmpty()) {
       ObjectMapper mapper = new ObjectMapper();
       File notesFile = new File(notesFilePath);
       ImportList notes = mapper.readValue(notesFile, new TypeReference<ImportList>() {
@@ -1322,6 +1325,7 @@ public class NoteServiceImpl implements NoteService {
       for (Page note : notes.getNotes()) {
         importNote(note,
                 parent,
+                featuredImages,
                 wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
                 conflict,
                 userIdentity);
@@ -1493,26 +1497,6 @@ public class NoteServiceImpl implements NoteService {
     }
     postDeletePageVersionLanguage(noteId + "-" + lang);
   }
-
-  private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
-    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(note, lang, objectType);
-    if (draftNoteMetadataItem != null) {
-      Map<String, String> properties = draftNoteMetadataItem.getProperties();
-      if (properties != null && properties.getOrDefault(FEATURED_IMAGE_ID, null) != null) {
-        String featuredImageId = properties.get(FEATURED_IMAGE_ID);
-        if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
-          removeNoteFeaturedImage(Long.parseLong(note.getId()),
-                                  Long.parseLong(featuredImageId),
-                                  lang,
-                                  true,
-                                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
-        } else {
-          fileService.deleteFile(Long.parseLong(featuredImageId));
-        }
-      }
-      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
-    }
-  }
   
   /**
    * {@inheritDoc}
@@ -1521,15 +1505,227 @@ public class NoteServiceImpl implements NoteService {
   public void deleteVersionsByNoteIdAndLang(Long noteId, String userName, String lang) throws Exception {
     deleteVersionsByNoteIdAndLang(noteId, lang);
   }
-  
-  public ExoCache<Integer, MarkupData> getRenderingCache() {
-    return renderingCache;
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void removeOrphanDraftPagesByParentPage(long parentPageId) {
+    dataStorage.deleteOrphanDraftPagesByParentPage(parentPageId);
   }
 
-  public Map<WikiPageParams, List<WikiPageParams>> getPageLinksMap() {
-    return pageLinksMap;
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Long saveNoteFeaturedImage(Page note, NoteFeaturedImage featuredImage) throws Exception {
+    if (featuredImage == null) {
+      return null;
+    }
+    long featuredImageId = featuredImage.getId() != null ? featuredImage.getId() : 0L;
+    String uploadId = featuredImage.getUploadId();
+    if (uploadId != null) {
+
+      UploadResource uploadResource = uploadService.getUploadResource(uploadId);
+      if (uploadResource != null) {
+        String fileDiskLocation = uploadResource.getStoreLocation();
+        try (InputStream inputStream = new FileInputStream(fileDiskLocation);) {
+          FileItem fileItem = new FileItem(featuredImageId,
+                                           note.getName(),
+                                           featuredImage.getMimeType(),
+                                           FILE_NAME_SPACE,
+                                           inputStream.available(),
+                                           new Date(),
+                                           null,
+                                           false,
+                                           inputStream);
+          if (featuredImageId == 0) {
+            fileItem = fileService.writeFile(fileItem);
+          } else {
+            fileItem = fileService.updateFile(fileItem);
+          }
+          if (fileItem != null && fileItem.getFileInfo() != null) {
+            return fileItem.getFileInfo().getId();
+          }
+        } catch (Exception e) {
+          log.error("Error while saving note featured image", e);
+        } finally {
+          uploadService.removeUploadResource(uploadId);
+        }
+      }
+    }
+    return featuredImageId;
   }
-  
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId,
+                                                    String lang,
+                                                    boolean isDraft,
+                                                    String thumbnailSize,
+                                                    long userIdentityId) throws Exception {
+    if (noteId == null) {
+      throw new IllegalArgumentException("note id is mandatory");
+    }
+    Page note;
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(String.valueOf(userIdentityId));
+    if (isDraft) {
+      note = getDraftNoteById(String.valueOf(noteId), identity.getRemoteId());
+    } else {
+      note = getNoteByIdAndLang(noteId, lang);
+    }
+    if (note == null) {
+      throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
+    }
+
+    MetadataItem metadataItem = getNoteMetadataItem(note,
+                                                    lang,
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
+                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+    if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
+      String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
+      long noteFeaturedImageId = featuredImageIdProp != null
+          && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
+      FileItem fileItem = fileService.getFile(noteFeaturedImageId);
+      if (fileItem != null && fileItem.getFileInfo() != null) {
+        FileInfo fileInfo = fileItem.getFileInfo();
+        if (thumbnailSize != null) {
+          int[] dimension = org.exoplatform.social.common.Utils.parseDimension(thumbnailSize);
+          fileItem = imageThumbnailService.getOrCreateThumbnail(fileItem, dimension[0], dimension[1]);
+        }
+        return new NoteFeaturedImage(fileInfo.getId(),
+                                     fileInfo.getName(),
+                                     fileInfo.getMimetype(),
+                                     fileInfo.getSize(),
+                                     fileInfo.getUpdatedDate().getTime(),
+                                     fileItem.getAsStream());
+      }
+    }
+    return null;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void removeNoteFeaturedImage(Long noteId,
+                                      Long featuredImageId,
+                                      String lang,
+                                      boolean isDraft,
+                                      Long userIdentityId) throws Exception {
+    boolean removeFeaturedImageFile = true;
+    Page note;
+    if (isDraft) {
+      DraftPage draftPage = getDraftNoteById(String.valueOf(noteId),
+                                             identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+      if (draftPage != null && draftPage.getTargetPageId() != null
+          && isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang))) {
+        removeFeaturedImageFile = false;
+      }
+      note = draftPage;
+    } else {
+      note = getNoteByIdAndLang(noteId, lang);
+    }
+    if (note == null) {
+      throw new ObjectNotFoundException("note not found");
+    }
+    if (removeFeaturedImageFile && featuredImageId != null && featuredImageId > 0) {
+      fileService.deleteFile(featuredImageId);
+    }
+    MetadataItem metadataItem = getNoteMetadataItem(note,
+                                                    lang,
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
+                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+    if (metadataItem != null) {
+      Map<String, String> properties = metadataItem.getProperties();
+      properties.remove(FEATURED_IMAGE_ID);
+      properties.remove(FEATURED_IMAGE_UPDATED_DATE);
+      properties.remove(FEATURED_IMAGE_ALT_TEXT);
+      metadataItem.setProperties(properties);
+      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties,
+                                             String lang,
+                                             Long userIdentityId) throws Exception {
+    if (notePageProperties == null) {
+      return null;
+    }
+    Page note;
+    Long featuredImageId = null;
+    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
+    if (notePageProperties.isDraft()) {
+      note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
+                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+    } else {
+      note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
+    }
+    if (note == null) {
+      throw new ObjectNotFoundException("note not found");
+    }
+
+    if (featuredImage != null && featuredImage.isToDelete()) {
+      removeNoteFeaturedImage(Long.valueOf(note.getId()),
+                              featuredImage.getId(),
+                              lang,
+                              notePageProperties.isDraft(),
+                              userIdentityId);
+    } else {
+      featuredImageId = saveNoteFeaturedImage(note, featuredImage);
+    }
+    NoteMetadataObject noteMetadataObject =
+                                          buildNoteMetadataObject(note,
+                                                                  lang,
+                                                                  notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
+                                                                                               : NOTE_METADATA_PAGE_OBJECT_TYPE);
+    MetadataItem metadataItem = getNoteMetadataItem(note,
+                                                    lang,
+                                                    notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
+                                                                                 : NOTE_METADATA_PAGE_OBJECT_TYPE);
+
+    Map<String, String> properties = new HashMap<>();
+    if (metadataItem != null && metadataItem.getProperties() != null) {
+      properties = metadataItem.getProperties();
+    }
+    properties.put(SUMMARY_PROP, notePageProperties.getSummary());
+    if (featuredImageId != null) {
+      properties.put(FEATURED_IMAGE_ID, String.valueOf(featuredImageId));
+      properties.put(FEATURED_IMAGE_UPDATED_DATE, String.valueOf(new Date().getTime()));
+      properties.put(FEATURED_IMAGE_ALT_TEXT, notePageProperties.getFeaturedImage().getAltText());
+    }
+    if (metadataItem == null) {
+      metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId, false);
+    } else {
+      metadataItem.setProperties(properties);
+      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
+    }
+    if (featuredImage != null) {
+      featuredImage.setId(featuredImageId);
+      featuredImage.setLastUpdated(Long.valueOf(properties.getOrDefault(FEATURED_IMAGE_UPDATED_DATE, "0")));
+      featuredImage.setUploadId(null);
+      notePageProperties.setFeaturedImage(featuredImage);
+    }
+    return notePageProperties;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public PageVersion getPageVersionById(Long versionId) {
+    if (versionId == null) {
+      throw new IllegalArgumentException("version id is mandatory");
+    }
+    return dataStorage.getPageVersionById(versionId);
+  }
+
   // ******* Listeners *******/
 
   public void postUpdatePageVersionLanguage(String versionPageId) {
@@ -1695,10 +1891,35 @@ public class NoteServiceImpl implements NoteService {
   }
   
   /******* Private methods *******/
-  
-  private void importNote(Page note, Page parent, Wiki wiki, String conflict, Identity userIdentity) throws WikiException,
-                                                                                                    IllegalAccessException, Exception {
 
+  private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
+    MetadataItem draftNoteMetadataItem = getNoteMetadataItem(note, lang, objectType);
+    if (draftNoteMetadataItem != null) {
+      Map<String, String> properties = draftNoteMetadataItem.getProperties();
+      if (properties != null && properties.getOrDefault(FEATURED_IMAGE_ID, null) != null) {
+        String featuredImageId = properties.get(FEATURED_IMAGE_ID);
+        if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
+          removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                  Long.parseLong(featuredImageId),
+                  lang,
+                  true,
+                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+        } else {
+          fileService.deleteFile(Long.parseLong(featuredImageId));
+        }
+      }
+      metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
+    }
+  }
+
+  private void importNote(Page note,
+                          Page parent,
+                          Map<String, String> featuredImages,
+                          Wiki wiki,
+                          String conflict,
+                          Identity userIdentity) throws Exception {
+
+    File featuredImageFile = extractNoteFeaturedImageFileToImport(note, featuredImages);
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
       parent_ = wiki.getWikiHome();
@@ -1775,9 +1996,14 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
+    if (featuredImageFile != null) {
+      saveImportedFeaturedImage(featuredImageFile,
+                                note,
+                                Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
+    }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        importNote(child, note_, wiki, conflict, userIdentity);
+        importNote(child, note_, featuredImages, wiki, conflict, userIdentity);
       }
     }
   }
@@ -1992,102 +2218,6 @@ public class NoteServiceImpl implements NoteService {
     return metadata;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void removeOrphanDraftPagesByParentPage(long parentPageId) {
-    dataStorage.deleteOrphanDraftPagesByParentPage(parentPageId);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Long saveNoteFeaturedImage(Page note, NoteFeaturedImage featuredImage) throws Exception {
-    if (featuredImage == null) {
-      return null;
-    }
-    long featuredImageId = featuredImage.getId() != null ? featuredImage.getId(): 0L;
-    String uploadId = featuredImage.getUploadId();
-    if (uploadId != null) {
-      
-      UploadResource uploadResource = uploadService.getUploadResource(uploadId);
-      if (uploadResource != null) {
-        String fileDiskLocation = uploadResource.getStoreLocation();
-        try (InputStream inputStream = new FileInputStream(fileDiskLocation);) {
-          FileItem fileItem = new FileItem(featuredImageId,
-                                           note.getName(),
-                                           featuredImage.getMimeType(),
-                                           FILE_NAME_SPACE,
-                                           inputStream.available(),
-                                           new Date(),
-                                           null,
-                                           false,
-                                           inputStream);
-          if (featuredImageId == 0) {
-            fileItem = fileService.writeFile(fileItem);
-          } else {
-            fileItem = fileService.updateFile(fileItem);
-          }
-          if (fileItem != null && fileItem.getFileInfo() != null) {
-            return fileItem.getFileInfo().getId();
-          }
-        } catch (Exception e) {
-          log.error("Error while saving note featured image", e);
-        } finally {
-          uploadService.removeUploadResource(uploadId);
-        }
-      }
-    }
-    return featuredImageId;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception {
-    if (noteId == null) {
-      throw new IllegalArgumentException("note id is mandatory");
-    }
-    Page note;
-    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(String.valueOf(userIdentityId));
-    if (isDraft) {
-      note = getDraftNoteById(String.valueOf(noteId), identity.getRemoteId());
-    } else {
-      note = getNoteByIdAndLang(noteId, lang);
-    }
-    if (note == null) {
-      throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
-    }
-
-    MetadataItem metadataItem = getNoteMetadataItem(note,
-                                                    lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
-    if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
-      String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
-      long noteFeaturedImageId = featuredImageIdProp != null
-          && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
-      FileItem fileItem = fileService.getFile(noteFeaturedImageId);
-      if (fileItem != null && fileItem.getFileInfo() != null) {
-        FileInfo fileInfo = fileItem.getFileInfo();
-        if (thumbnailSize != null) {
-          int[] dimension = org.exoplatform.social.common.Utils.parseDimension(thumbnailSize);
-          fileItem = imageThumbnailService.getOrCreateThumbnail(fileItem, dimension[0], dimension[1]);
-        }
-        return new NoteFeaturedImage(fileInfo.getId(),
-                                     fileInfo.getName(),
-                                     fileInfo.getMimetype(),
-                                     fileInfo.getSize(),
-                                     fileInfo.getUpdatedDate().getTime(),
-                                     fileItem.getAsStream());
-      }
-    }
-    return null;
-  }
-
   private NoteMetadataObject buildNoteMetadataObject(Page note, String lang, String objectType) {
     Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
     long spaceId = space != null ? Long.parseLong(space.getId()) : 0L;
@@ -2139,7 +2269,7 @@ public class NoteServiceImpl implements NoteService {
       }
     }
   }
-  
+
   private boolean isOriginalFeaturedImage(Page draftPage, Page targetPage) {
     if (draftPage == null || targetPage == null) {
       return false;
@@ -2152,122 +2282,53 @@ public class NoteServiceImpl implements NoteService {
     return draftFeaturedImage != null && targetFeaturedImage != null
         && targetFeaturedImage.getId().equals(draftFeaturedImage.getId());
   }
-  
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void removeNoteFeaturedImage(Long noteId,
-                                      Long featuredImageId,
-                                      String lang,
-                                      boolean isDraft,
-                                      Long userIdentityId) throws Exception {
-    boolean removeFeaturedImageFile = true;
-    Page note;
-    if (isDraft) {
-      DraftPage draftPage = getDraftNoteById(String.valueOf(noteId),
-                                             identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
-      if (draftPage != null && draftPage.getTargetPageId() != null
-          && isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang))) {
-        removeFeaturedImageFile = false;
+
+  private File extractNoteFeaturedImageFileToImport(Page note, Map<String, String> featuredImages) {
+    File featuredImageFile = null;
+    NotePageProperties properties = note.getProperties();
+    if (properties != null && properties.getFeaturedImage() != null) {
+      NoteFeaturedImage featuredImage = properties.getFeaturedImage();
+      String path = featuredImages.getOrDefault(String.valueOf(featuredImage.getId()), null);
+      if (path != null) {
+        featuredImageFile = new File(path);
       }
-      note = draftPage;
-    } else {
-      note = getNoteByIdAndLang(noteId, lang);
     }
-    if (note == null) {
-      throw new ObjectNotFoundException("note not found");
-    }
-    if (removeFeaturedImageFile && featuredImageId != null && featuredImageId > 0) {
-      fileService.deleteFile(featuredImageId);
-    }
-    MetadataItem metadataItem = getNoteMetadataItem(note,
-                                                    lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
-    if (metadataItem != null) {
-      Map<String, String> properties = metadataItem.getProperties();
-      properties.remove(FEATURED_IMAGE_ID);
-      properties.remove(FEATURED_IMAGE_UPDATED_DATE);
-      properties.remove(FEATURED_IMAGE_ALT_TEXT);
-      metadataItem.setProperties(properties);
-      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
-    }
+    return featuredImageFile;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties, String lang, Long userIdentityId) throws Exception {
-    if (notePageProperties == null) {
-      return null;
+  private void saveImportedFeaturedImage(File featuredImage, Page note, long userIdentityId) {
+    try (InputStream inputStream = new FileInputStream(featuredImage)) {
+      String mimeType = Files.probeContentType(featuredImage.toPath());
+      FileItem fileItem = new FileItem(0L,
+                                       note.getName(),
+                                       mimeType,
+                                       FILE_NAME_SPACE,
+                                       featuredImage.length(),
+                                       new Date(),
+                                       null,
+                                       false,
+                                       inputStream);
+      fileItem = fileService.writeFile(fileItem);
+      NoteMetadataObject noteMetadataObject = buildNoteMetadataObject(note, note.getLang(), NOTE_METADATA_PAGE_OBJECT_TYPE);
+      MetadataItem metadataItem = getNoteMetadataItem(note, note.getLang(), NOTE_METADATA_PAGE_OBJECT_TYPE);
+      Map<String, String> properties = new HashMap<>();
+      if (metadataItem != null && metadataItem.getProperties() != null) {
+        properties = metadataItem.getProperties();
+      }
+      if (fileItem != null && fileItem.getFileInfo() != null) {
+        FileInfo fileInfo = fileItem.getFileInfo();
+        properties.put(FEATURED_IMAGE_ID, String.valueOf(fileInfo.getId()));
+        properties.put(FEATURED_IMAGE_UPDATED_DATE, String.valueOf(new Date().getTime()));
+        properties.put(FEATURED_IMAGE_ALT_TEXT, note.getProperties().getFeaturedImage().getAltText());
+      }
+      if (metadataItem == null) {
+        metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId);
+      } else {
+        metadataItem.setProperties(properties);
+        metadataService.updateMetadataItem(metadataItem, userIdentityId);
+      }
+    } catch (Exception e) {
+      log.error("Error while saving imported featured image");
     }
-    Page note;
-    Long featuredImageId = null;
-    NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
-    if (notePageProperties.isDraft()) {
-      note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
-                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
-    } else {
-      note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
-    }
-    if (note == null) {
-      throw new ObjectNotFoundException("note not found");
-    }
-
-    if (featuredImage != null && featuredImage.isToDelete()) {
-      removeNoteFeaturedImage(Long.valueOf(note.getId()),
-                              featuredImage.getId(),
-                              lang,
-                              notePageProperties.isDraft(),
-                              userIdentityId);
-    } else {
-      featuredImageId = saveNoteFeaturedImage(note, featuredImage);
-    }
-    NoteMetadataObject noteMetadataObject =
-                                          buildNoteMetadataObject(note,
-                                                                  lang,
-                                                                  notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                                                               : NOTE_METADATA_PAGE_OBJECT_TYPE);
-    MetadataItem metadataItem = getNoteMetadataItem(note,
-                                                    lang,
-                                                    notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                                                 : NOTE_METADATA_PAGE_OBJECT_TYPE);
-
-    Map<String, String> properties = new HashMap<>();
-    if (metadataItem != null && metadataItem.getProperties() != null) {
-      properties = metadataItem.getProperties();
-    }
-    properties.put(SUMMARY_PROP, notePageProperties.getSummary());
-    if (featuredImageId != null) {
-      properties.put(FEATURED_IMAGE_ID, String.valueOf(featuredImageId));
-      properties.put(FEATURED_IMAGE_UPDATED_DATE, String.valueOf(new Date().getTime()));
-      properties.put(FEATURED_IMAGE_ALT_TEXT, notePageProperties.getFeaturedImage().getAltText());
-    }
-    if (metadataItem == null) {
-      metadataService.createMetadataItem(noteMetadataObject, NOTES_METADATA_KEY, properties, userIdentityId, false);
-    } else {
-      metadataItem.setProperties(properties);
-      metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
-    }
-    if (featuredImage != null) {
-      featuredImage.setId(featuredImageId);
-      featuredImage.setLastUpdated(Long.valueOf(properties.getOrDefault(FEATURED_IMAGE_UPDATED_DATE, "0")));
-      featuredImage.setUploadId(null);
-      notePageProperties.setFeaturedImage(featuredImage);
-    }
-    return notePageProperties;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public PageVersion getPageVersionById(Long versionId) {
-    if (versionId == null) {
-      throw new IllegalArgumentException("version id is mandatory");
-    }
-    return dataStorage.getPageVersionById(versionId);
   }
 }
