@@ -73,7 +73,10 @@
 
       .notes-content-form {
         min-height: calc(~"100vh - 140px");
-
+        input.longTitleHighlight {
+          color: @errorColor !important;
+          border-bottom: solid 1px @errorColor !important;
+        }
         .notes-content-wrapper > div[role="application"] {
           border-color: transparent;
           flex: 0 1 100%;
@@ -86,7 +89,7 @@
             box-sizing: border-box;
             font-size: 21px;
             letter-spacing: 0.3px;
-            border-bottom: solid 1px @greyColor !important;
+            border-bottom: solid 1px @greyColor;
 
             &:focus {
               box-shadow: none !important;
