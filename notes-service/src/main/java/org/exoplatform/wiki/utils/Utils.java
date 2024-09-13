@@ -25,6 +25,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -685,32 +688,54 @@ public class Utils {
 
 
   public static List<String> unzip(String zipFilePath, String folderPath) throws IOException {
-    List<String> files = new ArrayList<>();
-    File destDir = new File(folderPath);
-    if (!destDir.exists()) {
-      destDir.mkdir();
+    Path destDirPath = Paths.get(folderPath).toAbsolutePath().normalize();
+    if (!Files.exists(destDirPath)) {
+      Files.createDirectories(destDirPath);
     }
-    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))){
-      ZipEntry entry = zipIn.getNextEntry();
-      while (entry != null) {
-        String filePath = folderPath + File.separator + entry.getName();
-        if (!entry.isDirectory()) {
-          extractFile(zipIn, filePath);
-          files.add(filePath);
-        } else {
-          File dir = new File(filePath);
-          dir.mkdirs();
+
+    List<String> extractedFiles = new ArrayList<>();
+
+    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))) {
+      ZipEntry entry;
+
+      while ((entry = zipIn.getNextEntry()) != null) {
+        Path entryPath = Paths.get(entry.getName()).normalize();
+        Path targetPath = destDirPath.resolve(entryPath);
+
+        if (!targetPath.toAbsolutePath().startsWith(destDirPath)) {
+          throw new IOException("Potential Zip Slip detected: " + entry.getName());
         }
+
+        if (entry.isDirectory()) {
+          Files.createDirectories(targetPath);
+        } else {
+          Path parentDir = targetPath.getParent();
+          if (parentDir != null && !Files.exists(parentDir)) {
+            Files.createDirectories(parentDir);
+          }
+
+          extractFile(zipIn, targetPath.toFile());
+          extractedFiles.add(targetPath.toString());
+        }
+
         zipIn.closeEntry();
-        entry = zipIn.getNextEntry();
       }
     }
-    return files;
+    return extractedFiles;
   }
 
+  private static void extractFile(ZipInputStream zipIn, File targetFile) throws IOException {
+    try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(targetFile))) {
+      byte[] buffer = new byte[1024];
+      int len;
+      while ((len = zipIn.read(buffer)) > 0) {
+        bos.write(buffer, 0, len);
+      }
+    }
+  }
 
   public static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-    try(BufferedOutputStream bos =  new BufferedOutputStream(new FileOutputStream(filePath));) {
+    try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));) {
       byte[] bytesIn = new byte[4096];
       int read = 0;
       while ((read = zipIn.read(bytesIn)) != -1) {
