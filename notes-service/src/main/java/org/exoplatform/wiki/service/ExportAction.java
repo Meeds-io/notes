@@ -22,22 +22,40 @@ import lombok.Data;
 @Data
 public class ExportAction {
 
-  public static final String   GETTING_NOTES = "GETTING_NOTES";
-  public static final String   UPDATING_NOTES_PARENTS = "UPDATING_NOTES_PARENTS";
-  public static final String   CREATING_CONTENT_DATA = "CREATING_CONTENT_DATA";
-  public static final String   UPDATING_IMAGES_URLS = "UPDATING_IMAGES_URLS";
-  public static final String   CREATING_ZIP_FILE = "CREATING_ZIP_FILE";
-  public static final String   CLEANING_TEMP_FILE = "CLEANING_TEMP_FILE";
-  public static final String   EXPORT_DATA_CREATED = "EXPORT_DATA_CREATED";
+  public static final String GETTING_NOTES           = "GETTING_NOTES";
 
-  private boolean started = false;
-  private boolean notesGetted = false;
-  private boolean notesPrepared = false;
-  private boolean jsonCreated = false;
-  private boolean imageUrlsUpdated = false;
-  private boolean zipCreated = false;
-  private boolean tempCleaned = false;
-  private boolean dataCreated = false;
-  private String action = "";
+  public static final String UPDATING_NOTES_PARENTS  = "UPDATING_NOTES_PARENTS";
+
+  public static final String CREATING_CONTENT_DATA   = "CREATING_CONTENT_DATA";
+
+  public static final String UPDATING_IMAGES_URLS    = "UPDATING_IMAGES_URLS";
+
+  public static final String CREATING_ZIP_FILE       = "CREATING_ZIP_FILE";
+
+  public static final String CLEANING_TEMP_FILE      = "CLEANING_TEMP_FILE";
+
+  public static final String EXPORT_DATA_CREATED     = "EXPORT_DATA_CREATED";
+
+  public static final String PROCESS_FEATURED_IMAGES = "PROCESS_FEATURED_IMAGES";
+
+  private boolean            started                 = false;
+
+  private boolean            notesGetted             = false;
+
+  private boolean            notesPrepared           = false;
+
+  private boolean            jsonCreated             = false;
+
+  private boolean            imageUrlsUpdated        = false;
+
+  private boolean            featuredImagesProcessed = false;
+
+  private boolean            zipCreated              = false;
+
+  private boolean            tempCleaned             = false;
+
+  private boolean            dataCreated             = false;
+
+  private String             action                  = "";
 
 }

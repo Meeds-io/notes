@@ -20,15 +20,7 @@
 
 package org.exoplatform.wiki.service;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
@@ -46,10 +38,16 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.exoplatform.commons.file.model.FileInfo;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
@@ -63,8 +61,9 @@ import org.exoplatform.wiki.model.NoteToExport;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
+import org.springframework.util.MimeTypeUtils;
 
-public class ExportThread implements Runnable {
+ public class ExportThread implements Runnable {
 
   private static final Log               log                          = ExoLogger.getLogger(ExportThread.class);
 
@@ -77,6 +76,8 @@ public class ExportThread implements Runnable {
   private static final String            EXPORT_ZIP_PREFIX            = "exportzip";
 
   private static final String            TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
+  
+  private static final String            FEATURED_IMAGES_DIRECTORY    = "featuredImages";
 
   private final NoteService              noteService;
 
@@ -88,52 +89,46 @@ public class ExportThread implements Runnable {
 
   private final ExportData               exportData;
 
+  private final FileService              fileService;
+
   public ExportThread(NoteService noteService,
                       WikiService wikiService,
                       NotesExportService notesExportService,
                       HTMLUploadImageProcessor htmlUploadImageProcessor,
-                      ExportData exportData) {
+                      ExportData exportData,
+                      FileService fileService) {
     this.noteService = noteService;
     this.wikiService = wikiService;
     this.notesExportService = notesExportService;
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.exportData = exportData;
+    this.fileService = fileService;
   }
 
-  public static void cleanUp(File file) throws IOException {
-    if (Files.exists(file.toPath())) {
-      Files.delete(file.toPath());
+  public static void cleanUp(List<File> files) throws IOException {
+    for (File file : files) {
+      if (Files.exists(file.toPath())) {
+        Files.delete(file.toPath());
+      }
     }
   }
 
   public static File zipFiles(String zipFileName,
-                              List<File> addToZip,
+                              List<List<File>> addToZip,
                               NotesExportService notesExportService,
                               int exportId) throws IOException {
 
     String zipPath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + zipFileName;
     FileOutputStream fos = new FileOutputStream(zipPath);
+    List<File> files = addToZip.getFirst();
+    List<File> featuredImages = addToZip.getLast();
     try (ZipOutputStream zipOut = new ZipOutputStream(fos)) {
-      for (File fileToZip : addToZip) {
-        ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
-        if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
-          return null;
-        }
-        try (FileInputStream fis = new FileInputStream(fileToZip)) {
-          ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
-          zipOut.putNextEntry(zipEntry);
-          byte[] bytes = new byte[1024];
-          int length;
-          while ((length = fis.read(bytes)) >= 0) {
-            zipOut.write(bytes, 0, length);
-          }
-          fis.close();
-        } catch (IOException e) {
-          log.warn("cannot add the file: {} to the zip", fileToZip.getName());
-        }
-      }
+      addFilesToZip(zipOut, files, exportId, null, notesExportService);
+      addFilesToZip(zipOut, featuredImages, exportId, FEATURED_IMAGES_DIRECTORY, notesExportService);
       zipOut.close();
       fos.close();
+    } catch (InterruptedIOException e) {
+      return null;
     } catch (IOException e) {
       log.warn("cannot zip files");
     }
@@ -152,23 +147,25 @@ public class ExportThread implements Runnable {
                     exportData.getNotesToExportIds(),
                     exportData.isExportAll(),
                     exportData.getIdentity());
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("cannot Export Notes", e);
     } finally {
       RequestLifeCycle.end();
     }
   }
 
-  public void processExport(int exportId, String[] notesToExportIds, boolean exportAll, Identity identity) throws IOException {
+  public void processExport(int exportId, String[] notesToExportIds, boolean exportAll, Identity identity) throws Exception {
 
     File zipFile = null;
+    List<List<File>> listFiles = new ArrayList<>();
+    List<File> featuredImages = new ArrayList<>();
     ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
     if (exportResource != null) {
       exportResource.setStatus(ExportStatus.IN_PROGRESS.name());
       exportResource.getAction().setStarted(true);
       exportResource.getAction().setAction(ExportAction.GETTING_NOTES);
       Page note_ = null;
-      List<NoteToExport> noteToExportList = new ArrayList();
+      List<NoteToExport> noteToExportList = new ArrayList<>();
       if (exportAll) {
         for (String noteId : notesToExportIds) {
           try {
@@ -307,6 +304,7 @@ public class ExportThread implements Runnable {
       String fileName = "";
       String filePath = "";
       exportResource.getAction().setJsonCreated(true);
+      processNoteFeaturedImages(exportResource, notesExport.getNotes(), featuredImages);
       exportResource.getAction().setAction(ExportAction.UPDATING_IMAGES_URLS);
       while (contentUpdated.contains(IMAGE_URL_REPLACEMENT_PREFIX)) {
         fileName = contentUpdated.split(IMAGE_URL_REPLACEMENT_PREFIX)[1].split(IMAGE_URL_REPLACEMENT_SUFFIX)[0];
@@ -314,11 +312,12 @@ public class ExportThread implements Runnable {
         files.add(new File(filePath));
         contentUpdated = contentUpdated.replace(IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX, "");
       }
+      listFiles.add(files);
+      listFiles.add(featuredImages);
       exportResource = notesExportService.getExportRessourceById(exportId);
       if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
-        for (File file : files) {
-          cleanUp(file);
-        }
+        cleanUp(files);
+        cleanUp(featuredImages);
         notesExportService.removeExportResource(exportId);
         return;
       }
@@ -329,24 +328,22 @@ public class ExportThread implements Runnable {
       files.add(temp);
       exportResource = notesExportService.getExportRessourceById(exportId);
       if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
-        for (File file : files) {
-          cleanUp(file);
-        }
+        cleanUp(files);
+        cleanUp(featuredImages);
         notesExportService.removeExportResource(exportId);
         return;
       }
       exportResource.getAction().setAction(ExportAction.CREATING_ZIP_FILE);
       String zipName = EXPORT_ZIP_PREFIX + exportId + EXPORT_ZIP_EXTENSION;
       exportResource.setZipFile(zipFile);
-      zipFile = zipFiles(zipName, files, notesExportService, exportId);
+      zipFile = zipFiles(zipName, listFiles, notesExportService, exportId);
       exportResource.setZipFile(zipFile);
       exportResource = notesExportService.getExportRessourceById(exportId);
       if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
-        for (File file : files) {
-          cleanUp(file);
-        }
+        cleanUp(files);
+        cleanUp(featuredImages);
         if (zipFile != null) {
-          cleanUp(zipFile);
+          cleanUp(List.of(zipFile));
         }
         notesExportService.removeExportResource(exportId);
         return;
@@ -367,9 +364,8 @@ public class ExportThread implements Runnable {
       exportResource.setStatus(ExportStatus.ZIP_CREATED.name());
       exportResource.getAction().setZipCreated(true);
       exportResource.getAction().setAction(ExportAction.CLEANING_TEMP_FILE);
-      for (File file : files) {
-        cleanUp(file);
-      }
+      cleanUp(files);
+      cleanUp(featuredImages);
       exportResource.getAction().setAction(ExportAction.EXPORT_DATA_CREATED);
     }
   }
@@ -592,4 +588,59 @@ public class ExportThread implements Runnable {
     return ancestorsIds;
   }
 
+  private void processNoteFeaturedImages(ExportResource exportResource,
+                                         List<NoteToExport> notesToExport,
+                                         List<File> files) throws Exception {
+    exportResource.getAction().setAction(ExportAction.PROCESS_FEATURED_IMAGES);
+    for (NoteToExport noteToExport : notesToExport) {
+      if (noteToExport != null) {
+        if (noteToExport.getProperties() != null) {
+          NotePageProperties properties = noteToExport.getProperties();
+          NoteFeaturedImage featuredImage = properties.getFeaturedImage();
+          if (featuredImage != null) {
+            FileItem imageFile = fileService.getFile(featuredImage.getId());
+            if (imageFile != null && imageFile.getFileInfo() != null) {
+              FileInfo fileInfo = imageFile.getFileInfo();
+              String extension = "." + MimeTypeUtils.parseMimeType(fileInfo.getMimetype()).getSubtype();
+              String filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + featuredImage.getId() + extension;
+              File file = new File(filePath);
+              FileUtils.copyInputStreamToFile(imageFile.getAsStream(), file);
+              files.add(file);
+            }
+          }
+        }
+        processNoteFeaturedImages(exportResource, noteToExport.getChildren(), files);
+      }
+    }
+    exportResource.getAction().setFeaturedImagesProcessed(true);
+  }
+
+  private static void addFilesToZip(ZipOutputStream zipOut,
+                                    List<File> files,
+                                    int exportId,
+                                    String parentDirectory,
+                                    NotesExportService notesExportService) throws IOException {
+    if (parentDirectory != null) {
+      ZipEntry directoryEntry = new ZipEntry(parentDirectory + File.separator);
+      zipOut.putNextEntry(directoryEntry);
+    }
+    for (File fileToZip : files) {
+      ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
+      if (exportResource.getStatus().equals(ExportStatus.CANCELLED.name())) {
+        throw new InterruptedIOException();
+      }
+      try (FileInputStream fis = new FileInputStream(fileToZip)) {
+        String name = parentDirectory != null ? parentDirectory + File.separator + fileToZip.getName() : fileToZip.getName();
+        ZipEntry zipEntry = new ZipEntry(name);
+        zipOut.putNextEntry(zipEntry);
+        byte[] bytes = new byte[1024];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+          zipOut.write(bytes, 0, length);
+        }
+      } catch (IOException e) {
+        log.warn("cannot add the file: {} to the zip", fileToZip.getName());
+      }
+    }
+  }
 }
