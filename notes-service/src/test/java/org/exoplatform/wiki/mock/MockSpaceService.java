@@ -100,11 +100,11 @@ public class MockSpaceService implements SpaceService {
     return null;
   }
 
-  public Space updateSpaceAvatar(Space existingSpace) {
+  public Space updateSpaceAvatar(Space existingSpace, String username) {
     return null;
   }
 
-  public Space updateSpaceBanner(Space existingSpace) {
+  public Space updateSpaceBanner(Space existingSpace, String username) {
     return null;
   }
 
@@ -248,7 +248,7 @@ public class MockSpaceService implements SpaceService {
     
   }
 
-  public void renameSpace(String remoteId, Space space, String newDisplayName) throws SpaceException {
+  public void renameSpace(Space space, String newDisplayName, String remoteId) throws SpaceException {
     
   }
 
@@ -466,14 +466,6 @@ public class MockSpaceService implements SpaceService {
 
   public void unregisterSpaceLifeCycleListener(SpaceLifeCycleListener listener) {
     
-  }
-
-  public void setPortletsPrefsRequired(PortletPreferenceRequiredPlugin portletPrefsRequiredPlugin) {
-    
-  }
-
-  public String[] getPortletsPrefsRequired() {
-    return null;
   }
 
   public ListAccess<Space> getVisitedSpaces(String remoteId, String appId) {
