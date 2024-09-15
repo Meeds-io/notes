@@ -1846,8 +1846,7 @@ public class NoteServiceImpl implements NoteService {
 
   private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
-      return (spaceService.isSuperManager(authenticatedUser) || spaceService.isManager(space, authenticatedUser)
-              || spaceService.isRedactor(space, authenticatedUser));
+      return (spaceService.canRedactOnSpace(space, authenticatedUser));
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
       return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
