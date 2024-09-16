@@ -327,6 +327,7 @@ export default {
     resetEditorData() {
       this.noteObject.title = null;
       if (this.noteObject?.properties) {
+        this.noteObject.properties.featuredImage = null;
         this.noteObject.properties.summary = '';
       }
       this.editor.setData('');
