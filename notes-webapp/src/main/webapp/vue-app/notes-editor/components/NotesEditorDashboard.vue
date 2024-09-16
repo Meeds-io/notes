@@ -139,7 +139,7 @@ export default {
                                 && !this.propertiesModified && !this.draftNote) || this.savingDraft;
     },
     noteNotModified() {
-      return this.note?.title === this.originalNote?.title && this.note?.content === this.originalNote?.content;
+      return this.note?.title === this.originalNote?.title && this.$noteUtils.isSameContent(this.note?.content, this.originalNote?.content);
     },
     propertiesModified() {
       return JSON.stringify(this.note?.properties) !== JSON.stringify(this.originalNote?.properties);
@@ -370,6 +370,10 @@ export default {
         return;
       }
 
+      if (!this.note?.title?.length && !this.note?.content?.length) {
+        return;
+      }
+
       // if the Note is not updated, no need to autosave anymore
       if ((this.note?.title === this.actualNote.title) && (this.note?.content === this.actualNote.content)
           && (JSON.stringify(this.note?.properties) === JSON.stringify(this.actualNote?.properties))) {
@@ -411,9 +415,8 @@ export default {
                 this.displayDraftMessage();
               }, this.autoSaveDelay / 2);
               this.initActualNoteDone = true;
-            } else {
-              this.draftNote = latestDraft;
             }
+            this.draftNote = latestDraft;
           } else {
             return this.$notesService.getNoteById(id, lang)
               .then(data => {
@@ -545,7 +548,7 @@ export default {
         }
         if (draftNote.properties) {
           draftNote.properties.draft = true;
-          if (this.newTranslation) {
+          if (this.newTranslation && !this.featuredImageUpdated) {
             draftNote.properties.featuredImage = null;
           }
         }
