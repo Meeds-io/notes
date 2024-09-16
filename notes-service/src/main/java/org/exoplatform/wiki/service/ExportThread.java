@@ -592,24 +592,26 @@ import org.springframework.util.MimeTypeUtils;
                                          List<NoteToExport> notesToExport,
                                          List<File> files) throws Exception {
     exportResource.getAction().setAction(ExportAction.PROCESS_FEATURED_IMAGES);
-    for (NoteToExport noteToExport : notesToExport) {
-      if (noteToExport != null) {
-        if (noteToExport.getProperties() != null) {
-          NotePageProperties properties = noteToExport.getProperties();
-          NoteFeaturedImage featuredImage = properties.getFeaturedImage();
-          if (featuredImage != null) {
-            FileItem imageFile = fileService.getFile(featuredImage.getId());
-            if (imageFile != null && imageFile.getFileInfo() != null) {
-              FileInfo fileInfo = imageFile.getFileInfo();
-              String extension = "." + MimeTypeUtils.parseMimeType(fileInfo.getMimetype()).getSubtype();
-              String filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + featuredImage.getId() + extension;
-              File file = new File(filePath);
-              FileUtils.copyInputStreamToFile(imageFile.getAsStream(), file);
-              files.add(file);
+    if (notesToExport != null) {
+      for (NoteToExport noteToExport : notesToExport) {
+        if (noteToExport != null) {
+          if (noteToExport.getProperties() != null) {
+            NotePageProperties properties = noteToExport.getProperties();
+            NoteFeaturedImage featuredImage = properties.getFeaturedImage();
+            if (featuredImage != null) {
+              FileItem imageFile = fileService.getFile(featuredImage.getId());
+              if (imageFile != null && imageFile.getFileInfo() != null) {
+                FileInfo fileInfo = imageFile.getFileInfo();
+                String extension = "." + MimeTypeUtils.parseMimeType(fileInfo.getMimetype()).getSubtype();
+                String filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + featuredImage.getId() + extension;
+                File file = new File(filePath);
+                FileUtils.copyInputStreamToFile(imageFile.getAsStream(), file);
+                files.add(file);
+              }
             }
           }
+          processNoteFeaturedImages(exportResource, noteToExport.getChildren(), files);
         }
-        processNoteFeaturedImages(exportResource, noteToExport.getChildren(), files);
       }
     }
     exportResource.getAction().setFeaturedImagesProcessed(true);
