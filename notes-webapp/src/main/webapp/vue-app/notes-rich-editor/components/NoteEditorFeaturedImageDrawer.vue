@@ -26,7 +26,7 @@
     :src="featuredImageLink"
     :max-file-size="maxFileSize"
     :crop-options="cropOptions"
-    useFormat
+    use-format
     alt
     @input="uploadId = $event"
     @data="imageData = $event"
