@@ -38,6 +38,7 @@ export default {
   data() {
     return {
       displayActionMenu: false,
+      waitTimeUntilCloseMenu: 200
     };
   },
   props: {

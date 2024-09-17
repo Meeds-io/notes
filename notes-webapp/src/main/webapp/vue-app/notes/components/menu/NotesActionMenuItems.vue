@@ -25,7 +25,7 @@
       class="ps-2 pe-4 action-menu-item draftButton"
       @click="copyLink">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-link
       </v-icon>
@@ -38,7 +38,7 @@
       class="ps-2 pe-4 noteExportPdf action-menu-item draftButton"
       @click="exportPdf">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-file-pdf
       </v-icon>
@@ -50,7 +50,7 @@
       class="ps-2 pe-4 action-menu-item draftButton"
       @click="openNoteHistory">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-history
       </v-icon>
@@ -63,7 +63,7 @@
       class="ps-2 pe-4 action-menu-item draftButton"
       @click="openTreeView('movePage')">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-arrows-alt
       </v-icon>
@@ -76,7 +76,7 @@
       class="ps-2 pe-4 action-menu-item draftButton"
       @click="openTreeView('exportNotes')">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-sign-in-alt
       </v-icon>
@@ -89,7 +89,7 @@
       class="ps-2 pe-4 action-menu-item draftButton"
       @click="openImportDrawer">
       <v-icon
-        size="12"
+        size="16"
         class="clickable icon-menu">
         fas fa-sign-out-alt
       </v-icon>
@@ -102,7 +102,7 @@
       class="red--text ps-2 pe-4 action-menu-item draftButton"
       @click="deleteNote">
       <v-icon
-        size="12"
+        size="16"
         class="delete-option-color clickable icon-menu">
         fas fa-trash
       </v-icon>
