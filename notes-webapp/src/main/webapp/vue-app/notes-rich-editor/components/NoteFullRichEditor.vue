@@ -54,7 +54,6 @@
             :placeholder="titlePlaceholder"
             type="text"
             :maxlength="noteTitleMaxLength"
-            :class="noteTitleClass"
             class="py-0 px-1 mt-5 mb-0">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
@@ -90,7 +89,7 @@ export default {
       editor: null,
       initialized: false,
       instanceReady: false,
-      noteTitleMaxLength: 1000
+      noteTitleMaxLength: 500
     };
   },
   props: {
@@ -229,9 +228,6 @@ export default {
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
     },
-    noteTitleClass() {
-      return this.noteObject.title.length >= this.noteTitleMaxLength && 'longTitleHighlight' || '' ;
-    }
   },
   created() {
     this.cloneNoteObject();
