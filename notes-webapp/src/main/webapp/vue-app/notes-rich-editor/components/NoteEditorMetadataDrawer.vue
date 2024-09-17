@@ -119,6 +119,17 @@
                   dense
                   outlined
                   auto-grow />
+                <span
+                  class="d-flex justify-end me-1"
+                  :class="{'error-color': summaryLengthError}">
+                  {{ summaryContent?.length }}/{{ summaryMaxLength }}
+                  <v-icon
+                    class="ms-1 my-auto"
+                    :class="[{ 'success-color': !summaryLengthError }, 'error-color']"
+                    size="16">
+                    fas fa-info-circle
+                  </v-icon>
+                </span>
               </div>
             </label>
           </v-form>
@@ -161,6 +172,7 @@ export default {
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       currentNoteProperties: {},
       removeFeaturedImage: false,
+      summaryMaxLength: 1300
     };
   },
   props: {
@@ -175,11 +187,14 @@ export default {
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
   },
   computed: {
+    summaryLengthError() {
+      return this.summaryContent?.length > this.summaryMaxLength;
+    },
     savedFeaturedImageAltText() {
       return this.noteObject?.properties.featuredImage?.altText;
     },
     saveDisabled() {
-      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage);
+      return (!this.propertiesChanged && !this.imageData && !this.removeFeaturedImage) || this.summaryLengthError;
     },
     propertiesChanged() {
       return JSON.stringify(this.noteObject?.properties || {}) !== JSON.stringify(this.currentNoteProperties || {});
