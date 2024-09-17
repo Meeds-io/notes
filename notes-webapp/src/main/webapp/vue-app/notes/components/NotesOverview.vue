@@ -146,7 +146,7 @@
           </div>
           <p
             v-if="hasSummary"
-            class="note-summary text-sub-title mt-4 mb-0">
+            class="note-summary text-break text-sub-title mt-4 mb-0">
             {{ noteSummary }}
           </p>
         </div>
