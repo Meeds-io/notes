@@ -231,9 +231,10 @@
 
         <div v-else class="notes-application-content">
           <v-treeview
-            v-if="noteChildren && noteChildren[0]"
+            v-if="noteChildren?.length"
+            :load-children="fetchChildren"
+            :items="noteChildren"
             dense
-            :items="noteAllChildren"
             class="ps-1"
             item-key="noteId">
             <template #label="{ item }">
@@ -353,6 +354,7 @@ export default {
       translationsMenu: false,
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      initialized: false
     };
   },
   watch: {
@@ -367,7 +369,9 @@ export default {
       this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
       this.noteContent = this.note.content;
       this.noteSummary = this.note?.properties?.summary;
-      this.retrieveNoteTreeById();
+      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+        this.retrieveNoteTreeById();
+      }
     },
     actualVersion() {
       if (!this.isDraft && this.actualVersion) {
@@ -416,6 +420,7 @@ export default {
                 <v-treeview
                   dense
                   :items="noteChildItems"
+                  :load-children="fetchChildren"
                   class="ps-1"
                   item-key="noteId">
                   <template #label="{ item }">
@@ -441,6 +446,9 @@ export default {
                 });
               },
               methods: {
+                fetchChildren(note) {
+                  return this.$root.$children[0].fetchChildren(note);
+                },
                 getNoteLanguages(noteId) {
                   return this.$root.$children[0].getNoteLanguages(noteId);
                 },
@@ -448,10 +456,9 @@ export default {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.getNoteLanguages(noteId);
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
-                      if (data && data.jsonList.length) {
-                        const allNotesTreeview = data.jsonList;
-                        this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
+                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children', this.selectedTranslation?.value).then(data => {
+                      if (data?.jsonList?.length) {
+                        this.noteChildItems = data.jsonList;
                       }
                     });
                   }).catch(e => {
@@ -480,9 +487,6 @@ export default {
     isHomeNoteDefaultContent() {
       return !this.note.parentPageId && ( this.noteContent===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>` || this.noteContent === '');
     },
-    noteAllChildren() {
-      return this.noteChildren && this.noteChildren.length && this.noteChildren[0].children;
-    },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
     },
@@ -499,7 +503,7 @@ export default {
       return !this.note?.content;
     },
     hasChildren(){
-      return this.noteChildren && this.noteChildren[0] && this.noteChildren[0].children?.length > 0;
+      return this.noteChildren?.length;
     },
     isManager(){
       return this.note?.canManage;
@@ -759,7 +763,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     importNotes(uploadId,overrideMode){
@@ -794,7 +799,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     getDraftNote(noteId, viewNote) {
@@ -814,7 +820,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     confirmDeleteNote: function () {
@@ -931,13 +938,17 @@ export default {
       }
       this.closeMobileActionMenu();
     },
+    fetchChildren(note) {
+      return this.$notesService.getNoteTreeLevel(note.path, this.selectedTranslation?.value).then(data => {
+        note.children = data?.jsonList;
+      });
+    },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       if (!this.note.draftPage) {
-        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false,this.selectedTranslation.value).then(data => {
-          if (data && data.jsonList.length) {
-            const allnotesTreeview = data.jsonList;
-            this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
+        this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, 'children' ,this.selectedTranslation.value).then(data => {
+          if (data?.jsonList?.length) {
+            this.noteChildren = data?.jsonList;
           }
         });
       }
@@ -1029,7 +1040,9 @@ export default {
         }
       }));
     },
-
+    refreshTreeView() {
+      this.$root.$emit('refresh-treeView-items', this.note);
+    }
   }
 };
 </script>

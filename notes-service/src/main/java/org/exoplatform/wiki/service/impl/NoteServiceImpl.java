@@ -766,7 +766,23 @@ public class NoteServiceImpl implements NoteService {
     }
     return pages;
   }
-  
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean hasChildren(long pageId) {
+    return dataStorage.hasChildren(pageId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean hasDrafts(long pageId) {
+    return dataStorage.hasDrafts(pageId);
+  }
+
   /**
    * {@inheritDoc}
    */

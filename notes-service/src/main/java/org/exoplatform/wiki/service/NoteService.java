@@ -278,6 +278,22 @@ public interface NoteService {
   List<Page> getChildrenNoteOf(Page note, boolean withDrafts, boolean withChild) throws WikiException;
 
   /**
+   * Check whether the page has children or not
+   *
+   * @param pageId target note id
+   * @return true if it has page and false if not
+   */
+  boolean hasChildren(long pageId);
+
+  /**
+   * Check if page has drafts
+   *
+   * @param pageId target note id
+   * @return true if page has drafts and false if not
+   */
+  boolean hasDrafts(long pageId);
+
+  /**
    * Get all the children notes of a note
    *
    * @param note note.

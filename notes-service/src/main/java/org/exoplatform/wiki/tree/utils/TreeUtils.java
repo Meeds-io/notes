@@ -100,14 +100,11 @@ public class TreeUtils {
       canEdit     = (Boolean)context.get(TreeNode.CAN_EDIT);
     }
     
-    List<JsonNodeData> children = new ArrayList<JsonNodeData>();
+    List<JsonNodeData> children = new ArrayList<>();
     for (TreeNode child : treeNode.getChildren()) {
       boolean isSelectable = true;
-      boolean isLastNode = false;
-      if (counter >= treeNode.getChildren().size()) {
-        isLastNode = true;
-      }
-      
+      boolean isLastNode = counter >= treeNode.getChildren().size();
+
       if (child.getNodeType().equals(TreeNodeType.WIKI)) {
         isSelectable = false;
       } else if (child.getNodeType().equals(TreeNodeType.PAGE)) {
@@ -115,12 +112,13 @@ public class TreeUtils {
         if (((currentPage != null) && (currentPage.equals(page) || Utils.isDescendantPage(page, currentPage)))) {
           isSelectable = false;
         }
-        
+
         if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
           isSelectable = false;
           child.setRetricted(true);
         }
-        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
+        if (BooleanUtils.isTrue(canEdit)
+            && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
           isSelectable = false;
           child.setRetricted(true);
         }
@@ -131,21 +129,22 @@ public class TreeUtils {
           child.setRetricted(true);
         }
 
-        if(BooleanUtils.isTrue(canEdit) && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())){
+        if (BooleanUtils.isTrue(canEdit)
+            && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
           isSelectable = false;
           child.setRetricted(true);
         }
 
       }
-      
+
       String excerpt = null;
       if (showExcerpt != null && showExcerpt) {
         WikiPageParams params = getPageParamsFromPath(child.getPath());
         // FIXME Migration - Remove excerpt support ?
-        //excerpt = ExcerptUtils.getExcerpts(params);
+        // excerpt = ExcerptUtils.getExcerpts(params);
         excerpt = "";
       }
-      
+
       children.add(new JsonNodeData(child, isLastNode, isSelectable, currentPath, excerpt, context));
       counter++;
     }
