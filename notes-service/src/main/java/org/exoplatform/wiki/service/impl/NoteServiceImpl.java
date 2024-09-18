@@ -2185,7 +2185,7 @@ public class NoteServiceImpl implements NoteService {
                                                     lang,
                                                     isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
                                                             : NOTE_METADATA_PAGE_OBJECT_TYPE);
-    if (metadataItem != null) {
+    if (metadataItem != null && metadataItem.getProperties() != null) {
       Map<String, String> properties = metadataItem.getProperties();
       properties.remove(FEATURED_IMAGE_ID);
       properties.remove(FEATURED_IMAGE_UPDATED_DATE);

@@ -320,6 +320,7 @@ export default {
       this.summaryContent = this.currentNoteProperties?.summary || '';
       this.hasFeaturedImageValue = this.hasFeaturedImage;
       this.imageData = null;
+      this.uploadId = null;
     },
     close() {
       this.$refs.metadataDrawer.close();
