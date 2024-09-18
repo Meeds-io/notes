@@ -53,6 +53,7 @@
             v-model="noteObject.title"
             :placeholder="titlePlaceholder"
             type="text"
+            :maxlength="noteTitleMaxLength"
             class="py-0 px-1 mt-5 mb-0">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
@@ -87,7 +88,8 @@ export default {
       noteObject: null,
       editor: null,
       initialized: false,
-      instanceReady: false
+      instanceReady: false,
+      noteTitleMaxLength: 500
     };
   },
   props: {
@@ -190,6 +192,13 @@ export default {
   },
   watch: {
     'noteObject.title': function() {
+      if (this.noteObject.title.length >= this.noteTitleMaxLength) {
+        const messageObject = {
+          type: 'warning',
+          message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
+        };
+        this.displayAlert(messageObject);
+      }
       this.updateData();
     },
     'noteObject.content': function () {
@@ -218,7 +227,7 @@ export default {
   computed: {
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
-    }
+    },
   },
   created() {
     this.cloneNoteObject();
@@ -495,6 +504,12 @@ export default {
     },
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);
+    },
+    displayAlert(detail) {
+      document.dispatchEvent(new CustomEvent('alert-message', {detail: {
+        alertType: detail?.type,
+        alertMessage: detail?.message,
+      }}));
     },
   }
 };
