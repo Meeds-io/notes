@@ -22,19 +22,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-<<<<<<< HEAD
 import java.io.Serializable;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PagePropertiesEntity implements Serializable {
-=======
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PagePropertiesEntity {
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   private long                noteId;
 

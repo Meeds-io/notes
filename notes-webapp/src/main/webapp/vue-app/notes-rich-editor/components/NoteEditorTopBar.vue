@@ -60,16 +60,10 @@
             width="36"
             min-width="36"
             height="36"
-<<<<<<< HEAD
             class="pa-0 my-auto "
             :aria-label="$t('notes.metadata.open.drawer')"
             :disabled="!editorReady"
             icon
-=======
-            class="pa-0 my-auto"
-            text
-            :disabled="!noteIdParam || !editorReady"
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
             @click="openMetadataDrawer">
             <v-icon
               size="20"
@@ -211,23 +205,12 @@ export default {
     },
     editorReady: {
       type: Boolean,
-<<<<<<< HEAD
-=======
-      default: true
-    },
-    editorReady: {
-      type: Boolean,
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       default: false
     },
   },
   computed: {
     editorMetadataDrawerEnabled() {
-<<<<<<< HEAD
       return !this.isMobile && !this.webPageNote;
-=======
-      return eXo?.env?.portal?.notesEditorMetadataDrawerEnabled &&!this.isMobile && !this.webPageNote;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     }
   },
   created() {

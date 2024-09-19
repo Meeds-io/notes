@@ -19,15 +19,11 @@
 
 package org.exoplatform.wiki.jpa;
 
-<<<<<<< HEAD
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-=======
-import io.meeds.notes.model.NoteMetadataObject;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.file.model.FileInfo;
@@ -152,11 +148,7 @@ public class EntityConverter {
     return page;
   }
 
-<<<<<<< HEAD
   public static void buildNotePageMetadata(Page note, boolean isDraft) {
-=======
-  private static void buildNotePageMetadata(Page note, boolean isDraft) {
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
     if (note == null) {
       return;
     }
@@ -173,7 +165,6 @@ public class EntityConverter {
       getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
                           .stream()
                           .findFirst()
-<<<<<<< HEAD
                           .ifPresent(metadataItem -> {
                             if (!MapUtils.isEmpty(metadataItem.getProperties())) {
                               buildPageProperties(metadataItem.getProperties(), note);
@@ -195,12 +186,6 @@ public class EntityConverter {
     notePageProperties.setFeaturedImage(noteFeaturedImage);
     note.setProperties(notePageProperties);
   }
-=======
-                          .ifPresent(metadataItem -> note.setProperties(metadataItem.getProperties()));
-
-    }
-  }
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   private static SpaceService getSpaceService() {
     if (spaceService == null) {
@@ -553,10 +538,7 @@ public class EntityConverter {
       pageVersion.setOwner(pageVersionEntity.getAuthor());
       pageVersion.setParent(convertPageEntityToPage(pageVersionEntity.getPage()));
       pageVersion.setLang(pageVersionEntity.getLang());
-<<<<<<< HEAD
       pageVersion.setWikiOwner(pageVersionEntity.getPage().getWiki().getOwner());
-=======
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
       buildNotePageMetadata(pageVersion, pageVersion.isDraftPage());
     }
     return pageVersion;

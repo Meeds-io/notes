@@ -103,11 +103,7 @@ public class Page {
 
   private String                          lang;
 
-<<<<<<< HEAD
   private NotePageProperties              properties;
-=======
-  private Map<String, String>             properties;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   public Page(String name) {
     this.name = name;

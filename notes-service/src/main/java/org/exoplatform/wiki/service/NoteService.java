@@ -795,18 +795,11 @@ public interface NoteService {
    * @param noteId Note id
    * @param lang note version language
    * @param isDraft is target not a draft
-<<<<<<< HEAD
    * @param thumbnailSize featured image thumbnail size
    * @param userIdentityId user identity id
    * @return {@link NoteFeaturedImage}
    */
   NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception;
-=======
-   * @param userIdentityId user identity id
-   * @return {@link NoteFeaturedImage}
-   */
-  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, long userIdentityId) throws Exception;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   /**
    * Save note metadata properties
@@ -814,14 +807,9 @@ public interface NoteService {
    * @param pageProperties note metadata properties to save
    * @param lang target version language
    * @param userIdentityId user identity id
-<<<<<<< HEAD
    * @return {@link NotePageProperties}                      
    */
   NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
-=======
-   */
-  Map<String, String> saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
   /**
    * Removes note featured image and its related metadata property
@@ -834,7 +822,6 @@ public interface NoteService {
    * @throws Exception
    */
   void removeNoteFeaturedImage(Long noteId, Long featuredImageId, String lang, boolean isDraft, Long userIdentityId) throws Exception;
-<<<<<<< HEAD
 
   /**
    * Gets page version by its given id
@@ -848,6 +835,4 @@ public interface NoteService {
    * {@inheritDoc}
    */
   DraftPage getDraftOfPageByLang(WikiPageParams param, String lang) throws WikiException;
-=======
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 }

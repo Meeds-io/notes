@@ -168,7 +168,7 @@ export default {
     },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
-    },
+    }
   },
   watch: {
     'note.title'() {

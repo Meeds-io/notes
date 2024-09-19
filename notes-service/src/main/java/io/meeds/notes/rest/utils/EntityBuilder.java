@@ -21,17 +21,12 @@ package io.meeds.notes.rest.utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
-<<<<<<< HEAD
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
-=======
-import io.meeds.notes.rest.model.FeaturedImageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
 public class EntityBuilder {
 
@@ -52,7 +47,6 @@ public class EntityBuilder {
     if (featuredImageEntity == null) {
       return null;
     }
-<<<<<<< HEAD
     return new NoteFeaturedImage(featuredImageEntity.getId(),
                                  featuredImageEntity.getMimeType(),
                                  featuredImageEntity.getUploadId(),
@@ -109,11 +103,5 @@ public class EntityBuilder {
     draftPage.setNewPage(draftPageEntity.isNewPage());
     draftPage.setProperties(toNotePageProperties(draftPageEntity.getProperties()));
     return draftPage;
-=======
-    return new NoteFeaturedImage(featuredImageEntity.getBase64Data(),
-                                 featuredImageEntity.getMimeType(),
-                                 featuredImageEntity.getUploadId(),
-                                 featuredImageEntity.getAltText());
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
   }
 }

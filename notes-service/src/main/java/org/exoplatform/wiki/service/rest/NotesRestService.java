@@ -56,8 +56,8 @@ import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+
 import org.exoplatform.common.http.HTTPStatus;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.log.ExoLogger;

@@ -32,10 +32,6 @@
   <import>war:/conf/wiki/search-configuration.xml</import>
   <import>war:/conf/wiki/ckeditor-configuration.xml</import>
   <import>war:/conf/wiki/metadata-configuration.xml</import>
-<<<<<<< HEAD
   <import>war:/conf/wiki/notification-configuration.xml</import>
-=======
-  <import>war:/conf/wiki/feature-flags-configuration.xml</import>
->>>>>>> 5f49af63c (feat: Implement note editor metadata drawer - EXO-71928,EXO-71929,EXO-71930 - Meeds-io/MIPs#128 (#1039))
 
 </configuration>
