@@ -23,7 +23,7 @@
                             <string>UINotification.label.note</string>
                         </field>
                         <field name="order">
-                            <string>120</string>
+                            <string>300</string>
                         </field>
                     </object>
                 </object-param>
