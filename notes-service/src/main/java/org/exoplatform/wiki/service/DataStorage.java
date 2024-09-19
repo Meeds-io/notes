@@ -84,7 +84,21 @@ public interface DataStorage {
    */
   public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException;
 
-  public boolean hasChildren(long noteId) throws WikiException;
+  /**
+   * Check if the given note page has children or not
+   *
+   * @param noteId note page id
+   * @return true if the given note page has children and false if not
+   */
+  public boolean hasChildren(long noteId);
+
+  /**
+   * Check if the given note page has drafts or not
+   *
+   * @param noteId note page id
+   * @return true if the given note page has drafts and false if not
+   */
+  boolean hasDrafts(long noteId);
 
   public void deletePage(String wikiType, String wikiOwner, String pageId) throws WikiException;
 
