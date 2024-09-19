@@ -53,7 +53,7 @@
             v-model="noteObject.title"
             :placeholder="titlePlaceholder"
             type="text"
-            :maxlength="noteTitleMaxLength"
+            :maxlength="noteTitleMaxLength + 1"
             class="py-0 px-1 mt-5 mb-0">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
@@ -191,13 +191,10 @@ export default {
     }
   },
   watch: {
-    'noteObject.title': function() {
-      if (this.noteObject.title.length >= this.noteTitleMaxLength) {
-        const messageObject = {
-          type: 'warning',
-          message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
-        };
-        this.displayAlert(messageObject);
+    'noteObject.title': function(newVal, oldVal) {
+      if (newVal.length > this.noteTitleMaxLength) {
+        this.displayNoteTitleMaxLengthCheckAlert();
+        this.noteObject.title = oldVal;
       }
       this.updateData();
     },
@@ -512,6 +509,13 @@ export default {
         alertMessage: detail?.message,
       }}));
     },
+    displayNoteTitleMaxLengthCheckAlert(){
+      const messageObject = {
+        type: 'warning',
+        message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
+      };
+      this.displayAlert(messageObject);
+    }
   }
 };
 </script>
