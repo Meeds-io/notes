@@ -21,22 +21,27 @@
 package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Deque;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.rest.model.FeaturedImageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-import jakarta.persistence.EntityManager;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +50,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
@@ -53,6 +59,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.rest.api.EntityBuilder;
@@ -75,6 +82,7 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
