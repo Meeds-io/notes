@@ -45,6 +45,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
@@ -53,6 +54,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.rest.api.EntityBuilder;
@@ -75,6 +77,7 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.model.NoteFeaturedImage;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
