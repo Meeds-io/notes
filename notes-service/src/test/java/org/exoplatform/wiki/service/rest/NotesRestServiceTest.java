@@ -21,22 +21,27 @@
 package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Deque;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.rest.model.FeaturedImageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-import jakarta.persistence.EntityManager;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -335,6 +340,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
     when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
+    when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
     when(noteService.getChildrenNoteOf(homePage, true, false)).thenReturn(childrenWithDraft);
     when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(childrenWithoutDrafts);
 

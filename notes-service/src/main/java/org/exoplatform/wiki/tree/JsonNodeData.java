@@ -99,14 +99,13 @@ public class JsonNodeData {
     this.children = TreeUtils.tranformToJson(treeNode, context);
     this.isSelected = treeNode.isSelected();
     this.isRestricted = treeNode.isRetricted;
-    if (!this.children.isEmpty()) {
+    if (this.children != null && !this.children.isEmpty()) {
       this.isExpanded = true;
     }
     if (treeNode.getNodeType().equals(TreeNodeType.PAGE)) {
       Page page = ((PageTreeNode) treeNode).getPage();
       this.isDraftPage = page.isDraftPage();
       this.parentPageId = page.getParentPageId();
-      this.lang = page.getLang();
       this.url = page.getUrl();
       this.lang = page.getLang();
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);

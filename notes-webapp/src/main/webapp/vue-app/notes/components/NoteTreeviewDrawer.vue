@@ -140,16 +140,16 @@
               <template>
                 <v-list-item-action class="mr-3">
                   <v-icon
-                      color="success"
-                      size="18"
-                      v-if="exportStatus.action.featuredImagesProcessed">
+                    color="success"
+                    size="18"
+                    v-if="exportStatus.action.featuredImagesProcessed">
                     fa-check
                   </v-icon>
                   <v-progress-circular
-                      v-if="!exportStatus.action.featuredImagesProcessed"
-                      color="primary"
-                      indeterminate
-                      size="18" />
+                    v-if="!exportStatus.action.featuredImagesProcessed"
+                    color="primary"
+                    indeterminate
+                    size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
                   <v-list-item-title>{{ $t('notes.export.status.label.processingFeaturedImages') }}</v-list-item-title>
@@ -635,6 +635,11 @@ export default {
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.parentPageName);
         });
       }
+    },
+    fetchChildren(note) {
+      return this.$notesService.getNoteTreeLevel(note.path, this.selectedTranslation?.value).then(data => {
+        note.children = data?.jsonList;
+      });
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
       const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
