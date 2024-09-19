@@ -616,6 +616,11 @@ export default {
         });
       }
     },
+    fetchChildren(note) {
+      return this.$notesService.getNoteTreeLevel(note.path, this.selectedTranslation?.value).then(data => {
+        note.children = data?.jsonList;
+      });
+    },
     retrieveNoteTree(noteType, noteOwner, noteName) {
       const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
       this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts, this.selectedTranslation).then(data => {

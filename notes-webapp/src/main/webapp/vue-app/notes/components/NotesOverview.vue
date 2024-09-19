@@ -202,11 +202,26 @@
 
         <div v-else class="notes-application-content">
           <v-treeview
-            v-if="noteChildren && noteChildren[0]"
-            dense
-            :items="noteAllChildren"
-            class="ps-1"
-            item-key="noteId">
+            v-if="noteChildren?.length"
+            ref="noteTreeview"
+            :items="noteChildren"
+            class="ps-1 notes-custom-treeview"
+            item-key="noteId"
+            expand-icon=""
+            dense>
+            <template #prepend="{ item, open }">
+              <v-btn
+                v-if="item.hasChild"
+                :loading="item.isLoading"
+                class="me-n3"
+                icon
+                @click="fetchChildren(item, $refs.noteTreeview)">
+                <v-icon
+                  size="16">
+                  {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+                </v-icon>
+              </v-btn>
+            </template>
             <template #label="{ item }">
               <note-content-table-item :note="item" />
             </template>
@@ -322,6 +337,8 @@ export default {
       slectedLanguage: null,
       translationsMenu: false,
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
+      illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      initialized: false
     };
   },
   watch: {
@@ -335,7 +352,9 @@ export default {
       }
       this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
       this.noteContent = this.note.content;
-      this.retrieveNoteTreeById();
+      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+        this.retrieveNoteTreeById();
+      }
     },
     actualVersion() {
       if (!this.isDraft && this.actualVersion) {
@@ -364,10 +383,24 @@ export default {
             vTreeComponent: {
               template: `
                 <v-treeview
-                  dense
+                  ref="noteTreeview"
                   :items="noteChildItems"
-                  class="ps-1"
-                  item-key="noteId">
+                  class="ps-1 notes-custom-treeview"
+                  item-key="noteId"
+                  dense>
+                  <template #prepend="{ item, open }">
+                    <v-btn
+                      v-if="item.hasChild"
+                      :loading="item.isLoading"
+                      class="me-n3"
+                      icon
+                      @click="fetchChildren(item, $refs.noteTreeview)">
+                    <v-icon
+                      size="16">
+                      {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+                    </v-icon>
+                    </v-btn>
+                  </template>
                   <template #label="{ item }">
                     <note-content-table-item :note="item" />
                   </template>
@@ -391,6 +424,9 @@ export default {
                 });
               },
               methods: {
+                fetchChildren(item, treeview) {
+                  return this.$root.$children[0].fetchChildren(item, treeview);
+                },
                 getNoteLanguages(noteId) {
                   return this.$root.$children[0].getNoteLanguages(noteId);
                 },
@@ -398,10 +434,9 @@ export default {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.getNoteLanguages(noteId);
-                    this.$notesService.getFullNoteTree(data.wikiType, data.wikiOwner, data.name, false,this.selectedTranslation.value).then(data => {
-                      if (data && data.jsonList.length) {
-                        const allNotesTreeview = data.jsonList;
-                        this.noteChildItems = allNotesTreeview.filter(note => note.name === this.note.title)[0]?.children;
+                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children', this.selectedTranslation?.value).then(data => {
+                      if (data?.jsonList?.length) {
+                        this.noteChildItems = data.jsonList;
                       }
                     });
                   }).catch(e => {
@@ -452,9 +487,6 @@ export default {
         }
       }
     },
-    noteAllChildren() {
-      return this.noteChildren && this.noteChildren.length && this.noteChildren[0].children;
-    },
     displayedDate() {
       if (this.isDraft && this.note && this.note.updatedDate && this.note.updatedDate.time) {
         return this.$dateUtil.formatDateObjectToDisplay(new Date(this.note.updatedDate.time), this.dateTimeFormat, this.lang) || '';
@@ -483,7 +515,7 @@ export default {
       return !this.note?.content;
     },
     hasChildren(){
-      return this.noteChildren && this.noteChildren[0] && this.noteChildren[0].children?.length > 0;
+      return this.noteChildren?.length;
     },
     isManager(){
       return this.note?.canManage;
@@ -748,7 +780,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     importNotes(uploadId,overrideMode){
@@ -783,7 +816,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     getDraftNote(noteId, viewNote) {
@@ -803,7 +837,8 @@ export default {
         this.existingNote = false;
       }).finally(() => {
         this.$root.$applicationLoaded();
-        this.$root.$emit('refresh-treeView-items', this.note);
+        this.refreshTreeView();
+        this.initialized = true;
       });
     },
     confirmDeleteNote: function () {
@@ -920,13 +955,26 @@ export default {
       }
       this.closeMobileActionMenu();
     },
+    fetchChildren(item, treeview) {
+      if (item.isOpen) {
+        treeview.updateOpen(item.noteId, false);
+        item.isOpen = false;
+        return;
+      }
+      item.isLoading = true;
+      return this.$notesService.getNoteTreeLevel(item.path, this.selectedTranslation?.value).then(data => {
+        item.children = data?.jsonList;
+        item.isLoading = false;
+        treeview.updateOpen(item.noteId, true);
+        item.isOpen = true;
+      });
+    },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       if (!this.note.draftPage) {
-        this.$notesService.getFullNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, false,this.selectedTranslation.value).then(data => {
-          if (data && data.jsonList.length) {
-            const allnotesTreeview = data.jsonList;
-            this.noteChildren = allnotesTreeview.filter(note => note.name === this.note.title);
+        this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, 'children' ,this.selectedTranslation.value).then(data => {
+          if (data?.jsonList?.length) {
+            this.noteChildren = data?.jsonList;
           }
         });
       }
@@ -1018,7 +1066,9 @@ export default {
         }
       }));
     },
-
+    refreshTreeView() {
+      this.$root.$emit('refresh-treeView-items', this.note);
+    }
   }
 };
 </script>

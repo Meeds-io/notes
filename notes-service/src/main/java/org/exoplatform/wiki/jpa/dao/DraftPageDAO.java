@@ -111,4 +111,9 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
     }
   }
 
+  public Long countDraftPagesByParentPage(long parentPageId) {
+    return (Long) getEntityManager().createNamedQuery("wikiDraftPage.countDraftPagesByParentPage")
+                                    .setParameter("parentPageId", parentPageId)
+                                    .getSingleResult();
+  }
 }

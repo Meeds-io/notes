@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -39,6 +41,8 @@ import org.exoplatform.wiki.utils.Utils;
 public class PageTreeNode extends TreeNode {
   private static final Log log = ExoLogger.getLogger(PageTreeNode.class);
 
+  @Setter
+  @Getter
   private Page page;
 
   private NoteService noteService;
@@ -55,15 +59,8 @@ public class PageTreeNode extends TreeNode {
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
-    this.hasChild = !page.isDraftPage() && !noteService.getChildrenNoteOf(page, true, false).isEmpty();
-  }
-
-  public Page getPage() {
-    return page;
-  }
-
-  public void setPage(Page page) {
-    this.page = page;
+    this.hasChild = !page.isDraftPage() && (noteService.hasChildren(Long.parseLong(page.getId()))
+        || noteService.hasDrafts(Long.parseLong(page.getId())));
   }
 
   @Override

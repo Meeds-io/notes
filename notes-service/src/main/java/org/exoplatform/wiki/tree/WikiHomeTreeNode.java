@@ -61,7 +61,8 @@ public class WikiHomeTreeNode extends TreeNode {
 
     this.wikiHome = wikiHome;
     this.path = this.buildPath();
-    this.hasChild = !wikiHome.isDraftPage() && !noteService.getChildrenNoteOf(wikiHome, true, true).isEmpty();
+    this.hasChild = !wikiHome.isDraftPage() && (noteService.hasChildren(Long.parseLong(wikiHome.getId()))
+        || noteService.hasDrafts(Long.parseLong(wikiHome.getId())));
   }
 
   @Override
