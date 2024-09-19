@@ -96,7 +96,7 @@ public class JsonNodeData {
     this.isLastNode = isLastNode;
     this.isSelectable = isSelectable;
     this.excerpt = excerpt;
-    this.children = !this.hasChild ? null : TreeUtils.tranformToJson(treeNode, context);
+    this.children = TreeUtils.tranformToJson(treeNode, context);
     this.isSelected = treeNode.isSelected();
     this.isRestricted = treeNode.isRetricted;
     if (this.children != null && !this.children.isEmpty()) {

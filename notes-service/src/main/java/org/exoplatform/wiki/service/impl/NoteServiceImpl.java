@@ -761,7 +761,7 @@ public class NoteServiceImpl implements NoteService {
     if (withChild) {
       for (Page page : pages) {
         long pageId = Long.parseLong(page.getId());
-        page.setHasChild(dataStorage.hasChildren(pageId));
+        page.setHasChild(hasChildren(pageId));
       }
     }
     return pages;

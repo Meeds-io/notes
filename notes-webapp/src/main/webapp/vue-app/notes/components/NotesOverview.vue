@@ -232,11 +232,23 @@
         <div v-else class="notes-application-content">
           <v-treeview
             v-if="noteChildren?.length"
-            :load-children="fetchChildren"
+            ref="noteTreeview"
             :items="noteChildren"
-            dense
-            class="ps-1"
-            item-key="noteId">
+            class="ps-1 notes-custom-treeview"
+            item-key="noteId"
+            dense>
+            <template #prepend="{ item, open }">
+              <v-btn
+                @click="fetchChildren(item, $refs.noteTreeview)"
+                :loading="item.isLoading"
+                icon>
+                <v-icon
+                  v-if="item.hasChild"
+                  size="16">
+                  {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+                </v-icon>
+              </v-btn>
+            </template>
             <template #label="{ item }">
               <note-content-table-item :note="item" />
             </template>
@@ -418,11 +430,23 @@ export default {
             vTreeComponent: {
               template: `
                 <v-treeview
-                  dense
+                  ref="noteTreeview"
                   :items="noteChildItems"
-                  :load-children="fetchChildren"
-                  class="ps-1"
-                  item-key="noteId">
+                  class="ps-1 notes-custom-treeview"
+                  item-key="noteId"
+                  dense>
+                  <template #prepend="{ item, open }">
+                    <v-btn
+                     @click="fetchChildren(item, $refs.noteTreeview)"
+                     :loading="item.isLoading"
+                     icon>
+                    <v-icon
+                      v-if="item.hasChild"
+                      size="16">
+                      {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+                    </v-icon>
+                    </v-btn>
+                  </template>
                   <template #label="{ item }">
                     <note-content-table-item :note="item" />
                   </template>
@@ -446,8 +470,8 @@ export default {
                 });
               },
               methods: {
-                fetchChildren(note) {
-                  return this.$root.$children[0].fetchChildren(note);
+                fetchChildren(item, treeview) {
+                  return this.$root.$children[0].fetchChildren(item, treeview);
                 },
                 getNoteLanguages(noteId) {
                   return this.$root.$children[0].getNoteLanguages(noteId);
@@ -938,9 +962,18 @@ export default {
       }
       this.closeMobileActionMenu();
     },
-    fetchChildren(note) {
-      return this.$notesService.getNoteTreeLevel(note.path, this.selectedTranslation?.value).then(data => {
-        note.children = data?.jsonList;
+    fetchChildren(item, treeview) {
+      if (item.isOpen) {
+        treeview.updateOpen(item.noteId, false);
+        item.isOpen = false;
+        return;
+      }
+      item.isLoading = true;
+      return this.$notesService.getNoteTreeLevel(item.path, this.selectedTranslation?.value).then(data => {
+        item.children = data?.jsonList;
+        item.isLoading = false;
+        treeview.updateOpen(item.noteId, true);
+        item.isOpen = true;
       });
     },
     retrieveNoteTreeById() {
