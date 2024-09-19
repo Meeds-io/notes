@@ -23,10 +23,18 @@ package org.exoplatform.wiki.service.impl;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
@@ -2154,9 +2162,6 @@ public class NoteServiceImpl implements NoteService {
                                       String lang,
                                       boolean isDraft,
                                       Long userIdentityId) throws Exception {
-    if (featuredImageId == null || featuredImageId <= 0) {
-      return;
-    }
     boolean removeFeaturedImageFile = true;
     Page note;
     if (isDraft) {

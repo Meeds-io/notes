@@ -154,13 +154,6 @@ export default {
         return this.$t('notes.message.firstVersionShouldBeCreated');
       }
     },
-    langButtonTooltipText() {
-      if (this.noteId) {
-        return this.$t('notes.label.button.translations.options');
-      } else {
-        return this.$t('notes.message.firstVersionShouldBeCreated');
-      }
-    },
     initCompleted() {
       return this.initDone && ((this.initActualNoteDone || this.noteId) || (this.initActualNoteDone || !this.noteId)) ;
     },
@@ -314,11 +307,6 @@ export default {
         this.createNote(note);
       }
       this.draftNote = null;
-    },
-    addParamToUrl(paramName, paramValue) {
-      const url = new URL(window.location.href);
-      url.searchParams.set(paramName, paramValue);
-      history.pushState({}, null, url.toString());
     },
     addParamToUrl(paramName, paramValue) {
       const url = new URL(window.location.href);

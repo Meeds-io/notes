@@ -206,7 +206,7 @@ export default {
         this.updateData();
       }
     },
-    'note.lang': function() {
+    'note.properties': function () {
       this.cloneNoteObject();
     },
     'note.id': function () {
