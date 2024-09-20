@@ -1291,12 +1291,13 @@ public class NotesRestService implements ResourceContainer {
 
       List<JsonNodeData> finalTree = new ArrayList<>();
       responseData = getJsonTree(noteParam, context);
-      JsonNodeData rootNodeData = responseData.get(0);
+      JsonNodeData rootNodeData = responseData.getFirst();
       rootNodeData.setHasDraftDescendant(true);
       finalTree.add(rootNodeData);
       context.put(TreeNode.DEPTH, "1");
 
-      List<JsonNodeData> children = new ArrayList<>(rootNodeData.getChildren());
+      List<JsonNodeData> listChildren = rootNodeData.getChildren();
+      List<JsonNodeData> children = listChildren != null ? new ArrayList<>(listChildren) : new ArrayList<>();
       List<JsonNodeData> parents = new ArrayList<>();
 
       do {
@@ -1364,7 +1365,7 @@ public class NotesRestService implements ResourceContainer {
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
-      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
+      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.getFirst().getParentPageId() != null)) {
         for (JsonNodeData bottomChild : bottomChildren) {
           String parentPageId = bottomChild.getParentPageId();
           Optional<JsonNodeData> parentOptional = finalTree.stream()

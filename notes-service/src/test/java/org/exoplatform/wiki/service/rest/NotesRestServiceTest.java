@@ -340,6 +340,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
     when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
+    when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
     when(noteService.getChildrenNoteOf(homePage, true, false)).thenReturn(childrenWithDraft);
     when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(childrenWithoutDrafts);
 

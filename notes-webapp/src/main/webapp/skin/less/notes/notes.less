@@ -1248,3 +1248,23 @@ ul.note-manual-child  {
 .remove-focus:focus::after {
   opacity: 0 !important;
 }
+
+.notes-custom-treeview {
+  > .v-treeview-node {
+    > .v-treeview-node__root {
+      .v-treeview-node__toggle,
+      > .v-treeview-node__level:first-child {
+        display: none;
+      }
+    }
+  }
+
+  > .v-treeview-node__children {
+    > .v-treeview-node__root {
+      .v-treeview-node__toggle,
+      > .v-treeview-node__level:nth-child(2) {
+        display: none;
+      }
+    }
+  }
+}
