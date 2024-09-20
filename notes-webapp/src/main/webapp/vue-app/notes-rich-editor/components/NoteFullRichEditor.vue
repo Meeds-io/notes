@@ -37,7 +37,7 @@
       :web-page-url="webPageUrl"
       :editor-icon="editorIcon"
       :save-button-icon="saveButtonIcon"
-      :save-button-disabled="saveButtonDisabled"
+      :save-button-disabled="saveNoteButtonDisabled"
       :editor-ready="!!editor"
       @editor-closed="editorClosed"
       @post-note="postNote"
@@ -89,7 +89,8 @@ export default {
       editor: null,
       initialized: false,
       instanceReady: false,
-      noteTitleMaxLength: 500
+      noteTitleMaxLength: 500,
+      updatingProperties: null
     };
   },
   props: {
@@ -225,6 +226,9 @@ export default {
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
     },
+    saveNoteButtonDisabled() {
+      return this.updatingProperties || this.saveButtonDisabled;
+    }
   },
   created() {
     this.cloneNoteObject();
@@ -238,10 +242,14 @@ export default {
   },
   methods: {
     metadataUpdated(properties) {
+      this.updatingProperties = true;
       this.noteObject.properties = properties;
       this.updateData();
       if (this.noteObject?.title?.length) {
         this.autoSave();
+        this.waitForNoteMetadataUpdate();
+      } else {
+        this.updatingProperties = null;
       }
     },
     editorClosed(){
@@ -515,6 +523,11 @@ export default {
         message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
       };
       this.displayAlert(messageObject);
+    },
+    waitForNoteMetadataUpdate() {
+      setTimeout(() => {
+        this.updatingProperties = null;
+      }, 1000);
     }
   }
 };
