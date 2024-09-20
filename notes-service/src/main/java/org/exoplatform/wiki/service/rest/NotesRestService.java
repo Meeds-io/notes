@@ -23,7 +23,17 @@ package org.exoplatform.wiki.service.rest;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -35,24 +45,18 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.rest.model.DraftPageEntity;
-import io.meeds.notes.rest.model.PageEntity;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.social.core.utils.MentionUtils;
-import org.exoplatform.wiki.model.PageHistory;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.wiki.model.*;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -1287,12 +1291,13 @@ public class NotesRestService implements ResourceContainer {
 
       List<JsonNodeData> finalTree = new ArrayList<>();
       responseData = getJsonTree(noteParam, context);
-      JsonNodeData rootNodeData = responseData.get(0);
+      JsonNodeData rootNodeData = responseData.getFirst();
       rootNodeData.setHasDraftDescendant(true);
       finalTree.add(rootNodeData);
       context.put(TreeNode.DEPTH, "1");
 
-      List<JsonNodeData> children = new ArrayList<>(rootNodeData.getChildren());
+      List<JsonNodeData> listChildren = rootNodeData.getChildren();
+      List<JsonNodeData> children = listChildren != null ? new ArrayList<>(listChildren) : new ArrayList<>();
       List<JsonNodeData> parents = new ArrayList<>();
 
       do {
@@ -1360,7 +1365,7 @@ public class NotesRestService implements ResourceContainer {
                                  || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
                              .collect(Collectors.toList());
       }
-      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.get(0).getParentPageId() != null)) {
+      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.getFirst().getParentPageId() != null)) {
         for (JsonNodeData bottomChild : bottomChildren) {
           String parentPageId = bottomChild.getParentPageId();
           Optional<JsonNodeData> parentOptional = finalTree.stream()
