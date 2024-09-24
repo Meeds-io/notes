@@ -739,10 +739,7 @@ public class Utils {
     SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
     CMSService cmsService = CommonsUtils.getService(CMSService.class);
     if (space != null) {
-      return (spaceService.isSuperManager(authenticatedUser)
-          || spaceService.isManager(space, authenticatedUser)
-          || spaceService.isRedactor(space, authenticatedUser)
-          || spaceService.isMember(space, authenticatedUser) && ArrayUtils.isEmpty(space.getRedactors()));
+      return spaceService.canRedactOnSpace(space, authenticatedUser);
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
       return cmsService.hasEditPermission(getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
