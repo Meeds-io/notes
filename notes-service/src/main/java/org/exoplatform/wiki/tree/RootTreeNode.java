@@ -16,7 +16,7 @@
  */
 package org.exoplatform.wiki.tree;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public class RootTreeNode extends TreeNode {
 
@@ -25,7 +25,7 @@ public class RootTreeNode extends TreeNode {
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
 
     SpaceTreeNode portalNode = new SpaceTreeNode("portal");
     SpaceTreeNode groupNode = new SpaceTreeNode("group");

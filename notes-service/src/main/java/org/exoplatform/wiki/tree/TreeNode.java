@@ -26,10 +26,7 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 
 public class TreeNode { 
@@ -191,16 +188,16 @@ public class TreeNode {
     return true;
   } 
   
-  public void pushDescendants(HashMap<String, Object> context, String userId) throws Exception {
+  public void pushDescendants(Map<String, Object> context, String userId) throws Exception {
     addChildren(context, userId);
     pushChildren(context, userId);
     this.children = this.children.stream().sorted((childItem1, childItem2) -> new NaturalComparator().compare(childItem1.getName(), childItem2.getName())).toList();
   }
   
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
   }
   
-  protected int getNumberOfChildren(HashMap<String, Object> context, int size) {
+  protected int getNumberOfChildren(Map<String, Object> context, int size) {
     String childNumCdt = (String) context.get(CHILDREN_NUMBER);
     int childrenNUm = (childNumCdt == null || StringUtils.EMPTY.equals(childNumCdt)) ? -1
                                                                                     : Integer.valueOf(childNumCdt);
@@ -214,7 +211,7 @@ public class TreeNode {
     return childrenNUm;
   }
   
-  private void pushChildren(HashMap<String, Object> context, String userId) throws Exception {
+  private void pushChildren(Map<String, Object> context, String userId) throws Exception {
     Deque<WikiPageParams> paramsStk = (Deque<WikiPageParams>) context.get(STACK_PARAMS);
     if (paramsStk == null) {
       pushChild(context, userId);
@@ -243,7 +240,7 @@ public class TreeNode {
     }
   }
   
-  private void pushChild(TreeNode child, HashMap<String, Object> context, String userId) throws Exception {
+  private void pushChild(TreeNode child, Map<String, Object> context, String userId) throws Exception {
     Boolean showDesCdt = (Boolean) context.get(SHOW_DESCENDANT);
 
     String depthCdt = (String) context.get(DEPTH);
@@ -268,7 +265,7 @@ public class TreeNode {
     }
   }
 
-  private void pushChild(HashMap<String, Object> context, String userId) throws Exception {
+  private void pushChild(Map<String, Object> context, String userId) throws Exception {
     pushChild(null, context, userId);
   }
 

@@ -11,6 +11,7 @@ import NotesTranslationMenu from './components/NotesTranslationMenu.vue';
 import NoteContentTableItem from './components/NoteContentTableItem.vue';
 import NotesActionMenuItems from './components/menu/NotesActionMenuItems.vue';
 import NotesMobileActionMenu from './components/menu/NotesMobileActionMenu.vue';
+import NoteTreeviewItemPrepend from './components/NoteTreeviewItemPrepend.vue';
 
 const components = {
   'notes-overview': NotesOverview,
@@ -25,7 +26,8 @@ const components = {
   'notes-translation-menu': NotesTranslationMenu,
   'note-content-table-item': NoteContentTableItem,
   'notes-action-menu-items': NotesActionMenuItems,
-  'notes-mobile-action-menu': NotesMobileActionMenu
+  'notes-mobile-action-menu': NotesMobileActionMenu,
+  'note-treeview-item-prepend': NoteTreeviewItemPrepend
 };
 
 for (const key in components) {
