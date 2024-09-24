@@ -39,12 +39,12 @@
                 min-width="36"
                 height="36"
                 class="pa-0 my-auto"
+                :aria-label="$t('notes.label.button.translations.options')"
                 icon
                 :disabled="!noteIdParam || !editorReady"
                 @click="showTranslations">
                 <v-icon
                   :class="{'primary--text': !!selectedLanguage}"
-                  :aria-label="$t('notes.label.button.translations.options')"
                   size="20"
                   class="pa-0 translation-button-icon my-auto icon-default-color">
                   fa-language
@@ -55,22 +55,31 @@
               {{ langButtonTooltipText }}
             </span>
           </v-tooltip>
-          <v-btn
-            v-if="editorMetadataDrawerEnabled"
-            width="36"
-            min-width="36"
-            height="36"
-            class="pa-0 my-auto "
-            :aria-label="$t('notes.metadata.open.drawer')"
-            :disabled="!editorReady"
-            icon
-            @click="openMetadataDrawer">
-            <v-icon
-              size="20"
-              class="pa-0 metadata-button-icon my-auto icon-default-color">
-              fas fa-th-list
-            </v-icon>
-          </v-btn>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                v-on="on"
+                v-bind="attrs"
+                v-if="editorMetadataDrawerEnabled"
+                width="36"
+                min-width="36"
+                height="36"
+                class="pa-0 my-auto "
+                :aria-label="$t('notes.metadata.properties.label')"
+                :disabled="!editorReady"
+                icon
+                @click="openMetadataDrawer">
+                <v-icon
+                  size="20"
+                  class="pa-0 metadata-button-icon my-auto icon-default-color">
+                  fas fa-th-list
+                </v-icon>
+              </v-btn>
+            </template>
+            <span class="caption">
+              {{ $t('notes.metadata.properties.label') }}
+            </span>
+          </v-tooltip>
         </div>
         <div class="notesFormRightActions pe-5">
           <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
