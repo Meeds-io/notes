@@ -58,9 +58,9 @@
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
               <v-btn
+                v-if="editorMetadataDrawerEnabled"
                 v-on="on"
                 v-bind="attrs"
-                v-if="editorMetadataDrawerEnabled"
                 width="36"
                 min-width="36"
                 height="36"
