@@ -21,9 +21,7 @@
 package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -42,6 +40,9 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.exoplatform.services.organization.Group;
+import org.exoplatform.services.organization.GroupHandler;
+import org.exoplatform.services.organization.OrganizationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -111,11 +112,12 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   @Mock
   private SpaceService                      spaceService;
 
+  @Mock
+  private OrganizationService               organizationService;
+
   private MockedStatic<ConversationState>   conversationStateStatic;
 
   private MockedStatic<EnvironmentContext>  environmentContextStatic;
-
-  private MockedStatic<TreeUtils>           treeUtilsStatic;
 
   private MockedStatic<Utils>               utilsStatic;
 
@@ -131,7 +133,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     super.setUp();
     conversationStateStatic = mockStatic(ConversationState.class);
     environmentContextStatic = mockStatic(EnvironmentContext.class);
-    treeUtilsStatic = mockStatic(TreeUtils.class);
     utilsStatic = mockStatic(Utils.class);
     REST_UTILS = mockStatic(RestUtils.class);
     ENTITY_BUILDER = mockStatic(EntityBuilder.class);
@@ -165,6 +166,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     when(exoContainer.getComponentInstanceOfType(WikiService.class)).thenReturn(noteBookService);
     when(exoContainer.getComponentInstanceOfType(NoteService.class)).thenReturn(noteService);
     when(exoContainer.getComponentInstanceOfType(SpaceService.class)).thenReturn(spaceService);
+    when(exoContainer.getComponentInstanceOfType(OrganizationService.class)).thenReturn(organizationService);
+    when(exoContainer.getComponentInstanceOfType(ResourceBundleService.class)).thenReturn(resourceBundleService);
   }
 
   @Override
@@ -172,7 +175,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   public void tearDown() throws Exception {
     conversationStateStatic.close();
     environmentContextStatic.close();
-    treeUtilsStatic.close();
     utilsStatic.close();
     REST_UTILS.close();
     ENTITY_BUILDER.close();
@@ -317,8 +319,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     draftPage.setWikiType("PAGE");
     WikiPageParams pageParams = new WikiPageParams();
     pageParams.setPageName("home");
-    pageParams.setOwner("user");
-    pageParams.setType("WIKI");
+    pageParams.setOwner("/spaces/test");
+    pageParams.setType("group");
     List<Page> childrenWithDraft = new ArrayList<>(List.of(page, draftPage, page10, page12, page2, page1));
     List<Page> childrenWithoutDrafts = new ArrayList<>(List.of(page12, page10, page1, page, page2)); // return
                                                                                                      // an
@@ -327,7 +329,10 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     @SuppressWarnings("unchecked")
     Deque<Object> paramsDeque = mock(Deque.class);
     when(identity.getUserId()).thenReturn("1");
-    treeUtilsStatic.when(() -> TreeUtils.getPageParamsFromPath("path")).thenReturn(pageParams);
+    GroupHandler groupHandler = mock(GroupHandler.class);
+    Group group = mock(Group.class);
+    when(groupHandler.findGroupById(anyString())).thenReturn(null, group, null, group, null, group, null, group);
+    when (organizationService.getGroupHandler()).thenReturn(groupHandler);
     utilsStatic.when(() -> Utils.getStackParams(homePage)).thenReturn(paramsDeque);
     when(paramsDeque.pop()).thenReturn(pageParams);
     when(noteService.getNoteOfNoteBookByName(pageParams.getType(),
@@ -344,9 +349,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     when(noteService.getChildrenNoteOf(homePage, true, false)).thenReturn(childrenWithDraft);
     when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(childrenWithoutDrafts);
 
-    treeUtilsStatic.when(() -> TreeUtils.getPathFromPageParams(any())).thenCallRealMethod();
-    treeUtilsStatic.when(() -> TreeUtils.tranformToJson(any(), any())).thenCallRealMethod();
-
     utilsStatic.when(() -> Utils.validateWikiOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenCallRealMethod();
     utilsStatic.when(() -> Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page)).thenReturn(true);
@@ -357,15 +359,13 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
     utilsStatic.when(() -> Utils.canManageNotes(anyString(), any(Space.class), any(Page.class))).thenReturn(true);
     when(spaceService.getSpaceByGroupId(anyString())).thenReturn(mock(Space.class));
-    treeUtilsStatic.when(() -> TreeUtils.cleanDraftChildren(anyList(), any())).then(returnsFirstArg());
-    Response response = notesRestService.getFullTreeData("path", true);
+    Response response = notesRestService.getNoteTreeData("all","drafts", "group/spaces/test/home");
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    Response response3 = notesRestService.getFullTreeData("path", false);
+    Response response3 = notesRestService.getNoteTreeData("all", "notes", "group/spaces/test/home");
     assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
-    assertEquals(6, ((BeanToJsons) response3.getEntity()).getJsonList().size());
-    List<JsonNodeData> treeNodeList = ((BeanToJsons) response3.getEntity()).getTreeNodeData();
-    JsonNodeData jsonNodeData = treeNodeList.get(0);
+    assertEquals(5, ((JsonNodeData)((BeanToJsons) response3.getEntity()).getJsonList().getFirst()).getChildren().size());
+    JsonNodeData jsonNodeData = ((JsonNodeData)((BeanToJsons) response3.getEntity()).getJsonList().getFirst());
     assertEquals(5, jsonNodeData.getChildren().size());
     assertEquals("testPage", jsonNodeData.getChildren().get(0).getName());
     assertEquals("testPage 1", jsonNodeData.getChildren().get(1).getName());
@@ -378,7 +378,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                   pageParams.getOwner(),
                                                                   pageParams.getPageName(),
                                                                   identity);
-    Response response1 = notesRestService.getFullTreeData("path", true);
+    Response response1 = notesRestService.getNoteTreeData("all","drafts", "group/spaces/test/home");
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response1.getStatus());
 
     doThrow(new RuntimeException()).when(noteService)
@@ -386,7 +386,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                             pageParams.getOwner(),
                                                             pageParams.getPageName(),
                                                             identity);
-    Response response2 = notesRestService.getFullTreeData("path", true);
+    Response response2 = notesRestService.getNoteTreeData("all","drafts", "group/spaces/test/home");
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response2.getStatus());
   }
 

@@ -757,14 +757,7 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public List<Page> getChildrenNoteOf(Page note, boolean withDrafts, boolean withChild) throws WikiException {
-    List<Page> pages = dataStorage.getChildrenPageOf(note, withDrafts);
-    if (withChild) {
-      for (Page page : pages) {
-        long pageId = Long.parseLong(page.getId());
-        page.setHasChild(hasChildren(pageId));
-      }
-    }
-    return pages;
+    return dataStorage.getChildrenPageOf(note, withDrafts, withChild);
   }
 
   /**
@@ -1740,6 +1733,14 @@ public class NoteServiceImpl implements NoteService {
       throw new IllegalArgumentException("version id is mandatory");
     }
     return dataStorage.getPageVersionById(versionId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
+    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType);
   }
 
   // ******* Listeners *******/

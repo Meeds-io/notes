@@ -239,20 +239,15 @@
             expand-icon=""
             dense>
             <template #prepend="{ item, open }">
-              <v-btn
-                v-if="item.hasChild"
-                :loading="item.isLoading"
-                class="me-n3"
-                icon
-                @click="fetchChildren(item, $refs.noteTreeview)">
-                <v-icon
-                  size="16">
-                  {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
-                </v-icon>
-              </v-btn>
+              <note-treeview-item-prepend
+                :item="item"
+                :open="open"
+                @click="fetchChildren(item, $refs.noteTreeview)" />
             </template>
             <template #label="{ item }">
-              <note-content-table-item :note="item" />
+              <note-content-table-item
+                :note="item"
+                @open-note="openNoteChild" />
             </template>
           </v-treeview>
         </div>
@@ -439,20 +434,15 @@ export default {
                   expand-icon=""
                   dense>
                   <template #prepend="{ item, open }" >
-                    <v-btn
-                      v-if="item.hasChild"
-                      :loading="item.isLoading"
-                      class="me-n3"
-                      icon
-                      @click="fetchChildren(item, $refs.noteTreeview)">
-                    <v-icon
-                      size="16">
-                      {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
-                    </v-icon>
-                    </v-btn>
+                    <note-treeview-item-prepend
+                       :item="item"
+                       :open="open"
+                       @click="fetchChildren(item, $refs.noteTreeview)" />
                   </template>
                   <template #label="{ item }">
-                    <note-content-table-item :note="item" />
+                    <note-content-table-item
+                      :note="item"
+                      @open-note="openNoteChild"/>
                   </template>
                 </v-treeview >`,
               props: {
@@ -474,6 +464,9 @@ export default {
                 });
               },
               methods: {
+                openNoteChild(item) {
+                  return this.$root.$children[0].openNoteChild(item);
+                },
                 fetchChildren(item, treeview) {
                   return this.$root.$children[0].fetchChildren(item, treeview);
                 },
@@ -484,7 +477,7 @@ export default {
                   return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
                     this.note = data || {};
                     this.getNoteLanguages(noteId);
-                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children', this.selectedTranslation?.value).then(data => {
+                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children').then(data => {
                       if (data?.jsonList?.length) {
                         this.noteChildItems = data.jsonList;
                       }
@@ -492,11 +485,7 @@ export default {
                   }).catch(e => {
                     console.error('Error when getting note', e);
                   });
-                },
-                openNoteChild(item) {
-                  const noteName = item.path.split('%2F').pop();
-                  this.$root.$emit('open-note-by-name', noteName);
-                },
+                }
               }
             }
           };
@@ -973,22 +962,20 @@ export default {
         return;
       }
       item.isLoading = true;
-      return this.$notesService.getNoteTreeLevel(item.path, this.selectedTranslation?.value).then(data => {
+      return this.$notesService.getNoteTreeLevel(item.path).then(data => {
         item.children = data?.jsonList;
-        item.isLoading = false;
         treeview.updateOpen(item.noteId, true);
         item.isOpen = true;
+        item.isLoading = false;
       });
     },
     retrieveNoteTreeById() {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
-      if (!this.note.draftPage) {
-        this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name, 'children' ,this.selectedTranslation.value).then(data => {
-          if (data?.jsonList?.length) {
-            this.noteChildren = data?.jsonList;
-          }
-        });
-      }
+      this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name, 'children').then(data => {
+        if (data?.jsonList?.length) {
+          this.noteChildren = data?.jsonList[0]?.children;
+        }
+      });
     },
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
@@ -1078,7 +1065,9 @@ export default {
       }));
     },
     refreshTreeView() {
-      this.$root.$emit('refresh-treeView-items', this.note);
+      if (this.initialized) {
+        this.$root.$emit('refresh-treeView-items', this.note);
+      }
     }
   }
 };

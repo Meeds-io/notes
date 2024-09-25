@@ -23,17 +23,7 @@ package org.exoplatform.wiki.service.rest;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -53,10 +43,11 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.commons.comparators.NaturalComparator;
+import org.exoplatform.wiki.tree.PageTreeNode;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -150,6 +141,8 @@ public class NotesRestService implements ResourceContainer {
   private static final long           CACHE_DURATION_MILLISECONDS = CACHE_DURATION_SECONDS * 1000L;
 
   private static final CacheControl   ILLUSTRATION_CACHE_CONTROL  = new CacheControl();
+  
+  private static final String         DRAFTS_NOTE_TYPE            = "drafts";
 
   static {
     ILLUSTRATION_CACHE_CONTROL.setMaxAge(CACHE_DURATION_SECONDS);
@@ -1153,109 +1146,22 @@ public class NotesRestService implements ResourceContainer {
   }
 
   @GET
-  @Path("/tree/{type}")
+  @Path("/tree/{treeType}/{noteType}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get node's tree", method = "GET", description = "Display the current tree of a noteBook based on is path")
+  @Operation(summary = "Get node's tree data", method = "GET", description = "Display the current tree of a noteBook based on is path")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
       @ApiResponse(responseCode = "400", description = "Invalid query input"),
       @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
       @ApiResponse(responseCode = "404", description = "Resource not found") })
-  public Response getTreeData(@PathParam("type")
-  String type, @QueryParam(TreeNode.PATH)
-  String path, @QueryParam(TreeNode.CURRENT_PATH)
-  String currentPath, @QueryParam(TreeNode.CAN_EDIT)
-  Boolean canEdit, @QueryParam(TreeNode.SHOW_EXCERPT)
-  Boolean showExcerpt, @QueryParam("lang")
-  String lang, @QueryParam(TreeNode.DEPTH)
-  String depth) {
+  public Response getNoteTreeData(@Parameter(description = "Tree of selected path children or all notes") @PathParam("treeType")  String treeType,
+                                  @Parameter(description = "Tree of drafts or notes") @PathParam("noteType") String noteType,
+                                  @Parameter(description = "Note path", required = true) @QueryParam(TreeNode.PATH) String path) {
     try {
+      boolean withDrafts = Objects.equals(noteType, DRAFTS_NOTE_TYPE);
       Identity identity = ConversationState.getCurrent().getIdentity();
-      List<JsonNodeData> responseData = new ArrayList<JsonNodeData>();
-      HashMap<String, Object> context = new HashMap<String, Object>();
-      context.put(TreeNode.CAN_EDIT, canEdit);
-      if (currentPath != null) {
-        currentPath = URLDecoder.decode(currentPath, StandardCharsets.UTF_8);
-        context.put(TreeNode.CURRENT_PATH, currentPath);
-        WikiPageParams currentNoteParam = TreeUtils.getPageParamsFromPath(currentPath);
-        Page currentNote = noteService.getNoteOfNoteBookByName(currentNoteParam.getType(),
-                                                               currentNoteParam.getOwner(),
-                                                               currentNoteParam.getPageName(),
-                                                               identity);
-        context.put(TreeNode.CURRENT_PAGE, currentNote);
-      }
-
-      EnvironmentContext env = EnvironmentContext.getCurrent();
-      HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
-
-      // Put select note to context
-      path = URLDecoder.decode(path, StandardCharsets.UTF_8);
-      context.put(TreeNode.PATH, path);
-      WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
-      Page note =
-                noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
-      if (note == null) {
-        log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
-                 ConversationState.getCurrent().getIdentity().getUserId(),
-                 path);
-        note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
-        if (note == null) {
-          ResourceBundle resourceBundle = resourceBundleService.getResourceBundle("locale.portlet.wiki.WikiPortlet",
-                                                                                  request.getLocale());
-          String errorMessage = "";
-          if (resourceBundle != null) {
-            errorMessage = resourceBundle.getString("UIWikiMovePageForm.msg.no-permission-at-wiki-destination");
-          }
-          return Response.serverError().entity("{ \"message\": \"" + errorMessage + "\"}").cacheControl(cc).build();
-        }
-      }
-
-      context.put(TreeNode.SELECTED_PAGE, note);
-
-      context.put(TreeNode.SHOW_EXCERPT, showExcerpt);
-      if (type.equalsIgnoreCase(TREETYPE.ALL.toString())) {
-        Deque<WikiPageParams> stk = Utils.getStackParams(note);
-        context.put(TreeNode.STACK_PARAMS, stk);
-        responseData = getJsonTree(noteParam, context);
-      } else if (type.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
-        // Get children only
-        if (depth == null)
-          depth = "1";
-        context.put(TreeNode.DEPTH, depth);
-        responseData = getJsonDescendants(noteParam, context);
-      }
-
-      encodeWikiTree(responseData, request.getLocale(), identity, false);
-      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData);
-      return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
-    } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", path, e);
-      return Response.status(Response.Status.UNAUTHORIZED).build();
-    } catch (Exception e) {
-      log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
-      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
-    }
-  }
-
-  @GET
-  @Path("/tree/full")
-  @RolesAllowed("users")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get node's tree", method = "GET", description = "Display the current tree of a noteBook based on is path")
-  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-      @ApiResponse(responseCode = "400", description = "Invalid query input"),
-      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
-      @ApiResponse(responseCode = "404", description = "Resource not found") })
-  public Response getFullTreeData(@Parameter(description = "Note path", required = true)
-  @QueryParam(TreeNode.PATH)
-  String path,
-                                  @Parameter(description = "With draft notes", required = true)
-                                  @QueryParam("withDrafts")
-                                  Boolean withDrafts) {
-    try {
-      Identity identity = ConversationState.getCurrent().getIdentity();
-      List<JsonNodeData> responseData;
-      HashMap<String, Object> context = new HashMap<>();
+      List<JsonNodeData> responseData = new ArrayList<>();
+      Map<String, Object> context = new HashMap<>();
       context.put(TreeNode.WITH_DRAFTS, withDrafts);
 
       EnvironmentContext env = EnvironmentContext.getCurrent();
@@ -1289,134 +1195,31 @@ public class NotesRestService implements ResourceContainer {
       Deque<WikiPageParams> stk = Utils.getStackParams(note);
       context.put(TreeNode.STACK_PARAMS, stk);
 
-      List<JsonNodeData> finalTree = new ArrayList<>();
-      responseData = getJsonTree(noteParam, context);
-      JsonNodeData rootNodeData = responseData.getFirst();
-      rootNodeData.setHasDraftDescendant(true);
-      finalTree.add(rootNodeData);
-      context.put(TreeNode.DEPTH, "1");
-
-      List<JsonNodeData> listChildren = rootNodeData.getChildren();
-      List<JsonNodeData> children = listChildren != null ? new ArrayList<>(listChildren) : new ArrayList<>();
-      List<JsonNodeData> parents = new ArrayList<>();
-
-      do {
-        parents.addAll(children);
-        children.clear();
-        for (JsonNodeData parent : parents) {
-          if (parent.isHasChild()) {
-            // Put select note to context
-            path = URLDecoder.decode(parent.getPath(), StandardCharsets.UTF_8);
-            context.put(TreeNode.PATH, path);
-            noteParam = TreeUtils.getPageParamsFromPath(path);
-            try {
-              Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(),
-                                                                    noteParam.getOwner(),
-                                                                    noteParam.getPageName(),
-                                                                    identity);
-              context.put(TreeNode.SELECTED_PAGE, parentNote);
-            } catch (EntityNotFoundException e) {
-              log.warn("Cannot find the note {}", noteParam.getPageName());
-            }
-            List<JsonNodeData> childNotes = getJsonDescendants(noteParam, context);
-
-            children.addAll(childNotes);
-            parent.setChildren(childNotes);
-          }
-          finalTree.add(parent);
-        }
-        parents.clear();
-
-      } while (!children.isEmpty());
-
-      // from the bottom children nodes
-      List<JsonNodeData> bottomChildren =
-                                        Boolean.TRUE.equals(withDrafts) ? finalTree.stream()
-                                                     .filter(JsonNodeData::isDraftPage)
-                                                     .collect(Collectors.toList())
-                                          : finalTree.stream()
-                                                     .filter(jsonNodeData -> !jsonNodeData.isHasChild())
-                                                     .collect(Collectors.toList());
-
-      // prepare draft note nodes tree
-      if (Boolean.TRUE.equals(withDrafts)) {
-        bottomChildren = TreeUtils.cleanDraftChildren(bottomChildren,request.getLocale());
-        for (JsonNodeData child : bottomChildren) {
-          JsonNodeData parent;
-          do {
-            parent = null;
-            String parentId = child.getParentPageId();
-            Optional<JsonNodeData> parentOptional = finalTree.stream()
-                                                             .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
-                                                                                                        parentId))
-                                                             .findFirst();
-            if (parentOptional.isPresent()) {
-              parent = parentOptional.get();
-              parent.setHasDraftDescendant(true);
-              int index = finalTree.indexOf(parent);
-              finalTree.set(index, parent);
-            }
-            child = parent;
-
-          } while (parent != null);
-        }
-        finalTree = finalTree.stream()
-                             .filter(jsonNodeData -> jsonNodeData.isDraftPage()
-                                 || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
-                             .collect(Collectors.toList());
-      }
-      while (bottomChildren.size() > 1 || (bottomChildren.size() == 1 && bottomChildren.getFirst().getParentPageId() != null)) {
-        for (JsonNodeData bottomChild : bottomChildren) {
-          String parentPageId = bottomChild.getParentPageId();
-          Optional<JsonNodeData> parentOptional = finalTree.stream()
-                                                           .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getNoteId(),
-                                                                                                      parentPageId))
-                                                           .findFirst();
-          if (parentOptional.isPresent()) {
-            JsonNodeData parent = parentOptional.get();
-
-            if (!Boolean.TRUE.equals(withDrafts) || Boolean.TRUE.equals(parent.isHasDraftDescendant())) {
-              children = parent.getChildren();
-              if (Boolean.TRUE.equals(withDrafts)) {
-                children = TreeUtils.cleanDraftChildren(children, request.getLocale());
-                children = children.stream()
-                                   .filter(jsonNodeData -> jsonNodeData.isDraftPage()
-                                       || Boolean.TRUE.equals(jsonNodeData.isHasDraftDescendant()))
-                                   .collect(Collectors.toList());
-              }
-              int indexChild = children.indexOf(bottomChild);
-              children.remove(bottomChild);
-
-              if (!Boolean.TRUE.equals(withDrafts) || bottomChild.isDraftPage()
-                  || Boolean.TRUE.equals(bottomChild.isHasDraftDescendant())) {
-                children.add(indexChild, bottomChild);
-              }
-              parent.setChildren(children);
-
-              // update final tree
-              if (finalTree.contains(parent)) {
-                int index = finalTree.indexOf(parent);
-                finalTree.set(index, parent);
-              }
-
-              // add node to parents
-              if (parents.contains(parent)) {
-                int index = parents.indexOf(parent);
-                parents.set(index, parent);
-              } else {
-                parents.add(parent);
-              }
-
-            }
-          }
-        }
-        bottomChildren.clear();
-        bottomChildren.addAll(parents);
-        parents.clear();
+      JsonNodeData rootNodeData = null;
+      List<JsonNodeData> treeNodeData = new ArrayList<>();
+      if (withDrafts) {
+        context.put(TreeNode.DEPTH, "1");
+        rootNodeData = getJsonTree(noteParam, context, identity, request.getLocale()).getFirst();
+        rootNodeData.setChildren(new ArrayList<>());
+        rootNodeData.setHasDraftDescendant(true);
+        buildNoteDraftsTree(rootNodeData, treeNodeData, noteParam, path, context, identity, request.getLocale());
+      } else if (treeType.equalsIgnoreCase(TREETYPE.ALL.toString())) {
+        responseData = getJsonTree(noteParam, context, identity, request.getLocale());
+        rootNodeData = responseData.getFirst();
+        buildNotesTree(rootNodeData, treeNodeData, context, identity, request.getLocale());
+      } else if (treeType.equalsIgnoreCase(TREETYPE.CHILDREN.toString())) {
+        context.put(TreeNode.DEPTH, "1");
+        responseData = getJsonDescendants(noteParam, context, identity, request.getLocale());
+        treeNodeData.addAll(responseData);
+      } else {
+        rootNodeData = getJsonTree(noteParam, context, identity, request.getLocale()).getFirst();
+        treeNodeData.addAll(rootNodeData.getChildren());
       }
 
-      encodeWikiTree(bottomChildren, request.getLocale(), identity, withDrafts);
-      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(finalTree, bottomChildren);
+      if (rootNodeData != null) {
+        responseData = List.of(rootNodeData);
+      }
+      BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData, treeNodeData);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", path, e);
@@ -1614,46 +1417,19 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
-  private List<JsonNodeData> getJsonTree(WikiPageParams params, HashMap<String, Object> context) throws Exception {
+  private List<JsonNodeData> getJsonTree(WikiPageParams params, Map<String, Object> context, Identity identity, Locale locale) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
     WikiTreeNode noteBookNode = new WikiTreeNode(noteBook);
     noteBookNode.pushDescendants(context, ConversationState.getCurrent().getIdentity().getUserId());
-    return TreeUtils.tranformToJson(noteBookNode, context);
+    return TreeUtils.tranformToJson(noteBookNode, context, identity, locale);
   }
 
-  private List<JsonNodeData> getJsonDescendants(WikiPageParams params, HashMap<String, Object> context) throws Exception {
+  private List<JsonNodeData> getJsonDescendants(WikiPageParams params,
+                                                Map<String, Object> context,
+                                                Identity identity,
+                                                Locale locale) throws Exception {
     TreeNode treeNode = TreeUtils.getDescendants(params, context, ConversationState.getCurrent().getIdentity().getUserId());
-    return TreeUtils.tranformToJson(treeNode, context);
-  }
-
-  private void encodeWikiTree(List<JsonNodeData> responseData,
-                              Locale locale,
-                              Identity identity,
-                              boolean withDrafts) throws Exception {
-    ResourceBundle resourceBundle = resourceBundleService.getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
-    String untitledLabel = "";
-    if (resourceBundle == null) {
-      // May happen in Tests
-      log.warn("Cannot find resource bundle '{}'", Utils.WIKI_RESOUCE_BUNDLE_NAME);
-    } else {
-      untitledLabel = resourceBundle.getString("Page.Untitled");
-    }
-
-    for (JsonNodeData data : responseData) {
-      if (StringUtils.isBlank(data.getName())) {
-        data.setName(untitledLabel);
-      } else {
-        if (!data.isDraftPage()) {
-          Page page = noteService.getNoteByIdAndLang(Long.valueOf(data.getNoteId()), identity, "", locale.getLanguage());
-          if (page != null) {
-            data.setName(page.getTitle());
-          }
-        }
-      }
-      if (CollectionUtils.isNotEmpty(data.getChildren())) {
-        encodeWikiTree(data.getChildren(), locale, identity, withDrafts);
-      }
-    }
+    return TreeUtils.tranformToJson(treeNode, context, identity, locale);
   }
 
   private Page updateChildrenContainer(Page note) throws WikiException {
@@ -1693,4 +1469,110 @@ public class NotesRestService implements ResourceContainer {
     }
   }
 
+  private void buildNotesTree(JsonNodeData rootNode,
+                              List<JsonNodeData> treeNodeData,
+                              Map<String, Object> context,
+                              Identity identity,
+                              Locale locale) throws Exception {
+    for (JsonNodeData child : rootNode.getChildren()) {
+      treeNodeData.add(child);
+      if (child.isHasChild()) {
+        String path = URLDecoder.decode(child.getPath(), StandardCharsets.UTF_8);
+        context.put(TreeNode.PATH, path);
+        WikiPageParams noteParam = TreeUtils.getPageParamsFromPath(path);
+        try {
+          Page parentNote = noteService.getNoteOfNoteBookByName(noteParam.getType(),
+                                                                noteParam.getOwner(),
+                                                                noteParam.getPageName(),
+                                                                identity);
+          context.put(TreeNode.SELECTED_PAGE, parentNote);
+        } catch (EntityNotFoundException e) {
+          log.warn("Cannot find the note {}", noteParam.getPageName());
+        }
+        List<JsonNodeData> children = getJsonDescendants(noteParam, context, identity, locale);
+        child.setChildren(children);
+        treeNodeData.addAll(children);
+      }
+      buildNotesTree(child, treeNodeData, context, identity, locale);
+    }
+  }
+
+  private void buildNoteDraftsTree(JsonNodeData rootNode,
+                                   List<JsonNodeData> treeNodeData,
+                                   WikiPageParams params,
+                                   String path,
+                                   Map<String, Object> context,
+                                   Identity identity,
+                                   Locale locale) {
+    List<DraftPage> draftPages = noteService.getDraftsOfWiki(params.getOwner(), params.getType());
+    Map<String, List<JsonNodeData>> draftsByParentPage = draftPages.stream().map(draftPage -> {
+      try {
+        PageTreeNode pageTreeNode = new PageTreeNode(draftPage);
+        Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
+        return TreeUtils.toJsonNodeData(pageTreeNode, path, draftPage, context, canEdit, true, identity, locale, noteService);
+      } catch (Exception e) {
+        return null;
+      }}).filter(Objects::nonNull).collect(Collectors.groupingBy(
+                                    JsonNodeData::getParentPageId,
+                                    Collectors.collectingAndThen(
+                                    Collectors.toList(),
+                                    list -> list.stream()
+                                    .sorted((x, y) -> new NaturalComparator().compare(x.getName(), y.getName()))
+                                    .collect(Collectors.toList()))));
+    draftsByParentPage.forEach((parentPageId, drafts) -> {
+      try {
+        drafts = TreeUtils.cleanDraftChildren(drafts, locale);
+        Page parent = noteService.getNoteById(String.valueOf(parentPageId));
+        PageTreeNode pageTreeNode = new PageTreeNode(parent);
+        Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
+        JsonNodeData parentJsonData = TreeUtils.toJsonNodeData(pageTreeNode,
+                                                               path,
+                                                               parent,
+                                                               context,
+                                                               canEdit,
+                                                               true,
+                                                               identity,
+                                                               locale,
+                                                               noteService);
+        if (!Objects.equals(parentJsonData.getNoteId(), rootNode.getNoteId())) {
+          parentJsonData.setChildren(drafts);
+          treeNodeData.add(parentJsonData);
+          buildPageAscendants(rootNode, parentJsonData, treeNodeData, context, identity, locale, path);
+        } else {
+          rootNode.addChildren(drafts);
+        }
+      } catch (Exception e) {
+        log.error("Error while building draft tree descendants", e);
+      }
+    });
+  }
+  
+  private void buildPageAscendants(JsonNodeData rootNode,
+                                   JsonNodeData parentJsonData,
+                                   List<JsonNodeData> treeNodeData,
+                                   Map<String, Object> context,
+                                   Identity identity,
+                                   Locale locale,
+                                   String path) throws Exception {
+    String parentPageId = parentJsonData.getParentPageId();
+    if (parentPageId != null && !parentPageId.equals(rootNode.getNoteId())) {
+      Page parent = noteService.getNoteById(parentJsonData.getParentPageId());
+      PageTreeNode pageTreeNode = new PageTreeNode(parent);
+      Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
+      JsonNodeData parentNode = TreeUtils.toJsonNodeData(pageTreeNode,
+                                                         path,
+                                                         parent,
+                                                         context,
+                                                         canEdit,
+                                                         true,
+                                                         identity,
+                                                         locale,
+                                                         noteService);
+      parentNode.addChildren(List.of(parentJsonData));
+      treeNodeData.add(parentNode);
+      buildPageAscendants(rootNode, parentNode, treeNodeData, context, identity, locale, path);
+    } else {
+      rootNode.addChildren(List.of(parentJsonData));
+    }
+  }
 }

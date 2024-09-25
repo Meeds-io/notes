@@ -80,11 +80,12 @@ public interface DataStorage {
    * Get children notes and draft notes of page
    * 
    * @param page the target page to retrieve its children
-   * @param withDrafts if set to true returns the children notes and draft notes
+   * @param withDrafts if set to true returns the children notes and draft notes,
+   * @param withChild Check if note has child
    * @return children notes of page
    * @throws WikiException
    */
-  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException;
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts, boolean withChild) throws WikiException;
 
   /**
    * Check if the given note page has children or not
@@ -317,4 +318,13 @@ public interface DataStorage {
    * @return {@link PageVersion}
    */
   PageVersion getPageVersionById(long versionId);
+
+  /**
+   * Gets draft pages of a given wiki
+   * 
+   * @param wikiOwner wiki owner
+   * @param wikiType wiki type
+   * @return {@link List} of {@link DraftPage}
+   */
+  List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType);
 }
