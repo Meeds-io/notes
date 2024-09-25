@@ -116,4 +116,14 @@ public class DraftPageDAO extends WikiBaseDAO<DraftPageEntity, Long> {
                                     .setParameter("parentPageId", parentPageId)
                                     .getSingleResult();
   }
+
+  public List<DraftPageEntity> findDraftsOfWiki(String wikiOwner, String wikiType) {
+    Query query = getEntityManager().createNativeQuery("""
+                         SELECT * FROM WIKI_DRAFT_PAGES wdp WHERE wdp.PARENT_PAGE_ID IN
+                         (SELECT wp.PAGE_ID FROM WIKI_PAGES wp INNER JOIN WIKI_WIKIS ww ON wp.WIKI_ID = ww.WIKI_ID
+                          WHERE ww.OWNER=:wikiOwner and ww.type=:wikiType)""", DraftPageEntity.class);
+    query.setParameter("wikiOwner", wikiOwner);
+    query.setParameter("wikiType", wikiType);
+    return query.getResultList();
+  }
 }

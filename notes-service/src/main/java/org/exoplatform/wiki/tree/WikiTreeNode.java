@@ -23,7 +23,7 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public class WikiTreeNode extends TreeNode {
   private Wiki wiki;
@@ -40,7 +40,7 @@ public class WikiTreeNode extends TreeNode {
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
 
     this.children.add(new WikiHomeTreeNode(wiki.getWikiHome()));
     super.addChildren(context, userId);

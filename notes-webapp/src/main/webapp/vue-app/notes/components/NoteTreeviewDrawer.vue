@@ -272,6 +272,7 @@
             <div class="filter">
               <select
                 v-model="filter"
+                :disabled="isLoading"
                 class="selectSpacesFilter my-auto width-auto me-2 subtitle-1 ignore-vuetify-classes d-none d-sm-inline">
                 <option
                   v-for="filterOption in filterOptions"
@@ -292,51 +293,70 @@
               </v-list-item-content>
             </v-list-item>
           </template>
-          <template v-if="items && items.length && exportNotes">
+          <template v-if="items?.length && exportNotes">
             <v-checkbox
               v-model="checkbox"
               :label="selectExportLabel"
               class="checkbox mt-0 pl-3" />
             <v-treeview
               v-if="reload"
-              v-model="selectionNotes"
               ref="treeSearch"
-              :items="allItemsHome"
+              v-model="selectionNotes"
+              :items="items"
               :open.sync="openLevel"
+              :selection-type="selectionType"
+              :load-children="loadChildren"
               class="treeview-item"
               item-key="noteId"
               hoverable
               selectable
               activatable
               open-on-click
-              :selection-type="selectionType"
               transition />
           </template>
-          <template v-if="items && items.length && !exportNotes">
+          <template v-else-if="!exportNotes">
             <v-treeview
               v-if="reload"
+              ref="treeSearch"
               :items="items"
-              :open="openedItems"
               :active="active"
-              :search="search"
-              class="treeview-item"
+              :open="openedItems"
+              class="ps-1 notes-custom-treeview treeview-item"
               item-key="noteId"
+              expand-icon=""
+              open-on-click
               hoverable
               activatable
-              open-on-click
-              transition>
+              transition
+              dense>
+              <template #prepend="{ item, open }">
+                <v-btn
+                  v-if="item.hasChild"
+                  :loading="item.isLoading"
+                  class="me-n3"
+                  width="30"
+                  height="30"
+                  min-width="30"
+                  icon
+                  @click="fetchChildren(item, $refs.treeSearch)">
+                  <v-icon
+                    size="16">
+                    {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+                  </v-icon>
+                </v-btn>
+              </template>
               <template #label="{ item }">
                 <v-list-item-title class="body-2">
-                  <div 
-                    v-if="filter === $t('notes.filter.label.drafts') && !item.draftPage"
-                    :style="{cursor: 'default'}">
+                  <div
+                    v-if="isDraftFilter && !item.draftPage"
+                    class="not-clickable">
                     {{ item.name }}
                   </div>
-                  <a 
-                    v-else 
-                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId" 
-                    :style="{color: filter === $t('notes.filter.label.drafts') && item.draftPage || !item.draftPage ? 'var(--allPagesBaseTextColor, #333333)' : ''}"
-                    @click.prevent="openNote(event,item)">
+                  <a
+                    v-else
+                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId"
+                    :class="{'text-color': (isDraftFilter && item.draftPage) || !item.draftPage}"
+                    @click.prevent="openNote($event,item)">
                     {{ item.name }}
                   </a>
                 </v-list-item-title>
@@ -431,6 +451,8 @@ export default {
     zipCreated: false,
     tempCleaned: false,
     dataCreated: false,
+    isLoading: false,
+    selection: 'independent',
   }),
   props: {
     selectedTranslation: {
@@ -479,10 +501,20 @@ export default {
       return [this.home.noteId];
     },
     selectionType() {
-      return this.exportNotes ? 'independent' : 'leaf';
+      return this.selection;
     },
+    isDraftFilter() {
+      return this.filter === this.$t('notes.filter.label.drafts');
+    }
   },
   watch: {
+    isLoading() {
+      if (this.isLoading) {
+        this.$refs.breadcrumbDrawer.startLoading();
+      } else {
+        this.$refs.breadcrumbDrawer.endLoading();
+      }
+    },
     search() {
       this.showTree = true;
       if (this.search) {
@@ -490,21 +522,13 @@ export default {
         this.items.forEach(item => {
           item.children = null;
         });
-        this.showTree = this.active.length ? true : false;
+        this.showTree = !!this.active.length;
       } else {
         this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name);
       }
     },
     checkbox() {
-      if (this.checkbox) {
-        const allNotesIds = this.allItems.map(note => note.noteId);
-        this.selectionNotes = allNotesIds;
-        this.$refs.treeSearch.updateAll(true);
-      } else {
-        this.selectionNotes = [];
-        this.$refs.treeSearch.updateAll(false);
-        this.open(this.home.noteId, 'exportNotes');
-      }
+      this.selectAllItems(this.checkbox);
     },
     filter() {
       if (this.note && this.note.id) {
@@ -538,6 +562,10 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
+    selectAllItems(select) {
+      this.$refs.treeSearch.selectionType = 'leaf';
+      this.$refs.treeSearch.updateSelected(this.home.noteId, select);
+    },
     open(note, source, includeDisplay,filter) {
       this.render = false;
       if (note.draftPage) {
@@ -573,8 +601,9 @@ export default {
         this.render = true;
         this.$refs.breadcrumbDrawer.open();
       });
-      if (this.note.canManage || note.canManage && !this.filterOptions.includes(this.$t('notes.filter.label.drafts'))) {
-        this.filterOptions.push(this.$t('notes.filter.label.drafts'));
+      const draftFilterValue = this.$t('notes.filter.label.drafts');
+      if ((this.note.canManage || note.canManage) && !this.filterOptions.includes(draftFilterValue)) {
+        this.filterOptions.push(draftFilterValue);
       }
     },
     backToPlugins() {
@@ -636,36 +665,78 @@ export default {
         });
       }
     },
-    fetchChildren(note) {
-      return this.$notesService.getNoteTreeLevel(note.path, this.selectedTranslation?.value).then(data => {
-        note.children = data?.jsonList;
+    loadChildren(item) {
+      return this.$notesService.getNoteTreeLevel(item.path).then(data => {
+        item.children = this.mapItems(data?.jsonList);
       });
     },
-    retrieveNoteTree(noteType, noteOwner, noteName) {
-      const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
-      this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts, this.selectedTranslation).then(data => {
-        if (data && data.jsonList.length) {
-          this.home = [];
-          this.items = [];
-          this.allItems = [];
-          this.allItemsHome = [];
-          this.home = data.treeNodeData.length ? data.treeNodeData[0] : data.jsonList[0];
-          this.items = data.treeNodeData && data.treeNodeData[0] && data.treeNodeData[0] .children || [];
-          this.allItems = data.jsonList;
-          this.allItemsHome = data.treeNodeData;
+    fetchChildren(item, treeview) {
+      if (item?.isOpen || item.expanded) {
+        this.closeItem(item, treeview);
+        return;
+      }
+      if (this.isDraftFilter) {
+        this.openItem(item, treeview);
+        return;
+      }
+      item.isLoading = true;
+      this.$notesService.getNoteTreeLevel(item.path).then(data => {
+        item.children = data?.jsonList;
+        this.openItem(item, treeview);
+        item.isLoading = false;
+      });
+    },
+    openItem(item, treeview) {
+      treeview.updateOpen(item.noteId, true);
+      item.isOpen = true;
+      item.expanded = item.isOpen;
+    },
+    closeItem(item, treeview) {
+      treeview.updateOpen(item.noteId, false);
+      item.isOpen = false;
+      item.expanded = item.isOpen;
+      if (!this.isDraftFilter) {
+        item.children = [];
+      }
+    },
+    mapItems(itemsArray) {
+      for (let i = 0; i < itemsArray.length; i++) {
+        const item = itemsArray[i];
+        if (!item.hasChild && item.children) {
+          delete item.children;
         }
+      }
+      return itemsArray;
+    },
+    retrieveNoteTree(noteBookType, noteOwner, noteName, treeType) {
+      const noteType = this.isDraftFilter && 'drafts' || 'published';
+      this.isLoading = true;
+      this.items = [];
+      this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, noteType).then(data => {
+        if (data?.jsonList?.length) {
+          this.home = data.jsonList[0];
+          this.items = this.exportNotes && [this.home] || data.jsonList[0].children;
+          if (this.exportNotes) {
+            if (!this.items[0].hasChild) {
+              delete this.items[0].children;
+            } else {
+              this.mapItems(this.items[0]?.children);
+            }
+          }
+          this.allItems = data.treeNodeData;
+          this.allItemsHome = data.jsonList[0].children;
+        }
+        this.isLoading = false;
         const openedTreeViewItems = this.getOpenedTreeViewItems(this.note.breadcrumb);
-        this.openNotes = [];
         this.openNotes = openedTreeViewItems;
-        this.activeItem = [];
         this.activeItem = [openedTreeViewItems[openedTreeViewItems.length-1]];
-        this.noteBookType = noteType;
+        this.noteBookType = noteBookType;
         this.noteBookOwnerTree = noteOwner;
       });
     },
     getOpenedTreeViewItems(breadCrumbArray) {
       const activatedNotes = [];
-      if (this.filter === this.$t('notes.filter.label.drafts')) {
+      if (this.isDraftFilter) {
         const nodesToOpen = this.allItems.filter(item => !item.draftPage);
         const nodesToOpenIds = nodesToOpen.map(node => node.noteId);
         
@@ -701,6 +772,7 @@ export default {
       }
     },
     closeAllDrawer() {
+      this.checkbox = false;
       $('.spaceButtomNavigation').removeClass('hidden');
       this.search = '';
       if (this.exporting){

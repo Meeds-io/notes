@@ -20,10 +20,7 @@
 
 package org.exoplatform.wiki.tree;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
@@ -61,12 +58,11 @@ public class WikiHomeTreeNode extends TreeNode {
 
     this.wikiHome = wikiHome;
     this.path = this.buildPath();
-    this.hasChild = !wikiHome.isDraftPage() && (noteService.hasChildren(Long.parseLong(wikiHome.getId()))
-        || noteService.hasDrafts(Long.parseLong(wikiHome.getId())));
+    this.hasChild = !wikiHome.isDraftPage() && noteService.hasChildren(Long.parseLong(wikiHome.getId()));
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
     boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
     Collection<Page> pages = noteService.getChildrenNoteOf(wikiHome, withDrafts, false);
     Iterator<Page> childPageIterator = pages.iterator();

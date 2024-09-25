@@ -20,8 +20,8 @@
 package org.exoplatform.wiki.tree;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -59,12 +59,11 @@ public class PageTreeNode extends TreeNode {
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
-    this.hasChild = !page.isDraftPage() && (noteService.hasChildren(Long.parseLong(page.getId()))
-        || noteService.hasDrafts(Long.parseLong(page.getId())));
+    this.hasChild = !page.isDraftPage() && noteService.hasChildren(Long.parseLong(page.getId()));
   }
 
   @Override
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
     boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
     Collection<Page> pages = noteService.getChildrenNoteOf(page, withDrafts, false);
     Iterator<Page> childPageIterator = pages.iterator();

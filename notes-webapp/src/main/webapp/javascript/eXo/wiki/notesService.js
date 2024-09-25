@@ -83,11 +83,11 @@ export function getSeparator(url) {
   return url.indexOf('?') !== -1 ? '&' : '?';
 }
 
-export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
+export function getNoteTree(noteBookType, noteBookOwner, noteId, treeType, noteType) {
   if (noteBookOwner.indexOf('/') !== 0) {
     noteBookOwner = `/${noteBookOwner}`;
   }
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/${treeType}?path=${noteBookType}${noteBookOwner}/${noteId}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/${treeType}/${noteType}?path=${noteBookType}${noteBookOwner}/${noteId}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
@@ -100,32 +100,12 @@ export function getNoteTree(noteBookType, noteBookOwner, noteId,treeType) {
 }
 
 export function getNoteTreeLevel(path) {
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/children?path=${path}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/children/notes?path=${path}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {
     if (!resp || !resp.ok) {
       throw new Error('Error while getting note tree level');
-    } else {
-      return resp.json();
-    }
-  });
-}
-
-export function getFullNoteTree(noteBookType, noteBookOwner, noteId, withDrafts, lang) {
-  if (noteBookOwner.indexOf('/') !== 0) {
-    noteBookOwner = `/${noteBookOwner}`;
-  }
-  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/tree/full?path=${noteBookType}${noteBookOwner}/${noteId}&withDrafts=${withDrafts}`;
-  if (lang){
-    url=`${url}${getSeparator(url)}lang=${lang}`;
-  }
-  return fetch(url, {
-    method: 'GET',
-    credentials: 'include',
-  }).then(resp => {
-    if (!resp || !resp.ok) {
-      throw new Error('Response code indicates a server error', resp);
     } else {
       return resp.json();
     }
