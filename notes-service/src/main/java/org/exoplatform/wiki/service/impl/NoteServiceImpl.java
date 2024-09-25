@@ -1523,6 +1523,10 @@ public class NoteServiceImpl implements NoteService {
     dataStorage.deleteOrphanDraftPagesByParentPage(parentPageId);
   }
 
+  public ExoCache<Integer, MarkupData> getRenderingCache() {
+    return renderingCache;
+  }
+
   /**
    * {@inheritDoc}
    */
