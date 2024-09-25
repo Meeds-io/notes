@@ -21,8 +21,6 @@ package org.exoplatform.wiki.jpa.entity;
 
 import java.util.List;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,7 +42,6 @@ import jakarta.persistence.Table;
  * Jun 23, 2015
  */
 @Entity(name = "WikiDraftPageEntity")
-@ExoEntity
 @Table(name = "WIKI_DRAFT_PAGES")
 @NamedQueries({
         @NamedQuery(name = "wikiDraftPage.findDraftPages", query = "SELECT d FROM WikiDraftPageEntity d ORDER BY d.updatedDate DESC"),

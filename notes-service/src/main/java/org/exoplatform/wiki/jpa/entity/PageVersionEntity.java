@@ -19,9 +19,17 @@
 
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 /**
  * Created by The eXo Platform SAS
@@ -30,7 +38,6 @@ import jakarta.persistence.*;
  * 7/16/15
  */
 @Entity(name = "WikiPageVersionEntity")
-@ExoEntity
 @Table(name = "WIKI_PAGE_VERSIONS")
 @NamedQueries({
         @NamedQuery(name = "wikiPageVersion.getLastversionNumberOfPage", query = "SELECT max(p.versionNumber) FROM WikiPageVersionEntity p WHERE p.page.id = :pageId"),

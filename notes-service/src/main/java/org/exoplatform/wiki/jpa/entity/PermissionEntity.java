@@ -19,13 +19,12 @@
 
 package org.exoplatform.wiki.jpa.entity;
 
+import org.exoplatform.wiki.model.PermissionType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-
-import org.exoplatform.commons.api.persistence.ExoEntity;
-import org.exoplatform.wiki.model.PermissionType;
 
 /**
  * Created by The eXo Platform SAS
@@ -34,7 +33,6 @@ import org.exoplatform.wiki.model.PermissionType;
  * Jun 26, 2015  
  */
 @Embeddable
-@ExoEntity
 public class PermissionEntity {
   /**
    * User or Group

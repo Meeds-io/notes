@@ -16,10 +16,10 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
 import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Created by The eXo Platform SAS
@@ -28,8 +28,6 @@ import java.util.Date;
  * Jun 23, 2015  
  */
 @MappedSuperclass
-@ExoEntity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class BasePageEntity {
 
   @Column(name = "AUTHOR")

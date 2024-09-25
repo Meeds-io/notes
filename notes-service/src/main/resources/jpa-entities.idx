@@ -1,0 +1,12 @@
+org.exoplatform.wiki.jpa.entity.AttachmentEntity
+org.exoplatform.wiki.jpa.entity.PageMoveEntity
+org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity
+org.exoplatform.wiki.jpa.entity.WikiEntity
+org.exoplatform.wiki.jpa.entity.PageEntity
+org.exoplatform.wiki.jpa.entity.PageVersionEntity
+org.exoplatform.wiki.jpa.entity.PageAttachmentEntity
+org.exoplatform.wiki.jpa.entity.BasePageEntity
+org.exoplatform.wiki.jpa.entity.TemplateEntity
+org.exoplatform.wiki.jpa.entity.PermissionEntity
+org.exoplatform.wiki.jpa.entity.DraftPageEntity
+org.exoplatform.wiki.jpa.entity.EmotionIconEntity

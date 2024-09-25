@@ -16,10 +16,16 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
 import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 /**
  * Created by The eXo Platform SAS
@@ -28,9 +34,7 @@ import java.util.Date;
  * Jun 23, 2015
  */
 @MappedSuperclass
-@ExoEntity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class AttachmentEntity {
+public abstract class AttachmentEntity {
 
   @Id
   @Column(name = "ATTACHMENT_ID")
