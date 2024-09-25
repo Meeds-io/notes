@@ -302,7 +302,7 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public List<Page> getChildrenPageOf(Page page, boolean withDrafts) throws WikiException {
+  public List<Page> getChildrenPageOf(Page page, boolean withDrafts, boolean withChild) throws WikiException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     if (pageEntity == null) {
       throw new WikiException("Cannot get children of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":"
@@ -313,7 +313,11 @@ public class JPADataStorage implements DataStorage {
     List<PageEntity> childrenPagesEntities = pageDAO.getChildrenPages(pageEntity);
     if (childrenPagesEntities != null) {
       for (PageEntity childPageEntity : childrenPagesEntities) {
-        childrenPages.add(convertPageEntityToPage(childPageEntity));
+        Page childPage = convertPageEntityToPage(childPageEntity);
+        if (withChild) {
+          childPage.setHasChild(hasChildren(Long.parseLong(childPage.getId())));
+        }
+        childrenPages.add(childPage);
       }
     }
     
@@ -1584,5 +1588,13 @@ public class JPADataStorage implements DataStorage {
   @Override
   public PageVersion getPageVersionById(long versionId) {
     return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.find(versionId));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
+    return convertDraftPageEntitiesToDraftPages(draftPageDAO.findDraftsOfWiki(wikiOwner, wikiType));
   }
 }

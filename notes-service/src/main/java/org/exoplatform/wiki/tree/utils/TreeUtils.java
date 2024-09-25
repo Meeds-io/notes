@@ -29,7 +29,9 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
@@ -41,6 +43,8 @@ import org.exoplatform.wiki.utils.Utils;
 
 public class TreeUtils {
   
+  private static ResourceBundleService resourceBundleService;
+
   /**
    * Create a tree node with a given {@link WikiPageParams}
    * 
@@ -79,64 +83,43 @@ public class TreeUtils {
    * @return <code>TreeNode</code>
    * @throws Exception if error occured
    */
-  public static TreeNode getDescendants(WikiPageParams params, HashMap<String, Object> context, String userId) throws Exception {
+  public static TreeNode getDescendants(WikiPageParams params, Map<String, Object> context, String userId) throws Exception {
     TreeNode treeNode = getTreeNode(params);
     treeNode.pushDescendants(context, userId);
     return treeNode;
   }
   
-  public static List<JsonNodeData> tranformToJson(TreeNode treeNode, HashMap<String, Object> context) throws Exception {
+  public static List<JsonNodeData> tranformToJson(TreeNode treeNode,
+                                                  Map<String, Object> context,
+                                                  Identity identity,
+                                                  Locale locale) throws Exception {
     NoteService noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
 
     int counter = 1;
     Boolean showExcerpt = false;
     Page currentPage = null;
     String currentPath = null;
-    Boolean canEdit      = false;
+    Boolean canEdit = false;
     if (context != null) {
       currentPath = (String) context.get(TreeNode.CURRENT_PATH);
       currentPage = (Page) context.get(TreeNode.CURRENT_PAGE);
       showExcerpt = (Boolean) context.get(TreeNode.SHOW_EXCERPT);
-      canEdit     = (Boolean)context.get(TreeNode.CAN_EDIT);
+      canEdit = (Boolean)context.get(TreeNode.CAN_EDIT);
     }
     
     List<JsonNodeData> children = new ArrayList<>();
     for (TreeNode child : treeNode.getChildren()) {
-      boolean isSelectable = true;
       boolean isLastNode = counter >= treeNode.getChildren().size();
-
-      if (child.getNodeType().equals(TreeNodeType.WIKI)) {
-        isSelectable = false;
-      } else if (child.getNodeType().equals(TreeNodeType.PAGE)) {
-        Page page = ((PageTreeNode) child).getPage();
-        if (((currentPage != null) && (currentPage.equals(page) || Utils.isDescendantPage(page, currentPage)))) {
-          isSelectable = false;
-        }
-
-        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-        if (BooleanUtils.isTrue(canEdit)
-            && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-      } else if (child.getNodeType().equals(TreeNodeType.WIKIHOME)) {
-        Page page = ((WikiHomeTreeNode) child).getWikiHome();
-        if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-
-        if (BooleanUtils.isTrue(canEdit)
-            && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
-          isSelectable = false;
-          child.setRetricted(true);
-        }
-
-      }
-
+      JsonNodeData jsonNodeData = toJsonNodeData(child,
+                                                 currentPath,
+                                                 currentPage,
+                                                 context,
+                                                 canEdit,
+                                                 isLastNode,
+                                                 identity,
+                                                 locale,
+                                                 noteService);
+      encodeWikiTreeNode(jsonNodeData, locale, identity, noteService);
       String excerpt = null;
       if (showExcerpt != null && showExcerpt) {
         WikiPageParams params = getPageParamsFromPath(child.getPath());
@@ -144,8 +127,8 @@ public class TreeUtils {
         // excerpt = ExcerptUtils.getExcerpts(params);
         excerpt = "";
       }
-
-      children.add(new JsonNodeData(child, isLastNode, isSelectable, currentPath, excerpt, context));
+      jsonNodeData.setExcerpt(excerpt);
+      children.add(jsonNodeData);
       counter++;
     }
     return children;
@@ -209,52 +192,120 @@ public class TreeUtils {
 
   public static List<JsonNodeData> cleanDraftChildren(List<JsonNodeData> children, Locale locale) {
     List<Locale> localesList = new ArrayList<>(LocaleContextInfoUtils.getSupportedLocales());
-    List<String> targetList = children.stream().map(JsonNodeData::getTargetPageId).distinct().collect(Collectors.toList());
+    Map<String, List<JsonNodeData>> childrenByTarget = children.stream()
+                                                               .filter(jsonNodeData -> jsonNodeData.getTargetPageId() != null)
+                                                               .collect(Collectors.groupingBy(JsonNodeData::getTargetPageId));
+
     List<JsonNodeData> cleanedChildren = children.stream()
-            .filter(jsonNodeData -> (!jsonNodeData.isDraftPage() || StringUtils.isEmpty(jsonNodeData.getTargetPageId())))
-            .collect(Collectors.toList());
-    for (String target : targetList) {
-      if (StringUtils.isNotEmpty(target)) {
-        List<JsonNodeData> subJsonNodeDataList =
-                                               children.stream()
-                                                       .filter(jsonNodeData -> StringUtils.equals(jsonNodeData.getTargetPageId(),
-                                                                                                  target))
-                                                       .collect(Collectors.toList());
-        if (subJsonNodeDataList.size() > 1) {
-          JsonNodeData currentLangDraft = null;
-          JsonNodeData originalLangDraft = null;
-          JsonNodeData anyLangDraft = null;
-          List<JsonNodeData> subCleanedChildren = new ArrayList<>();
-          for (JsonNodeData nodeData : subJsonNodeDataList) {
-            if (StringUtils.isEmpty(nodeData.getLang())) {
-              originalLangDraft = nodeData;
-            } else if (nodeData.getLang().equals(locale.getLanguage())) {
-              currentLangDraft = nodeData;
-            } else if (anyLangDraft == null || getLocatedLangDisplayName(localesList, locale, nodeData.getLang()).compareToIgnoreCase(getLocatedLangDisplayName(localesList, locale, anyLangDraft.getLang())) < 0) {
-              anyLangDraft = nodeData;
-            }
+                                                 .filter(jsonNodeData -> !jsonNodeData.isDraftPage()
+                                                     || StringUtils.isEmpty(jsonNodeData.getTargetPageId()))
+                                                 .collect(Collectors.toList());
+
+    for (Map.Entry<String, List<JsonNodeData>> entry : childrenByTarget.entrySet()) {
+      String target = entry.getKey();
+      List<JsonNodeData> subJsonNodeDataList = entry.getValue();
+
+      if (StringUtils.isNotEmpty(target) && subJsonNodeDataList.size() > 1) {
+        JsonNodeData currentLangDraft = null;
+        JsonNodeData originalLangDraft = null;
+        JsonNodeData anyLangDraft = null;
+
+        for (JsonNodeData nodeData : subJsonNodeDataList) {
+          if (StringUtils.isEmpty(nodeData.getLang())) {
+            originalLangDraft = nodeData;
+          } else if (nodeData.getLang().equals(locale.getLanguage())) {
+            currentLangDraft = nodeData;
+          } else if (anyLangDraft == null
+              || getLocatedLangDisplayName(localesList,
+                                           locale,
+                                           nodeData.getLang()).compareToIgnoreCase(getLocatedLangDisplayName(localesList, locale, anyLangDraft.getLang())) < 0) {
+            anyLangDraft = nodeData;
           }
-          if (currentLangDraft != null) {
-            subCleanedChildren.add(currentLangDraft);
-          } else if (originalLangDraft != null) {
-            subCleanedChildren.add(originalLangDraft);
-          } else {
-            subCleanedChildren.add(anyLangDraft);
-          }
-          cleanedChildren.addAll(subCleanedChildren);
-        } else {
-          cleanedChildren.addAll(subJsonNodeDataList);
         }
+
+        cleanedChildren.add(Optional.ofNullable(currentLangDraft)
+                                    .orElse(Optional.ofNullable(originalLangDraft).orElse(anyLangDraft)));
+      } else {
+        cleanedChildren.addAll(subJsonNodeDataList);
       }
     }
     return cleanedChildren;
   }
 
   public static String getLocatedLangDisplayName(List<Locale> localesList, Locale currentLocale, String lang) {
-    Optional<Locale> opLocal = localesList.stream().filter(local -> local.getLanguage().equals(lang)).findAny();
-    if (opLocal.isPresent()) {
-      return opLocal.get().getDisplayName(currentLocale);
+    for (Locale locale : localesList) {
+      if (locale.getLanguage().equals(lang)) {
+        return locale.getDisplayName(currentLocale);
+      }
     }
     return lang;
+  }
+  
+  public static JsonNodeData toJsonNodeData(TreeNode node,
+                                            String path,
+                                            Page currentPage,
+                                            Map<String, Object> context,
+                                            Boolean canEdit,
+                                            Boolean isLastNode,
+                                            Identity identity,
+                                            Locale locale,
+                                            NoteService noteService) throws Exception {
+    boolean isSelectable = true;
+    if (node.getNodeType().equals(TreeNodeType.WIKI)) {
+      isSelectable = false;
+    } else if (node.getNodeType().equals(TreeNodeType.PAGE)) {
+      Page page = ((PageTreeNode) node).getPage();
+      if (((currentPage != null) && (currentPage.equals(page) || Utils.isDescendantPage(page, currentPage)))) {
+        isSelectable = false;
+      }
+
+      if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
+        isSelectable = false;
+        node.setRetricted(true);
+      }
+      if (BooleanUtils.isTrue(canEdit)
+          && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
+        isSelectable = false;
+        node.setRetricted(true);
+      }
+    } else if (node.getNodeType().equals(TreeNodeType.WIKIHOME)) {
+      Page page = ((WikiHomeTreeNode) node).getWikiHome();
+      if (!noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())) {
+        isSelectable = false;
+        node.setRetricted(true);
+      }
+
+      if (BooleanUtils.isTrue(canEdit)
+          && !noteService.hasPermissionOnPage(page, PermissionType.EDITPAGE, ConversationState.getCurrent().getIdentity())) {
+        isSelectable = false;
+        node.setRetricted(true);
+      }
+
+    }
+    JsonNodeData jsonNodeData = new JsonNodeData(node, isLastNode, isSelectable, path, "", context, identity, locale);
+    encodeWikiTreeNode(jsonNodeData, locale, identity, noteService);
+    return jsonNodeData;
+  }
+
+  private static void encodeWikiTreeNode(JsonNodeData nodeData, Locale locale, Identity identity, NoteService noteService) throws Exception {
+    ResourceBundle resourceBundle = getResourceBundleService().getResourceBundle(Utils.WIKI_RESOUCE_BUNDLE_NAME, locale);
+    String untitledLabel = resourceBundle.getString("Page.Untitled");
+    if (StringUtils.isBlank(nodeData.getName())) {
+      nodeData.setName(untitledLabel);
+    } else {
+      if (!nodeData.isDraftPage()) {
+        Page page = noteService.getNoteByIdAndLang(Long.valueOf(nodeData.getNoteId()), identity, "", locale.getLanguage());
+        if (page != null) {
+          nodeData.setName(page.getTitle());
+        }
+      }
+    }
+  }
+
+  private static ResourceBundleService getResourceBundleService() {
+    if (resourceBundleService == null) {
+      resourceBundleService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ResourceBundleService.class);
+    }
+    return resourceBundleService;
   }
 }

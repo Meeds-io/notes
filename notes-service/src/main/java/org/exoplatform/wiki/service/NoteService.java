@@ -852,4 +852,13 @@ public interface NoteService {
    * {@inheritDoc}
    */
   DraftPage getDraftOfPageByLang(WikiPageParams param, String lang) throws WikiException;
+
+  /**
+   * Gets draft pages of a given wiki
+   *
+   * @param wikiOwner wiki owner
+   * @param wikiType wiki type
+   * @return {@link List} of {@link DraftPage}
+   */
+  List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType);
 }
