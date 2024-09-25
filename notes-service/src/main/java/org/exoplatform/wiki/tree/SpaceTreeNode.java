@@ -27,8 +27,8 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class SpaceTreeNode extends TreeNode {
 
@@ -50,7 +50,7 @@ public class SpaceTreeNode extends TreeNode {
   }  
   
   @Override
-  protected void addChildren(HashMap<String, Object> context, String userId) throws Exception {
+  protected void addChildren(Map<String, Object> context, String userId) throws Exception {
     try {
       WikiType wikiType = WikiType.valueOf(name.toUpperCase());
       Collection<Wiki> wikis = wikiService.getWikisByType(wikiType.toString());

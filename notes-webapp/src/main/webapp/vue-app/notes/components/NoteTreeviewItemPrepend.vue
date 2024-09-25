@@ -19,31 +19,37 @@
  */
 -->
 <template>
-  <v-list-item
-    ripple
-    :href="noteLink"
-    @click.prevent="openNote">
-    <span class="primary--text subtitle-1 ps-2">
-      {{ note.name }}
-    </span>
-  </v-list-item>
+  <v-btn
+    v-if="hasChild"
+    :loading="loading"
+    class="me-n3"
+    icon
+    @click="$emit('click')">
+    <v-icon
+      size="16">
+      {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+    </v-icon>
+  </v-btn>
 </template>
+
 <script>
 export default {
   props: {
-    note: {
+    item: {
       type: Object,
       default: null
+    },
+    open: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
-    noteLink() {
-      return this.note?.url;
-    }
-  },
-  methods: {
-    openNote() {
-      this.$emit('open-note', this.note);
+    loading() {
+      return this.item?.isLoading;
+    },
+    hasChild() {
+      return this.item?.hasChild;
     }
   }
 };

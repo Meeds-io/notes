@@ -821,7 +821,9 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
   }
 
   public void testCreatePageWithProperties() throws Exception {
-    Identity user = new Identity("user");
+    startSessionAs("root");
+    Identity user = new Identity("root");
+    identityManager.getOrCreateUserIdentity("root");
     this.bindMockedUploadService();
     NotePageProperties notePageProperties = createNotePageProperties(0L, "alt text", "summary Test");
     DraftPage draftPage = new DraftPage();
@@ -968,5 +970,22 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
      assertNotNull(featuredImage);
      noteService.removeDraftById(draftPage.getId());
      assertTrue(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
+   }
+
+   public void testGetDraftsOfWiki() throws Exception {
+     Identity user = new Identity("user");
+     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+     Page note = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), user);
+     Page note2 = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), user);
+     DraftPage draftPage = new DraftPage();
+     draftPage.setTitle("test");
+     draftPage.setContent("test");
+     draftPage.setWikiOwner(portalWiki.getId());
+     draftPage.setParentPageId(note.getId());
+     noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+     draftPage.setParentPageId(note2.getId());
+     noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+     assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType()).size());
+
    }
  }

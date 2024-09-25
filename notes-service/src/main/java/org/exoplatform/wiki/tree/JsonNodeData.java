@@ -20,11 +20,14 @@
 package org.exoplatform.wiki.tree;
 
 import java.net.URLEncoder;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
@@ -68,7 +71,7 @@ public class JsonNodeData {
 
   private String             targetPageId;
 
-  private Boolean hasDraftDescendant;
+  private Boolean            hasDraftDescendant;
 
 
   private String             lang;
@@ -79,7 +82,9 @@ public class JsonNodeData {
                       boolean isLastNode,
                       boolean isSelectable,
                       String currentPath, String excerpt,
-                      HashMap<String, Object> context) throws Exception {
+                      Map<String, Object> context,
+                      Identity identity,
+                      Locale locale) throws Exception {
     this.name = treeNode.getName();
     this.noteId = treeNode.getId();
     if (treeNode instanceof WikiHomeTreeNode){
@@ -96,7 +101,7 @@ public class JsonNodeData {
     this.isLastNode = isLastNode;
     this.isSelectable = isSelectable;
     this.excerpt = excerpt;
-    this.children = TreeUtils.tranformToJson(treeNode, context);
+    this.children = TreeUtils.tranformToJson(treeNode, context, identity, locale);
     this.isSelected = treeNode.isSelected();
     this.isRestricted = treeNode.isRetricted;
     if (this.children != null && !this.children.isEmpty()) {
@@ -140,5 +145,12 @@ public class JsonNodeData {
 
   public void setTargetPageId(String targetPageId) {
     this.targetPageId = targetPageId;
+  }
+
+  public void addChildren(List<JsonNodeData> children) {
+    if (this.children == null) {
+      this.children = new ArrayList<JsonNodeData>();
+    }
+    this.children.addAll(children);
   }
 }
