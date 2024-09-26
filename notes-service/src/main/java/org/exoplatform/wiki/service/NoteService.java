@@ -857,7 +857,8 @@ public interface NoteService {
    *
    * @param wikiOwner wiki owner
    * @param wikiType wiki type
+   * @param wikiHome wiki home page
    * @return {@link List} of {@link DraftPage}
    */
-  List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType);
+  List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome);
 }

@@ -709,6 +709,12 @@ export default {
       }
       return itemsArray;
     },
+    naturalSort(items) {
+      if (items?.length) {
+        const collator = new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'});
+        items.sort((a, b) => collator.compare(a.name, b.name));
+      }
+    },
     retrieveNoteTree(noteBookType, noteOwner, noteName, treeType) {
       const noteType = this.isDraftFilter && 'drafts' || 'published';
       this.isLoading = true;
@@ -723,6 +729,9 @@ export default {
             } else {
               this.mapItems(this.items[0]?.children);
             }
+          }
+          if (this.isDraftFilter) {
+            this.naturalSort(this.items);
           }
           this.allItems = data.treeNodeData;
           this.allItemsHome = data.jsonList[0].children;
