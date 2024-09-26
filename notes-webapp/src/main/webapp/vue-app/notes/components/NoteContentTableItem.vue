@@ -20,8 +20,8 @@
 -->
 <template>
   <v-list-item
-    ripple
     :href="noteLink"
+    ripple
     @click.prevent="openNote">
     <span class="primary--text subtitle-1 ps-2">
       {{ note.name }}

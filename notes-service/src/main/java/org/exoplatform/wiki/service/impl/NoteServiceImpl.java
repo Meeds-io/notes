@@ -1522,9 +1522,13 @@ public class NoteServiceImpl implements NoteService {
   public void removeOrphanDraftPagesByParentPage(long parentPageId) {
     dataStorage.deleteOrphanDraftPagesByParentPage(parentPageId);
   }
-
-  public ExoCache<Integer, MarkupData> getRenderingCache() {
-    return renderingCache;
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome) {
+    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType, wikiHome);
   }
 
   /**
@@ -1737,14 +1741,6 @@ public class NoteServiceImpl implements NoteService {
       throw new IllegalArgumentException("version id is mandatory");
     }
     return dataStorage.getPageVersionById(versionId);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
-    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType);
   }
 
   // ******* Listeners *******/
