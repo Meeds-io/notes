@@ -268,14 +268,9 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
     when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
-    when(noteService.getChildrenNoteOf(homePage,
-                                       ConversationState.getCurrent().getIdentity().getUserId(),
-                                       true,
-                                       false)).thenReturn(childrenWithDraft);
-    when(noteService.getChildrenNoteOf(homePage,
-            ConversationState.getCurrent().getIdentity().getUserId(),
-            false,
-            false)).thenReturn(childrenWithoutDrafts);
+    when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
+    when(noteService.getChildrenNoteOf(homePage, "1",true, false)).thenReturn(childrenWithDraft);
+    when(noteService.getChildrenNoteOf(homePage, "1",false, false)).thenReturn(childrenWithoutDrafts);
 
     treeUtilsStatic.when(() -> TreeUtils.getPathFromPageParams(any())).thenCallRealMethod();
     treeUtilsStatic.when(() -> TreeUtils.tranformToJson(any(), any())).thenCallRealMethod();
