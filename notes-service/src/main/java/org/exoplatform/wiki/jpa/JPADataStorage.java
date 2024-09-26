@@ -293,8 +293,13 @@ public class JPADataStorage implements DataStorage {
   }
 
   @Override
-  public boolean hasChildren(long noteId) throws WikiException {
+  public boolean hasChildren(long noteId) {
     return pageDAO.countPageChildrenById(noteId) > 0;
+  }
+
+  @Override
+  public boolean hasDrafts(long noteId) {
+    return draftPageDAO.countDraftPagesByParentPage(noteId) > 0;
   }
 
   @Override

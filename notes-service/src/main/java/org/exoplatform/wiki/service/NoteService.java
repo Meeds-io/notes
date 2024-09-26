@@ -192,6 +192,22 @@ public interface NoteService {
   Page getParentNoteOf(Page note) throws WikiException;
 
   /**
+   * Check if the given note page has children or not
+   *
+   * @param pageId note page id
+   * @return true if the given note page has children and false if not
+   */
+  boolean hasChildren(long pageId);
+
+  /**
+   * Check if the given note page has drafts or not
+   *
+   * @param pageId note page id
+   * @return true if the given note page has drafts and false if not
+   */
+  boolean hasDrafts(long pageId);
+
+  /**
    * Get all the children notes of a note
    *
    * @param note note.
