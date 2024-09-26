@@ -1594,7 +1594,24 @@ public class JPADataStorage implements DataStorage {
    * {@inheritDoc}
    */
   @Override
-  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
-    return convertDraftPageEntitiesToDraftPages(draftPageDAO.findDraftsOfWiki(wikiOwner, wikiType));
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome) {
+    // The Note API allows multiple home pages to be created within the wiki.
+    // To avoid retrieving drafts from all home pages,
+    // we need to specifically fetch all pages under the target home page and search
+    // for drafts.
+    // Although this approach may seem performance-intensive, it is the only
+    // reliable solution.
+    PageEntity pageEntity = pageDAO.getPageOfWikiByName(wikiType, wikiOwner, wikiHome);
+    List<DraftPageEntity> draftPageEntities = new ArrayList<>();
+    getDraftsOfPage(pageEntity, draftPageEntities);
+    return convertDraftPageEntitiesToDraftPages(draftPageEntities);
+  }
+
+  private void getDraftsOfPage(PageEntity pageEntity, List<DraftPageEntity> drafts) {
+    drafts.addAll(draftPageDAO.findDraftPagesByParentPage(pageEntity.getId()));
+    List<PageEntity> childrenPages = pageDAO.getChildrenPages(pageEntity);
+    for (PageEntity child : childrenPages) {
+      getDraftsOfPage(child, drafts);
+    }
   }
 }

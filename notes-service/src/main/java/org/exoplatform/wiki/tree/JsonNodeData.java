@@ -126,26 +126,6 @@ public class JsonNodeData {
     return hasDraftDescendant;
   }
 
-  public void setHasDraftDescendant(Boolean hasDraftDescendant) {
-    this.hasDraftDescendant = hasDraftDescendant;
-  }
-
-  public String getLang() {
-    return lang;
-  }
-
-  public void setLang(String lang) {
-    this.lang = lang;
-  }
-
-  public String getTargetPageId() {
-    return targetPageId;
-  }
-
-  public void setTargetPageId(String targetPageId) {
-    this.targetPageId = targetPageId;
-  }
-
   public void addChildren(List<JsonNodeData> children) {
     if (this.children == null) {
       this.children = new ArrayList<JsonNodeData>();

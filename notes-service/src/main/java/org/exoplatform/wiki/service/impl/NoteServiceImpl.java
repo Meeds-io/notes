@@ -1531,12 +1531,13 @@ public class NoteServiceImpl implements NoteService {
     deleteVersionsByNoteIdAndLang(noteId, lang);
   }
 
+
   /**
    * {@inheritDoc}
    */
   @Override
-  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
-    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType);
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome) {
+    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType, wikiHome);
   }
 
   public ExoCache<Integer, MarkupData> getRenderingCache() {
@@ -1546,7 +1547,6 @@ public class NoteServiceImpl implements NoteService {
   public Map<WikiPageParams, List<WikiPageParams>> getPageLinksMap() {
     return pageLinksMap;
   }
-
 
   // ******* Listeners *******/
 
