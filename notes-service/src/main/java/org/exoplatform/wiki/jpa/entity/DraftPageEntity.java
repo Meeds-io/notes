@@ -31,6 +31,7 @@ import java.util.List;
 @ExoEntity
 @Table(name = "WIKI_DRAFT_PAGES")
 @NamedQueries({
+        @NamedQuery(name = "wikiDraftPage.countDraftPagesByParentPage", query = "SELECT count(*) FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId"),
         @NamedQuery(name = "wikiDraftPage.findDraftPagesByUser", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username ORDER BY d.updatedDate DESC"),
         @NamedQuery(name = "wikiDraftPage.findDraftPageByUserAndName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.name = :draftPageName ORDER BY d.updatedDate DESC"),
         @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByUserAndTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.author = :username AND d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC"),

@@ -1208,7 +1208,8 @@ public class NotesRestService implements ResourceContainer {
       finalTree.add(rootNodeData);
       context.put(TreeNode.DEPTH, "1");
 
-      List<JsonNodeData> children = new ArrayList<>(rootNodeData.getChildren());
+      List<JsonNodeData> listChildren = rootNodeData.getChildren();
+      List<JsonNodeData> children = listChildren != null ? new ArrayList<>(listChildren) : new ArrayList<>();
       List<JsonNodeData> parents = new ArrayList<>();
 
       do {

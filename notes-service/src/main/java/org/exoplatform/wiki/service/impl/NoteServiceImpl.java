@@ -624,12 +624,31 @@ public class NoteServiceImpl implements NoteService {
     if (withChild) {
       for (Page page : pages) {
         long pageId = Long.parseLong(page.getId());
-        page.setHasChild(dataStorage.hasChildren(pageId));
+        page.setHasChild(hasChildren(pageId));
       }
     }
     return pages;
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean hasChildren(long pageId) {
+    return dataStorage.hasChildren(pageId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean hasDrafts(long pageId) {
+    return dataStorage.hasDrafts(pageId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<NoteToExport> getChildrenNoteOf(NoteToExport note, String userId) throws WikiException {
 
