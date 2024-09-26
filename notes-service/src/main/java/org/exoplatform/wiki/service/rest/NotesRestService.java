@@ -1215,7 +1215,6 @@ public class NotesRestService implements ResourceContainer {
         rootNodeData = getJsonTree(noteParam, context, identity, request.getLocale()).getFirst();
         treeNodeData.addAll(rootNodeData.getChildren());
       }
-
       if (rootNodeData != null) {
         responseData = List.of(rootNodeData);
       }
@@ -1504,7 +1503,7 @@ public class NotesRestService implements ResourceContainer {
                                    Map<String, Object> context,
                                    Identity identity,
                                    Locale locale) {
-    List<DraftPage> draftPages = noteService.getDraftsOfWiki(params.getOwner(), params.getType());
+    List<DraftPage> draftPages = noteService.getDraftsOfWiki(params.getOwner(), params.getType(), params.getPageName());
     Map<String, List<JsonNodeData>> draftsByParentPage = draftPages.stream().map(draftPage -> {
       try {
         PageTreeNode pageTreeNode = new PageTreeNode(draftPage);
@@ -1522,20 +1521,23 @@ public class NotesRestService implements ResourceContainer {
     draftsByParentPage.forEach((parentPageId, drafts) -> {
       try {
         drafts = TreeUtils.cleanDraftChildren(drafts, locale);
-        Page parent = noteService.getNoteById(String.valueOf(parentPageId));
-        PageTreeNode pageTreeNode = new PageTreeNode(parent);
-        Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
-        JsonNodeData parentJsonData = TreeUtils.toJsonNodeData(pageTreeNode,
-                                                               path,
-                                                               parent,
-                                                               context,
-                                                               canEdit,
-                                                               true,
-                                                               identity,
-                                                               locale,
-                                                               noteService);
+        JsonNodeData parentJsonData = findParent(parentPageId, treeNodeData);
+        if (parentJsonData == null) {
+          Page parent = noteService.getNoteById(String.valueOf(parentPageId));
+          PageTreeNode pageTreeNode = new PageTreeNode(parent);
+          Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
+          parentJsonData = TreeUtils.toJsonNodeData(pageTreeNode,
+                                                    path,
+                                                    parent,
+                                                    context,
+                                                    canEdit,
+                                                    true,
+                                                    identity,
+                                                    locale,
+                                                    noteService);
+        }
         if (!Objects.equals(parentJsonData.getNoteId(), rootNode.getNoteId())) {
-          parentJsonData.setChildren(drafts);
+          parentJsonData.addChildren(drafts);
           treeNodeData.add(parentJsonData);
           buildPageAscendants(rootNode, parentJsonData, treeNodeData, context, identity, locale, path);
         } else {
@@ -1546,7 +1548,7 @@ public class NotesRestService implements ResourceContainer {
       }
     });
   }
-  
+
   private void buildPageAscendants(JsonNodeData rootNode,
                                    JsonNodeData parentJsonData,
                                    List<JsonNodeData> treeNodeData,
@@ -1556,23 +1558,28 @@ public class NotesRestService implements ResourceContainer {
                                    String path) throws Exception {
     String parentPageId = parentJsonData.getParentPageId();
     if (parentPageId != null && !parentPageId.equals(rootNode.getNoteId())) {
-      Page parent = noteService.getNoteById(parentJsonData.getParentPageId());
-      PageTreeNode pageTreeNode = new PageTreeNode(parent);
-      Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
-      JsonNodeData parentNode = TreeUtils.toJsonNodeData(pageTreeNode,
-                                                         path,
-                                                         parent,
-                                                         context,
-                                                         canEdit,
-                                                         true,
-                                                         identity,
-                                                         locale,
-                                                         noteService);
-      parentNode.addChildren(List.of(parentJsonData));
+      JsonNodeData parentNode = findParent(parentPageId, treeNodeData);
+      if (parentNode == null) {
+        Page parent = noteService.getNoteById(parentJsonData.getParentPageId());
+        PageTreeNode pageTreeNode = new PageTreeNode(parent);
+        Boolean canEdit = context != null && context.get(TreeNode.CAN_EDIT) != null && (Boolean) context.get(TreeNode.CAN_EDIT);
+        parentNode = TreeUtils.toJsonNodeData(pageTreeNode, path, parent, context, canEdit, true, identity, locale, noteService);
+      }
+      addChildIfNoExists(parentNode, parentJsonData);
       treeNodeData.add(parentNode);
       buildPageAscendants(rootNode, parentNode, treeNodeData, context, identity, locale, path);
     } else {
-      rootNode.addChildren(List.of(parentJsonData));
+      addChildIfNoExists(rootNode, parentJsonData);
+    }
+  }
+
+  private JsonNodeData findParent(String parentId, List<JsonNodeData> list) {
+    return list.stream().filter(obj -> obj.getNoteId().equals(parentId)).findFirst().orElse(null);
+  }
+
+  private void addChildIfNoExists(JsonNodeData parent, JsonNodeData child) {
+    if (findParent(child.getNoteId(), parent.getChildren()) == null) {
+      parent.addChildren(List.of(child));
     }
   }
 }

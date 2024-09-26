@@ -985,7 +985,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
      noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
      draftPage.setParentPageId(note2.getId());
      noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
-     assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType()).size());
+     assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType(), portalWiki.getWikiHome().getName()).size());
 
    }
  }

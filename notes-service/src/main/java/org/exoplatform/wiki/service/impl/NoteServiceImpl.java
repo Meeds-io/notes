@@ -1739,8 +1739,8 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType) {
-    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType);
+  public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome) {
+    return dataStorage.getDraftsOfWiki(wikiOwner, wikiType, wikiHome);
   }
 
   // ******* Listeners *******/
