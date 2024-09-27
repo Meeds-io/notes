@@ -16,11 +16,19 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
 import java.util.Date;
-import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 /**
  * Created by The eXo Platform SAS
@@ -29,7 +37,6 @@ import java.util.List;
  * Jun 23, 2015
  */
 @Entity(name = "WikiPageMoveEntity")
-@ExoEntity
 @Table(name = "WIKI_PAGE_MOVES")
 @NamedQueries({
         @NamedQuery(name = "wikiPageMove.getPreviousPage", query = "SELECT p FROM WikiPageMoveEntity p WHERE p.wikiType = :wikiType AND p.wikiOwner = :wikiOwner AND p.pageName = :pageName")

@@ -19,13 +19,28 @@
 
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 /**
  * Created by The eXo Platform SAS
@@ -34,7 +49,6 @@ import java.util.Set;
  * 7/16/15
  */
 @Entity(name = "WikiPageEntity")
-@ExoEntity
 @Table(name = "WIKI_PAGES")
 @NamedQueries({
     @NamedQuery(name = "wikiPage.getAllIds", query = "SELECT p.id FROM WikiPageEntity p  WHERE p.deleted = false ORDER BY p.id"),

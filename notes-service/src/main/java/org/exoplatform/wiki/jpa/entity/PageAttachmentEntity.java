@@ -16,9 +16,13 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 
 /**
  * Created by The eXo Platform SAS
@@ -27,7 +31,6 @@ import jakarta.persistence.*;
  * Jun 23, 2015
  */
 @Entity(name = "WikiPageAttachmentEntity")
-@ExoEntity
 @Table(name = "WIKI_PAGE_ATTACHMENTS")
 @NamedQueries({
     @NamedQuery(name = "pageAttachment.getAllIds", query = "SELECT a.id FROM WikiPageAttachmentEntity a ORDER BY a.id"),
