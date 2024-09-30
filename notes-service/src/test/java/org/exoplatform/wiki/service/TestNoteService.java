@@ -21,7 +21,6 @@
 package org.exoplatform.wiki.service;
 
 
-import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -720,7 +719,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
     draft = noteService.createDraftForNewPage(draft, new Date().getTime(), 1L);
     assertNotNull(draft);
     noteService.removeOrphanDraftPagesByParentPage(Long.parseLong(homePage.getId()));
-    persist();
+    restartTransaction();
     assertNull(noteService.getDraftNoteById(draft.getId(), "root"));
   }
   
