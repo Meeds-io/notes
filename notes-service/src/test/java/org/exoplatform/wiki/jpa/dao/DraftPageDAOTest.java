@@ -30,8 +30,6 @@ import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 
-import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
-
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com Jun
  * 26, 2015
@@ -348,7 +346,7 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     dp1.setCreatedDate(new Date());
     dp1.setUpdatedDate(new Date());
     draftPageDAO.create(dp1);
-    persist();
+    restartTransaction();
 
     // Added to fix random fail when draft pages
     // are added at the same time
@@ -361,7 +359,7 @@ public class DraftPageDAOTest extends BaseWikiJPAIntegrationTest {
     dp2.setCreatedDate(new Date());
     dp2.setUpdatedDate(new Date());
     draftPageDAO.create(dp2);
-    persist();
+    restartTransaction();
 
     // When
     DraftPageEntity latestDraft = draftPageDAO.findLatestDraftPageByTargetPage(page.getId());
