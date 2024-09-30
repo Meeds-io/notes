@@ -23,7 +23,18 @@ package org.exoplatform.wiki.service.rest;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -46,13 +57,12 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.exoplatform.commons.comparators.NaturalComparator;
-import org.exoplatform.wiki.tree.PageTreeNode;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.common.http.HTTPStatus;
+import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -93,6 +103,7 @@ import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.TitleSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
+import org.exoplatform.wiki.tree.PageTreeNode;
 import org.exoplatform.wiki.tree.TreeNode;
 import org.exoplatform.wiki.tree.TreeNode.TREETYPE;
 import org.exoplatform.wiki.tree.WikiTreeNode;
@@ -1365,7 +1376,6 @@ public class NotesRestService implements ResourceContainer {
 
   @GET
   @Path( "/illustration/{noteId}")
-  @RolesAllowed("users")
   @Operation(
           summary = "Gets a note featured image illustration by note Id",
           description = "Gets a note featured image illustration by note Id",
