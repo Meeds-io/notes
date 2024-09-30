@@ -53,8 +53,6 @@ import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.utils.NoteConstants;
 
-import static org.exoplatform.social.core.jpa.test.AbstractCoreTest.persist;
-
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
  * 9/8/15
@@ -1161,7 +1159,7 @@ public class JPADataStorageTest extends BaseWikiJPAIntegrationTest {
     draft = draftPageDAO.create(draft);
     assertNotNull(draft);
     storage.deleteOrphanDraftPagesByParentPage(Long.parseLong(wiki.getWikiHome().getId()));
-    persist();
+    restartTransaction();
     assertNull(draftPageDAO.find(draft.getId()));
   }
   
