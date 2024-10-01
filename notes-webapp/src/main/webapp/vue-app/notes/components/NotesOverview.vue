@@ -969,7 +969,7 @@ export default {
       this.note.wikiOwner = this.note.wikiOwner.substring(1);
       this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name, 'children').then(data => {
         if (data?.jsonList?.length) {
-          this.noteChildren = data?.jsonList[0]?.children;
+          this.noteChildren = data?.jsonList;
         }
       });
     },
