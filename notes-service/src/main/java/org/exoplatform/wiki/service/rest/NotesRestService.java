@@ -57,6 +57,8 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.commons.comparators.NaturalComparator;
+import org.exoplatform.wiki.tree.PageTreeNode;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
