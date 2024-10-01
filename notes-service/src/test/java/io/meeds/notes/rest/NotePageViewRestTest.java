@@ -34,13 +34,13 @@ import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.portal.mop.PageType;
 import org.exoplatform.portal.mop.page.PageContext;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.portal.mop.page.PageState;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.rest.impl.ContainerResponse;
 import org.exoplatform.services.rest.impl.MultivaluedMapImpl;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.rest.api.RestUtils;
@@ -112,14 +112,18 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     Page notePage = getNotePage(pageNoteName, null);
     assertNull(notePage);
 
+    assertEquals(403, saveNotePage(pageNoteName, pageContent, null).getStatus());
+
     resetRestUtils();
+    registerInternalUser(USERNAME);
     assertEquals(401, saveNotePage(pageNoteName, pageContent, null).getStatus());
     assertEquals(404, saveNotePage(pageNoteName + "22", pageContent, null).getStatus());
 
     registerAdministratorUser(USERNAME);
-    saveNotePage(pageNoteName, pageContent, null);
+    assertEquals(204, saveNotePage(pageNoteName, pageContent, null).getStatus());
+    restartTransaction();
 
-    resetRestUtils();
+    registerInternalUser(USERNAME);
     notePage = getNotePage(pageNoteName, null);
     assertNotNull(notePage);
     assertEquals(pageContent, notePage.getContent());
@@ -186,14 +190,9 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     PageState pageState = new PageState(pageName,
                                         null,
                                         false,
-                                        false,
                                         null,
                                         Collections.singletonList(accessPermission),
-                                        editPermission,
-                                        Collections.singletonList(editPermission),
-                                        Collections.singletonList(editPermission),
-                                        PageType.PAGE.name(),
-                                        null);
+                                        editPermission);
     layoutService.save(new PageContext(pageKey, pageState));
     return pageKey.format();
   }
@@ -254,8 +253,9 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
   private org.exoplatform.services.security.Identity registerAdministratorUser(String user) {
     org.exoplatform.services.security.Identity identity =
                                                         new org.exoplatform.services.security.Identity(user,
-                                                                                                       Arrays.asList(MembershipEntry.parse(ADMINISTRATORS_GROUP)));
+                                                                                                       Arrays.asList(MembershipEntry.parse(ADMINISTRATORS_GROUP), MembershipEntry.parse(USERS_GROUP)));
     identityRegistry.register(identity);
+    ConversationState.setCurrent(new ConversationState(identity));
     resetRestUtils();
     REST_UTILS.when(RestUtils::getCurrentUser).thenReturn(USERNAME);
     REST_UTILS.when(RestUtils::getCurrentUserAclIdentity).thenReturn(identity);
@@ -267,6 +267,7 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
                                                         new org.exoplatform.services.security.Identity(username,
                                                                                                        Arrays.asList(MembershipEntry.parse(USERS_GROUP)));
     identityRegistry.register(identity);
+    ConversationState.setCurrent(new ConversationState(identity));
     resetRestUtils();
     REST_UTILS.when(RestUtils::getCurrentUser).thenReturn(USERNAME);
     REST_UTILS.when(RestUtils::getCurrentUserAclIdentity).thenReturn(identity);

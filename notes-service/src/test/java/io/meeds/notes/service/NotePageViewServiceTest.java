@@ -29,7 +29,6 @@ import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.portal.mop.PageType;
 import org.exoplatform.portal.mop.page.PageContext;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.portal.mop.page.PageState;
@@ -161,14 +160,9 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     PageState pageState = new PageState(pageName,
                                         null,
                                         false,
-                                        false,
                                         null,
                                         Collections.singletonList(accessPermission),
-                                        editPermission,
-                                        Collections.singletonList(editPermission),
-                                        Collections.singletonList(editPermission),
-                                        PageType.PAGE.name(),
-                                        null);
+                                        editPermission);
     layoutService.save(new PageContext(pageKey, pageState));
     return pageKey.format();
   }
