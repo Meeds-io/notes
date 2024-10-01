@@ -18,17 +18,8 @@ package org.exoplatform.wiki.mock;
 
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.portal.config.UserACL;
-import org.exoplatform.portal.config.model.Page;
 
 public class MockUserACL extends UserACL {
-
-  /* (non-Javadoc)
-   * @see org.exoplatform.portal.config.UserACL#hasPermission(org.exoplatform.portal.config.model.Page)
-   */
-  @Override
-  public boolean hasPermission(Page page) {
-    return true;
-  }
 
   /**
    * @param params
