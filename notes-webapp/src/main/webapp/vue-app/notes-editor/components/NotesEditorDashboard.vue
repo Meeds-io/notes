@@ -136,7 +136,7 @@ export default {
       return (!this.note?.title || this.note?.title?.length < 3
                                 || this.note?.title?.length > this.titleMaxLength)
                                 || (this.noteNotModified
-                                && !this.propertiesModified && !this.draftNote) || this.savingDraft;
+                                && !this.propertiesModified && !this.draftNote && !this.note.draftPage) || this.savingDraft;
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.$noteUtils.isSameContent(this.note?.content, this.originalNote?.content);
@@ -357,7 +357,13 @@ export default {
         });
       }).finally(() => this.enableClickOnce());
     },
-    autoSave() {
+    autoSave(event) {
+      if (event?.detail?.processAutoSave) {
+        //TODO
+      }
+      if (event?.detail?.showAutoSaveMessage) {
+        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
+      }
       if (this.translationSwitch) {
         return;
       }

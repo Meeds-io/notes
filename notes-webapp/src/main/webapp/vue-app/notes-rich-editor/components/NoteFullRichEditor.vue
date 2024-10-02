@@ -67,6 +67,11 @@
         </div>
       </div>
     </form>
+    <extension-registry-components
+      v-if="editorExtensions.length > 0"
+      name="NotesRichEditor"
+      type="notes-editor-extensions"
+      :params="extensionParams"/>
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
@@ -100,6 +105,7 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
+      editorExtensions: [],
       updatingProperties: false,
       enablePostKeys: 0,
       isPublishing: false
@@ -240,6 +246,14 @@ export default {
     }
   },
   computed: {
+    extensionParams() {
+      return {
+        spaceId: this.getURLQueryParam('spaceId'),
+        entityId: this.note?.id,
+        entityType: this.note.draftPage && 'draftPage' || 'Page',
+        lang: this.note.lang
+      };
+    },
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
     },
@@ -261,6 +275,7 @@ export default {
   },
   created() {
     this.cloneNoteObject();
+    this.refreshEditorExtensions();
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
@@ -268,8 +283,15 @@ export default {
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
+    document.addEventListener('notes-editor-extensions-updated', this.refreshEditorExtensions);
+    document.addEventListener('editor-extensions-data-start-updating', (event) => this.handleEditorExtensionDataUpdated(event));
+    document.addEventListener('editor-extensions-data-updated', (event) => this.handleEditorExtensionDataUpdated(event));
+
   },
   methods: {
+    handleEditorExtensionDataUpdated(event) {
+      this.autoSave(event.detail);
+    },
     metadataUpdated(properties) {
       this.updatingProperties = true;
       this.noteObject.properties = properties;
@@ -280,6 +302,9 @@ export default {
       } else {
         this.updatingProperties = false;
       }
+    },
+    refreshEditorExtensions() {
+      this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
     },
     editorClosed(){
       this.$emit('editor-closed');
@@ -580,6 +605,12 @@ export default {
     },
     setPublishing(publishing) {
       this.isPublishing = publishing;
+    },
+    getURLQueryParam(paramName) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has(paramName)) {
+        return urlParams.get(paramName);
+      }
     },
   }
 };

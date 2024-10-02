@@ -95,6 +95,8 @@ public class Page {
 
   private boolean                         hasChild;
 
+  private boolean                         hasVersions;
+
   private boolean                         isDeleted;
 
   private Page                            parent;

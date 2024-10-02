@@ -255,6 +255,7 @@ public class NoteServiceImpl implements NoteService {
       note.setContent(note.getContent());
       Page createdPage = createNote(noteBook, parentPage, note);
       NotePageProperties properties = note.getProperties();
+      Long draftPageId = properties != null && properties.isDraft() ? properties.getNoteId() : 0;
       try {
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
@@ -272,6 +273,12 @@ public class NoteServiceImpl implements NoteService {
         createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
         createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
         createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
+        if (draftPageId > 0) {
+          Map<String, String> eventData = new HashMap<>();
+          eventData.put("pageId", createdPage.getId());
+          eventData.put("draftPageId", String.valueOf(draftPageId));
+          Utils.broadcast(listenerService, "note.created", this, eventData);
+        }
       }
       return createdPage;
     } else {
@@ -1465,6 +1472,7 @@ public class NoteServiceImpl implements NoteService {
     List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
     if (lang == null && pageHistories.isEmpty()) {
       PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
+      String originalPageVersionId = pageVersion.getId();
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
                              pageVersion,
@@ -1474,6 +1482,10 @@ public class NoteServiceImpl implements NoteService {
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
       pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), null);
+      Map<String, String> eventData = new HashMap<>();
+      eventData.put("pageId", note.getId());
+      eventData.put("pageVersionId", originalPageVersionId);
+      Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
     return pageHistories;
   }

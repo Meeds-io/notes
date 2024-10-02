@@ -87,7 +87,7 @@ CKEDITOR.editorConfig = function (config) {
       }
     }
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
-    if (notesEditorExtensions?.length && this.useExtraPlugins) {
+    if (notesEditorExtensions?.length) {
       notesEditorExtensions.forEach(notesEditorExtension => {
         if (notesEditorExtension.extraPlugin) {
           extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
@@ -96,7 +96,7 @@ CKEDITOR.editorConfig = function (config) {
           removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
         }
         if (notesEditorExtension.extraToolbarItem) {
-          toolbar[0].push(notesEditorExtension.extraToolbarItem);
+          toolbar[toolbar.length - 1].items.push(notesEditorExtension.extraToolbarItem);
         }
       });
     }
