@@ -494,6 +494,7 @@ export default {
         wikiType: this.note.wikiType,
         wikiOwner: this.note.wikiOwner,
         parentPageId: this.parentPageId,
+        draftPage: true,
         properties: this.note?.properties
       };
       if (this.note.draftPage && this.note.id) {
