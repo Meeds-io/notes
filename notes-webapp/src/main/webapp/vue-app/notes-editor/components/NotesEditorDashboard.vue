@@ -335,6 +335,10 @@ export default {
       });
     },
     createNote(note) {
+      note.properties = {
+        draft: this.note?.draftPage,
+        noteId: this.note?.id
+      };
       return this.$notesService.createNote(note).then(data => {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         this.note = data;

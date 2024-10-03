@@ -255,7 +255,7 @@ public class NoteServiceImpl implements NoteService {
       note.setContent(note.getContent());
       Page createdPage = createNote(noteBook, parentPage, note);
       NotePageProperties properties = note.getProperties();
-      Long draftPageId = properties != null && properties.isDraft() ? properties.getNoteId() : 0;
+      String draftPageId = String.valueOf(properties != null && properties.isDraft() ? properties.getNoteId() : null);
       try {
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
@@ -273,12 +273,15 @@ public class NoteServiceImpl implements NoteService {
         createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
         createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
         createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
-        if (draftPageId > 0) {
-          Map<String, String> eventData = new HashMap<>();
-          eventData.put("pageId", createdPage.getId());
-          eventData.put("draftPageId", String.valueOf(draftPageId));
-          Utils.broadcast(listenerService, "note.created", this, eventData);
-        }
+      }
+      dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
+      PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()), createdPage.getLang());
+      createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
+      if (pageVersion != null && draftPageId != null) {
+        Map<String, String> eventData = new HashMap<>();
+        eventData.put("draftPageId", draftPageId);
+        eventData.put("pageVersionId", pageVersion.getId());
+        Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
       }
       return createdPage;
     } else {
@@ -995,6 +998,7 @@ public class NoteServiceImpl implements NoteService {
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
       versionsHistory = dataStorage.getHistoryOfPage(note);
+
     }
     for (PageHistory version : versionsHistory) {
       if (version.getAuthor() != null) {
@@ -1013,6 +1017,8 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public void createVersionOfNote(Page note, String userName) throws WikiException {
     PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
+    String pageVersionId = pageVersion.getId();
+    note.setLatestVersionId(pageVersionId);
     if (note.getLang() != null) {
       try {
         NotePageProperties properties = note.getProperties();
@@ -1034,8 +1040,14 @@ public class NoteServiceImpl implements NoteService {
                              null,
                              NOTE_METADATA_PAGE_OBJECT_TYPE,
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                             userName
-      );
+                             userName);
+    }
+    DraftPage draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
+    if (draftPage != null) {
+      Map<String, String> eventData = new HashMap<>();
+      eventData.put("draftPageId", draftPage.getId());
+      eventData.put("pageVersionId", pageVersionId);
+      Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
   }
 
@@ -1218,6 +1230,14 @@ public class NoteServiceImpl implements NoteService {
       log.error("Failed to save draft note metadata", e);
     }
     newDraftPage.setProperties(properties);
+    //
+    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()), newDraftPage.getLang());
+    if (pageVersion != null) {
+      Map<String, String> eventData = new HashMap<>();
+      eventData.put("pageVersionId", pageVersion.getId());
+      eventData.put("draftForExistingPageId", newDraftPage.getId());
+      Utils.broadcast(listenerService, "note.draft.for.exist.page.created", this, eventData);
+    }
     return newDraftPage;
   }
 
@@ -1412,6 +1432,7 @@ public class NoteServiceImpl implements NoteService {
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
       page.setProperties(publishedVersion.getProperties());
+      page.setLatestVersionId(publishedVersion.getId());
       if (lang != null) {
         page.setMetadatas(retrieveMetadataItems(pageId + "-" + lang, userIdentity.getUserId()));
       }
@@ -1428,6 +1449,7 @@ public class NoteServiceImpl implements NoteService {
       page.setTitle(publishedVersion.getTitle());
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
+      page.setLatestVersionId(publishedVersion.getId());
     }
     return page;
   }
@@ -1472,7 +1494,6 @@ public class NoteServiceImpl implements NoteService {
     List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
     if (lang == null && pageHistories.isEmpty()) {
       PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
-      String originalPageVersionId = pageVersion.getId();
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
                              pageVersion,
@@ -1482,10 +1503,6 @@ public class NoteServiceImpl implements NoteService {
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
       pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), null);
-      Map<String, String> eventData = new HashMap<>();
-      eventData.put("pageId", note.getId());
-      eventData.put("pageVersionId", originalPageVersionId);
-      Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
     return pageHistories;
   }
