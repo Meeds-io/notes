@@ -219,6 +219,10 @@ export default {
   },
   watch: {
     'noteObject.title': function(newVal, oldVal) {
+      if (newVal && newVal.length > this.noteTitleMaxLength) {
+        this.displayNoteTitleMaxLengthCheckAlert();
+        this.noteObject.title = oldVal;
+      }
       this.displayNoteTitleMaxLengthCheckAlert(newVal, oldVal);
       this.updateData();
     },
@@ -247,12 +251,13 @@ export default {
   },
   computed: {
     extensionParams() {
+      console.log(this.note);
       return {
         spaceId: this.getURLQueryParam('spaceId'),
         entityId: this.note.draftPage && this.note?.id || this.note.latestVersionId,
         entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
         lang: this.note.lang,
-        isEmptyNoteTranslation: this.note?.lang && this.note?.title && this.note?.content
+        isEmptyNoteTranslation: this.note.lang != null && !this.note?.title && !this.note?.content
       };
     },
     hasFeaturedImage() {
@@ -285,14 +290,8 @@ export default {
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
     document.addEventListener('notes-editor-extensions-updated', this.refreshEditorExtensions);
-    document.addEventListener('editor-extensions-data-start-updating', (event) => this.handleEditorExtensionDataUpdated(event));
-    document.addEventListener('editor-extensions-data-updated', (event) => this.handleEditorExtensionDataUpdated(event));
-
   },
   methods: {
-    handleEditorExtensionDataUpdated(event) {
-      this.autoSave(event.detail);
-    },
     metadataUpdated(properties) {
       this.updatingProperties = true;
       this.noteObject.properties = properties;
@@ -574,12 +573,6 @@ export default {
     },
     isImageDrawerClosed() {
       return this.$refs.featuredImageDrawer.isClosed();
-    },
-    openPublicationDrawer() {
-      this.$refs.editorPublicationDrawer.open(this.noteObject);
-    },
-    publicationDrawerClosed() {
-      this.enablePostKeys ++;
     },
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);

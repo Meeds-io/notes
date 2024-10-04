@@ -129,6 +129,7 @@ export default {
       saveButtonIcon: 'fas fa-save',
       translationSwitch: false,
       newTranslation: false,
+      autosaveProcessedFromEditorExtension: false
     };
   },
   computed: {
@@ -195,6 +196,7 @@ export default {
     document.addEventListener('automatic-translation-extensions-updated', () => {
       this.refreshTranslationExtensions();
     });
+    document.addEventListener('note-editor-extensions-data-updated', (evt) => this.processAutoSaveFromEditorExtension(evt));
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
@@ -248,6 +250,13 @@ export default {
     });
   },
   methods: {
+    processAutoSaveFromEditorExtension(event) {
+      if (event.detail.processAutoSave) {
+        this.autosaveProcessedFromEditorExtension = true;
+        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
+        this.persistDraftNote(this.fillDraftNote(), true);
+      }
+    },
     editorClosed() {
       window.close();
     },
@@ -361,13 +370,7 @@ export default {
         });
       }).finally(() => this.enableClickOnce());
     },
-    autoSave(event) {
-      if (event?.detail?.processAutoSave) {
-        //TODO
-      }
-      if (event?.detail?.showAutoSaveMessage) {
-        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
-      }
+    autoSave() {
       if (this.translationSwitch) {
         return;
       }
@@ -586,6 +589,14 @@ export default {
           this.savingDraft = false;
           setTimeout(() => {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+            if (this.autosaveProcessedFromEditorExtension) {
+              document.dispatchEvent(new CustomEvent('note-draft-auto-save-done', {
+                detail: {
+                  draftId: this.note.id
+                }
+              }));
+            }
+            this.autosaveProcessedFromEditorExtension = false;
           }, this.autoSaveDelay/2);
         }).catch(e => {
           console.error('Error when creating draft note: ', e);
