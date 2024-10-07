@@ -251,13 +251,12 @@ export default {
   },
   computed: {
     extensionParams() {
-      console.log(this.note);
       return {
         spaceId: this.getURLQueryParam('spaceId'),
-        entityId: this.note.draftPage && this.note?.id || this.note.latestVersionId,
+        entityId: this.note.id && this.note.id !== 0 && this.note?.draftPage ? this.note.id : this.note.latestVersionId,
         entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
         lang: this.note.lang,
-        isEmptyNoteTranslation: this.note.lang != null && !this.note?.title && !this.note?.content
+        isEmptyNoteTranslation: (!!this.note.lang || this.note.lang != null) && !this.note?.title && !this.note?.content
       };
     },
     hasFeaturedImage() {

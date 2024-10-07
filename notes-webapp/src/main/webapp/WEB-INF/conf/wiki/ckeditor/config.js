@@ -29,6 +29,7 @@ CKEDITOR.editorConfig = function (config) {
     'Table',
     'EmbedSemantic',
     'CodeSnippet',
+    'attachFile',
     'InsertOptions'
   ];
   if (webPageNote) {
