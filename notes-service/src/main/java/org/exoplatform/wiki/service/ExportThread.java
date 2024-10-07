@@ -20,7 +20,16 @@
 
 package org.exoplatform.wiki.service;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
@@ -34,14 +43,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.MimeTypeUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -59,9 +69,10 @@ import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.ExportList;
 import org.exoplatform.wiki.model.NoteToExport;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
-import org.springframework.util.MimeTypeUtils;
+
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
 
  public class ExportThread implements Runnable {
 
@@ -444,12 +455,22 @@ import org.springframework.util.MimeTypeUtils;
 
   public String processNotesLinkForExport(NoteToExport note) throws WikiException {
     String content = note.getContent();
-    String noteLinkprefix = "class=\"noteLink\" href=\"";
+//    String noteLinkprefix = "class=\"noteLink\" href=\"";
+//    String noteLinkprefix = "class=\"noteLink\" href=\"(\\d+)|.*?/([^/\"]+)";
+    String noteLinkprefix = "class=\"noteLink\" href=\"(?:.*?/|)(\\d+)";
     String contentUpdated = content;
     Map<String, String> urlToReplaces = new HashMap<>();
-    while (contentUpdated.contains("noteLink")) {
-      String checkContent = contentUpdated;
-      String noteId = contentUpdated.split(noteLinkprefix)[1].split("\"")[0];
+    Pattern pattern = Pattern.compile(noteLinkprefix);
+    Matcher matcher = pattern.matcher(contentUpdated);
+    while (matcher.find()) {
+      String matchedLink = matcher.group(0);
+      String noteId;
+      if (matcher.group(1) != null) {
+        noteId = matcher.group(1);
+      } else {
+        noteId = matcher.group(2);
+      }
+      
       Page linkedNote = null;
       try {
         linkedNote = noteService.getNoteById(noteId);
@@ -461,11 +482,7 @@ import org.springframework.util.MimeTypeUtils;
         String noteParams = IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiType() + IMAGE_URL_REPLACEMENT_SUFFIX
             + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiOwner() + IMAGE_URL_REPLACEMENT_SUFFIX
             + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getName() + IMAGE_URL_REPLACEMENT_SUFFIX;
-        urlToReplaces.put(noteLinkprefix + linkedNote.getId() + "\"", noteLinkprefix + noteParams + "\"");
-      }
-      contentUpdated = contentUpdated.replace(noteLinkprefix + noteId + "\"", "");
-      if (contentUpdated.equals(checkContent)) {
-        break;
+        urlToReplaces.put(matchedLink + "\"", "class=\"noteLink\" href=\"" + noteParams + "\"");
       }
     }
     if (!urlToReplaces.isEmpty()) {
@@ -523,38 +540,6 @@ import org.springframework.util.MimeTypeUtils;
       content = replaceUrl(note.getContent(), urlToReplaces);
     }
     return htmlUploadImageProcessor.processImagesForExport(content);
-  }
-
-  private void replaceIncludedPages(Page note, Wiki wiki) throws WikiException {
-    Page note_ = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
-    if (note_ != null) {
-      String content = note_.getContent();
-      if (content.contains("class=\"noteLink\" href=\"//-")) {
-        while (content.contains("class=\"noteLink\" href=\"//-")) {
-          String linkedParams = content.split("class=\"noteLink\" href=\"//-")[1].split("-//\"")[0];
-          String NoteName = linkedParams.split("-////-")[2];
-          Page linkedNote = null;
-          linkedNote = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), NoteName);
-          if (linkedNote != null) {
-            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//",
-                                      "\"noteLink\" href=\"" + linkedNote.getId());
-          } else {
-            content = content.replace("\"noteLink\" href=\"//-" + linkedParams + "-//", "\"noteLink\" href=\"" + NoteName);
-          }
-          if (content.equals(note_.getContent()))
-            break;
-        }
-        if (!content.equals(note_.getContent())) {
-          note_.setContent(content);
-          noteService.updateNote(note_);
-        }
-      }
-    }
-    if (note.getChildren() != null) {
-      for (Page child : note.getChildren()) {
-        replaceIncludedPages(child, wiki);
-      }
-    }
   }
 
   private String replaceUrl(String body, Map<String, String> urlToReplaces) {
