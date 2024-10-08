@@ -129,7 +129,8 @@ export default {
       saveButtonIcon: 'fas fa-save',
       translationSwitch: false,
       newTranslation: false,
-      autosaveProcessedFromEditorExtension: false
+      autosaveProcessedFromEditorExtension: false,
+      extensionDataUpdated: false
     };
   },
   computed: {
@@ -252,9 +253,61 @@ export default {
   methods: {
     processAutoSaveFromEditorExtension(event) {
       if (event.detail.processAutoSave) {
+        this.extensionDataUpdated = true;
         this.autosaveProcessedFromEditorExtension = true;
         this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
-        this.persistDraftNote(this.fillDraftNote(), true);
+        clearTimeout(this.saveDraft);
+        const draftNote = this.fillDraftNote();
+        if (!draftNote.title) {
+          draftNote.title = this.$t('notes.untitled.title');
+        }
+        draftNote.lang = this.selectedLanguage;
+        if (this.newDraft){
+          draftNote.id = null;
+        }
+        if (draftNote.properties) {
+          draftNote.properties.draft = true;
+          if (this.newTranslation && !this.featuredImageUpdated) {
+            draftNote.properties.featuredImage = null;
+          }
+        }
+        this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          this.actualNote = {
+            id: savedDraftNote.id,
+            name: savedDraftNote.name,
+            title: savedDraftNote.title,
+            content: savedDraftNote.content,
+            author: savedDraftNote.author,
+            owner: savedDraftNote.owner,
+            properties: savedDraftNote.properties
+          };
+          this.newDraft=false;
+          savedDraftNote.parentPageId = this.parentPageId;
+          this.note = savedDraftNote;
+          localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
+          this.newTranslation = false;
+        }).then(() => {
+          this.savingDraft = false;
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+            if (this.autosaveProcessedFromEditorExtension) {
+              document.dispatchEvent(new CustomEvent('note-draft-auto-save-done', {
+                detail: {
+                  draftId: this.note.id
+                }
+              }));
+            }
+            this.autosaveProcessedFromEditorExtension = false;
+          }, this.autoSaveDelay);
+        }).catch(e => {
+          console.error('Error when creating draft note: ', e);
+          this.$root.$emit('show-alert', {
+            type: 'error',
+            message: this.$t(`notes.message.${e.message}`)
+          });
+        });
+      } else {
+        this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
       }
     },
     editorClosed() {
@@ -308,7 +361,8 @@ export default {
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
         toBePublished: false,
         appName: this.appName,
-        properties: properties
+        properties: properties,
+        extensionDataUpdated: this.extensionDataUpdated
       };
       if (note.id) {
         this.updateNote(note);
@@ -341,6 +395,7 @@ export default {
       }).finally(() => {
         this.enableClickOnce();
         this.removeLocalStorageCurrentDraft(currentDraftId);
+        this.extensionDataUpdated = false;
       });
     },
     createNote(note) {
@@ -589,14 +644,6 @@ export default {
           this.savingDraft = false;
           setTimeout(() => {
             this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-            if (this.autosaveProcessedFromEditorExtension) {
-              document.dispatchEvent(new CustomEvent('note-draft-auto-save-done', {
-                detail: {
-                  draftId: this.note.id
-                }
-              }));
-            }
-            this.autosaveProcessedFromEditorExtension = false;
           }, this.autoSaveDelay/2);
         }).catch(e => {
           console.error('Error when creating draft note: ', e);

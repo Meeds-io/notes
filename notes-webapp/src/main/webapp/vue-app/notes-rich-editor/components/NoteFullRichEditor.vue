@@ -54,7 +54,8 @@
             :placeholder="titlePlaceholder"
             type="text"
             :maxlength="noteTitleMaxLength + 1"
-            class="py-0 px-1 mt-5 mb-0">
+            class="py-0 px-1 mt-5 mb-0"
+            @input="waitUserTyping()">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
           <textarea
@@ -71,7 +72,7 @@
       v-if="editorExtensions.length > 0"
       name="NotesRichEditor"
       type="notes-editor-extensions"
-      :params="extensionParams"/>
+      :params="extensionParams" />
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
@@ -105,6 +106,8 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
+      typingTimer: null,
+      isUserTyping: false,
       editorExtensions: [],
       updatingProperties: false,
       enablePostKeys: 0,
@@ -219,10 +222,6 @@ export default {
   },
   watch: {
     'noteObject.title': function(newVal, oldVal) {
-      if (newVal && newVal.length > this.noteTitleMaxLength) {
-        this.displayNoteTitleMaxLengthCheckAlert();
-        this.noteObject.title = oldVal;
-      }
       this.displayNoteTitleMaxLengthCheckAlert(newVal, oldVal);
       this.updateData();
     },
@@ -250,20 +249,26 @@ export default {
     }
   },
   computed: {
+    newEmptyTranslation() {
+      return !!this.note?.lang && !this.note?.title?.length && !this.note?.content?.length;
+    },
+    entityId() {
+      return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
+    },
     extensionParams() {
       return {
         spaceId: this.getURLQueryParam('spaceId'),
-        entityId: this.note.id && this.note.id !== 0 && this.note?.draftPage ? this.note.id : this.note.latestVersionId,
+        entityId: this.entityId,
         entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
         lang: this.note.lang,
-        isEmptyNoteTranslation: (!!this.note.lang || this.note.lang != null) && !this.note?.title && !this.note?.content
+        isEmptyNoteTranslation: this.newEmptyTranslation
       };
     },
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
     },
     saveNoteButtonDisabled() {
-      return this.updatingProperties || this.saveButtonDisabled;
+      return this.updatingProperties || this.saveButtonDisabled || this.isUserTyping;
     },
     newPageDraft() {
       return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
@@ -496,6 +501,7 @@ export default {
               self.initialized = true;
               return;
             }
+            self.waitUserTyping(self);
             self.noteObject.content = evt.editor.getData();
             self.autoSave();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
@@ -573,6 +579,12 @@ export default {
     isImageDrawerClosed() {
       return this.$refs.featuredImageDrawer.isClosed();
     },
+    openPublicationDrawer() {
+      this.$refs.editorPublicationDrawer.open(this.noteObject);
+    },
+    publicationDrawerClosed() {
+      this.enablePostKeys ++;
+    },
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);
     },
@@ -605,6 +617,14 @@ export default {
         return urlParams.get(paramName);
       }
     },
+    waitUserTyping(component) {
+      component ??= this;
+      clearTimeout(component.typingTimer);
+      component.isUserTyping = true;
+      component.typingTimer = setTimeout(function () {
+        component.isUserTyping = false;
+      }, 1000);
+    }
   }
 };
 </script>

@@ -998,7 +998,6 @@ public class NoteServiceImpl implements NoteService {
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
       versionsHistory = dataStorage.getHistoryOfPage(note);
-
     }
     for (PageHistory version : versionsHistory) {
       if (version.getAuthor() != null) {
