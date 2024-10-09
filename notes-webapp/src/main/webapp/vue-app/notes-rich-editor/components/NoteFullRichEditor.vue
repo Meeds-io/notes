@@ -30,7 +30,7 @@
       :selected-language="selectedLanguage"
       :translations="translations"
       :is-mobile="isMobile"
-      :post-key="postKey"
+      :post-key="postKey + enablePostKeys"
       :draft-saving-status="draftSavingStatus"
       :publish-button-text="publishButtonText"
       :lang-button-tooltip-text="langButtonTooltipText"
@@ -78,6 +78,16 @@
       ref="featuredImageDrawer"
       :note="noteObject"
       :has-featured-image="hasFeaturedImage" />
+    <note-publication-drawer
+      v-if="canPublish"
+      ref="editorPublicationDrawer"
+      :has-featured-image="hasFeaturedImage"
+      :is-publishing="isPublishing"
+      :space-id="spaceId"
+      :edit-mode="editMode"
+      @publish="postAndPublishNote"
+      @metadata-updated="metadataUpdated"
+      @closed="publicationDrawerClosed" />
   </div>
 </template>
 
@@ -90,7 +100,9 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
-      updatingProperties: null
+      updatingProperties: false,
+      enablePostKeys: 0,
+      isPublishing: false
     };
   },
   props: {
@@ -189,14 +201,19 @@ export default {
     imagesDownloadFolder: {
       type: String,
       default: 'DRIVE_ROOT_NODE/notes/images'
+    },
+    canPublish: {
+      type: Boolean,
+      default: false
+    },
+    spaceId: {
+      type: String,
+      default: null
     }
   },
   watch: {
     'noteObject.title': function(newVal, oldVal) {
-      if (newVal.length > this.noteTitleMaxLength) {
-        this.displayNoteTitleMaxLengthCheckAlert();
-        this.noteObject.title = oldVal;
-      }
+      this.displayNoteTitleMaxLengthCheckAlert(newVal, oldVal);
       this.updateData();
     },
     'noteObject.content': function () {
@@ -228,6 +245,18 @@ export default {
     },
     saveNoteButtonDisabled() {
       return this.updatingProperties || this.saveButtonDisabled;
+    },
+    newPageDraft() {
+      return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
+    },
+    editMode() {
+      return this.noteObject?.id && !this.newPageDraft;
+    },
+    isTranslation() {
+      return !!this.noteObject?.lang;
+    },
+    newPublicationDrawerEnabled() {
+      return eXo?.env?.portal?.newPublicationDrawerEnabled;
     }
   },
   created() {
@@ -249,7 +278,7 @@ export default {
         this.autoSave();
         this.waitForNoteMetadataUpdate();
       } else {
-        this.updatingProperties = null;
+        this.updatingProperties = false;
       }
     },
     editorClosed(){
@@ -335,8 +364,20 @@ export default {
         }, 200);
       }
     },
-    postNote(toPublish) {
-      this.$emit('post-note', toPublish);
+    postNote() {
+      if (this.newPublicationDrawerEnabled && this.canPublish
+          && !this.isTranslation && !this.editMode) {
+        this.openPublicationDrawer(this.noteObject);
+        return;
+      }
+      this.postAndPublishNote();
+    },
+    postAndPublishNote(note, publicationSettings) {
+      if (this.newPublicationDrawerEnabled) {
+        this.noteObject = note;
+        this.updateData();
+      }
+      this.$emit('post-note', publicationSettings);
     },
     resetEditorData() {
       this.noteObject.title = null;
@@ -508,6 +549,12 @@ export default {
     isImageDrawerClosed() {
       return this.$refs.featuredImageDrawer.isClosed();
     },
+    openPublicationDrawer() {
+      this.$refs.editorPublicationDrawer.open(this.noteObject);
+    },
+    publicationDrawerClosed() {
+      this.enablePostKeys ++;
+    },
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);
     },
@@ -517,18 +564,23 @@ export default {
         alertMessage: detail?.message,
       }}));
     },
-    displayNoteTitleMaxLengthCheckAlert(){
-      const messageObject = {
-        type: 'warning',
-        message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
-      };
-      this.displayAlert(messageObject);
+    displayNoteTitleMaxLengthCheckAlert(newTitle, oldTitle) {
+      if (newTitle?.length > this.noteTitleMaxLength) {
+        this.noteObject.title = oldTitle;
+        this.displayAlert({
+          type: 'warning',
+          message: this.$t('notes.title.max.length.warning.message', {0: this.noteTitleMaxLength})
+        });
+      }
     },
     waitForNoteMetadataUpdate() {
       setTimeout(() => {
-        this.updatingProperties = null;
+        this.updatingProperties = false;
       }, 1000);
-    }
+    },
+    setPublishing(publishing) {
+      this.isPublishing = publishing;
+    },
   }
 };
 </script>
