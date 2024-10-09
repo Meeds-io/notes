@@ -5,7 +5,6 @@ import NoteEditorTopBar from '../notes-rich-editor/components/NoteEditorTopBar.v
 import NoteFullRichEditor from './components/NoteFullRichEditor.vue';
 import NoteEditorMetadataDrawer from './components/note-properties/NoteEditorMetadataDrawer.vue';
 import NoteEditorFeaturedImageDrawer from './components/note-properties/NoteEditorFeaturedImageDrawer.vue';
-import NotePublicationDrawer from './components/note-publication/NotePublicationDrawer.vue';
 import NoteMetadataPropertiesForm from './components/note-properties/NoteMetadataPropertiesForm.vue';
 
 const components = {
@@ -16,7 +15,6 @@ const components = {
   'note-full-rich-editor': NoteFullRichEditor,
   'note-editor-metadata-drawer': NoteEditorMetadataDrawer,
   'note-editor-featured-image-drawer': NoteEditorFeaturedImageDrawer,
-  'note-publication-drawer': NotePublicationDrawer,
   'note-metadata-properties-form': NoteMetadataPropertiesForm
 };
 
