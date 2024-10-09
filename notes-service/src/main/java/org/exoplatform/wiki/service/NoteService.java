@@ -22,10 +22,7 @@ package org.exoplatform.wiki.service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NotePageProperties;
 import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.commons.utils.PageList;
@@ -40,6 +37,9 @@ import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
+
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
 
 /**
  * Provides functions for processing database with notes, including: adding,
@@ -71,6 +71,22 @@ public interface NoteService {
    *           parent note
    */
   Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
+                                                                                          IllegalAccessException;
+  
+  /**
+   * Create a new note in the given notebook, under the given parent note.
+   *
+   * @param noteBook Notebook object.
+   * @param parentNoteName parent note name.
+   * @param note the note object to create.
+   * @param userIdentity user Identity.
+   * @param importMode true if the creation is without timestamp for import mode. 
+   * @return The new note.
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights to the
+   *           parent note
+   */
+  Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity, boolean importMode) throws WikiException,
                                                                                           IllegalAccessException;
 
   /**
