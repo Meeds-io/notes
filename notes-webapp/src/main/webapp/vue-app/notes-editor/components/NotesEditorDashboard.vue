@@ -281,7 +281,7 @@ export default {
       this.note.content = noteObject.content;
       this.note.properties = noteObject.properties;
     },
-    postNote(toPublish) {
+    postNote() {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
       const properties = this.note?.properties;
@@ -297,7 +297,7 @@ export default {
         wikiOwner: this.note.wikiOwner,
         content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
-        toBePublished: toPublish,
+        toBePublished: false,
         appName: this.appName,
         properties: properties
       };
@@ -550,7 +550,7 @@ export default {
         if (draftNote.properties) {
           draftNote.properties.draft = true;
           if (this.newTranslation && !this.featuredImageUpdated) {
-            draftNote.properties.featuredImage = null;
+            draftNote.properties.featuredImage = {};
           }
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
