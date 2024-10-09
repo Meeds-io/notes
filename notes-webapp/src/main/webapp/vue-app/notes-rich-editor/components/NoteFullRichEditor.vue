@@ -89,16 +89,27 @@
       :note="noteObject"
       :has-featured-image="hasFeaturedImage" />
     <note-publication-drawer
+<<<<<<< HEAD
       v-if="publicationParams"
       ref="editorPublicationDrawer"
       :has-featured-image="hasFeaturedImage"
       :is-publishing="isPublishing"
       :params="publicationParams"
+=======
+      v-if="canPublish"
+      ref="editorPublicationDrawer"
+      :has-featured-image="hasFeaturedImage"
+      :is-publishing="isPublishing"
+      :space-id="spaceId"
+>>>>>>> 7376c8826 (feat: Implement notes publication drawer - EXO-72738_EXO-72741 - Meeds-io/MIPs#161 (#1152))
       :edit-mode="editMode"
       @publish="postAndPublishNote"
       @metadata-updated="metadataUpdated"
       @closed="publicationDrawerClosed" />
+<<<<<<< HEAD
     <note-publication-target-drawer />
+=======
+>>>>>>> 7376c8826 (feat: Implement notes publication drawer - EXO-72738_EXO-72741 - Meeds-io/MIPs#161 (#1152))
   </div>
 </template>
 
@@ -217,8 +228,17 @@ export default {
       type: String,
       default: 'DRIVE_ROOT_NODE/notes/images'
     },
+<<<<<<< HEAD
     publicationParams: {
       type: Object,
+=======
+    canPublish: {
+      type: Boolean,
+      default: false
+    },
+    spaceId: {
+      type: String,
+>>>>>>> 7376c8826 (feat: Implement notes publication drawer - EXO-72738_EXO-72741 - Meeds-io/MIPs#161 (#1152))
       default: null
     }
   },
@@ -284,6 +304,18 @@ export default {
     },
     isContentImagesUploadProgress() {
       return this.contentImageUploadProgress;
+    },
+    newPageDraft() {
+      return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
+    },
+    editMode() {
+      return this.noteObject?.id && !this.newPageDraft;
+    },
+    isTranslation() {
+      return !!this.noteObject?.lang;
+    },
+    newPublicationDrawerEnabled() {
+      return eXo?.env?.portal?.newPublicationDrawerEnabled;
     }
   },
   created() {
