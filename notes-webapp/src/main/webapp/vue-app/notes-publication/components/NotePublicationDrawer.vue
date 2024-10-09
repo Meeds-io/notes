@@ -46,6 +46,7 @@
             vertical
             flat>
             <div
+              v-if="!editMode"
               :class="{
                 'col-6': expanded,
                 'flex-grow-1': expanded || stepper === 1,
@@ -85,11 +86,12 @@
             <div
               :class="{
                 'col-6': expanded,
-                'mt-8': !expanded && stepper < 2,
-                'mt-4': !expanded && stepper === 2,
+                'mt-8': !expanded && stepper < 2 && !editMode,
+                'mt-4': !expanded && stepper === 2 && !editMode,
               }"
               class="flex-grow-0 flex-shrink-0">
               <v-stepper-step
+                v-if="!editMode"
                 :step="2"
                 :editable="!expanded"
                 width="100%"
@@ -101,27 +103,33 @@
                 </div>
               </v-stepper-step>
               <v-slide-y-transition>
-                <div v-show="expanded || stepper === 2">
+                <div v-show="expanded || stepper === (2 - editMode)">
                   <div
-                    class="d-flex flex-column mt-8">
+                    :class="{'mt-8': !editMode}"
+                    class="d-flex flex-column">
                     <v-scroll-y-transition hide-on-leave>
                       <div class="mb-2">
                         <div class="d-flex">
                           <v-switch
                             v-model="publicationSettings.post"
                             :disabled="isPublishing"
+                            :aria-label="$t('notes.publication.post.in.feed.label')"
                             :ripple="false"
                             color="primary"
                             class="mt-n1 me-1" />
-                          <span class="d-flex">
-                            {{ $t('notes.publication.post.in.feed.label') }}
+                          <div class="d-flex flex-wrap">
+                            <p class="me-2">
+                              {{ $t('notes.publication.post.in.feed.label') }}
+                            </p>
                             <exo-space-avatar
                               :space-id="spaceId"
                               size="21"
-                              extra-class="ms-2 mb-auto"
+                              :extra-class="['mb-auto text-truncate', {
+                                'post-feed-target': !expanded
+                              }]"
                               bold-title
                               popover />
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </v-scroll-y-transition>
@@ -187,7 +195,7 @@ export default {
   },
   computed: {
     saveButtonLabel() {
-      return (this.stepper === 1 && !this.expanded) && this.$t('notes.publication.publish.next.label')
+      return (!this.editMode && this.stepper === 1 && !this.expanded) && this.$t('notes.publication.publish.next.label')
                                                   || this.$t('notes.publication.publish.save.label');
     },
     summaryLengthError() {
@@ -217,6 +225,9 @@ export default {
     },
     open(noteObject) {
       this.noteObject = noteObject;
+      if (this.editMode) {
+        this.publicationSettings.post = this.noteObject?.activityPosted;
+      }
       this.cloneProperties();
       this.$refs.publicationDrawer.open();
       this.toggleExpand();
@@ -253,6 +264,10 @@ export default {
       }, 1000);
     },
     save() {
+      if (this.editMode) {
+        this.$emit('publish', this.publicationSettings);
+        return;
+      }
       if (!this.expanded && this.stepper === 1) {
         this.stepper += 1;
         return;
