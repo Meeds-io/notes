@@ -71,7 +71,7 @@ CKEDITOR.editorConfig = function (config) {
     },
     {
       name: 'blocks',
-      items: ['Blockquote']
+      items: ['Blockquote', 'attachFile']
     },
   ];
   if (!webPageNote) {
