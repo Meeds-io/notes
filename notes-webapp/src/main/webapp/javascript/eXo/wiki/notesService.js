@@ -221,19 +221,6 @@ export function restoreNoteVersion(note,version) {
   });
 }
 
-export function getPathByNoteOwner(note, noteAppName) {
-  if (!noteAppName) {
-    noteAppName = 'notes';
-  }
-  if (note.wikiType === 'group' && note?.url) {
-    const spaceName = note.wikiOwner.split('/spaces/')[1];
-    const spaceDisplayName = note.url.split(`/portal/g/:spaces:${spaceName}/`)[1].split('/')[0];
-    return `${eXo.env.portal.context}/g/:spaces:${spaceName}/${spaceDisplayName}/${noteAppName}/${note.id}`;
-  } else {
-    return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes/${note.id}`;
-  }
-}
-
 export function deleteNotes(note) {
   return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${note.id}`, {
     credentials: 'include',

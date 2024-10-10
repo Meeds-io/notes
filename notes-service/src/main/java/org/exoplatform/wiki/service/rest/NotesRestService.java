@@ -1161,7 +1161,7 @@ public class NotesRestService implements ResourceContainer {
       log.error("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to export note {} ", noteId, ex);
+      log.warn("Failed to import note {} ", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
