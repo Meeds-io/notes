@@ -824,8 +824,15 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
         }
-      } else if (note_.isToBePublished()){
-        note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);        
+      } else if (note_.isToBePublished()) {
+        note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);
+      } else if (note.isExtensionDataUpdated()) {
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        noteService.createVersionOfNote(note_, identity.getUserId());
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
+        }  
       } else {
         // in this case, the note didnt change on title nor content. As we need the page
         // url in front side, we compute it here

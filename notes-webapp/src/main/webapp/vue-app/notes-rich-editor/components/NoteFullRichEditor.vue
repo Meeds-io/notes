@@ -54,7 +54,8 @@
             :placeholder="titlePlaceholder"
             type="text"
             :maxlength="noteTitleMaxLength + 1"
-            class="py-0 px-1 mt-5 mb-0">
+            class="py-0 px-1 mt-5 mb-0"
+            @input="waitUserTyping()">
         </div>
         <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
           <textarea
@@ -67,6 +68,11 @@
         </div>
       </div>
     </form>
+    <extension-registry-components
+      v-if="editorExtensions.length > 0"
+      name="NotesRichEditor"
+      type="notes-editor-extensions"
+      :params="extensionParams" />
     <note-custom-plugins
       ref="noteCustomPlugins"
       :instance="editor" />
@@ -100,6 +106,9 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
+      typingTimer: null,
+      isUserTyping: false,
+      editorExtensions: [],
       updatingProperties: false,
       enablePostKeys: 0,
       isPublishing: false
@@ -240,11 +249,26 @@ export default {
     }
   },
   computed: {
+    newEmptyTranslation() {
+      return !!this.note?.lang && !this.note?.title?.length && !this.note?.content?.length;
+    },
+    entityId() {
+      return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
+    },
+    extensionParams() {
+      return {
+        spaceId: this.getURLQueryParam('spaceId'),
+        entityId: this.entityId,
+        entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
+        lang: this.note.lang,
+        isEmptyNoteTranslation: this.newEmptyTranslation
+      };
+    },
     hasFeaturedImage() {
       return !!this.noteObject?.properties?.featuredImage?.id;
     },
     saveNoteButtonDisabled() {
-      return this.updatingProperties || this.saveButtonDisabled;
+      return this.updatingProperties || this.saveButtonDisabled || this.isUserTyping;
     },
     newPageDraft() {
       return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
@@ -261,6 +285,7 @@ export default {
   },
   created() {
     this.cloneNoteObject();
+    this.refreshEditorExtensions();
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
     this.$root.$on('update-note-content', this.updateTranslatedNoteContent);
@@ -268,6 +293,7 @@ export default {
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
+    document.addEventListener('notes-editor-extensions-updated', this.refreshEditorExtensions);
   },
   methods: {
     metadataUpdated(properties) {
@@ -280,6 +306,9 @@ export default {
       } else {
         this.updatingProperties = false;
       }
+    },
+    refreshEditorExtensions() {
+      this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
     },
     editorClosed(){
       this.$emit('editor-closed');
@@ -472,6 +501,7 @@ export default {
               self.initialized = true;
               return;
             }
+            self.waitUserTyping(self);
             self.noteObject.content = evt.editor.getData();
             self.autoSave();
             const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
@@ -581,6 +611,20 @@ export default {
     setPublishing(publishing) {
       this.isPublishing = publishing;
     },
+    getURLQueryParam(paramName) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has(paramName)) {
+        return urlParams.get(paramName);
+      }
+    },
+    waitUserTyping(component) {
+      component ??= this;
+      clearTimeout(component.typingTimer);
+      component.isUserTyping = true;
+      component.typingTimer = setTimeout(function () {
+        component.isUserTyping = false;
+      }, 1000);
+    }
   }
 };
 </script>
