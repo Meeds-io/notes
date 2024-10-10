@@ -44,4 +44,6 @@ public class PageEntity implements Serializable {
   private String               lang;
 
   private PagePropertiesEntity properties;
+
+  private boolean              extensionDataUpdated;
 }
