@@ -29,6 +29,7 @@ CKEDITOR.editorConfig = function (config) {
     'Table',
     'EmbedSemantic',
     'CodeSnippet',
+    'attachFile',
     'InsertOptions'
   ];
   if (webPageNote) {
@@ -68,7 +69,7 @@ CKEDITOR.editorConfig = function (config) {
     },
     {
       name: 'blocks',
-      items: ['Blockquote']
+      items: ['Blockquote', 'attachFile']
     },
   ];
   let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester`;
@@ -87,7 +88,7 @@ CKEDITOR.editorConfig = function (config) {
       }
     }
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
-    if (notesEditorExtensions?.length && this.useExtraPlugins) {
+    if (notesEditorExtensions?.length) {
       notesEditorExtensions.forEach(notesEditorExtension => {
         if (notesEditorExtension.extraPlugin) {
           extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
@@ -96,7 +97,7 @@ CKEDITOR.editorConfig = function (config) {
           removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
         }
         if (notesEditorExtension.extraToolbarItem) {
-          toolbar[0].push(notesEditorExtension.extraToolbarItem);
+          toolbar[toolbar.length - 1].items.push(notesEditorExtension.extraToolbarItem);
         }
       });
     }

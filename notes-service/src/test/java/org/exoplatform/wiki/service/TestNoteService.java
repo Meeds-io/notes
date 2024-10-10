@@ -866,7 +866,7 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
   }
 
   public void testCreateDraftForExistPageWithProperties() throws Exception {
-    Identity user = new Identity("user");
+    Identity user = new Identity("root");
     this.bindMockedUploadService();
     NotePageProperties notePageProperties = createNotePageProperties(0L, "alt text", "summary Test");
     DraftPage draftPage = new DraftPage();
@@ -972,10 +972,10 @@ import org.exoplatform.wiki.jpa.JPADataStorage;
    }
 
    public void testGetDraftsOfWiki() throws Exception {
-     Identity user = new Identity("user");
+     Identity root = new Identity("root");
      Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
-     Page note = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), user);
-     Page note2 = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), user);
+     Page note = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), root);
+     Page note2 = noteService.createNote(portalWiki, "Home", new Page("testGetDraftsOfWiki", "testGetDraftsOfWiki"), root);
      DraftPage draftPage = new DraftPage();
      draftPage.setTitle("test");
      draftPage.setContent("test");
