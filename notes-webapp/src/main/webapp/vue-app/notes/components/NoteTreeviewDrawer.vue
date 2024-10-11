@@ -388,7 +388,7 @@
           <v-btn
             @click="moveNote()"
             class="btn btn-primary ml-2">
-            {{ $t('notes.button.ok') }}
+            {{ $t('notes.button.move') }}
           </v-btn>
         </div>
       </template>
