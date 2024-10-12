@@ -402,7 +402,6 @@ public class WikiServiceImpl implements WikiService {
       // search by keyword
       SpaceFilter spaceFilter = new SpaceFilter(keyword);
       spaceFilter.setRemoteId(currentUser);
-      spaceFilter.setAppId("Wiki");
 
       SpaceService spaceService = ExoContainerContext.getCurrentContainer()
                                                                     .getComponentInstanceOfType(SpaceService.class);
