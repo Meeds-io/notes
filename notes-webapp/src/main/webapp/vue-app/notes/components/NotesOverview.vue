@@ -293,7 +293,7 @@
       ref="DeleteNoteDialog"
       :message="confirmMessage"
       :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
-      :ok-label="$t('notes.button.ok')"
+      :ok-label="$t('notes.button.delete')"
       :cancel-label="$t('notes.button.cancel')"
       persistent
       @ok="deleteNote()"
