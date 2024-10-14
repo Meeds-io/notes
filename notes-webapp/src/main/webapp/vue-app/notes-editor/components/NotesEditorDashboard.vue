@@ -268,7 +268,7 @@ export default {
         if (draftNote.properties) {
           draftNote.properties.draft = true;
           if (this.newTranslation && !this.featuredImageUpdated) {
-            draftNote.properties.featuredImage = null;
+            draftNote.properties.featuredImage = {};
           }
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
@@ -399,10 +399,11 @@ export default {
       });
     },
     createNote(note) {
-      note.properties = {
-        draft: this.note?.draftPage,
-        noteId: this.note?.id
-      };
+      note.properties = note.properties || {};
+      if (!note.properties.noteId) {
+        note.properties.noteId = this.note?.id;
+        note.properties.draftPage = this.note?.draftPage;
+      }
       return this.$notesService.createNote(note).then(data => {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         this.note = data;
