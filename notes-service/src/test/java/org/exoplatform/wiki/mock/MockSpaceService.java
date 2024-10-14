@@ -240,19 +240,11 @@ public class MockSpaceService implements SpaceService {
     return null;
   }
 
-  public void saveSpace(Space space, boolean isNew) throws SpaceException {
-    
-  }
-
-  public void renameSpace(Space space, String newDisplayName) throws SpaceException {
+  public void createSpace(Space space, boolean isNew) throws SpaceException {
     
   }
 
   public void renameSpace(Space space, String newDisplayName, String remoteId) throws SpaceException {
-    
-  }
-
-  public void deleteSpace(String spaceId) throws SpaceException {
     
   }
 
@@ -266,22 +258,6 @@ public class MockSpaceService implements SpaceService {
 
   public void deInitApps(Space space) throws SpaceException {
     
-  }
-
-  public void addMember(String spaceId, String userId) throws SpaceException {
-    
-  }
-
-  public void removeMember(String spaceId, String userId) throws SpaceException {
-    
-  }
-
-  public List<String> getMembers(Space space) throws SpaceException {
-    return null;
-  }
-
-  public List<String> getMembers(String spaceId) throws SpaceException {
-    return null;
   }
 
   public void setLeader(Space space, String userId, boolean isLeader) throws SpaceException {
@@ -305,10 +281,6 @@ public class MockSpaceService implements SpaceService {
   }
 
   public boolean isOnlyLeader(String spaceId, String userId) throws SpaceException {
-    return false;
-  }
-
-  public boolean isMember(String spaceId, String userId) throws SpaceException {
     return false;
   }
 
@@ -377,10 +349,6 @@ public class MockSpaceService implements SpaceService {
   }
 
   public void removeApplication(String spaceId, String appId, String appName) throws SpaceException {
-    
-  }
-
-  public void updateSpaceAccessed(String remoteId, Space space) throws SpaceException {
     
   }
 
