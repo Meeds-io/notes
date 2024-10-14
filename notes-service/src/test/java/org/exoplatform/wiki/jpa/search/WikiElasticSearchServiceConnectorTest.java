@@ -27,10 +27,13 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.SpaceListAccess;
+import org.exoplatform.social.core.space.SpaceListAccessType;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.utils.Utils;
+
+import io.meeds.social.core.search.SpaceSearchConnector;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
@@ -45,9 +48,12 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
 
   @Mock
   private SpaceService                      spaceService;
-
+  
   @Mock
   private SpaceStorage                      spaceStorage;
+
+  @Mock
+  private SpaceSearchConnector              spaceSearchConnector;
 
   @Mock
   private ConfigurationManager              configurationManager;
@@ -129,8 +135,9 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
         + "        \"pre_tags\" : [\"<span class='searchMatchExcerpt'>\"],\n" + "        \"post_tags\" : [\"</span>\"]\n"
         + "      }\n" + "    }\n" + "  }\n" + "}");
     when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
+                                                                                  spaceSearchConnector,
                                                                                   "__system",
-                                                                                  SpaceListAccess.Type.MEMBER));
+                                                                                  SpaceListAccessType.MEMBER));
     when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
     when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,"__system")).thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
 
