@@ -35,6 +35,7 @@ CKEDITOR.editorConfig = function (config) {
   if (webPageNote) {
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('tagSuggester'), 1);
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('InsertOptions'), 1);
+    blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('attachFile'), 1);
   }
   const toolbar = [
     {name: 'accessibility', items: ['A11ychecker']},
@@ -69,9 +70,12 @@ CKEDITOR.editorConfig = function (config) {
     },
     {
       name: 'blocks',
-      items: ['Blockquote', 'attachFile']
+      items: ['Blockquote']
     },
   ];
+  if (!webPageNote) {
+    mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push('attachFile');
+  }
   let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
