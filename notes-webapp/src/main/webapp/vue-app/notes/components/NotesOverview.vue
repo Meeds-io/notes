@@ -133,16 +133,26 @@
             width="100%"
             max-height="400" />
           <div class="notes-title">
-            <span
-              ref="noteTitle"
-              class="title text-color">
+            <p ref="noteTitle" class="title text-color text-break">
+              <span>
               {{ noteTitle }}
-            </span>
-            <notes-translation-menu
-              :note="note"
-              :translations="translations"
-              :selected-translation="selectedTranslation"
-              @change-translation="changeTranslation" />
+              </span>
+              <span>
+                <notes-translation-menu
+                  note="note"
+                  :translations="translations"
+                  :selected-translation="selectedTranslation"
+                  @change-translation="changeTranslation" />
+              </span>
+              <extension-registry-components
+                v-if="overviewExtensions.length > 0"
+                name="NotesOverview"
+                type="notes-overview-extensions"
+                :params="extensionParams"
+                element-class="ms-3"
+                parent-element="span"
+                element="span" />
+            </p>
           </div>
           <p
             v-if="hasSummary"
@@ -363,7 +373,8 @@ export default {
       translationsMenu: false,
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
-      initialized: false
+      initialized: false,
+      overviewExtensions: [],
     };
   },
   watch: {
@@ -401,6 +412,19 @@ export default {
     }
   },
   computed: {
+    extensionParams() {
+      return {
+        entityId: this.entityId,
+        entityType: this.entityType,
+        editMode: false
+      };
+    },
+    entityId() {
+      return this.note?.draftPage && this.note?.id || this.note.latestVersionId;
+    },
+    entityType() {
+      return this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS';
+    },
     hasSummary() {
       return this.note?.properties?.summary?.length;
     },
@@ -612,6 +636,8 @@ export default {
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
+    document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
+    this.refreshOverviewExtensions();
 
   },
   mounted() {
@@ -1035,6 +1061,7 @@ export default {
           this.note.lang = note.lang;
           this.noteContent = note.content;
           this.note.title = note.title;
+          this.note.latestVersionId = note.latestVersionId;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
         }
         this.updateURL();
@@ -1068,6 +1095,9 @@ export default {
       if (this.initialized) {
         this.$root.$emit('refresh-treeView-items', this.note);
       }
+    },
+    refreshOverviewExtensions() {
+      this.overviewExtensions = extensionRegistry.loadComponents('NotesOverview') || [];
     }
   }
 };
