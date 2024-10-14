@@ -293,7 +293,7 @@ export default {
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
-    document.addEventListener('notes-editor-extensions-updated', this.refreshEditorExtensions);
+    document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
   },
   methods: {
     metadataUpdated(properties) {
