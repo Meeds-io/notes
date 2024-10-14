@@ -32,7 +32,7 @@
         width="36"
         min-width="36"
         height="36"
-        class="mt-n2 pa-0  ms-5"
+        class="pa-0  ms-5"
         :class="langButtonColor"
         icon>
         <v-icon

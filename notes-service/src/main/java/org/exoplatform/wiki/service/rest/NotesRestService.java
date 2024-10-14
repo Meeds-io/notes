@@ -226,6 +226,9 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNotBlank(lang)) {
         note = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), identity, source, lang);
+      } else {
+        PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), null);
+        note.setLatestVersionId(pageVersion == null ? null : pageVersion.getId());
       }
       String content = note.getContent();
       if (content.contains(Utils.NOTE_LINK)) {
