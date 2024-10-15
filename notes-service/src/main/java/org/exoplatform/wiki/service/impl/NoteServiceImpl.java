@@ -1117,6 +1117,7 @@ public class NoteServiceImpl implements NoteService {
             && isOriginalFeaturedImage(draftNoteToUpdate, targetPage)) {
           featuredImage.setId(0L);
         }
+        properties.setNoteId(Long.parseLong(newDraftPage.getId()));
         properties = saveNoteMetadata(properties,
                                       newDraftPage.getLang(),
                                       Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId()));
@@ -1153,6 +1154,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, Utils.getCurrentUser());
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
+      properties.setNoteId(Long.parseLong(newDraftPage.getId()));
       properties = saveNoteMetadata(properties, newDraftPage.getLang(), userIdentityId);
     } catch (Exception e) {
       log.error("Failed to save draft note metadata", e);
