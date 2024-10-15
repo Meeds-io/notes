@@ -89,11 +89,12 @@
       ref="editorPublicationDrawer"
       :has-featured-image="hasFeaturedImage"
       :is-publishing="isPublishing"
-      :space-id="spaceId"
+      :params="publicationParams"
       :edit-mode="editMode"
       @publish="postAndPublishNote"
       @metadata-updated="metadataUpdated"
       @closed="publicationDrawerClosed" />
+    <note-publication-target-drawer />
   </div>
 </template>
 
@@ -211,12 +212,8 @@ export default {
       type: String,
       default: 'DRIVE_ROOT_NODE/notes/images'
     },
-    canPublish: {
-      type: Boolean,
-      default: false
-    },
-    spaceId: {
-      type: String,
+    publicationParams: {
+      type: Object,
       default: null
     }
   },
@@ -249,6 +246,9 @@ export default {
     }
   },
   computed: {
+    canPublish() {
+      return this.publicationParams?.canPublish;
+    },
     newEmptyTranslation() {
       return !!this.note?.lang && !this.note?.title?.length && !this.note?.content?.length;
     },
@@ -575,6 +575,7 @@ export default {
         return;
       }
       this.$refs.editorMetadataDrawer.close();
+      this.$refs.editorPublicationDrawer.close();
     },
     isImageDrawerClosed() {
       return this.$refs.featuredImageDrawer.isClosed();
