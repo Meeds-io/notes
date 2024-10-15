@@ -22,7 +22,7 @@
     <v-overlay
       z-index="2000"
       :value="drawer"
-      @click.native="drawer = false" />
+      @click.native="closeDrawerByOverlay" />
     <exo-drawer
       id="editorPublicationDrawer"
       ref="publicationDrawer"
@@ -85,7 +85,8 @@
             </div>
             <div
               :class="{
-                'col-6': expanded,
+                'col-6': expanded && !editMode,
+                'col-12': expanded && editMode,
                 'mt-8': !expanded && stepper < 2 && !editMode,
                 'mt-4': !expanded && stepper === 2 && !editMode,
               }"
@@ -117,20 +118,32 @@
                             :ripple="false"
                             color="primary"
                             class="mt-n1 me-1" />
-                          <div class="d-flex flex-wrap">
+                          <div class="d-flex flex-wrap mb-6">
                             <p class="me-2">
                               {{ $t('notes.publication.post.in.feed.label') }}
                             </p>
                             <exo-space-avatar
                               :space-id="spaceId"
                               size="21"
-                              :extra-class="['mb-auto text-truncate', {
+                              :extra-class="['mb-2 text-truncate', {
                                 'post-feed-target': !expanded
                               }]"
                               bold-title
                               popover />
                           </div>
                         </div>
+                        <note-publish-option
+                          ref="publishOption"
+                          :allowed-targets="allowedTargets"
+                          :is-publishing="isPublishing"
+                          :edit-mode="editMode"
+                          :expanded="expanded"
+                          :saved-settings="{
+                            published: publicationSettings?.publish,
+                            selectedAudience: publicationSettings?.selectedAudience,
+                            selectedTargets: savedTargets(publicationSettings?.selectedTargets)
+                          }"
+                          @updated="updatedPublicationSettings" />
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -149,7 +162,7 @@
           </v-btn>
           <v-btn
             class="btn btn-primary"
-            :disabled="summaryLengthError"
+            :disabled="summaryLengthError || !saveEnabled"
             :loading="isPublishing"
             @click="save">
             {{ saveButtonLabel }}
@@ -161,6 +174,7 @@
 </template>
 
 <script>
+
 export default {
   data() {
     return {
@@ -172,7 +186,8 @@ export default {
       summaryMaxLength: 1300,
       publicationSettings: {
         post: true
-      }
+      },
+      currentPublicationSettings: {}
     };
   },
   props: {
@@ -184,23 +199,35 @@ export default {
       type: Boolean,
       default: false
     },
-    spaceId: {
-      type: String,
-      default: null
-    },
     editMode: {
       type: Boolean,
       default: false
+    },
+    params: {
+      type: Object,
+      default: null
     }
   },
   computed: {
+    saveEnabled() {
+      return !this.editMode || this.publicationSettingsUpdated;
+    },
+    publicationSettingsUpdated() {
+      return JSON.stringify(this.currentPublicationSettings) !== JSON.stringify(this.publicationSettings);
+    },
     saveButtonLabel() {
-      return (!this.editMode && this.stepper === 1 && !this.expanded) && this.$t('notes.publication.publish.next.label')
+      return (!this.editMode && !this.expanded && this.stepper === 1) && this.$t('notes.publication.publish.next.label')
                                                   || this.$t('notes.publication.publish.save.label');
     },
     summaryLengthError() {
       return this.noteObject?.properties?.summary?.length > this.summaryMaxLength;
     },
+    spaceId() {
+      return this.params?.spaceId;
+    },
+    allowedTargets() {
+      return this.params?.allowedTargets;
+    }
   },
   watch: {
     expanded() {
@@ -213,6 +240,14 @@ export default {
     }
   },
   methods: {
+    updatedPublicationSettings(settings) {
+      this.publicationSettings = structuredClone({
+        post: this.publicationSettings.post
+      });
+      this.publicationSettings.publish = settings?.publish;
+      this.publicationSettings.selectedTargets = settings?.selectedTargets;
+      this.publicationSettings.selectedAudience = settings?.selectedAudience;
+    },
     propertiesUpdated(properties) {
       if (!this.noteObject?.properties || !Object.keys(this.noteObject?.properties).length) {
         this.noteObject.properties = structuredClone(properties || {});
@@ -223,14 +258,26 @@ export default {
       this.updateCurrentNoteObjectProperties(properties);
       this.propertiesToSave = properties;
     },
+    savedTargets(targets) {
+      return targets?.map(target => {
+        return this.allowedTargets[this.allowedTargets.findIndex(allowedTarget => allowedTarget.name === target)];
+      });
+    },
     open(noteObject) {
       this.noteObject = noteObject;
       if (this.editMode) {
         this.publicationSettings.post = this.noteObject?.activityPosted;
+        this.publicationSettings.publish = this.noteObject?.published;
+        this.publicationSettings.selectedTargets = this.noteObject?.targets;
+        this.publicationSettings.selectedAudience = this.noteObject?.audience;
       }
+      this.currentPublicationSettings = structuredClone(this.publicationSettings);
       this.cloneProperties();
       this.$refs.publicationDrawer.open();
       this.toggleExpand();
+      setTimeout(() => {
+        this.$refs.publishOption.initSettings();
+      }, 200);
       this.$refs.propertiesForm?.initProperties();
     },
     toggleExpand() {
@@ -254,7 +301,13 @@ export default {
       this.stepper = 1;
       this.$refs.publicationDrawer.close();
     },
+    cancelChanges() {
+      this.$refs?.publishOption?.cancelChanges();
+    },
     reset() {
+      setTimeout(() => {
+        this.cancelChanges();
+      }, 1000);
       this.$emit('closed');
     },
     cancel() {
@@ -285,7 +338,14 @@ export default {
       this.noteObject.properties.featuredImage.mimeType = properties?.featuredImage?.mimeType;
       this.noteObject.properties.featuredImage.altText = properties?.featuredImage?.altText;
       this.noteObject.properties.featuredImage.toDelete = properties?.featuredImage?.toDelete;
-    }
+    },
+    closeDrawerByOverlay() {
+      if (this.editMode) {
+        this.drawer = !this.drawer;
+        return;
+      }
+      this.$root.$emit('close-featured-image-byOverlay');
+    },
   }
 };
 </script>

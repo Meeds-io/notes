@@ -136,7 +136,7 @@
           <div class="notes-title">
             <p ref="noteTitle" class="title text-color text-break">
               <span>
-              {{ noteTitle }}
+                {{ noteTitle }}
               </span>
               <span>
                 <notes-translation-menu
