@@ -31,7 +31,16 @@
       :right="!$vuetify.rtl">
       <template slot="title">
         <div class="d-flex my-auto text-header font-weight-bold text-color">
-          {{ $t('notes.publication.targets.label') }}
+          <v-btn
+            icon
+            @click="close">
+            <v-icon size="20">
+              fas fa-arrow-left
+            </v-icon>
+          </v-btn>
+          <span class="ms-2 my-auto">
+            {{ $t('notes.publication.targets.label') }}
+          </span>
         </div>
       </template>
       <template slot="content">

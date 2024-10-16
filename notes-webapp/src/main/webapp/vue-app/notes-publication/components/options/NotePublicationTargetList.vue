@@ -26,16 +26,17 @@
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <p
-            v-on="on"
-            v-bind="attrs"
             class="text-truncate mb-0">
-            <span class="font-weight-bold">
+            <span
+              v-on="on"
+              v-bind="attrs"
+              class="font-weight-bold">
               {{ target.label }}:
             </span>
             {{ target.description }}
           </p>
         </template>
-        <p class="caption">
+        <p class="caption mb-0">
           {{ target.tooltipInfo }}
         </p>
       </v-tooltip>
@@ -45,7 +46,7 @@
         width="28"
         min-width="28"
         height="28"
-        text
+        icon
         @click="removeSelectedTarget(target.name)">
         <v-icon
           class="error-color"

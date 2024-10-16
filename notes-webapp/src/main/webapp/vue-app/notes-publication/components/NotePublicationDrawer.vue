@@ -133,6 +133,7 @@
                           </div>
                         </div>
                         <note-publish-option
+                          v-if="allowedTargets?.length"
                           ref="publishOption"
                           :allowed-targets="allowedTargets"
                           :is-publishing="isPublishing"

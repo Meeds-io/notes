@@ -78,10 +78,13 @@
           <template #append-outer>
             <v-btn
               v-if="hasInputFilterValue"
-              class="btn position-absolute custom-clear-button no-border pa-1 t-2"
+              class="position-absolute custom-clear-button no-border pa-1 t-2"
               icon
+              @mousedown.prevent.stop
               @click="clearInputFilter">
-              <v-icon size="20">
+              <v-icon
+                class="icon-default-color"
+                size="18">
                 fas fa-times
               </v-icon>
             </v-btn>
