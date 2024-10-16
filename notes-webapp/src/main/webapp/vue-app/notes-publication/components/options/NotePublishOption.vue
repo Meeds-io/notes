@@ -78,10 +78,13 @@
           <template #append-outer>
             <v-btn
               v-if="hasInputFilterValue"
-              class="btn position-absolute custom-clear-button no-border pa-1 t-2"
+              class="position-absolute custom-clear-button no-border pa-1 t-2"
               icon
+              @mousedown.prevent.stop
               @click="clearInputFilter">
-              <v-icon size="20">
+              <v-icon
+                class="icon-default-color"
+                size="18">
                 fas fa-times
               </v-icon>
             </v-btn>
@@ -206,18 +209,20 @@ export default {
     }
   },
   computed: {
+    cleanSelectedTargets() {
+      return this.selectedTargets?.filter(target => !!target.name);
+    },
     remainTargetsLength() {
-      return this.selectedTargets?.length - 4;
+      return this.cleanSelectedTargets?.length - 4;
     },
     hasRestrictedAudience() {
-      return this.selectedTargets?.some(target => target.restrictedAudience);
+      return this.cleanSelectedTargets?.some(target => target.restrictedAudience);
     },
     isAllUsersAudience() {
       return this.selectedAudience?.value === 'all';
     },
     selectedTargetsValues() {
-      return this.selectedTargets?.filter(target => !!target.name)
-        ?.map(target => target.name);
+      return this.cleanSelectedTargets?.map(target => target.name);
     }
   },
   created() {
