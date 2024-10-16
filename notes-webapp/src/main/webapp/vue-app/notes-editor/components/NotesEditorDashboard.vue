@@ -410,9 +410,8 @@ export default {
         this.noteId = data.id;
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
-        const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
         // delete draft note
-        this.deleteDraftNote(draftNote, notePath);
+        this.deleteDraftNote(draftNote, this.note?.url);
         this.displayMessage({
           type: 'success',
           message: this.$t('notes.save.success.message'),
@@ -577,9 +576,8 @@ export default {
       if (this.webPageUrl) {
         return this.webPageUrl;
       } else {
-        const notePath = this.$notesService.getPathByNoteOwner(note, this.appName).replace(/ /g, '_');
         this.draftSavingStatus = '';
-        return `${notePath}?translation=${this.selectedLanguage || 'original'}`;
+        return `${note.url}?translation=${this.selectedLanguage || 'original'}`;
       }
     },
     saveNoteDraft(update) {
@@ -704,7 +702,7 @@ export default {
           .catch(e => console.error('Error when deleting draft note', e));
       }
     },
-    deleteDraftNote(draftNote, notePath) {
+    deleteDraftNote(draftNote, noteUrl) {
       if (!draftNote) {
         draftNote = this.note;
       }
@@ -713,7 +711,7 @@ export default {
         return this.$notesService.deleteDraftNote(draftNote).then(() => {
           this.draftSavingStatus = '';
           //re-initialize data
-          if (!notePath) {
+          if (!noteUrl) {
             this.note = {
               id: '',
               title: '',

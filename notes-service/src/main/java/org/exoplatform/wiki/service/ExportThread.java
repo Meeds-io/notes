@@ -455,7 +455,8 @@ import io.meeds.notes.model.NotePageProperties;
 
   public String processNotesLinkForExport(NoteToExport note) throws WikiException {
     String content = note.getContent();
-    String noteLinkprefix = "class=\"noteLink\" href=\"(?:.*?/|)(\\d+)";
+    String noteLinkprefix = "class=\"noteLink\" href=\"(?:.*?/)?(\\d+)\"";
+    
     String contentUpdated = content;
     Map<String, String> urlToReplaces = new HashMap<>();
     Pattern pattern = Pattern.compile(noteLinkprefix);
@@ -480,7 +481,7 @@ import io.meeds.notes.model.NotePageProperties;
         String noteParams = IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiType() + IMAGE_URL_REPLACEMENT_SUFFIX
             + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getWikiOwner() + IMAGE_URL_REPLACEMENT_SUFFIX
             + IMAGE_URL_REPLACEMENT_PREFIX + linkedNote.getName() + IMAGE_URL_REPLACEMENT_SUFFIX;
-        urlToReplaces.put(matchedLink + "\"", "class=\"noteLink\" href=\"" + noteParams + "\"");
+        urlToReplaces.put(matchedLink, "class=\"noteLink\" href=\"" + noteParams + "\"");
       }
     }
     if (!urlToReplaces.isEmpty()) {

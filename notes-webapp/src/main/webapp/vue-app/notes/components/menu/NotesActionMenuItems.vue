@@ -148,7 +148,7 @@ export default {
     },
     copyLink() {
       const inputTemp = $('<input>');
-      const path = window.location.href;
+      const path = `${window.location.origin}${this.note.url}`;
       $('body').append(inputTemp);
       inputTemp.val(path).select();
       document.execCommand('copy');
