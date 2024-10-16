@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
@@ -1341,7 +1342,8 @@ public class NoteServiceImpl implements NoteService {
           notesFilePath = file;
       }
       if (file.contains("/" + FEATURED_IMAGE_FOLDER + "/")) {
-        String imageId = file.substring(file.lastIndexOf("/") + 1);
+        String fileName = file.substring(file.lastIndexOf("/") + 1);
+        String imageId = fileName.substring(0, fileName.lastIndexOf("."));
         featuredImages.put(imageId, file);
       }
     }
@@ -1975,6 +1977,7 @@ public class NoteServiceImpl implements NoteService {
                           String conflict,
                           Identity userIdentity) throws Exception {
 
+    Page targetNote = null;
     File featuredImageFile = extractNoteFeaturedImageFileToImport(note, featuredImages);
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
@@ -1991,6 +1994,7 @@ public class NoteServiceImpl implements NoteService {
                                                                               imagesSubLocationPath);
         note.setContent(processedContent);
         note_ = createNote(wiki, parent_.getName(), note, userIdentity, false);
+        targetNote = note_;
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
@@ -2000,7 +2004,7 @@ public class NoteServiceImpl implements NoteService {
                                                                                   imagesSubLocationPath);
             note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity, false);
-
+            targetNote = note_;
           }
           if (conflict.equals("duplicate")) {
             String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
@@ -2008,9 +2012,11 @@ public class NoteServiceImpl implements NoteService {
                                                                                   imagesSubLocationPath);
             note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
+            targetNote = note_;
           }
           if (conflict.equals("update")) {
-            if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())) {
+            if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())
+                || !Objects.equals(note_2.getProperties(), note.getProperties())) {
               note_2.setTitle(note.getTitle());
               String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
                                                                                     wiki.getOwner(),
@@ -2018,6 +2024,7 @@ public class NoteServiceImpl implements NoteService {
               note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
+              targetNote = note_2;
             }
           }
         }
@@ -2026,7 +2033,7 @@ public class NoteServiceImpl implements NoteService {
       if (StringUtils.isNotEmpty(conflict)
           && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
-        if (!note.getContent().equals(note_1.getContent())) {
+        if (!note.getContent().equals(note_1.getContent()) || !Objects.equals(note_1.getProperties(), note.getProperties())) {
           String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
                                                                                 wiki.getOwner(),
                                                                                 imagesSubLocationPath);
@@ -2034,12 +2041,13 @@ public class NoteServiceImpl implements NoteService {
           note_1.setContent(processedContent);
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
           createVersionOfNote(note_1, userIdentity.getUserId());
+          targetNote = note_1;
         }
       }
     }
     if (featuredImageFile != null) {
       saveImportedFeaturedImage(featuredImageFile,
-                                note,
+                                targetNote,
                                 Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
     }
     if (note.getChildren() != null) {
