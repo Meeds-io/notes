@@ -7,6 +7,7 @@
     :top="top"
     :right="right"
     :space-id="spaceId"
+    :icon-size="iconSize"
     :template-params="templateParams"
     :small="false"
     type="notes"
@@ -35,6 +36,10 @@ export default {
     right: {
       type: Number,
       default: () => 0,
+    },
+    iconSize: {
+      type: Number,
+      default: () => 16,
     },
   },
   data: () => ({
