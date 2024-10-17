@@ -998,6 +998,9 @@ export default {
         if (data?.jsonList?.length) {
           this.noteChildren = data?.jsonList;
         }
+        else {
+          this.noteChildren = [];
+        }
       });
     },
     openNoteChild(item) {
