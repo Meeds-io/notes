@@ -97,9 +97,10 @@
                   </v-tooltip>
                 </div>
                 <note-favorite-action
-                  class="ms-2"
+                  :icon-size="20"
                   :note="note"
-                  :activity-id="note.activityId" />
+                  :activity-id="note.activityId" 
+                  class="ms-2" />
                 <div
                   class="d-inline-flex ms-2">
                   <v-tooltip bottom>
