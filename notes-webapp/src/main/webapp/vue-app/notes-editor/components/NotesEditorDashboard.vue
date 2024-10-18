@@ -129,6 +129,8 @@ export default {
       saveButtonIcon: 'fas fa-save',
       translationSwitch: false,
       newTranslation: false,
+      autosaveProcessedFromEditorExtension: false,
+      extensionDataUpdated: false
     };
   },
   computed: {
@@ -136,7 +138,7 @@ export default {
       return (!this.note?.title || this.note?.title?.length < 3
                                 || this.note?.title?.length > this.titleMaxLength)
                                 || (this.noteNotModified
-                                && !this.propertiesModified && !this.draftNote) || this.savingDraft;
+                                && !this.propertiesModified && !this.draftNote && !this.note.draftPage) || this.savingDraft;
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.$noteUtils.isSameContent(this.note?.content, this.originalNote?.content);
@@ -195,6 +197,7 @@ export default {
     document.addEventListener('automatic-translation-extensions-updated', () => {
       this.refreshTranslationExtensions();
     });
+    document.addEventListener('note-editor-extensions-data-updated', (evt) => this.processAutoSaveFromEditorExtension(evt));
     this.getAvailableLanguages();
     window.addEventListener('beforeunload', () => {
       if (!this.postingNote && this.note.draftPage && this.note.id) {
@@ -248,6 +251,65 @@ export default {
     });
   },
   methods: {
+    processAutoSaveFromEditorExtension(event) {
+      if (event.detail.processAutoSave) {
+        this.extensionDataUpdated = true;
+        this.autosaveProcessedFromEditorExtension = true;
+        this.draftSavingStatus = this.$t('notes.draft.savingDraftStatus');
+        clearTimeout(this.saveDraft);
+        const draftNote = this.fillDraftNote();
+        if (!draftNote.title) {
+          draftNote.title = this.$t('notes.untitled.title');
+        }
+        draftNote.lang = this.selectedLanguage;
+        if (this.newDraft){
+          draftNote.id = null;
+        }
+        if (draftNote.properties) {
+          draftNote.properties.draft = true;
+          if (this.newTranslation && !this.featuredImageUpdated) {
+            draftNote.properties.featuredImage = {};
+          }
+        }
+        this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          this.actualNote = {
+            id: savedDraftNote.id,
+            name: savedDraftNote.name,
+            title: savedDraftNote.title,
+            content: savedDraftNote.content,
+            author: savedDraftNote.author,
+            owner: savedDraftNote.owner,
+            properties: savedDraftNote.properties
+          };
+          this.newDraft=false;
+          savedDraftNote.parentPageId = this.parentPageId;
+          this.note = savedDraftNote;
+          localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
+          this.newTranslation = false;
+        }).then(() => {
+          this.savingDraft = false;
+          setTimeout(() => {
+            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+            if (this.autosaveProcessedFromEditorExtension) {
+              document.dispatchEvent(new CustomEvent('note-draft-auto-save-done', {
+                detail: {
+                  draftId: this.note.id
+                }
+              }));
+            }
+            this.autosaveProcessedFromEditorExtension = false;
+          }, this.autoSaveDelay);
+        }).catch(e => {
+          console.error('Error when creating draft note: ', e);
+          this.$root.$emit('show-alert', {
+            type: 'error',
+            message: this.$t(`notes.message.${e.message}`)
+          });
+        });
+      } else {
+        this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+      }
+    },
     editorClosed() {
       window.close();
     },
@@ -281,7 +343,7 @@ export default {
       this.note.content = noteObject.content;
       this.note.properties = noteObject.properties;
     },
-    postNote(toPublish) {
+    postNote() {
       this.postingNote = true;
       clearTimeout(this.saveDraft);
       const properties = this.note?.properties;
@@ -297,9 +359,10 @@ export default {
         wikiOwner: this.note.wikiOwner,
         content: this.$noteUtils.getContentToSave('notesContent', this.oembedMinWidth) || this.note.content,
         parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
-        toBePublished: toPublish,
+        toBePublished: false,
         appName: this.appName,
-        properties: properties
+        properties: properties,
+        extensionDataUpdated: this.extensionDataUpdated
       };
       if (note.id) {
         this.updateNote(note);
@@ -332,18 +395,23 @@ export default {
       }).finally(() => {
         this.enableClickOnce();
         this.removeLocalStorageCurrentDraft(currentDraftId);
+        this.extensionDataUpdated = false;
       });
     },
     createNote(note) {
+      note.properties = note.properties || {};
+      if (!note.properties.noteId) {
+        note.properties.noteId = this.note?.id;
+        note.properties.draftPage = this.note?.draftPage;
+      }
       return this.$notesService.createNote(note).then(data => {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         this.note = data;
         this.noteId = data.id;
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
-        const notePath = this.$notesService.getPathByNoteOwner(data, this.appName).replace(/ /g, '_');
         // delete draft note
-        this.deleteDraftNote(draftNote, notePath);
+        this.deleteDraftNote(draftNote, this.note?.url);
         this.displayMessage({
           type: 'success',
           message: this.$t('notes.save.success.message'),
@@ -508,9 +576,8 @@ export default {
       if (this.webPageUrl) {
         return this.webPageUrl;
       } else {
-        const notePath = this.$notesService.getPathByNoteOwner(note, this.appName).replace(/ /g, '_');
         this.draftSavingStatus = '';
-        return `${notePath}?translation=${this.selectedLanguage || 'original'}`;
+        return `${note.url}?translation=${this.selectedLanguage || 'original'}`;
       }
     },
     saveNoteDraft(update) {
@@ -550,7 +617,7 @@ export default {
         if (draftNote.properties) {
           draftNote.properties.draft = true;
           if (this.newTranslation && !this.featuredImageUpdated) {
-            draftNote.properties.featuredImage = null;
+            draftNote.properties.featuredImage = {};
           }
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
@@ -635,7 +702,7 @@ export default {
           .catch(e => console.error('Error when deleting draft note', e));
       }
     },
-    deleteDraftNote(draftNote, notePath) {
+    deleteDraftNote(draftNote, noteUrl) {
       if (!draftNote) {
         draftNote = this.note;
       }
@@ -644,7 +711,7 @@ export default {
         return this.$notesService.deleteDraftNote(draftNote).then(() => {
           this.draftSavingStatus = '';
           //re-initialize data
-          if (!notePath) {
+          if (!noteUrl) {
             this.note = {
               id: '',
               title: '',

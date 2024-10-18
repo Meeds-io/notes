@@ -29,11 +29,13 @@ CKEDITOR.editorConfig = function (config) {
     'Table',
     'EmbedSemantic',
     'CodeSnippet',
+    'attachFile',
     'InsertOptions'
   ];
   if (webPageNote) {
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('tagSuggester'), 1);
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('InsertOptions'), 1);
+    blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('attachFile'), 1);
   }
   const toolbar = [
     {name: 'accessibility', items: ['A11ychecker']},
@@ -71,6 +73,9 @@ CKEDITOR.editorConfig = function (config) {
       items: ['Blockquote']
     },
   ];
+  if (!webPageNote) {
+    mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push('attachFile');
+  }
   let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
@@ -87,7 +92,7 @@ CKEDITOR.editorConfig = function (config) {
       }
     }
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
-    if (notesEditorExtensions?.length && this.useExtraPlugins) {
+    if (notesEditorExtensions?.length) {
       notesEditorExtensions.forEach(notesEditorExtension => {
         if (notesEditorExtension.extraPlugin) {
           extraPlugins = `${extraPlugins},${notesEditorExtension.extraPlugin}`;
@@ -96,7 +101,7 @@ CKEDITOR.editorConfig = function (config) {
           removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
         }
         if (notesEditorExtension.extraToolbarItem) {
-          toolbar[0].push(notesEditorExtension.extraToolbarItem);
+          toolbar[toolbar.length - 1].items.push(notesEditorExtension.extraToolbarItem);
         }
       });
     }

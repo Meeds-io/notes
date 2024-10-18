@@ -226,6 +226,9 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNotBlank(lang)) {
         note = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), identity, source, lang);
+      } else {
+        PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), null);
+        note.setLatestVersionId(pageVersion == null ? null : pageVersion.getId());
       }
       String content = note.getContent();
       if (content.contains(Utils.NOTE_LINK)) {
@@ -761,8 +764,8 @@ public class NotesRestService implements ResourceContainer {
           }
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
         } else {
-          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+          note_.setLang(note.getLang());
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
@@ -783,8 +786,8 @@ public class NotesRestService implements ResourceContainer {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
         } else {
-          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
+          note_.setLang(note.getLang());
           note_.setTitle(note.getTitle());
           note_.setProperties(notePageProperties);
         }
@@ -799,8 +802,8 @@ public class NotesRestService implements ResourceContainer {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         } else {
-          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
+          note_.setLang(note.getLang());
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
@@ -815,8 +818,8 @@ public class NotesRestService implements ResourceContainer {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
         } else {
-          note_.setLang(note.getLang());
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
+          note_.setLang(note.getLang());
           note_.setProperties(notePageProperties);
         }
         noteService.createVersionOfNote(note_, identity.getUserId());
@@ -824,8 +827,15 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
         }
-      } else if (note_.isToBePublished()){
-        note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);        
+      } else if (note_.isToBePublished()) {
+        note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);
+      } else if (note.isExtensionDataUpdated()) {
+        note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
+        noteService.createVersionOfNote(note_, identity.getUserId());
+        if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
+          WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
+          noteService.removeDraftOfNote(noteParams, note.getLang());
+        }  
       } else {
         // in this case, the note didnt change on title nor content. As we need the page
         // url in front side, we compute it here
@@ -1151,7 +1161,7 @@ public class NotesRestService implements ResourceContainer {
       log.error("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to export note {} ", noteId, ex);
+      log.warn("Failed to import note {} ", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }

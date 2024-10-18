@@ -97,9 +97,10 @@
                   </v-tooltip>
                 </div>
                 <note-favorite-action
-                  class="ms-2"
+                  :icon-size="20"
                   :note="note"
-                  :activity-id="note.activityId" />
+                  :activity-id="note.activityId" 
+                  class="ms-2" />
                 <div
                   class="d-inline-flex ms-2">
                   <v-tooltip bottom>
@@ -133,16 +134,26 @@
             width="100%"
             max-height="400" />
           <div class="notes-title">
-            <span
-              ref="noteTitle"
-              class="title text-color">
-              {{ noteTitle }}
-            </span>
-            <notes-translation-menu
-              :note="note"
-              :translations="translations"
-              :selected-translation="selectedTranslation"
-              @change-translation="changeTranslation" />
+            <p ref="noteTitle" class="title text-color text-break">
+              <span>
+                {{ noteTitle }}
+              </span>
+              <span>
+                <notes-translation-menu
+                  note="note"
+                  :translations="translations"
+                  :selected-translation="selectedTranslation"
+                  @change-translation="changeTranslation" />
+              </span>
+              <extension-registry-components
+                v-if="overviewExtensions.length > 0"
+                name="NotesOverview"
+                type="notes-overview-extensions"
+                :params="extensionParams"
+                element-class="ms-3"
+                parent-element="span"
+                element="span" />
+            </p>
           </div>
           <p
             v-if="hasSummary"
@@ -293,7 +304,7 @@
       ref="DeleteNoteDialog"
       :message="confirmMessage"
       :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
-      :ok-label="$t('notes.button.ok')"
+      :ok-label="$t('notes.button.delete')"
       :cancel-label="$t('notes.button.cancel')"
       persistent
       @ok="deleteNote()"
@@ -362,7 +373,8 @@ export default {
       translationsMenu: false,
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
-      initialized: false
+      initialized: false,
+      overviewExtensions: [],
     };
   },
   watch: {
@@ -400,6 +412,19 @@ export default {
     }
   },
   computed: {
+    extensionParams() {
+      return {
+        entityId: this.entityId,
+        entityType: this.entityType,
+        editMode: false
+      };
+    },
+    entityId() {
+      return this.note?.draftPage && this.note?.id || this.note.latestVersionId;
+    },
+    entityType() {
+      return this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS';
+    },
     hasSummary() {
       return this.note?.properties?.summary?.length;
     },
@@ -611,6 +636,8 @@ export default {
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
+    document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
+    this.refreshOverviewExtensions();
 
   },
   mounted() {
@@ -673,7 +700,7 @@ export default {
       if (this.selectedTranslation.value){
         translation = `&translation=${this.selectedTranslation.value}`;
       }
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&spaceName=${eXo.env.portal?.spaceDisplayName}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true${translation}`, '_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&spaceName=${eXo.env.portal?.spaceDisplayName}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true${translation}&spaceId=${eXo.env.portal.spaceId}`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
@@ -971,6 +998,9 @@ export default {
         if (data?.jsonList?.length) {
           this.noteChildren = data?.jsonList;
         }
+        else {
+          this.noteChildren = [];
+        }
       });
     },
     openNoteChild(item) {
@@ -1031,6 +1061,7 @@ export default {
           this.note.lang = note.lang;
           this.noteContent = note.content;
           this.note.title = note.title;
+          this.note.latestVersionId = note.latestVersionId;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
         }
         this.updateURL();
@@ -1064,6 +1095,9 @@ export default {
       if (this.initialized) {
         this.$root.$emit('refresh-treeView-items', this.note);
       }
+    },
+    refreshOverviewExtensions() {
+      this.overviewExtensions = extensionRegistry.loadComponents('NotesOverview') || [];
     }
   }
 };
