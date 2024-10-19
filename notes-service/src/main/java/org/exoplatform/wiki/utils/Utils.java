@@ -45,24 +45,17 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.commons.api.notification.NotificationContext;
-import org.exoplatform.commons.api.notification.model.PluginKey;
-import org.exoplatform.commons.notification.impl.NotificationContextImpl;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.utils.MentionUtils;
-import org.exoplatform.social.notification.LinkProviderUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
+import org.exoplatform.commons.api.notification.NotificationContext;
+import org.exoplatform.commons.api.notification.model.PluginKey;
 import org.exoplatform.commons.diff.DiffResult;
 import org.exoplatform.commons.diff.DiffService;
+import org.exoplatform.commons.notification.impl.NotificationContextImpl;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.ExoContainer;
@@ -84,13 +77,13 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.space.SpaceApplication;
-import org.exoplatform.social.core.space.SpaceTemplate;
-import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.social.core.space.spi.SpaceTemplateService;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.utils.MentionUtils;
+import org.exoplatform.social.notification.LinkProviderUtils;
 import org.exoplatform.web.WebAppController;
 import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.web.controller.QualifiedName;
@@ -114,9 +107,9 @@ import org.exoplatform.wiki.service.impl.WikiPageHistory;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
+import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
-import jakarta.servlet.http.HttpServletRequest;
 
 public class Utils {
 
@@ -613,18 +606,10 @@ public class Utils {
   }
 
   public static String getPageUrl(Page page){
-    String appName= page.getAppName();
-    if(StringUtils.isEmpty(appName) && StringUtils.startsWith(page.getWikiOwner(), SpaceUtils.SPACE_GROUP)){
-      appName = getWikiAppNameInSpace(page.getWikiOwner());
-    } else {
-      appName = "notes";
-    }
     String spaceUri = getSpacesURI(page);
     StringBuilder spaceUrl = new StringBuilder("/portal");
     spaceUrl.append(spaceUri);
-    spaceUrl.append("/");
-    spaceUrl.append(appName);
-    spaceUrl.append("/");
+    spaceUrl.append("/notes/");
     if (!StringUtils.isEmpty(page.getId())) {
       spaceUrl.append(page.getId());
     }
@@ -658,34 +643,6 @@ public class Utils {
       return "";
     }
   }
-
-  public static String getWikiAppNameInSpace(String spaceGroupId) {
-    try {
-      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-      if (StringUtils.isBlank(spaceGroupId)) {
-        return null;
-      }
-      Space space = spaceService.getSpaceByGroupId(spaceGroupId);
-      if (space != null) {
-        SpaceTemplateService spaceTemplateService = CommonsUtils.getService(SpaceTemplateService.class);
-        SpaceTemplate spaceTemplate = spaceTemplateService.getSpaceTemplateByName(space.getTemplate());
-        if (spaceTemplate != null) {
-          List<SpaceApplication> spaceTemplateApplications = spaceTemplate.getSpaceApplicationList();
-          if (CollectionUtils.isNotEmpty(spaceTemplateApplications)) {
-            for (SpaceApplication spaceApplication : spaceTemplateApplications) {
-              if ("WikiPortlet".equals(spaceApplication.getPortletName())) {
-                return spaceApplication.getUri();
-              }
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log_.warn("Cannot get Wiki App anme", e);
-    }
-    return "notes";
-  }
-
 
   public static List<String> unzip(String zipFilePath, String folderPath) throws IOException {
     Path destDirPath = Paths.get(folderPath).toAbsolutePath().normalize();
