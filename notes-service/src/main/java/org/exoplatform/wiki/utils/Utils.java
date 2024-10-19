@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -79,12 +78,8 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.space.SpaceApplication;
-import org.exoplatform.social.core.space.SpaceTemplate;
-import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.social.core.space.spi.SpaceTemplateService;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.utils.MentionUtils;
 import org.exoplatform.social.notification.LinkProviderUtils;
@@ -612,15 +607,7 @@ public class Utils {
       if (space != null) {
         StringBuilder spaceUrl = new StringBuilder("/portal/s/");
         spaceUrl.append(space.getId());
-        spaceUrl.append("/");
-        String appName = page.getAppName();
-        if (StringUtils.isEmpty(appName) && StringUtils.startsWith(page.getWikiOwner(), SpaceUtils.SPACE_GROUP)) {
-          appName = getWikiAppNameInSpace(page.getWikiOwner());
-        } else {
-          appName = "notes";
-        }
-        spaceUrl.append(appName);
-        spaceUrl.append("/");
+        spaceUrl.append("/notes/");
         if (!StringUtils.isEmpty(page.getId())) {
           spaceUrl.append(page.getId());
         }
@@ -631,34 +618,6 @@ public class Utils {
       return "";
     }
   }
-
-  public static String getWikiAppNameInSpace(String spaceGroupId) {
-    try {
-      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-      if (StringUtils.isBlank(spaceGroupId)) {
-        return null;
-      }
-      Space space = spaceService.getSpaceByGroupId(spaceGroupId);
-      if (space != null) {
-        SpaceTemplateService spaceTemplateService = CommonsUtils.getService(SpaceTemplateService.class);
-        SpaceTemplate spaceTemplate = spaceTemplateService.getSpaceTemplateByName(space.getTemplate());
-        if (spaceTemplate != null) {
-          List<SpaceApplication> spaceTemplateApplications = spaceTemplate.getSpaceApplicationList();
-          if (CollectionUtils.isNotEmpty(spaceTemplateApplications)) {
-            for (SpaceApplication spaceApplication : spaceTemplateApplications) {
-              if ("WikiPortlet".equals(spaceApplication.getPortletName())) {
-                return spaceApplication.getUri();
-              }
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log_.warn("Cannot get Wiki App anme", e);
-    }
-    return "notes";
-  }
-
 
   public static List<String> unzip(String zipFilePath, String folderPath) throws IOException {
     Path destDirPath = Paths.get(folderPath).toAbsolutePath().normalize();

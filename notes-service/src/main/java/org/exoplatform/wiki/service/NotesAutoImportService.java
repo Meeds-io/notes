@@ -82,8 +82,6 @@ public class NotesAutoImportService implements Startable {
 
   private static final String  EN_EXPORT_ZIP_LOCATION                     = "/notesExports/en/kb_export_en.zip";
 
-  private static final String  SPACE_TEMPLATE                             = "community";
-
   private static final String  TEMP_DIRECTORY_PATH          = "java.io.tmpdir";
 
   private final InitParams     initParams;
@@ -196,7 +194,7 @@ public class NotesAutoImportService implements Startable {
     String groupId  = "/spaces/" + spaceName;
     Space space = spaceService.getSpaceByGroupId(groupId);
     if (space == null) {
-      space = createSpace(spaceName, spaceDisplayName, spaceDescription, SPACE_TEMPLATE, superUserIdentity);
+      space = createSpace(spaceName, spaceDisplayName, spaceDescription, superUserIdentity);
     }
 
     try {
@@ -271,14 +269,11 @@ public class NotesAutoImportService implements Startable {
   private Space createSpace(String prettyName,
                             String displayName,
                             String description,
-                            String template,
                             Identity superUserIdentity) {
     Space space = new Space();
-    space.setPriority(Space.INTERMEDIATE_PRIORITY);
     space.setDisplayName(displayName);
     space.setDescription(description);
     space.setPrettyName(prettyName);
-    space.setTemplate(template);
     space.setVisibility(Space.HIDDEN);
     space.setRegistration(Space.CLOSED);
     try {
