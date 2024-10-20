@@ -18,14 +18,15 @@
  */
 package io.meeds.notes.listener;
 
-import io.meeds.analytics.utils.AnalyticsUtils;
-import org.exoplatform.services.listener.Event;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.Identity;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.metadata.tag.model.TagName;
-import org.exoplatform.social.metadata.tag.model.TagObject;
-import org.exoplatform.wiki.model.Page;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,10 +35,15 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.exoplatform.services.listener.Event;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.metadata.tag.model.TagName;
+import org.exoplatform.social.metadata.tag.model.TagObject;
+import org.exoplatform.wiki.model.Page;
 
-import static org.mockito.Mockito.*;
+import io.meeds.analytics.utils.AnalyticsUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AnalyticsAddTagListenerTest {
