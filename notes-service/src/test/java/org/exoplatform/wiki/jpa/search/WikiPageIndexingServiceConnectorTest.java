@@ -24,9 +24,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Date;
 
-import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.service.NoteService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,9 +34,9 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.metadata.MetadataService;
-import org.exoplatform.wiki.jpa.dao.PageDAO;
-import org.exoplatform.wiki.jpa.entity.PageEntity;
-import org.exoplatform.wiki.jpa.entity.WikiEntity;
+import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.NoteService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WikiPageIndexingServiceConnectorTest {
