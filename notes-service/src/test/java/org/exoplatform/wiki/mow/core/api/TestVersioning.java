@@ -19,6 +19,9 @@
 
 package org.exoplatform.wiki.mow.core.api;
 
+import java.util.Iterator;
+import java.util.List;
+
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -26,9 +29,6 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
-
-import java.util.Iterator;
-import java.util.List;
 
 public class TestVersioning extends BaseTest {
 

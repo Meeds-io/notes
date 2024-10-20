@@ -20,8 +20,8 @@
 
 package org.exoplatform.wiki.service.rest;
 
-import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -40,9 +40,6 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.exoplatform.services.organization.Group;
-import org.exoplatform.services.organization.GroupHandler;
-import org.exoplatform.services.organization.OrganizationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +53,9 @@ import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.services.organization.Group;
+import org.exoplatform.services.organization.GroupHandler;
+import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.rest.impl.EnvironmentContext;
 import org.exoplatform.services.security.ConversationState;
@@ -79,11 +79,11 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.tree.JsonNodeData;
-import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.Silent.class)

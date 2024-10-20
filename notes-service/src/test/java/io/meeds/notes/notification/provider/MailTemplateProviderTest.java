@@ -1,24 +1,12 @@
 package io.meeds.notes.notification.provider;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
-import io.meeds.notes.notifications.provider.MailTemplateProvider;
-import org.exoplatform.commons.api.notification.NotificationContext;
-import org.exoplatform.commons.api.notification.model.MessageInfo;
-import org.exoplatform.commons.api.notification.model.NotificationInfo;
-import org.exoplatform.commons.api.notification.model.PluginKey;
-import org.exoplatform.commons.api.notification.plugin.NotificationPluginUtils;
-import org.exoplatform.commons.api.notification.service.template.TemplateContext;
-import org.exoplatform.commons.notification.template.TemplateUtils;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.notification.LinkProviderUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +14,23 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import org.exoplatform.commons.api.notification.NotificationContext;
+import org.exoplatform.commons.api.notification.model.MessageInfo;
+import org.exoplatform.commons.api.notification.model.NotificationInfo;
+import org.exoplatform.commons.api.notification.model.PluginKey;
+import org.exoplatform.commons.api.notification.plugin.NotificationPluginUtils;
+import org.exoplatform.commons.api.notification.service.template.TemplateContext;
+import org.exoplatform.commons.notification.template.TemplateUtils;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.notification.LinkProviderUtils;
+
+import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
+import io.meeds.notes.notifications.provider.MailTemplateProvider;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MailTemplateProviderTest {

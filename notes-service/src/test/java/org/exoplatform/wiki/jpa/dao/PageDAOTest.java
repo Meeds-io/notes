@@ -20,16 +20,17 @@
 
 package org.exoplatform.wiki.jpa.dao;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.junit.Test;
+
 import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PermissionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.model.PermissionType;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com

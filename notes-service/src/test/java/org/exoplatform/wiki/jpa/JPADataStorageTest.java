@@ -29,7 +29,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -40,6 +39,7 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
