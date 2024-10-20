@@ -6,6 +6,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import org.exoplatform.commons.search.index.IndexingService;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
@@ -15,10 +20,6 @@ import org.exoplatform.wiki.jpa.search.WikiPageIndexingServiceConnector;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @SuppressWarnings("unchecked")
