@@ -18,6 +18,20 @@
  */
 package io.meeds.notes.listener;
 
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Set;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -28,15 +42,6 @@ import org.exoplatform.social.metadata.tag.TagService;
 import org.exoplatform.social.metadata.tag.model.TagName;
 import org.exoplatform.social.metadata.tag.model.TagObject;
 import org.exoplatform.wiki.model.Page;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Set;
-
-import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NotesMetadataListenerTest {
