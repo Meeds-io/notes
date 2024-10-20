@@ -18,14 +18,16 @@
  */
 package org.exoplatform.wiki.jpa.dao;
 
-import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
-import org.exoplatform.wiki.jpa.entity.*;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
+import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.jpa.entity.PageMoveEntity;
+import org.exoplatform.wiki.jpa.entity.WikiEntity;
 
 /**
  * Created by The eXo Platform SAS

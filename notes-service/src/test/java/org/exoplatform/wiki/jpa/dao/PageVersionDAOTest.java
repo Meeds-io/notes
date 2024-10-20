@@ -20,14 +20,15 @@
 package org.exoplatform.wiki.jpa.dao;
 
 
+import java.util.Date;
+import java.util.List;
+
+import org.junit.Test;
+
 import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
-import org.junit.Test;
-
-import java.util.Date;
-import java.util.List;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com

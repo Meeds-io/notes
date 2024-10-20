@@ -1,21 +1,23 @@
 package org.exoplatform.wiki.jpa.search;
 
-import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.container.xml.PropertiesParam;
-import org.exoplatform.social.metadata.MetadataService;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PageVersion;
-import org.exoplatform.wiki.service.NoteService;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
+
+import java.util.Date;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Date;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.service.NoteService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NoteVersionLanguageIndexingServiceConnectorTest {
