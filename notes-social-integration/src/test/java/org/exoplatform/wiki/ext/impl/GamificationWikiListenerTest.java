@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
