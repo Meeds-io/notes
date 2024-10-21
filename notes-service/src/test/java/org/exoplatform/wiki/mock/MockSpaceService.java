@@ -14,10 +14,6 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 
 public class MockSpaceService implements SpaceService {
 
-  public Space getSpaceByDisplayName(String spaceDisplayName) {
-    return null;
-  }
-
   public Space getSpaceByPrettyName(String spacePrettyName) {
     return null;
   }
