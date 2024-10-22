@@ -619,15 +619,20 @@ export default {
       });
     },
     retrieveNoteTree(noteType, noteOwner, noteName) {
+      this.home = [];
+      this.items = [];
+      this.allItems = [];
+      this.allItemsHome = [];
       const withDrafts = this.filter === this.$t('notes.filter.label.drafts');
       this.$notesService.getFullNoteTree(noteType, noteOwner , noteName, withDrafts, this.selectedTranslation).then(data => {
         if (data && data.jsonList.length) {
-          this.home = [];
-          this.items = [];
-          this.allItems = [];
-          this.allItemsHome = [];
+          const items = data.treeNodeData && data.treeNodeData[0] && data.treeNodeData[0] .children || [];
+          if (this.movePage) {
+            const home = { children: items , noteId: 0};
+            this.filterItemsForMove(home);
+          }
           this.home = data.treeNodeData.length ? data.treeNodeData[0] : data.jsonList[0];
-          this.items = data.treeNodeData && data.treeNodeData[0] && data.treeNodeData[0] .children || [];
+          this.items = items;
           this.allItems = data.jsonList;
           this.allItemsHome = data.treeNodeData;
         }
@@ -639,6 +644,16 @@ export default {
         this.noteBookType = noteType;
         this.noteBookOwnerTree = noteOwner;
       });
+    },
+    filterItemsForMove(item) {
+      if (item.noteId===this.note.id) {
+        delete item.children;
+        return item;
+      }
+      for (let i = 0; i < item.children.length; i++) {
+        item.children[i] = this.filterItemsForMove(item.children[i]);
+      }
+      return item;
     },
     getOpenedTreeViewItems(breadCrumbArray) {
       const activatedNotes = [];
