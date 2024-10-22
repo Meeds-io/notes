@@ -701,7 +701,19 @@ export default {
         }
       }
       return itemsArray;
+    },   
+
+    filterItemsForMove(item) {
+      if (item.noteId===this.note.id) {
+        delete item.children;
+        return item;
+      }
+      for (let i = 0; i < item.children.length; i++) {
+        item.children[i] = this.filterItemsForMove(item.children[i]);
+      }
+      return item;
     },
+
     naturalSort(items) {
       if (items?.length) {
         const collator = new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'});
@@ -726,6 +738,10 @@ export default {
             } else {
               this.mapItems(this.items[0]?.children);
             }
+          } 
+          if (this.movePage) {
+            const home = { children: this.items , noteId: 0};
+            this.filterItemsForMove(home);
           }
           if (this.isDraftFilter) {
             this.naturalSort(this.items);
