@@ -179,7 +179,7 @@ export default {
       type: Array,
       default: () => []
     },
-    savedSettings: {
+    savedPublishSettings: {
       type: Object,
       default: null
     },
@@ -233,9 +233,9 @@ export default {
   },
   methods: {
     initSettings() {
-      this.publish = this.savedSettings?.published;
-      this.selectedTargets = this.savedSettings?.selectedTargets;
-      this.selectedAudience = this.savedAudience(this.savedSettings?.selectedAudience) || this.defaultAudience;
+      this.publish = this.savedPublishSettings?.published;
+      this.selectedTargets = this.savedPublishSettings?.selectedTargets;
+      this.selectedAudience = this.savedAudience(this.savedPublishSettings?.selectedAudience) || this.defaultAudience;
       this.checkRestrictedAudience();
     },
     savedAudience(savedAudience) {
