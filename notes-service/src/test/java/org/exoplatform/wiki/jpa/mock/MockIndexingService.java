@@ -19,10 +19,10 @@
 
 package org.exoplatform.wiki.jpa.mock;
 
-import org.exoplatform.commons.search.index.IndexingService;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.exoplatform.commons.search.index.IndexingService;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.

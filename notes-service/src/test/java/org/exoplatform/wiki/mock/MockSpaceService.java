@@ -3,9 +3,7 @@ package org.exoplatform.wiki.mock;
 import java.util.List;
 
 import org.exoplatform.commons.utils.ListAccess;
-import org.exoplatform.social.core.application.PortletPreferenceRequiredPlugin;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.space.SpaceApplicationConfigPlugin;
 import org.exoplatform.social.core.space.SpaceException;
 import org.exoplatform.social.core.space.SpaceFilter;
 import org.exoplatform.social.core.space.SpaceListAccess;
@@ -15,10 +13,6 @@ import org.exoplatform.social.core.space.spi.SpaceLifeCycleListener;
 import org.exoplatform.social.core.space.spi.SpaceService;
 
 public class MockSpaceService implements SpaceService {
-
-  public Space getSpaceByDisplayName(String spaceDisplayName) {
-    return null;
-  }
 
   public Space getSpaceByPrettyName(String spacePrettyName) {
     return null;
@@ -174,14 +168,6 @@ public class MockSpaceService implements SpaceService {
 
   public void unregisterSpaceListenerPlugin(SpaceListenerPlugin spaceListenerPlugin) {
     
-  }
-
-  public void setSpaceApplicationConfigPlugin(SpaceApplicationConfigPlugin spaceApplicationConfigPlugin) {
-
-  }
-
-  public SpaceApplicationConfigPlugin getSpaceApplicationConfigPlugin() {
-    return null;
   }
 
   public List<Space> getAllSpaces() throws SpaceException {
