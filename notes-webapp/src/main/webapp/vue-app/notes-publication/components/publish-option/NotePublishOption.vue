@@ -92,6 +92,7 @@
           <template #selection="{index}">
             <label
               v-if="!hasInputFilterValue && !index && !filterInputFocused"
+              for="targets"
               class="text-color v-label position-absolute l-0">
               {{ $t('notes.publication.choose.location.label') }}
             </label>
