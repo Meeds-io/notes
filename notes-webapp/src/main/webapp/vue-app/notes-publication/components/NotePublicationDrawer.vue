@@ -107,7 +107,7 @@
                 <div v-show="expanded || stepper === (2 - editMode)">
                   <div
                     :class="{'mt-8': !editMode}"
-                    class="d-flex flex-column">
+                    class="d-flex flex-column pb-10">
                     <v-scroll-y-transition hide-on-leave>
                       <div class="mb-2">
                         <div class="d-flex">
@@ -134,17 +134,31 @@
                         </div>
                         <note-publish-option
                           v-if="allowedTargets?.length"
-                          ref="publishOption"
                           :allowed-targets="allowedTargets"
                           :is-publishing="isPublishing"
                           :edit-mode="editMode"
                           :expanded="expanded"
-                          :saved-settings="{
+                          :saved-publish-settings="{
                             published: publicationSettings?.publish,
                             selectedAudience: publicationSettings?.selectedAudience,
                             selectedTargets: savedTargets(publicationSettings?.selectedTargets)
                           }"
+                          ref="publishOption"
+                          class="mb-7"
                           @updated="updatedPublicationSettings" />
+                        <note-schedule-option
+                          v-if="scheduleAllowed"
+                          :expanded="expanded"
+                          :publish="publicationSettings?.publish"
+                          :is-publishing="isPublishing"
+                          :edit-mode="editMode"
+                          :saved-schedule-settings="{
+                            scheduled: currentScheduleSettings?.schedule,
+                            postDate: currentScheduleSettings?.postDate,
+                            unpublishDate: currentScheduleSettings?.unpublishDate
+                          }"
+                          ref="scheduleOption"
+                          @updated="updatedScheduleSettings" />
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -188,7 +202,9 @@ export default {
       publicationSettings: {
         post: true
       },
-      currentPublicationSettings: {}
+      scheduleSettings: {},
+      currentPublicationSettings: {},
+      currentScheduleSettings: {}
     };
   },
   props: {
@@ -210,6 +226,12 @@ export default {
     }
   },
   computed: {
+    scheduleOptionEnabled() {
+      return eXo?.env?.portal?.newPublicationDrawerScheduleOptionEnabled;
+    },
+    scheduleAllowed() {
+      return this.scheduleOptionEnabled && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
+    },
     saveEnabled() {
       return !this.editMode || this.publicationSettingsUpdated;
     },
@@ -218,7 +240,8 @@ export default {
     },
     saveButtonLabel() {
       return (!this.editMode && !this.expanded && this.stepper === 1) && this.$t('notes.publication.publish.next.label')
-                                                  || this.$t('notes.publication.publish.save.label');
+                                                  || !this.editMode &&  this.$t('notes.publication.publish.save.label')
+                                                  || this.$t('notes.button.publish');
     },
     summaryLengthError() {
       return this.noteObject?.properties?.summary?.length > this.summaryMaxLength;
@@ -243,11 +266,16 @@ export default {
   methods: {
     updatedPublicationSettings(settings) {
       this.publicationSettings = structuredClone({
-        post: this.publicationSettings.post
+        post: this.publicationSettings.post,
+        scheduleSettings: this.publicationSettings.scheduleSettings
       });
       this.publicationSettings.publish = settings?.publish;
       this.publicationSettings.selectedTargets = settings?.selectedTargets;
       this.publicationSettings.selectedAudience = settings?.selectedAudience;
+    },
+    updatedScheduleSettings(settings) {
+      this.scheduleSettings = structuredClone(settings);
+      this.publicationSettings.scheduleSettings = this.scheduleSettings;
     },
     propertiesUpdated(properties) {
       if (!this.noteObject?.properties || !Object.keys(this.noteObject?.properties).length) {
@@ -268,16 +296,24 @@ export default {
       this.noteObject = noteObject;
       if (this.editMode) {
         this.publicationSettings.post = this.noteObject?.activityPosted;
+
+        this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
+        this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
+        this.scheduleSettings.unpublishDate = this.noteObject?.scheduleUnpublishDate;
+        this.publicationSettings.scheduleSettings = this.scheduleSettings;
+
         this.publicationSettings.publish = this.noteObject?.published;
         this.publicationSettings.selectedTargets = this.noteObject?.targets;
         this.publicationSettings.selectedAudience = this.noteObject?.audience;
       }
+      this.currentScheduleSettings = structuredClone(this.scheduleSettings);
       this.currentPublicationSettings = structuredClone(this.publicationSettings);
       this.cloneProperties();
       this.$refs.publicationDrawer.open();
       this.toggleExpand();
       setTimeout(() => {
-        this.$refs.publishOption.initSettings();
+        this.$refs?.publishOption?.initSettings();
+        this.$refs?.scheduleOption?.initSettings();
       }, 200);
       this.$refs.propertiesForm?.initProperties();
     },
@@ -304,6 +340,7 @@ export default {
     },
     cancelChanges() {
       this.$refs?.publishOption?.cancelChanges();
+      this.$refs?.scheduleOption?.cancelChanges();
     },
     reset() {
       setTimeout(() => {
