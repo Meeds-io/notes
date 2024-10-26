@@ -59,7 +59,7 @@ public class TestWikiService extends BaseTest {
 
   public void testCreateWikiPermissions() throws Exception {
     UserPortalConfigService portalConfigService = getContainer().getComponentInstanceOfType(UserPortalConfigService.class);
-    String defaultPortal = portalConfigService.getDefaultPortal();
+    String defaultPortal = portalConfigService.getMetaPortal();
     Wiki siteWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, defaultPortal);
     assertNotNull(siteWiki);
     assertTrue(siteWiki.getPermissions()
