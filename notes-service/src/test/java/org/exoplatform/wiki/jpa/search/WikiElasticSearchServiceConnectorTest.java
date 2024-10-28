@@ -33,7 +33,7 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.utils.Utils;
 
-import io.meeds.social.core.search.SpaceSearchConnector;
+import io.meeds.social.search.SpaceSearchConnector;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
