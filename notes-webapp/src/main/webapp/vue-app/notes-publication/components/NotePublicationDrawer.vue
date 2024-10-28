@@ -110,6 +110,11 @@
                     class="d-flex flex-column pb-10">
                     <v-scroll-y-transition hide-on-leave>
                       <div class="mb-2">
+                        <p
+                          v-if="editMode"
+                          class="text-header text-header-color mb-7">
+                          {{ $t('notes.publication.location.label') }}
+                        </p>
                         <div class="d-flex">
                           <v-switch
                             v-model="publicationSettings.post"
@@ -144,7 +149,7 @@
                             selectedTargets: savedTargets(publicationSettings?.selectedTargets)
                           }"
                           ref="publishOption"
-                          class="mb-7"
+                          class="mb-8"
                           @updated="updatedPublicationSettings" />
                         <note-schedule-option
                           v-if="scheduleAllowed"
@@ -298,6 +303,7 @@ export default {
         this.publicationSettings.post = this.noteObject?.activityPosted;
 
         this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
+        this.scheduleSettings.editScheduleAction = this.scheduleSettings.schedule && 'schedule' || null;
         this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
         this.scheduleSettings.unpublishDate = this.noteObject?.scheduleUnpublishDate;
         this.publicationSettings.scheduleSettings = this.scheduleSettings;
