@@ -42,7 +42,7 @@
           <v-stepper
             v-model="stepper"
             :class="expanded && 'flex-row' || 'flex-column'"
-            class="ma-0 d-flex"
+            class="ma-0 d-flex overflow-visible"
             vertical
             flat>
             <div
@@ -238,7 +238,10 @@ export default {
       return this.scheduleOptionEnabled && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return !this.editMode || this.publicationSettingsUpdated;
+      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
+    },
+    validPublishSettings() {
+      return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
     },
     publicationSettingsUpdated() {
       return JSON.stringify(this.currentPublicationSettings) !== JSON.stringify(this.publicationSettings);

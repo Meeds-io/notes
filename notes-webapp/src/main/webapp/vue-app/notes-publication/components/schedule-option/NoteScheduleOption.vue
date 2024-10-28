@@ -20,7 +20,7 @@
 <template>
   <div>
     <p
-      v-if="editMode"
+      v-if="editMode && !noSavedSchedule"
       class="text-header text-header-color mb-7">
       {{ $t('notes.publication.date.label') }}
     </p>
@@ -28,7 +28,7 @@
       v-if="editMode && savedScheduleSettings?.scheduled"
       v-model="editScheduleOption"
       :multiple="isMultipleSelectionOption"
-      class="d-flex ms-2 mt-0 pt-0">
+      class="d-flex ms-n1 mt-0 pt-0">
       <v-radio
         :label="cancelOption.label"
         :value="cancelOption.value" />
@@ -208,7 +208,7 @@ export default {
       minEndDate: startDate,
       endDate: endDate,
       startTime: '08:00',
-      endTime: '06:00',
+      endTime: '18:00',
       minStartTime: '',
       minEndTime: '',
       startDateMenu: false,
@@ -305,6 +305,9 @@ export default {
                            && !this.savedScheduleSettings?.postDate
                            && !!this.savedScheduleSettings?.unpublishDate;
     },
+    hasSavedPostSchedule() {
+      return !this.noSavedSchedule && !this.hasSavedUnpublishSchedule;
+    },
     noSavedSchedule() {
       return this.editMode && !this.savedScheduleSettings.scheduled;
     }
@@ -333,12 +336,18 @@ export default {
         this.startDate = startDate;
         this.minStartDate = minStartDate;
         this.endDate = endDate;
-        this.endTime = '06:00';
+        this.endTime = '18:00';
         this.minEndDate = minStartDate;
         this.scheduleTypes = [this.untilScheduleType];
         this.selectedScheduleType = this.scheduleTypes[0];
+      } else if (this.hasSavedPostSchedule) {
+        const {endDate} = this.initDateValues();
+        this.endDate = endDate;
+        this.endTime = '18:00';
       } else if (this.isUntilScheduleType) {
         this.minEndDate = new Date().toISOString().split('T')[0];
+      } else {
+        this.minEndDate = this.startDate;
       }
     },
     initDateValues() {
@@ -346,7 +355,7 @@ export default {
       const tomorrow = new Date(today);
       const nextWeek = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
-      nextWeek.setDate(today.getDate() + 14);
+      nextWeek.setDate(today.getDate() + 15);
       const startDate = tomorrow.toISOString().split('T')[0];
       const minStartDate = today.toISOString().split('T')[0];
       const endDate = nextWeek.toISOString().split('T')[0];
@@ -429,7 +438,7 @@ export default {
         endEndDate = startDate;
         endEndDate.setDate(startDate.getDate() + 14);
         this.endDate = endEndDate.toISOString().split('T')[0];
-        this.endTime = '06:00';
+        this.endTime = '18:00';
       }
     },
     updateMinStartTime() {
@@ -444,6 +453,7 @@ export default {
       this.startDateMenu = false;
       this.updateEndMinTime();
       this.checkEndDateComparedToStartDate();
+      this.minEndDate = this.startDate;
     },
     updateEndMinTime() {
       const selectedDate = new Date(this.endDate);
