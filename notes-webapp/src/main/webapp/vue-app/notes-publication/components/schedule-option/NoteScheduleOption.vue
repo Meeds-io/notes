@@ -19,7 +19,43 @@
 
 <template>
   <div>
-    <div class="d-flex">
+    <p
+      v-if="editMode && !noSavedSchedule"
+      class="text-header text-header-color mb-7">
+      {{ $t('notes.publication.date.label') }}
+    </p>
+    <v-radio-group
+      v-if="editMode && savedScheduleSettings?.scheduled"
+      v-model="editScheduleOption"
+      :multiple="isMultipleSelectionOption"
+      class="d-flex ms-n1 mt-0 pt-0">
+      <v-radio
+        :label="cancelOption.label"
+        :value="cancelOption.value" />
+      <v-tooltip
+        :disabled="!isMultipleSelectionOption"
+        bottom>
+        <template #activator="{ on, attrs }">
+          <span
+            v-bind="attrs"
+            v-on="on"
+            class="mb-2">
+            <v-radio
+              v-if="!hasSavedUnpublishSchedule"
+              :disabled="isMultipleSelectionOption"
+              :label="$t('notes.publication.publish.now.label')"
+              value="publish_now" />
+          </span>
+        </template>
+        {{ $t('notes.publication.schedule.publish.now.tooltip') }}
+      </v-tooltip>
+      <v-radio
+        :label="$t('notes.publication.schedule.label')"
+        value="schedule" />
+    </v-radio-group>
+    <div
+      v-else
+      class="d-flex">
       <v-switch
         v-model="schedule"
         :disabled="isPublishing"
@@ -46,7 +82,7 @@
             {{ $t('notes.publication.schedule.from.label') }}
           </span>
           <span
-            v-else-if="noSavedSchedule || hasSavedUnpublishSchedule">
+            v-else-if="(schedule && noSavedSchedule) || hasSavedUnpublishSchedule">
             {{ $t('notes.publication.schedule.until.label') }}
           </span>
           <v-select
@@ -66,7 +102,7 @@
         <div
           class="d-flex">
           <v-icon
-            v-if="!isUntilScheduleType || expanded"
+            v-if="!isUntilScheduleType || expanded || !publish"
             color="primary"
             size="24">
             fas fa-calendar-check
@@ -87,6 +123,7 @@
                   v-model="formattedStartDate"
                   v-bind="attrs"
                   v-on="on"
+                  :aria-label="$t('notes.publication.startDate.label')"
                   class="pt-0 ms-4 border-box-sizing flex-grow-0"
                   readonly
                   outlined
@@ -101,6 +138,7 @@
             <time-picker
               v-model="startTime"
               :min="minStartTime"
+              :aria-label="$t('notes.publication.startTime.label')"
               format="ampm"
               type="time"
               class="mb-1 " />
@@ -130,6 +168,7 @@
               v-model="formattedEndDate"
               v-bind="attrs"
               v-on="on"
+              :aria-label="$t('notes.publication.endDate.label')"
               class="pt-0 ms-4 border-box-sizing flex-grow-0"
               readonly
               outlined
@@ -144,6 +183,7 @@
         <time-picker
           v-model="endTime"
           :min="minEndTime"
+          :aria-label="$t('notes.publication.endTime.label')"
           format="ampm"
           type="time"
           class="mb-1 " />
@@ -153,6 +193,10 @@
 </template>
 
 <script>
+const SCHEDULE_OPTION = 'schedule';
+const PUBLISH_NOW_OPTION = 'publish_now';
+const CANCEL_SCHEDULE_OPTION = 'cancel_schedule';
+const CANCEL_PUBLICATION_OPTION = 'cancel_unpublish';
 export default {
   data() {
     const { startDate, minStartDate, endDate } = this.initDateValues();
@@ -160,6 +204,7 @@ export default {
     const untilScheduleType = {label: this.$t('notes.publication.schedule.until.label'), value: 'until'};
     const fromScheduleType = {label: this.$t('notes.publication.schedule.from.label'), value: 'from'};
     return {
+      editScheduleOption: null,
       schedule: false,
       betweenScheduleType: betweenScheduleType,
       untilScheduleType: untilScheduleType,
@@ -175,7 +220,7 @@ export default {
       minEndDate: startDate,
       endDate: endDate,
       startTime: '08:00',
-      endTime: '06:00',
+      endTime: '18:00',
       minStartTime: '',
       minEndTime: '',
       startDateMenu: false,
@@ -215,6 +260,7 @@ export default {
       this.emitUpdatedSettings();
     },
     selectedScheduleType() {
+      this.resetDateValues();
       this.emitUpdatedSettings();
     },
     startDate() {
@@ -228,9 +274,29 @@ export default {
     },
     endTime() {
       this.emitUpdatedSettings();
+    },
+    editScheduleOption() {
+      this.handleEditScheduleOptionUpdate();
+      this.emitUpdatedSettings();
+    },
+    isMultipleSelectionOption() {
+      this.handleMultiSelectionUpdate();
+    },
+    showStartDate() {
+      this.emitUpdatedSettings();
+    },
+    showEndDate() {
+      this.emitUpdatedSettings();
     }
   },
   computed: {
+    isMultipleSelectionOption() {
+      return this.schedule && this.isUntilScheduleType && !this.hasSavedUnpublishSchedule;
+    },
+    cancelOption() {
+      return this.hasSavedUnpublishSchedule && {label: this.$t('notes.publication.publish.cancel.label'), value: CANCEL_PUBLICATION_OPTION}
+          || {label: this.$t('notes.publication.schedule.cancel.label'), value: CANCEL_SCHEDULE_OPTION};
+    },
     formattedStartDate() {
       return this.startDate && this.formatDate(this.startDate) || '';
     },
@@ -241,7 +307,7 @@ export default {
       return ['between', 'until'].includes(this.selectedScheduleType?.value) && this.publish;
     },
     showStartDate() {
-      return this.selectedScheduleType?.value !== 'until';
+      return (this.selectedScheduleType?.value !== 'until' && this.publish) || !this.publish;
     },
     isUntilScheduleType() {
       return this.selectedScheduleType?.value === 'until';
@@ -251,8 +317,11 @@ export default {
                            && !this.savedScheduleSettings?.postDate
                            && !!this.savedScheduleSettings?.unpublishDate;
     },
+    hasSavedPostSchedule() {
+      return !this.noSavedSchedule && !this.hasSavedUnpublishSchedule;
+    },
     noSavedSchedule() {
-      return this.editMode && this.schedule && !this.savedScheduleSettings.scheduled;
+      return this.editMode && !this.savedScheduleSettings.scheduled;
     }
   },
   created() {
@@ -260,16 +329,37 @@ export default {
     this.updateMinStartTime();
   },
   methods: {
+    handleMultiSelectionUpdate() {
+      if (this.isMultipleSelectionOption) {
+        this.editScheduleOption = [SCHEDULE_OPTION, PUBLISH_NOW_OPTION];
+      } else if (this.isUntilScheduleType) {
+        this.editScheduleOption = CANCEL_SCHEDULE_OPTION;
+      } else {
+        this.editScheduleOption = this.editScheduleOption[0];
+      }
+    },
+    handleEditScheduleOptionUpdate() {
+      this.schedule = this.editScheduleOption === SCHEDULE_OPTION || (this.editScheduleOption?.includes(SCHEDULE_OPTION)
+          && !this.editScheduleOption.includes(CANCEL_SCHEDULE_OPTION));
+    },
     resetDateValues() {
-      if (this.noSavedSchedule) {
+      if (this.schedule && this.noSavedSchedule) {
         const {startDate, minStartDate, endDate} = this.initDateValues();
         this.startDate = startDate;
         this.minStartDate = minStartDate;
         this.endDate = endDate;
-        this.endTime = '06:00';
+        this.endTime = '18:00';
         this.minEndDate = minStartDate;
         this.scheduleTypes = [this.untilScheduleType];
         this.selectedScheduleType = this.scheduleTypes[0];
+      } else if (this.hasSavedPostSchedule) {
+        const {endDate} = this.initDateValues();
+        this.endDate = endDate;
+        this.endTime = '18:00';
+      } else if (this.isUntilScheduleType) {
+        this.minEndDate = new Date().toISOString().split('T')[0];
+      } else {
+        this.minEndDate = this.startDate;
       }
     },
     initDateValues() {
@@ -277,7 +367,7 @@ export default {
       const tomorrow = new Date(today);
       const nextWeek = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
-      nextWeek.setDate(today.getDate() + 14);
+      nextWeek.setDate(today.getDate() + 15);
       const startDate = tomorrow.toISOString().split('T')[0];
       const minStartDate = today.toISOString().split('T')[0];
       const endDate = nextWeek.toISOString().split('T')[0];
@@ -291,10 +381,19 @@ export default {
       const startDate = this.savedScheduleSettings?.postDate && new Date(this.savedScheduleSettings?.postDate) || null;
       const endDate = this.savedScheduleSettings?.unpublishDate && new Date(this.savedScheduleSettings?.unpublishDate) || null;
       this.selectedScheduleType = this.getUsedScheduleType(startDate, endDate);
+      this.editScheduleOption = this.getUsedScheduleOption();
       this.startDate = startDate?.toISOString()?.split('T')[0];
       this.endDate = endDate?.toISOString()?.split('T')[0];
       this.startTime = startDate && `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}` || null;
       this.endTime = endDate && `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}` || null;
+    },
+    getUsedScheduleOption() {
+      if (this.schedule && this.isUntilScheduleType && !this.hasSavedUnpublishSchedule) {
+        return [SCHEDULE_OPTION, PUBLISH_NOW_OPTION];
+      } else if (this.schedule) {
+        return SCHEDULE_OPTION;
+      }
+      return null;
     },
     getUsedScheduleType(postDate, unpublishDate) {
       if (postDate && unpublishDate) {
@@ -304,18 +403,22 @@ export default {
       }
       return this.untilScheduleType;
     },
+    getEditScheduleAction() {
+      return this.isMultipleSelectionOption && SCHEDULE_OPTION || this.editScheduleOption;
+    },
     emitUpdatedSettings() {
       this.$emit('updated', {
         schedule: this.schedule,
+        editScheduleAction: this.getEditScheduleAction(),
         postDate: this.computePostDate(),
         unpublishDate: this.computeUnpublishDate()
       });
     },
     computePostDate() {
-      return this.computeDateTime(this.startDate, this.startTime);
+      return this.showStartDate && this.computeDateTime(this.startDate, this.startTime) || null;
     },
     computeUnpublishDate() {
-      return this.computeDateTime(this.endDate, this.endTime);
+      return this.showEndDate && this.computeDateTime(this.endDate, this.endTime) || null;
     },
     computeDateTime(date, time) {
       if (!date || !time || !this.schedule) {
@@ -347,7 +450,7 @@ export default {
         endEndDate = startDate;
         endEndDate.setDate(startDate.getDate() + 14);
         this.endDate = endEndDate.toISOString().split('T')[0];
-        this.endTime = '06:00';
+        this.endTime = '18:00';
       }
     },
     updateMinStartTime() {
@@ -362,6 +465,7 @@ export default {
       this.startDateMenu = false;
       this.updateEndMinTime();
       this.checkEndDateComparedToStartDate();
+      this.minEndDate = this.startDate;
     },
     updateEndMinTime() {
       const selectedDate = new Date(this.endDate);
