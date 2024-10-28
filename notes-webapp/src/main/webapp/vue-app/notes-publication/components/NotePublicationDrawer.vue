@@ -42,7 +42,7 @@
           <v-stepper
             v-model="stepper"
             :class="expanded && 'flex-row' || 'flex-column'"
-            class="ma-0 d-flex"
+            class="ma-0 d-flex overflow-visible"
             vertical
             flat>
             <div
@@ -110,6 +110,11 @@
                     class="d-flex flex-column pb-10">
                     <v-scroll-y-transition hide-on-leave>
                       <div class="mb-2">
+                        <p
+                          v-if="editMode"
+                          class="text-header text-header-color mb-7">
+                          {{ $t('notes.publication.location.label') }}
+                        </p>
                         <div class="d-flex">
                           <v-switch
                             v-model="publicationSettings.post"
@@ -144,7 +149,7 @@
                             selectedTargets: savedTargets(publicationSettings?.selectedTargets)
                           }"
                           ref="publishOption"
-                          class="mb-7"
+                          class="mb-8"
                           @updated="updatedPublicationSettings" />
                         <note-schedule-option
                           v-if="scheduleAllowed"
@@ -226,22 +231,25 @@ export default {
     }
   },
   computed: {
-    scheduleOptionEnabled() {
-      return eXo?.env?.portal?.newPublicationDrawerScheduleOptionEnabled;
-    },
     scheduleAllowed() {
-      return this.scheduleOptionEnabled && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
+      return !this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate);
     },
     saveEnabled() {
-      return !this.editMode || this.publicationSettingsUpdated;
+      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
+    },
+    validPublishSettings() {
+      return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
     },
     publicationSettingsUpdated() {
       return JSON.stringify(this.currentPublicationSettings) !== JSON.stringify(this.publicationSettings);
     },
     saveButtonLabel() {
       return (!this.editMode && !this.expanded && this.stepper === 1) && this.$t('notes.publication.publish.next.label')
-                                                  || !this.editMode &&  this.$t('notes.publication.publish.save.label')
+                                                  || (!this.editMode || this.isPublishAction) &&  this.$t('notes.publication.publish.save.label')
                                                   || this.$t('notes.button.publish');
+    },
+    isPublishAction() {
+      return this.isUnpublishScheduled || this.isPublishNow;
     },
     summaryLengthError() {
       return this.noteObject?.properties?.summary?.length > this.summaryMaxLength;
@@ -251,6 +259,12 @@ export default {
     },
     allowedTargets() {
       return this.params?.allowedTargets;
+    },
+    isUnpublishScheduled() {
+      return this.scheduleSettings?.schedule && !this.scheduleSettings?.postDate;
+    },
+    isPublishNow() {
+      return this.editMode && this.scheduleSettings?.editScheduleAction === 'publish_now';
     }
   },
   watch: {
@@ -274,6 +288,7 @@ export default {
       this.publicationSettings.selectedAudience = settings?.selectedAudience;
     },
     updatedScheduleSettings(settings) {
+      console.log(settings);
       this.scheduleSettings = structuredClone(settings);
       this.publicationSettings.scheduleSettings = this.scheduleSettings;
     },
@@ -298,6 +313,7 @@ export default {
         this.publicationSettings.post = this.noteObject?.activityPosted;
 
         this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
+        this.scheduleSettings.editScheduleAction = this.scheduleSettings.schedule && 'schedule' || null;
         this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
         this.scheduleSettings.unpublishDate = this.noteObject?.scheduleUnpublishDate;
         this.publicationSettings.scheduleSettings = this.scheduleSettings;
