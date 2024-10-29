@@ -42,32 +42,36 @@
       @editor-closed="editorClosed"
       @post-note="postNote"
       @open-metadata-drawer="openMetadataDrawer" />
-    <form class="notes-content">
-      <div class="notes-content-form singlePageApplication my-5 mx-auto py-1 px-5">
-        <div
-          v-show="!webPageNote"
-          class="formInputGroup notesTitle white px-5">
-          <input
-            id="notesTitle"
-            :ref="editorTitleInputRef"
-            v-model="noteObject.title"
-            :placeholder="titlePlaceholder"
-            type="text"
-            :maxlength="noteTitleMaxLength + 1"
-            class="py-0 px-1 mt-5 mb-0"
-            @input="waitUserTyping()">
-        </div>
-        <div class="formInputGroup white overflow-auto flex notes-content-wrapper">
-          <textarea
-            :id="editorBodyInputRef"
-            :ref="editorBodyInputRef"
-            :placeholder="bodyPlaceholder"
-            :name="editorBodyInputRef"
-            class="notesFormInput">
+    <div class="notes-editor-body-section">
+      <div class="notes-editor-body-section-content">
+        <form class="notes-content">
+          <div class="notes-content-form">
+            <div
+              v-show="!webPageNote"
+              class="formInputGroup title notesTitle white px-5 pt-5 ">
+              <input
+                id="notesTitle"
+                :ref="editorTitleInputRef"
+                v-model="noteObject.title"
+                :placeholder="titlePlaceholder"
+                type="text"
+                :maxlength="noteTitleMaxLength + 1"
+                class="title text-color ma-0 pa-0"
+                @input="waitUserTyping()">
+            </div>
+            <div class="formInputGroup white overflow-auto flex notes-content-wrapper px-5 pb-5">
+              <textarea
+                :id="editorBodyInputRef"
+                :ref="editorBodyInputRef"
+                :placeholder="bodyPlaceholder"
+                :name="editorBodyInputRef"
+                class="notesFormInput">
             </textarea>
-        </div>
+            </div>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
     <extension-registry-components
       v-if="editorExtensions.length > 0"
       name="NotesRichEditor"
