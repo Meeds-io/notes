@@ -54,7 +54,13 @@ public class NoteSingleViewRenderPlugin implements PortletInstancePreferencePlug
   public List<PortletInstancePreference> generatePreferences(Application application, Portlet preferences) {
     String settingName = getCmsSettingName(preferences);
     if (StringUtils.isBlank(settingName)) {
-      return Collections.emptyList();
+      if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null) {
+        return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME,
+                                                                       preferences.getPreference(DATA_INIT_PREFERENCE_NAME)
+                                                                                  .getValue()));
+      } else {
+        return Collections.emptyList();
+      }
     }
     NotePageData notePageData = notePageViewService.getNotePageData(settingName);
     return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME,
