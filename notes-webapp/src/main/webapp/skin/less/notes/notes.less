@@ -53,7 +53,24 @@
       font-size: 22px;
     }
   }
-
+  .notes-editor-body-section {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    width: 100%;
+    .notes-editor-body-section-content {
+      width: @pageWidth;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding-top: var(--sectionMarginTop, 10px);
+      padding-bottom: var(--sectionMarginBottom, 10px);
+      padding-left: 20px;
+      padding-right: 20px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
   #notesEditor {
     position: fixed;
     height: 100%;
@@ -73,6 +90,16 @@
 
       .notes-content-form {
         min-height: calc(~"100vh - 140px");
+        .formInputGroup {
+          &:first-of-type {
+            border-top-right-radius: ~"var(--appBorderRadiusTopRight, var(--allPagesBorderRadius, 4px)) !important";
+            border-top-left-radius: ~"var(--appBorderRadiusTopLeft, var(--allPagesBorderRadius, 4px)) !important";
+          }
+          &:last-of-type {
+            border-bottom-right-radius: ~"var(--appBorderRadiusTopRight, var(--allPagesBorderRadius, 4px)) !important";
+            border-bottom-left-radius: ~"var(--appBorderRadiusTopLeft, var(--allPagesBorderRadius, 4px)) !important";
+          }
+        }
         .notes-content-wrapper > div[role="application"] {
           border-color: transparent;
           flex: 0 1 100%;
@@ -82,11 +109,9 @@
         .notesTitle {
           #notesTitle {
             width: 100%;
-            box-sizing: border-box;
-            font-size: 21px;
+            font-weight: bold;
+            font-size: 34px !important;
             letter-spacing: 0.3px;
-            border-bottom: solid 1px @greyColor !important;
-
             &:focus {
               box-shadow: none !important;
             }
@@ -202,6 +227,13 @@
       border: 0;
     }
   }
+}
+
+.notesContent {
+  margin-top: 32px !important;
+  margin-right: 0px !important;
+  margin-left: 0px !important;
+  margin-bottom: 0px !important;
 }
 
 #notesOverviewApplication {
