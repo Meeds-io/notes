@@ -33,6 +33,7 @@
         :label="cancelOption.label"
         :value="cancelOption.value" />
       <v-tooltip
+        v-if="canPublish"
         :disabled="!isMultipleSelectionOption"
         bottom>
         <template #activator="{ on, attrs }">
@@ -250,6 +251,10 @@ export default {
       default: false
     },
     editMode: {
+      type: Boolean,
+      default: false
+    },
+    canPublish: {
       type: Boolean,
       default: false
     }

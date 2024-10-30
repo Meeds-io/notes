@@ -138,7 +138,7 @@
                           </div>
                         </div>
                         <note-publish-option
-                          v-if="allowedTargets?.length"
+                          v-if="publishAllowed"
                           :allowed-targets="allowedTargets"
                           :is-publishing="isPublishing"
                           :edit-mode="editMode"
@@ -231,11 +231,14 @@ export default {
     }
   },
   computed: {
+    publishAllowed() {
+      return this.canPublish && this.allowedTargets?.length;
+    },
     scheduleAllowed() {
-      return !this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate);
+      return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
+      return (!this.editMode || this.publicationSettingsUpdated) && (this.canPublish && this.validPublishSettings || true);
     },
     validPublishSettings() {
       return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
@@ -259,6 +262,12 @@ export default {
     },
     allowedTargets() {
       return this.params?.allowedTargets;
+    },
+    canPublish() {
+      return this.params?.canPublish;
+    },
+    canSchedule() {
+      return this.params?.canSchedule;
     },
     isUnpublishScheduled() {
       return this.scheduleSettings?.schedule && !this.scheduleSettings?.postDate;
@@ -288,9 +297,11 @@ export default {
       this.publicationSettings.selectedAudience = settings?.selectedAudience;
     },
     updatedScheduleSettings(settings) {
-      console.log(settings);
       this.scheduleSettings = structuredClone(settings);
       this.publicationSettings.scheduleSettings = this.scheduleSettings;
+      if (!this.canPublish) {
+        this.updatedPublicationSettings(this.publicationSettings);
+      }
     },
     propertiesUpdated(properties) {
       if (!this.noteObject?.properties || !Object.keys(this.noteObject?.properties).length) {
