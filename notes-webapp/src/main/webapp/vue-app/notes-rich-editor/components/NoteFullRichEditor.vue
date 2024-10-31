@@ -89,7 +89,7 @@
       :note="noteObject"
       :has-featured-image="hasFeaturedImage" />
     <note-publication-drawer
-      v-if="canPublish"
+      v-if="publicationParams"
       ref="editorPublicationDrawer"
       :has-featured-image="hasFeaturedImage"
       :is-publishing="isPublishing"
@@ -250,9 +250,6 @@ export default {
     }
   },
   computed: {
-    canPublish() {
-      return this.publicationParams?.canPublish;
-    },
     newEmptyTranslation() {
       return !!this.note?.lang && !this.note?.title?.length && !this.note?.content?.length;
     },
@@ -398,7 +395,7 @@ export default {
       }
     },
     postNote() {
-      if (this.newPublicationDrawerEnabled && this.canPublish
+      if (this.newPublicationDrawerEnabled && this.publicationParams
           && !this.isTranslation && !this.editMode) {
         this.openPublicationDrawer(this.noteObject);
         return;
