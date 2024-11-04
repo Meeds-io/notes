@@ -40,6 +40,7 @@ public class EntityBuilder {
     return new NotePageProperties(pagePropertiesEntity.getNoteId(),
                                   pagePropertiesEntity.getSummary(),
                                   toNoteFeaturedImage(pagePropertiesEntity.getFeaturedImage()),
+                                  pagePropertiesEntity.isHideAuthor(),
                                   pagePropertiesEntity.isDraft());
   }
 

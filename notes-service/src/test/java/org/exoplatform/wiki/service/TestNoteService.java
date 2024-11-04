@@ -736,7 +736,14 @@ import io.meeds.notes.model.NotePageProperties;
   }
   
   private Page createTestNoteWithVersionLang(String name, String lang, Identity user) throws Exception {
-    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "testPortal");
+    identityManager.getOrCreateUserIdentity("root");
+    Space space = new Space();
+    space.setDisplayName("test");
+    space.setPrettyName("test");
+    space.setRegistration(Space.OPEN);
+    space.setVisibility(Space.PUBLIC);
+    space = spaceService.createSpace(space, "root");
+    Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, space.getGroupId());
     Page note = noteService.createNote(portalWiki, "Home", new Page(name, name), user);
     note.setLang(lang);
     note.setTitle("language title");
@@ -997,6 +1004,31 @@ import io.meeds.notes.model.NotePageProperties;
      draftPage.setParentPageId(note2.getId());
      noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
      assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType(), portalWiki.getWikiHome().getName()).size());
+   }
 
+   public void testSaveHideAuthorProperty() throws Exception {
+     Identity user = new Identity("user");
+     Page note = createTestNoteWithVersionLang("testMetadataHideAuthor", null, user);
+
+     this.bindMockedUploadService();
+
+     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+     notePageProperties.setHideAuthor(true);
+     NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+     assertEquals("summary test", properties.getSummary());
+     assertTrue(properties.isHideAuthor());
+
+     note.setLang("en");
+     note.setTitle("en title");
+     note.setContent("en content");
+     noteService.createVersionOfNote(note, user.getUserId());
+     notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text en", "summary test en");
+     notePageProperties.setHideAuthor(false);
+     noteService.saveNoteMetadata(notePageProperties, "en", 1L);
+
+     // when fetch version language metadata properties we should return the original
+     // note properties values in case of shared original properties values
+     note = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), "en");
+     assertTrue(note.getProperties().isHideAuthor());
    }
  }
