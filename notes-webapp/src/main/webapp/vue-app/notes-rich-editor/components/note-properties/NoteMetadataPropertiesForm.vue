@@ -225,6 +225,7 @@ export default {
       const properties = {
         noteId: this.noteObject?.id,
         summary: this.summaryContent,
+        hideAuthor: this.noteObject?.properties?.hideAuthor,
         featuredImage: {
           id: savedFeaturedImageId,
           uploadId: this.uploadId,

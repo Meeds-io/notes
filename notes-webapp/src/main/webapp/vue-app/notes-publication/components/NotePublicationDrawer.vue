@@ -164,6 +164,14 @@
                           }"
                           ref="scheduleOption"
                           @updated="updatedScheduleSettings" />
+                        <note-publication-advanced-option
+                          :edit-mode="editMode"
+                          :is-publishing="isPublishing"
+                          :saved-advanced-settings="{
+                            hideAuthor: currentAdvancedSettings?.hideAuthor
+                          }"
+                          ref="advancedOption"
+                          @update="updateAdvancedSettings"/>
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -208,8 +216,10 @@ export default {
         post: true
       },
       scheduleSettings: {},
+      advancedSettings: {},
       currentPublicationSettings: {},
-      currentScheduleSettings: {}
+      currentScheduleSettings: {},
+      currentAdvancedSettings: {}
     };
   },
   props: {
@@ -287,10 +297,16 @@ export default {
     }
   },
   methods: {
+    updateAdvancedSettings(settings) {
+      this.advancedSettings = structuredClone(settings);
+      this.publicationSettings.advancedSettings = this.advancedSettings;
+      this.noteObject.properties.hideAuthor = this.advancedSettings?.hideAuthor;
+    },
     updatedPublicationSettings(settings) {
       this.publicationSettings = structuredClone({
         post: this.publicationSettings.post,
-        scheduleSettings: this.publicationSettings.scheduleSettings
+        scheduleSettings: this.publicationSettings.scheduleSettings,
+        advancedSettings: this.publicationSettings.advancedSettings
       });
       this.publicationSettings.publish = settings?.publish;
       this.publicationSettings.selectedTargets = settings?.selectedTargets;
@@ -321,19 +337,12 @@ export default {
     open(noteObject) {
       this.noteObject = noteObject;
       if (this.editMode) {
-        this.publicationSettings.post = this.noteObject?.activityPosted;
-
-        this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
-        this.scheduleSettings.editScheduleAction = this.scheduleSettings.schedule && 'schedule' || null;
-        this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
-        this.scheduleSettings.unpublishDate = this.noteObject?.scheduleUnpublishDate;
-        this.publicationSettings.scheduleSettings = this.scheduleSettings;
-
-        this.publicationSettings.publish = this.noteObject?.published;
-        this.publicationSettings.selectedTargets = this.noteObject?.targets;
-        this.publicationSettings.selectedAudience = this.noteObject?.audience;
+        this.cloneScheduleSettings();
+        this.cloneAdvancedSettings();
+        this.clonePublicationSettings();
       }
       this.currentScheduleSettings = structuredClone(this.scheduleSettings);
+      this.currentAdvancedSettings = structuredClone(this.advancedSettings);
       this.currentPublicationSettings = structuredClone(this.publicationSettings);
       this.cloneProperties();
       this.$refs.publicationDrawer.open();
@@ -341,6 +350,7 @@ export default {
       setTimeout(() => {
         this.$refs?.publishOption?.initSettings();
         this.$refs?.scheduleOption?.initSettings();
+        this.$refs?.advancedOption?.initSettings();
       }, 200);
       this.$refs.propertiesForm?.initProperties();
     },
@@ -350,6 +360,23 @@ export default {
           this.$refs.publicationDrawer.toogleExpand();
         }, 50);
       }
+    },
+    cloneAdvancedSettings() {
+      this.advancedSettings.hideAuthor = this.noteObject?.properties?.hideAuthor;
+    },
+    clonePublicationSettings() {
+      this.publicationSettings.post = this.noteObject?.activityPosted;
+      this.publicationSettings.scheduleSettings = this.scheduleSettings;
+      this.publicationSettings.advancedSettings = this.advancedSettings;
+      this.publicationSettings.publish = this.noteObject?.published;
+      this.publicationSettings.selectedTargets = this.noteObject?.targets;
+      this.publicationSettings.selectedAudience = this.noteObject?.audience;
+    },
+    cloneScheduleSettings() {
+      this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
+      this.scheduleSettings.editScheduleAction = this.scheduleSettings.schedule && 'schedule' || null;
+      this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
+      this.scheduleSettings.unpublishDate = this.noteObject?.scheduleUnpublishDate;
     },
     cloneProperties() {
       this.currentNoteProperties = structuredClone(
@@ -368,6 +395,7 @@ export default {
     cancelChanges() {
       this.$refs?.publishOption?.cancelChanges();
       this.$refs?.scheduleOption?.cancelChanges();
+      this.$refs?.advancedOption?.cancelChanges();
     },
     reset() {
       setTimeout(() => {
