@@ -64,14 +64,14 @@
         :ripple="false"
         color="primary"
         class="mt-n1 me-1" />
-      <p class="mb-5">
+      <p class="mb-0">
         {{ $t('notes.publication.schedule.label') }}
       </p>
     </div>
     <div
       v-if="schedule"
       :class="{'d-flex': !showStartDate && expanded}"
-      class="width-fit-content">
+      class="width-fit-content mt-5">
       <div
         :class="{'d-flex': !publish || expanded}"
         class="justify-start">

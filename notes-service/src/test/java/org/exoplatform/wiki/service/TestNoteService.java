@@ -997,6 +997,18 @@ import io.meeds.notes.model.NotePageProperties;
      draftPage.setParentPageId(note2.getId());
      noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
      assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType(), portalWiki.getWikiHome().getName()).size());
+   }
 
+   public void testSaveHideAuthorProperty() throws Exception {
+     Identity user = new Identity("user");
+     Page note = createTestNoteWithVersionLang("testMetadataHideAuthor", null, user);
+
+     this.bindMockedUploadService();
+
+     NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
+     notePageProperties.setHideAuthor(true);
+     NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
+     assertEquals("summary test", properties.getSummary());
+     assertTrue(properties.isHideAuthor());
    }
  }

@@ -179,6 +179,7 @@ public class EntityConverter {
     NoteFeaturedImage noteFeaturedImage = new NoteFeaturedImage();
     notePageProperties.setNoteId(Long.parseLong(note.getId()));
     notePageProperties.setSummary(properties.get(NoteServiceImpl.SUMMARY_PROP));
+    notePageProperties.setHideAuthor(Boolean.parseBoolean(properties.getOrDefault(NoteServiceImpl.HIDE_AUTHOR_PROP, "false")));
     noteFeaturedImage.setId(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_ID, "0")));
     noteFeaturedImage.setLastUpdated(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_UPDATED_DATE, "0")));
     noteFeaturedImage.setAltText(properties.get(NoteServiceImpl.FEATURED_IMAGE_ALT_TEXT));
