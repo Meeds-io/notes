@@ -372,7 +372,7 @@ export default {
       this.publicationSettings.selectedTargets = this.noteObject?.targets;
       this.publicationSettings.selectedAudience = this.noteObject?.audience;
     },
-    cloneScheduleSettings () {
+    cloneScheduleSettings() {
       this.scheduleSettings.schedule = !!this.noteObject?.schedulePostDate || !!this.noteObject?.scheduleUnpublishDate;
       this.scheduleSettings.editScheduleAction = this.scheduleSettings.schedule && 'schedule' || null;
       this.scheduleSettings.postDate = this.noteObject?.schedulePostDate;
