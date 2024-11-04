@@ -38,6 +38,7 @@ import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataType;
 import org.exoplatform.wiki.WikiException;
@@ -51,23 +52,26 @@ import org.exoplatform.wiki.utils.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to convert JPA entity objects
  */
 public class EntityConverter {
 
-  private static final Log       LOG = ExoLogger.getLogger(EntityConverter.class);
+  private static final Log          LOG                        = ExoLogger.getLogger(EntityConverter.class);
 
-  private static SpaceService    spaceService;
+  private static SpaceService       spaceService;
 
-  private static MetadataService metadataService;
+  private static MetadataService    metadataService;
 
-  public static final MetadataType NOTES_METADATA_TYPE = new MetadataType(1001, "notes");
+  public static final MetadataType  NOTES_METADATA_TYPE        = new MetadataType(1001, "notes");
 
-  public static final MetadataKey  NOTES_METADATA_KEY   = new MetadataKey(NOTES_METADATA_TYPE.getName(),
-                                                                         Utils.NOTES_METADATA_OBJECT_TYPE,
-                                                                         0);
+  public static final MetadataKey   NOTES_METADATA_KEY         = new MetadataKey(NOTES_METADATA_TYPE.getName(),
+                                                                                 Utils.NOTES_METADATA_OBJECT_TYPE,
+                                                                                 0);
+
+  private static final List<String> ORIGINAL_SHARED_PROPERTIES = List.of("hideReaction", "hideAuthor");
 
   public static Wiki convertWikiEntityToWiki(WikiEntity wikiEntity) {
     Wiki wiki = null;
@@ -147,7 +151,7 @@ public class EntityConverter {
     }
     return page;
   }
-
+  
   public static void buildNotePageMetadata(Page note, boolean isDraft) {
     if (note == null) {
       return;
@@ -158,6 +162,7 @@ public class EntityConverter {
       if (note.getLang() != null) {
         noteId = noteId + "-" + note.getLang();
       }
+      Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, space.getId());
       NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
                                                                      noteId,
                                                                      note.getParentPageId(),
@@ -167,40 +172,13 @@ public class EntityConverter {
                           .findFirst()
                           .ifPresent(metadataItem -> {
                             if (!MapUtils.isEmpty(metadataItem.getProperties())) {
-                              buildPageProperties(metadataItem.getProperties(), note);
+                              buildPageProperties(metadataItem.getProperties(), originalNoteSharedProperties, note);
                             }
                           });
 
     }
   }
-  
-  private static void buildPageProperties(Map<String, String> properties, Page note) {
-    NotePageProperties notePageProperties = new NotePageProperties();
-    NoteFeaturedImage noteFeaturedImage = new NoteFeaturedImage();
-    notePageProperties.setNoteId(Long.parseLong(note.getId()));
-    notePageProperties.setSummary(properties.get(NoteServiceImpl.SUMMARY_PROP));
-    noteFeaturedImage.setId(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_ID, "0")));
-    noteFeaturedImage.setLastUpdated(Long.valueOf(properties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_UPDATED_DATE, "0")));
-    noteFeaturedImage.setAltText(properties.get(NoteServiceImpl.FEATURED_IMAGE_ALT_TEXT));
-    notePageProperties.setDraft(note.isDraftPage());
-    notePageProperties.setFeaturedImage(noteFeaturedImage);
-    note.setProperties(notePageProperties);
-  }
 
-  private static SpaceService getSpaceService() {
-    if (spaceService == null) {
-      spaceService = CommonsUtils.getService(SpaceService.class);
-    }
-    return spaceService;
-  }
-
-  private static MetadataService getMetadataService() {
-    if (metadataService == null) {
-      metadataService = CommonsUtils.getService(MetadataService.class);
-    }
-    return metadataService;
-  }
-  
   public static List<PermissionEntry> convertPermissionEntitiesToPermissionEntries(List<PermissionEntity> permissionEntities,
                                                                                    List<PermissionType> filteredPermissionTypes) {
     List<PermissionEntry> permissionEntries = new ArrayList<>();
@@ -585,5 +563,59 @@ public class EntityConverter {
 
   public static List<DraftPage> toDraftPages(List<DraftPageEntity> draftPageEntities) {
     return draftPageEntities.stream().map(EntityConverter::convertDraftPageEntityToDraftPage).toList();
+  }
+
+  private static Map<String, String> getOriginalNoteSharedProperties(Page note, String spaceId) {
+    if (note.getLang() == null || note.isDraftPage()) {
+      return new HashMap<>();
+    }
+    NoteMetadataObject originalNoteMetadataObject = new NoteMetadataObject("notePage",
+                                                                           note.getId(),
+                                                                           note.getParentPageId(),
+                                                                           Long.parseLong(spaceId));
+    List<MetadataItem> metadataItems = getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY,
+                                                                                                originalNoteMetadataObject);
+    Map<String, String> originalNoteSharedProperties = new HashMap<>();
+    if (!CollectionUtils.isEmpty(metadataItems)) {
+      originalNoteSharedProperties = metadataItems.getFirst().getProperties();
+    }
+    return originalNoteSharedProperties.entrySet()
+                                       .stream()
+                                       .filter(entry -> ORIGINAL_SHARED_PROPERTIES.contains(entry.getKey()))
+                                       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private static void buildPageProperties(Map<String, String> properties,
+                                          Map<String, String> originalNoteSharedProperties,
+                                          Page note) {
+    Map<String, String> finalProperties = new HashMap<>(properties);
+    finalProperties.putAll(originalNoteSharedProperties);
+    NotePageProperties notePageProperties = new NotePageProperties();
+    NoteFeaturedImage noteFeaturedImage = new NoteFeaturedImage();
+    notePageProperties.setNoteId(Long.parseLong(note.getId()));
+    notePageProperties.setSummary(finalProperties.get(NoteServiceImpl.SUMMARY_PROP));
+    notePageProperties.setHideAuthor(Boolean.parseBoolean(finalProperties.getOrDefault(NoteServiceImpl.HIDE_AUTHOR_PROP,
+                                                                                       "false")));
+    noteFeaturedImage.setId(Long.valueOf(finalProperties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_ID, "0")));
+    noteFeaturedImage.setLastUpdated(Long.valueOf(finalProperties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_UPDATED_DATE,
+                                                                               "0")));
+    noteFeaturedImage.setAltText(finalProperties.get(NoteServiceImpl.FEATURED_IMAGE_ALT_TEXT));
+    notePageProperties.setDraft(note.isDraftPage());
+    notePageProperties.setFeaturedImage(noteFeaturedImage);
+    note.setProperties(notePageProperties);
+  }
+
+  private static SpaceService getSpaceService() {
+    if (spaceService == null) {
+      spaceService = CommonsUtils.getService(SpaceService.class);
+    }
+    return spaceService;
+  }
+
+  private static MetadataService getMetadataService() {
+    if (metadataService == null) {
+      metadataService = CommonsUtils.getService(MetadataService.class);
+    }
+    return metadataService;
   }
 }
