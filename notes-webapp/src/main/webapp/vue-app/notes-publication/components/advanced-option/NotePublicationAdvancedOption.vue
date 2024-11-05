@@ -30,8 +30,20 @@
         :ripple="false"
         color="primary"
         class="mt-n1 me-1" />
-      <p class="mb-5">
+      <p class="mb-0">
         {{ $t('notes.publication.hide.author.label') }}
+      </p>
+    </div>
+    <div class="d-flex mt-4">
+      <v-switch
+        v-model="hideReaction"
+        :disabled="isPublishing"
+        :aria-label="$t('notes.publication.hide.reaction.label')"
+        :ripple="false"
+        color="primary"
+        class="mt-n1 me-1" />
+      <p class="mb-5">
+        {{ $t('notes.publication.hide.reaction.label') }}
       </p>
     </div>
   </div>
@@ -41,7 +53,8 @@
 export default {
   data() {
     return {
-      hideAuthor: false
+      hideAuthor: false,
+      hideReaction: false
     };
   },
   props: {
@@ -61,6 +74,9 @@ export default {
   watch: {
     hideAuthor() {
       this.emitAdvancedSettingsUpdate();
+    },
+    hideReaction() {
+      this.emitAdvancedSettingsUpdate();
     }
   },
   created() {
@@ -69,7 +85,8 @@ export default {
   methods: {
     emitAdvancedSettingsUpdate() {
       this.$emit('update', {
-        hideAuthor: this.hideAuthor
+        hideAuthor: this.hideAuthor,
+        hideReaction: this.hideReaction
       });
     },
     initSettings() {
@@ -77,6 +94,7 @@ export default {
         return;
       }
       this.hideAuthor = this.savedAdvancedSettings?.hideAuthor;
+      this.hideReaction = this.savedAdvancedSettings?.hideReaction;
     },
     cancelChanges() {
       this.initSettings();
