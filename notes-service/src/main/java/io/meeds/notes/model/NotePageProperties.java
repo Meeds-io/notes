@@ -39,6 +39,8 @@ public class NotePageProperties implements Serializable {
 
   private boolean           hideAuthor;
 
+  private boolean           hideReaction;
+
   private boolean           isDraft;
 
 }
