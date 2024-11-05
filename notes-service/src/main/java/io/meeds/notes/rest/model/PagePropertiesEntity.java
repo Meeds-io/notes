@@ -34,8 +34,10 @@ public class PagePropertiesEntity implements Serializable {
   private String              summary;
 
   private FeaturedImageEntity featuredImage;
-  
+
   private boolean             hideAuthor;
+
+  private boolean             hideReaction;
 
   private boolean             isDraft;
 }
