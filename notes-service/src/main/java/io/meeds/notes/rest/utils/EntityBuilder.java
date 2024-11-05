@@ -41,6 +41,7 @@ public class EntityBuilder {
                                   pagePropertiesEntity.getSummary(),
                                   toNoteFeaturedImage(pagePropertiesEntity.getFeaturedImage()),
                                   pagePropertiesEntity.isHideAuthor(),
+                                  pagePropertiesEntity.isHideReaction(),
                                   pagePropertiesEntity.isDraft());
   }
 

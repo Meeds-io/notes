@@ -36,19 +36,20 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-
-import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.file.services.FileService;
-import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.services.security.IdentityRegistry;
-import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+
+import org.exoplatform.commons.ObjectAlreadyExistsException;
+import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
+
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.jpa.JPADataStorage;
@@ -999,16 +1000,18 @@ import io.meeds.notes.model.NotePageProperties;
      assertEquals(2, noteService.getDraftsOfWiki(portalWiki.getOwner(), portalWiki.getType(), portalWiki.getWikiHome().getName()).size());
    }
 
-   public void testSaveHideAuthorProperty() throws Exception {
+   public void testSaveHideAuthorAndHideReactionProperties() throws Exception {
      Identity user = new Identity("user");
-     Page note = createTestNoteWithVersionLang("testMetadataHideAuthor", null, user);
+     Page note = createTestNoteWithVersionLang("testMetadataHideAuthorAndHideReaction", null, user);
 
      this.bindMockedUploadService();
 
      NotePageProperties notePageProperties = createNotePageProperties(Long.parseLong(note.getId()), "alt text", "summary test");
      notePageProperties.setHideAuthor(true);
+     notePageProperties.setHideReaction(true);
      NotePageProperties properties = noteService.saveNoteMetadata(notePageProperties, null, 1L);
      assertEquals("summary test", properties.getSummary());
      assertTrue(properties.isHideAuthor());
+     assertTrue(properties.isHideReaction());
    }
  }

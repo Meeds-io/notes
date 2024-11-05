@@ -226,6 +226,7 @@ export default {
         noteId: this.noteObject?.id,
         summary: this.summaryContent,
         hideAuthor: this.noteObject?.properties?.hideAuthor,
+        hideReaction: this.noteObject?.properties?.hideReaction,
         featuredImage: {
           id: savedFeaturedImageId,
           uploadId: this.uploadId,

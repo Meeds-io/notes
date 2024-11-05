@@ -168,10 +168,11 @@
                           :edit-mode="editMode"
                           :is-publishing="isPublishing"
                           :saved-advanced-settings="{
-                            hideAuthor: currentAdvancedSettings?.hideAuthor
+                            hideAuthor: currentAdvancedSettings?.hideAuthor,
+                            hideReaction: currentAdvancedSettings?.hideReaction
                           }"
                           ref="advancedOption"
-                          @update="updateAdvancedSettings"/>
+                          @update="updateAdvancedSettings" />
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -301,6 +302,7 @@ export default {
       this.advancedSettings = structuredClone(settings);
       this.publicationSettings.advancedSettings = this.advancedSettings;
       this.noteObject.properties.hideAuthor = this.advancedSettings?.hideAuthor;
+      this.noteObject.properties.hideReaction = this.advancedSettings?.hideReaction;
     },
     updatedPublicationSettings(settings) {
       this.publicationSettings = structuredClone({
@@ -363,6 +365,7 @@ export default {
     },
     cloneAdvancedSettings() {
       this.advancedSettings.hideAuthor = this.noteObject?.properties?.hideAuthor;
+      this.advancedSettings.hideReaction = this.noteObject?.properties?.hideReaction;
     },
     clonePublicationSettings() {
       this.publicationSettings.post = this.noteObject?.activityPosted;
