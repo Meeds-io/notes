@@ -596,6 +596,8 @@ public class EntityConverter {
     notePageProperties.setSummary(finalProperties.get(NoteServiceImpl.SUMMARY_PROP));
     notePageProperties.setHideAuthor(Boolean.parseBoolean(finalProperties.getOrDefault(NoteServiceImpl.HIDE_AUTHOR_PROP,
                                                                                        "false")));
+    notePageProperties.setHideReaction(Boolean.parseBoolean(properties.getOrDefault(NoteServiceImpl.HIDE_REACTION_PROP,
+                                                                                    "false")));
     noteFeaturedImage.setId(Long.valueOf(finalProperties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_ID, "0")));
     noteFeaturedImage.setLastUpdated(Long.valueOf(finalProperties.getOrDefault(NoteServiceImpl.FEATURED_IMAGE_UPDATED_DATE,
                                                                                "0")));
