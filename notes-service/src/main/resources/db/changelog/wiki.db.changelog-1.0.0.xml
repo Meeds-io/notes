@@ -16,23 +16,25 @@
 
 
   <changeSet author="wiki" id="1.0.0-1">
+    <validCheckSum>9:bc19b3d428dd5436236f2d68102893a0</validCheckSum>
+    <validCheckSum>9:2c442f5adc8e2b1d55591b0a06bc3913</validCheckSum>
     <createTable tableName="WIKI_WIKIS">
       <column name="WIKI_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_WIKIS_ID"/>
       </column>
-      <column name="NAME" type="NVARCHAR(550)"/>
-      <column name="OWNER" type="NVARCHAR(200)">
+      <column name="NAME" type="VARCHAR(550)"/>
+      <column name="OWNER" type="VARCHAR(200)">
         <constraints nullable="false"/>
       </column>
-      <column name="TYPE" type="NVARCHAR(50)">
+      <column name="TYPE" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
       <column name="WIKI_HOME" type="BIGINT"/>
-      <column name="SYNTAX" type="NVARCHAR(30)"/>
+      <column name="SYNTAX" type="VARCHAR(30)"/>
       <column name="ALLOW_MULTI_SYNTAX" type="BOOLEAN"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -42,6 +44,8 @@
     <validCheckSum>7:c046fcb3d84bc510622a067bc1a949d8</validCheckSum>
     <validCheckSum>7:7b342dc7f44b14421cabf99ac96dafa4</validCheckSum>
     <validCheckSum>7:2edcbb4fcffed57961d5c6b13f409c7f</validCheckSum>
+    <validCheckSum>9:abfb2d779995de857670a1d6c9b24612</validCheckSum>
+    <validCheckSum>9:9e50b115b37a295b11525ec7f17d74d4</validCheckSum>
     <createTable tableName="WIKI_PAGES">
       <column name="PAGE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_PAGES_ID"/>
@@ -50,11 +54,11 @@
         <constraints nullable="false"/>
       </column>
       <column name="PARENT_PAGE_ID" type="BIGINT"/>
-      <column name="AUTHOR" type="NVARCHAR(200)"/>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="AUTHOR" type="VARCHAR(200)"/>
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
-      <column name="OWNER" type="NVARCHAR(200)"/>
+      <column name="OWNER" type="VARCHAR(200)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
@@ -62,16 +66,16 @@
         <constraints nullable="true"/>
       </column>
       <column name="CONTENT" type="CLOB"/>
-      <column name="SYNTAX" type="NVARCHAR(30)"/>
-      <column name="TITLE" type="NVARCHAR(550)"/>
-      <column name="EDITION_COMMENT" type="NVARCHAR(1000)"/>
-      <column name="URL" type="NVARCHAR(500)"/>
+      <column name="SYNTAX" type="VARCHAR(30)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
+      <column name="EDITION_COMMENT" type="VARCHAR(1000)"/>
+      <column name="URL" type="VARCHAR(500)"/>
       <column name="MINOR_EDIT" type="BOOLEAN"/>
-      <column name="ACTIVITY_ID" type="NVARCHAR(36)"/>
+      <column name="ACTIVITY_ID" type="VARCHAR(36)"/>
       <column name="DELETED" type="BOOLEAN" defaultValueBoolean="false"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -81,6 +85,8 @@
     <validCheckSum>7:d0b4e4374990d4c328f7098d89c9b7af</validCheckSum>
     <validCheckSum>7:00968469a8dd1e767d7ab2b6eedc5f22</validCheckSum>
     <validCheckSum>7:2b1d896f653805f50bcecc559f356a10</validCheckSum>
+    <validCheckSum>9:eb9bbf2da4665c45f5428049b2e28325</validCheckSum>
+    <validCheckSum>9:2200a64b8428f24b730cb2275efe89d0</validCheckSum>
     <createTable tableName="WIKI_PAGE_ATTACHMENTS">
       <column name="ATTACHMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_ATTACHEMENTS_ID"/>
@@ -88,23 +94,23 @@
       <column name="WIKI_PAGE_ID" type="BIGINT">
         <constraints nullable="false" foreignKeyName="FK_WIKI_ATTACHMENTS_PAGES" references="WIKI_PAGES(PAGE_ID)" />
       </column>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
-      <column name="CREATOR" type="NVARCHAR(200)"/>
+      <column name="CREATOR" type="VARCHAR(200)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
       <column name="UPDATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
-      <column name="FULL_TITLE" type="NVARCHAR(550)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
+      <column name="FULL_TITLE" type="VARCHAR(550)"/>
       <column name="CONTENT" type="LONGBLOB"/>
-      <column name="MIMETYPE" type="NVARCHAR(100)"/>
+      <column name="MIMETYPE" type="VARCHAR(100)"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -114,6 +120,8 @@
     <validCheckSum>7:dcd6e840320601a01b445b610cc1a27d</validCheckSum>
     <validCheckSum>7:b20242a3aac74a364b63fe0864a25e18</validCheckSum>
     <validCheckSum>7:dac686a1d60ac80b8592d0f8a72cbca4</validCheckSum>
+    <validCheckSum>9:d897f8e4dc9ffb0991ab8c93e6c3f0dc</validCheckSum>
+    <validCheckSum>9:bc2b528d4c691b835cd150e2e6497b98</validCheckSum>
     <createTable tableName="WIKI_PAGE_VERSIONS">
       <column name="PAGE_VERSION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_PAGE_VERSIONS_ID"/>
@@ -121,11 +129,11 @@
       <column name="VERSION_NUMBER" type="BIGINT">
         <constraints nullable="false"/>
       </column>
-      <column name="AUTHOR" type="NVARCHAR(200)"/>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="AUTHOR" type="VARCHAR(200)"/>
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
@@ -133,15 +141,15 @@
         <constraints nullable="true"/>
       </column>
       <column name="CONTENT" type="CLOB"/>
-      <column name="SYNTAX" type="NVARCHAR(30)"/>
-      <column name="EDITION_COMMENT" type="NVARCHAR(1000)"/>
+      <column name="SYNTAX" type="VARCHAR(30)"/>
+      <column name="EDITION_COMMENT" type="VARCHAR(1000)"/>
       <column name="MINOR_EDIT" type="BOOLEAN"/>
       <column name="PAGE_ID" type="BIGINT">
         <constraints nullable="false"/>
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -151,17 +159,19 @@
     <validCheckSum>7:789366d990943d30ffe0e0d38e5fb850</validCheckSum>
     <validCheckSum>7:9fb957b31def3e497f65c08b28c5c60f</validCheckSum>
     <validCheckSum>7:c12477fcbaa6d1e3e7f131d0cc1ed49f</validCheckSum>
+    <validCheckSum>9:92d6342ce9b79e1bd5e9ba005a8d272a</validCheckSum>
+    <validCheckSum>9:a78ce34adbbbd009d140496ad3cc140a</validCheckSum>
     <createTable tableName="WIKI_PAGE_MOVES">
       <column name="PAGE_MOVE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_PAGE_MOVES_ID"/>
       </column>
-      <column name="WIKI_TYPE" type="NVARCHAR(50)">
+      <column name="WIKI_TYPE" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="WIKI_OWNER" type="NVARCHAR(100)">
+      <column name="WIKI_OWNER" type="VARCHAR(100)">
         <constraints nullable="false"/>
       </column>
-      <column name="PAGE_NAME" type="NVARCHAR(550)">
+      <column name="PAGE_NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
       <column name="CREATED_DATE" type="TIMESTAMP">
@@ -172,13 +182,15 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
   <changeSet author="wiki" id="1.0.0-7">
+    <validCheckSum>9:d7cac766b5553ef1d494d2fe947a7206</validCheckSum>
+    <validCheckSum>9:240ddbdf7f44a0b13645400d6ce70334</validCheckSum>
     <createTable tableName="WIKI_WATCHERS">
-      <column name="USERNAME" type="NVARCHAR(200)">
+      <column name="USERNAME" type="VARCHAR(200)">
         <constraints nullable="false"/>
       </column>
       <column name="PAGE_ID" type="BIGINT">
@@ -186,22 +198,24 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
   <changeSet author="wiki" id="1.0.0-8">
+    <validCheckSum>9:7a345035fe565a64d8afcf1a94f50f85</validCheckSum>
+    <validCheckSum>9:f347c7da68a00f857a20a240816ac45b</validCheckSum>
     <createTable tableName="WIKI_EMOTION_ICONS">
       <column name="EMOTION_ICON_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_EMOTION_ICONS_ID"/>
       </column>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
       <column name="IMAGE" type="LONGBLOB"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -211,6 +225,8 @@
     <validCheckSum>7:9f24e4c3d6ceb0bb0164926573a6b23d</validCheckSum>
     <validCheckSum>7:d8381f9e158990511677e35f200f9570</validCheckSum>
     <validCheckSum>7:3ac6d2c1b09140b13a74263f0857479b</validCheckSum>
+    <validCheckSum>9:de4f68d77c0eeb6e697c3a6236dcda55</validCheckSum>
+    <validCheckSum>9:dd36d04b1895be7d0c33048a73896add</validCheckSum>
     <createTable tableName="WIKI_TEMPLATES">
       <column name="TEMPLATE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_TEMPLATES_ID"/>
@@ -218,14 +234,14 @@
       <column name="WIKI_ID" type="BIGINT">
         <constraints nullable="true"/>
       </column>
-      <column name="AUTHOR" type="NVARCHAR(200)"/>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="AUTHOR" type="VARCHAR(200)"/>
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
-      <column name="DESCRIPTION" type="NVARCHAR(1000)"/>
+      <column name="DESCRIPTION" type="VARCHAR(1000)"/>
       <column name="CONTENT" type="CLOB"/>
-      <column name="SYNTAX" type="NVARCHAR(30)"/>
-      <column name="TITLE" type="NVARCHAR(550)"/>
+      <column name="SYNTAX" type="VARCHAR(30)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
@@ -234,7 +250,7 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -244,20 +260,22 @@
     <validCheckSum>7:61b7cc1738363bb5bb9a761848ffa983</validCheckSum>
     <validCheckSum>7:ef2c3568effd3a68b523d169a5968664</validCheckSum>
     <validCheckSum>7:5182cf317ff6d0afaede77e83852dda5</validCheckSum>
+    <validCheckSum>9:9c5bfb263d6bba9aa250c6d70b08a041</validCheckSum>
+    <validCheckSum>9:0ea35d0e1a8151d12080d0978f36032b</validCheckSum>
     <createTable tableName="WIKI_DRAFT_PAGES">
       <column name="DRAFT_PAGE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_DRAFT_PAGES_ID"/>
       </column>
       <column name="TARGET_PAGE_ID" type="BIGINT"/>
-      <column name="TARGET_PAGE_REVISION" type="NVARCHAR(50)"/>
+      <column name="TARGET_PAGE_REVISION" type="VARCHAR(50)"/>
       <column name="NEW_PAGE" type="BOOLEAN"/>
-      <column name="AUTHOR" type="NVARCHAR(200)"/>
-      <column name="NAME" type="NVARCHAR(550)">
+      <column name="AUTHOR" type="VARCHAR(200)"/>
+      <column name="NAME" type="VARCHAR(550)">
         <constraints nullable="false"/>
       </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
       <column name="CONTENT" type="CLOB"/>
-      <column name="SYNTAX" type="NVARCHAR(30)"/>
+      <column name="SYNTAX" type="VARCHAR(30)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
@@ -266,7 +284,7 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -276,6 +294,8 @@
     <validCheckSum>7:fb55a6e5095fcc1cf576ececf8797a47</validCheckSum>
     <validCheckSum>7:d1499302a7b3465e49250479aabee176</validCheckSum>
     <validCheckSum>7:b696d10c210627ab39e883c2f28d1dda</validCheckSum>
+    <validCheckSum>9:f38ff1ebf21f030e8056f2439571b221</validCheckSum>
+    <validCheckSum>9:4008a47a49453424755942482405ad32</validCheckSum>
     <createTable tableName="WIKI_DRAFT_ATTACHMENTS">
       <column name="ATTACHMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_DRAFT_ATTACHMENTS_ID"/>
@@ -283,65 +303,70 @@
       <column name="DRAFT_PAGE_ID" type="BIGINT">
         <constraints nullable="false" foreignKeyName="FK_WIKI_DRAFTATTACHMENTS_PAGES" references="WIKI_DRAFT_PAGES(DRAFT_PAGE_ID)" />
       </column>
-      <column name="NAME" type="NVARCHAR(550)"/>
-      <column name="CREATOR" type="NVARCHAR(200)"/>
+      <column name="NAME" type="VARCHAR(550)"/>
+      <column name="CREATOR" type="VARCHAR(200)"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
       <column name="UPDATED_DATE" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
-      <column name="FULL_TITLE" type="NVARCHAR(550)"/>
+      <column name="TITLE" type="VARCHAR(550)"/>
+      <column name="FULL_TITLE" type="VARCHAR(550)"/>
       <column name="CONTENT" type="LONGBLOB"/>
-      <column name="MIMETYPE" type="NVARCHAR(100)"/>
+      <column name="MIMETYPE" type="VARCHAR(100)"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
   <changeSet author="wiki" id="1.0.0-13">
+    <validCheckSum>9:b43be71d66f864af2eabd9bbb9223f26</validCheckSum>
+    <validCheckSum>9:1c5e3a67928b6b3b98475fd8fed1ea4b</validCheckSum>
     <createTable tableName="WIKI_WIKI_PERMISSIONS">
       <column name="WIKI_ID" type="BIGINT">
         <constraints nullable="false"/>
       </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
+      <column name="IDENTITY" type="VARCHAR(200)">
         <constraints nullable="false"/>
       </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
+      <column name="IDENTITY_TYPE" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
+      <column name="PERMISSION" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
   <changeSet author="wiki" id="1.0.0-14">
+    <validCheckSum>9:12f718762f505579448e9679b27193ad</validCheckSum>
+    <validCheckSum>9:3cf1ec034d9f0a086f92ea116c33600c</validCheckSum>
     <createTable tableName="WIKI_PAGE_PERMISSIONS">
       <column name="PAGE_ID" type="BIGINT">
         <constraints nullable="false"/>
       </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
+      <column name="IDENTITY" type="VARCHAR(200)">
         <constraints nullable="false"/>
       </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
+      <column name="IDENTITY_TYPE" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
+      <column name="PERMISSION" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
   <changeSet author="wiki" id="1.0.0-15">
+    <validCheckSum>9:6e6366b776be1fff93d095ae9c6a9a98</validCheckSum>
     <createTable tableName="WIKI_PAGES_RELATED_PAGES">
       <column name="PAGE_ID" type="BIGINT">
         <constraints nullable="false"/>
@@ -351,7 +376,7 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -557,10 +582,11 @@
 
   <!--Fix issue SOC-5440-->
   <changeSet id="1.0.0-46" author="wiki">
+    <validCheckSum>9:519be032cf85d8fa963fba4ce28df1b1</validCheckSum>
     <renameColumn tableName="WIKI_PAGE_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
+                  columnDataType="VARCHAR(200)"/>
     <renameColumn tableName="WIKI_WIKI_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
+                  columnDataType="VARCHAR(200)"/>
   </changeSet>
 
   <!--Fix issue WIKI-1263-->
@@ -658,6 +684,10 @@
     </createIndex>
   </changeSet>
 
+  <changeSet id="1.0.0-55.1" author="wiki">
+    <dropIndex tableName="WIKI_PAGES" indexName="IDX_WIKI_PAGES_01"/>
+  </changeSet>
+
   <changeSet id="1.0.0-56" author="wiki" dbms="mysql">
     <sql>
       ALTER TABLE WIKI_DRAFT_PAGES MODIFY COLUMN CONTENT longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -674,32 +704,33 @@
   </changeSet>
 
   <changeSet id="1.0.0-57" author="wiki">
+    <validCheckSum>9:5df54f8520a09462509f5721742195dd</validCheckSum>
     <modifyDataType columnName="NAME"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_PAGES"/>
     <modifyDataType columnName="TITLE"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_PAGES"/>
     <modifyDataType columnName="NAME"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_PAGE_VERSIONS"/>
     <modifyDataType columnName="TITLE"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_PAGE_VERSIONS"/>
     <modifyDataType columnName="PAGE_NAME"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_PAGE_MOVES"/>
     <modifyDataType columnName="NAME"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_TEMPLATES"/>
     <modifyDataType columnName="TITLE"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_TEMPLATES"/>
     <modifyDataType columnName="NAME"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_DRAFT_PAGES"/>
     <modifyDataType columnName="TITLE"
-                    newDataType="NVARCHAR(1000)"
+                    newDataType="VARCHAR(1000)"
                     tableName="WIKI_DRAFT_PAGES"/>
 
   </changeSet>
@@ -713,7 +744,7 @@
     </addColumn>
   </changeSet>
 
-  <changeSet id="1.0.0-59" author="wiki">
+  <changeSet id="1.0.0-59" author="wiki" dbms="oracle,postgresql,hsqldb">
     <createSequence sequenceName="SEQ_WIKI_WIKIS_WIKI_ID" startValue="1" />
     <createSequence sequenceName="SEQ_WIKI_PAGES_PAGE_ID" startValue="1" />
     <createSequence sequenceName="SEQ_WIKI_PAGE_ATTACH_ATTACH_ID" startValue="1" />
@@ -725,11 +756,12 @@
   </changeSet>
 
   <changeSet id="1.0.0-60" author="wiki">
+    <validCheckSum>9:e80a51365c090f3da82b997373112ed1</validCheckSum>
     <addColumn tableName="WIKI_DRAFT_PAGES">
-      <column name="LANG" type="NVARCHAR(50)"/>
+      <column name="LANG" type="VARCHAR(50)"/>
     </addColumn>
     <addColumn tableName="WIKI_PAGE_VERSIONS">
-      <column name="LANG" type="NVARCHAR(50)"/>
+      <column name="LANG" type="VARCHAR(50)"/>
     </addColumn>
   </changeSet>
 
@@ -739,6 +771,36 @@
       ALTER TABLE WIKI_DRAFT_PAGES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
       ALTER TABLE WIKI_PAGE_VERSIONS MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
       ALTER TABLE WIKI_TEMPLATES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    </sql>
+  </changeSet>
+
+  <changeSet id="1.0.0-62" author="wiki" dbms="mysql">
+    <createIndex tableName="WIKI_PAGES" indexName="IDX_WIKI_PAGES_01">
+      <column name="NAME(750)"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.0-63" author="wiki" dbms="!mysql">
+    <createIndex tableName="WIKI_PAGES" indexName="IDX_WIKI_PAGES_01">
+      <column name="NAME"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="wiki" id="1.0.0-64" >
+    <sql dbms="mysql">
+      ALTER TABLE WIKI_WIKIS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGES CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGE_ATTACHMENTS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGE_VERSIONS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGE_MOVES CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_WATCHERS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_EMOTION_ICONS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_TEMPLATES CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_DRAFT_PAGES CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_DRAFT_ATTACHMENTS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_WIKI_PERMISSIONS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGE_PERMISSIONS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+      ALTER TABLE WIKI_PAGES_RELATED_PAGES CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
     </sql>
   </changeSet>
 
