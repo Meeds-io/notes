@@ -577,7 +577,7 @@ public class EntityConverter {
                                                                            Long.parseLong(spaceId));
     List<MetadataItem> metadataItems = getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY,
                                                                                                 originalNoteMetadataObject);
-    Map<String, String> noteSharedProperties = new HashMap<>();
+    Map<String, String> originalNoteSharedProperties = new HashMap<>();
     if (!CollectionUtils.isEmpty(metadataItems)) {
       noteSharedProperties = metadataItems.getFirst().getProperties();
     }
