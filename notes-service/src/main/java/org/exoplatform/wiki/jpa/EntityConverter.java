@@ -588,7 +588,7 @@ public class EntityConverter {
   }
 
   private static void buildPageProperties(Map<String, String> properties,
-                                          Map<String, String> originalSharedProperties,
+                                          Map<String, String> originalNoteSharedProperties,
                                           Page note) {
     Map<String, String> finalProperties = new HashMap<>(properties);
     finalProperties.putAll(originalSharedProperties);
