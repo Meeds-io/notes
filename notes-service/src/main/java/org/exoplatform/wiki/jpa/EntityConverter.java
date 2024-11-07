@@ -162,7 +162,7 @@ public class EntityConverter {
       if (note.getLang() != null) {
         noteId = noteId + "-" + note.getLang();
       }
-      Map<String, String> originalSharedProperties = getOriginalNoteSharedProperties(note, space.getId());
+      Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, space.getId());
       NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
                                                                      noteId,
                                                                      note.getParentPageId(),
