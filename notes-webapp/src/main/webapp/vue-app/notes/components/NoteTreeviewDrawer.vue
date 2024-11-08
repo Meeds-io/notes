@@ -294,14 +294,9 @@
             </v-list-item>
           </template>
           <template v-if="items?.length && exportNotes">
-            <v-checkbox
-              v-model="checkbox"
-              :label="selectExportLabel"
-              class="checkbox mt-0 pl-3" />
             <v-treeview
               v-if="reload"
               ref="treeSearch"
-              v-model="selectionNotes"
               :items="items"
               :open.sync="openLevel"
               :selection-type="selectionType"
@@ -309,10 +304,31 @@
               class="treeview-item"
               item-key="noteId"
               hoverable
-              selectable
               activatable
               open-on-click
-              transition />
+              transition>
+              <template #label="{ item }">
+                <div class="d-flex">
+                  <v-progress-circular
+                    v-if="isBeingLoaded(item)"
+                    :size="20"
+                    :width="2"
+                    class="me-2"
+                    color="primary"
+                    indeterminate />
+                  <v-simple-checkbox
+                    v-else
+                    :value="isSelected(item)"
+                    color="primary"
+                    class="me-2"
+                    hide-details
+                    small
+                    @mousedown.prevent.stop
+                    @click="updateSelection(item)" />
+                  <span>{{ item.name }}</span>
+                </div>
+              </template>
+            </v-treeview>
           </template>
           <template v-else-if="!exportNotes">
             <v-treeview
@@ -402,6 +418,7 @@
           </v-btn>
           <v-btn
             :disabled="exporting"
+            :loading="!enableExport"
             @click="exportNotesToZip()"
             class="btn btn-primary ml-2">
             {{ $t('notes.button.export') }}
@@ -452,9 +469,16 @@ export default {
     tempCleaned: false,
     dataCreated: false,
     isLoading: false,
-    selection: 'independent',
+    selectionType: 'independent',
+    inProgressTreeFetches: []
   }),
   computed: {
+    homeLabel() {
+      return this.home?.name === 'Home' && this.$t('notes.label.noteHome') || this.home.name;
+    },
+    enableExport() {
+      return !this.inProgressTreeFetches?.length;
+    },
     confirmCloseLabels() {
       return {
         title: this.$t('notes.confirmCancelExport.title'),
@@ -484,18 +508,8 @@ export default {
     resultSearch() {
       return this.showTree;
     },
-    selectExportLabel() {
-      if (this.checkbox === true) {
-        return this.$t('notes.label.export.deselectAll');
-      } else {
-        return this.$t('notes.label.export.selectAll');
-      }
-    },
     openLevel() {
       return [this.home.noteId];
-    },
-    selectionType() {
-      return this.selection;
     },
     isDraftFilter() {
       return this.filter === this.$t('notes.filter.label.drafts');
@@ -509,6 +523,9 @@ export default {
         this.$refs.breadcrumbDrawer.endLoading();
       }
     },
+    inProgressTreeFetches() {
+      this.isLoading = this.inProgressTreeFetches?.length;
+    },
     search() {
       this.showTree = true;
       if (this.search) {
@@ -520,9 +537,6 @@ export default {
       } else {
         this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name);
       }
-    },
-    checkbox() {
-      this.selectAllItems(this.checkbox);
     },
     filter() {
       if (this.note && this.note.id) {
@@ -556,9 +570,71 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
-    selectAllItems(select) {
-      this.$refs.treeSearch.selectionType = 'leaf';
-      this.$refs.treeSearch.updateSelected(this.home.noteId, select);
+    fetchChildrenInParallel(children, level = 0) {
+      if (level >= 2) {
+        return;
+      }
+      children.forEach(item => {
+        if (item.hasChild && !item?.children?.length) {
+          this.inProgressTreeFetches.push(item.noteId);
+          return this.$notesService.getNoteTreeLevel(item.path).then((data) => {
+            item.children = this.mapItems(data?.jsonList);
+            this.fetchChildrenInParallel(item.children, level + 1);
+            const inProgressFetch = this.inProgressTreeFetches.indexOf(item.noteId);
+            this.inProgressTreeFetches.splice(inProgressFetch, 1);
+          });
+        }
+      });
+    },
+    selectChildren(item) {
+      if (item.hasChild && !item?.children?.length) {
+        this.inProgressTreeFetches.push(item.noteId);
+        return this.$notesService.getNoteTreeLevel(item.path).then((data) => {
+          item.children = this.mapItems(data?.jsonList);
+          this.selectionNotes.push(
+            ...item.children.map(item => item.noteId).filter(id => !this.selectionNotes.includes(id)));
+          item.children.forEach(child => this.selectChildren(child));
+          this.openItem(item, this.$refs.treeSearch);
+          this.inProgressTreeFetches.splice(this.inProgressTreeFetches.indexOf(item.noteId), 1);
+        });
+      } else if (item?.children?.length) {
+        this.selectionNotes.push(
+          ...item.children.map(item => item.noteId).filter(id => !this.selectionNotes.includes(id)));
+        this.openItem(item, this.$refs.treeSearch);
+        item.children.forEach(item => this.selectChildren(item));
+      }
+    },
+    deselectChildren(item) {
+      if (item.children) {
+        item.children.forEach((child) => {
+          const index = this.selectionNotes.indexOf(child.noteId);
+          if (index !== -1) {
+            this.selectionNotes.splice(index, 1);
+          }
+          this.deselectChildren(child);
+        });
+      }
+    },
+    updateSelection(item) {
+      this.enableExport = false;
+      const index = this.selectionNotes.findIndex(itemId => itemId === item.noteId);
+      if (index === -1) {
+        if (!this.selectionNotes.includes(item.noteId)) {
+          this.selectionNotes.push(item.noteId);
+        }
+        this.selectChildren(item);
+      } else {
+        this.$refs.treeSearch.selectionType = 'independent';
+        this.$refs.treeSearch.updateSelected(item.noteId, false);
+        this.selectionNotes.splice(index, 1);
+        this.deselectChildren(item);
+      }
+    },
+    isBeingLoaded(item) {
+      return this.inProgressTreeFetches.includes(item.noteId);
+    },
+    isSelected(item) {
+      return this.selectionNotes?.includes(item.noteId);
     },
     open(note, source, includeDisplay,filter) {
       this.render = false;
@@ -569,16 +645,8 @@ export default {
         this.filter = filter === 'draft' && this.filterOptions[1] || this.filterOptions[0];
         this.getNoteById(note.id);
       }
-      if (source === 'includePages') {
-        this.isIncludePage = true;
-      } else {
-        this.isIncludePage = false;
-      }
-      if (includeDisplay) {
-        this.displayArrow =false;
-      } else {
-        this.displayArrow =true;
-      }
+      this.isIncludePage = source === 'includePages';
+      this.displayArrow = !includeDisplay;
       if (source === 'movePage') {
         this.movePage = true;
         this.exportNotes = false;
@@ -701,8 +769,7 @@ export default {
         }
       }
       return itemsArray;
-    },   
-
+    },
     filterItemsForMove(item) {
       if (item.noteId===this.note.id) {
         delete item.children;
@@ -713,7 +780,6 @@ export default {
       }
       return item;
     },
-
     naturalSort(items) {
       if (items?.length) {
         const collator = new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'});
@@ -731,7 +797,11 @@ export default {
       this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, noteType).then(data => {
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
+          this.home.name = this.homeLabel;
           this.items = this.exportNotes && [this.home] || data.jsonList[0].children;
+          if (this.exportNotes) {
+            this.fetchChildrenInParallel(this.home.children);
+          }
           if (this.exportNotes) {
             if (!this.items[0].hasChild) {
               delete this.items[0].children;
@@ -798,12 +868,13 @@ export default {
       this.checkbox = false;
       $('.spaceButtomNavigation').removeClass('hidden');
       this.search = '';
-      if (this.exporting){
+      if (this.exporting) {
         this.$root.$emit('cancel-export-notes');
         this.exportStatus = {};
         this.exporting = false;
         this.resetImport();
       }
+      this.selectionNotes = [];
       if (this.closeAll) {
         this.$emit('closed');
       }
