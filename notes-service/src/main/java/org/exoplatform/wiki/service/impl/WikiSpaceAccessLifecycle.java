@@ -73,8 +73,8 @@ public class WikiSpaceAccessLifecycle extends BaseComponentPlugin implements App
           }
 
           // If user is not member of space but has view permission
-          if (space != null && !Space.HIDDEN.equals(space.getVisibility()) && !spaceService.isSuperManager(currentUser)
-              && !spaceService.isMember(space, currentUser)) {
+          if (space != null && !Space.HIDDEN.equals(space.getVisibility()) && !spaceService.isSuperManager(space, currentUser)
+              && !spaceService.canViewSpace(space, currentUser)) {
             WikiPageParams wikiPageParams = new WikiPageParams(PortalConfig.GROUP_TYPE, owner, pageId);
             String permalink = Utils.getPermanlink(wikiPageParams, false);
             redirect(permalink);
