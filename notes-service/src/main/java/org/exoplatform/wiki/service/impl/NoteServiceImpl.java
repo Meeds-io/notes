@@ -2082,7 +2082,7 @@ public class NoteServiceImpl implements NoteService {
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
       return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
-      return spaceService.isSuperManager(authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
+      return spaceService.isSuperManager(space, authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
   }
 
