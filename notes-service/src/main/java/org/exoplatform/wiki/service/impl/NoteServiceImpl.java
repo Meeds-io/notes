@@ -2078,11 +2078,11 @@ public class NoteServiceImpl implements NoteService {
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
-      return !page.isDraftPage() ? spaceService.isMember(space, authenticatedUser) : Utils.canManageNotes(authenticatedUser, space, page);
+      return !page.isDraftPage() ? spaceService.canViewSpace(space, authenticatedUser) : Utils.canManageNotes(authenticatedUser, space, page);
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
       return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
     } else {
-      return spaceService.isSuperManager(authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
+      return spaceService.isSuperManager(space, authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
   }
 
