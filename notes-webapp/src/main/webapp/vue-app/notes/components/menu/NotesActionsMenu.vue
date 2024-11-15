@@ -29,8 +29,7 @@
     offset-y
     left>
     <notes-action-menu-items
-      :note="note"
-      :default-path="defaultPath" />
+      :note="note" />
   </v-menu>
 </template>
 <script>
@@ -45,10 +44,6 @@ export default {
     note: {
       type: Object,
       default: () => null,
-    },
-    defaultPath: {
-      type: String,
-      default: () => 'Home',
     }
   },
   created() {

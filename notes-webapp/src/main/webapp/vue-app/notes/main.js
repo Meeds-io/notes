@@ -1,5 +1,6 @@
 import './initComponents.js';
 import './services.js';
+import './extensions.js';
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 
 // get overrided components if exists
