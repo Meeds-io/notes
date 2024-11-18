@@ -21,93 +21,18 @@
 <template>
   <v-list class="py-0 text-no-wrap width-fit-content">
     <v-list-item
-      v-if="note?.canView"
-      class="ps-2 pe-4 action-menu-item draftButton"
-      @click="copyLink">
+      v-for="extension in filteredExtensions"
+      :key="extension.id"
+      :class="extension.cssClass"
+      @click="handleAction(extension)">
       <v-icon
         size="16"
+        :class="extension?.iconCssClass"
         class="clickable icon-menu">
-        fas fa-link
+        {{ extension?.icon }}
       </v-icon>
       <span class="text-color">
-        {{ $t('notes.menu.label.copyLink') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      v-if="note?.canView"
-      class="ps-2 pe-4 noteExportPdf action-menu-item draftButton"
-      @click="exportPdf">
-      <v-icon
-        size="16"
-        class="clickable icon-menu">
-        fas fa-file-pdf
-      </v-icon>
-      <span class="text-color">
-        {{ $t('notes.menu.label.exportPdf') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      class="ps-2 pe-4 action-menu-item draftButton"
-      @click="openNoteHistory">
-      <v-icon
-        size="16"
-        class="clickable icon-menu">
-        fas fa-history
-      </v-icon>
-      <span class="text-color">
-        {{ $t('notes.menu.label.noteHistory') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      v-if="!homePage && note.canManage"
-      class="ps-2 pe-4 action-menu-item draftButton"
-      @click="openTreeView('movePage')">
-      <v-icon
-        size="16"
-        class="clickable icon-menu">
-        fas fa-arrows-alt
-      </v-icon>
-      <span class="text-color">
-        {{ $t('notes.menu.label.movePage') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      v-if="homePage"
-      class="ps-2 pe-4 action-menu-item draftButton"
-      @click="openTreeView('exportNotes')">
-      <v-icon
-        size="16"
-        class="clickable icon-menu">
-        fas fa-sign-in-alt
-      </v-icon>
-      <span class="text-color">
-        {{ $t('notes.menu.label.export') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      v-if="homePage && note?.canImport"
-      class="ps-2 pe-4 action-menu-item draftButton"
-      @click="openImportDrawer">
-      <v-icon
-        size="16"
-        class="clickable icon-menu">
-        fas fa-sign-out-alt
-      </v-icon>
-      <span class="text-color">
-        {{ $t('notes.menu.label.import') }}
-      </span>
-    </v-list-item>
-    <v-list-item
-      v-if="!homePage && note?.canManage"
-      class="red--text ps-2 pe-4 action-menu-item draftButton"
-      @click="deleteNote">
-      <v-icon
-        size="16"
-        class="delete-option-color clickable icon-menu">
-        fas fa-trash
-      </v-icon>
-      <span class="delete-option-color">
-        {{ $t('notes.menu.label.delete') }}
+        {{ $t(extension.labelKey) }}
       </span>
     </v-list-item>
   </v-list>
@@ -115,46 +40,35 @@
 
 <script>
 export default {
+  data() {
+    return {
+      extensions: []
+    };
+  },
   props: {
     note: {
       type: Object,
       default: () => null,
-    },
-    defaultPath: {
-      type: String,
-      default: () => 'Home',
     }
   },
   computed: {
-    homePage(){
-      return !this.note.parentPageId;
+    filteredExtensions() {
+      return this.extensions.filter(extension => extension.enabled(this.note));
     }
   },
+  created() {
+    this.refreshMenuExtensions();
+  },
   methods: {
-    exportPdf() {
-      this.$root.$emit('note-export-pdf', this.note);
+    refreshMenuExtensions() {
+      this.extensions = extensionRegistry.loadExtensions('NotesMenu', 'menuActionMenu');
     },
-    openTreeView(action) {
-      this.$root.$emit('open-note-treeview', this.note, action);
-    },
-    openNoteHistory() {
-      this.$root.$emit('open-note-history', this.note);
-    },
-    openImportDrawer() {
-      this.$root.$emit('open-note-import-drawer');
-    },
-    deleteNote() {
-      this.$root.$emit('delete-note', this.note);
-    },
-    copyLink() {
-      const inputTemp = $('<input>');
-      const path = `${window.location.origin}${this.note.url}`;
-      $('body').append(inputTemp);
-      inputTemp.val(path).select();
-      document.execCommand('copy');
-      inputTemp.remove();
-      this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.linkCopied')});
-      this.$root.$emit('close-action-menu');
+    handleAction(extension) {
+      if (extension?.action) {
+        extension.action(this);
+      } else {
+        this.$root.$emit(extension.actionEvent, this.note, extension.id);
+      }
     }
   },
 };
