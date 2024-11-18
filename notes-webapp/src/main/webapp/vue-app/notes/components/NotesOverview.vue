@@ -279,15 +279,23 @@
         </a>
       </div>
     </div>
+    <exo-confirm-dialog
+      ref="DeleteNoteDialog"
+      :message="confirmMessage"
+      :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
+      :ok-label="$t('notes.button.delete')"
+      :cancel-label="$t('notes.button.cancel')"
+      persistent
+      @ok="deleteNote()"
+      @dialog-opened="$emit('confirmDialogOpened')"
+      @dialog-closed="$emit('confirmDialogClosed')" />
     <notes-actions-menu
       v-if="!isMobile"
-      :note="note"
-      :default-path="defaultPath" />
+      :note="note" />
     <notes-mobile-action-menu
       v-else
       ref="notesMobileActionMenu"
-      :note="note"
-      :default-path="defaultPath" />
+      :note="note" />
     <note-treeview-drawer
       ref="notesBreadcrumb" 
       :selected-translation="selectedTranslation.value" />
@@ -301,21 +309,28 @@
       ref="noteVersionsHistoryDrawer" />
     <note-import-drawer
       ref="noteImportDrawer" />
-    <exo-confirm-dialog
-      ref="DeleteNoteDialog"
-      :message="confirmMessage"
-      :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
-      :ok-label="$t('notes.button.delete')"
-      :cancel-label="$t('notes.button.cancel')"
-      persistent
-      @ok="deleteNote()"
-      @dialog-opened="$emit('confirmDialogOpened')"
-      @dialog-closed="$emit('confirmDialogClosed')" />
+    <note-featured-image-drawer
+      ref="featuredImageDrawer"
+      :note="note"
+      :has-featured-image="hasFeaturedImage" />
+    <note-publication-drawer
+      v-if="newPublicationDrawerEnabled"
+      ref="publicationDrawer"
+      :has-featured-image="hasFeaturedImage"
+      :is-publishing="isPublishing"
+      :params="{
+        spaceId: spaceId,
+        allowedTargets: publishTargets,
+        canPublish: canPublish,
+        canSchedule: canScheduleNotePublication
+      }"
+      :edit-mode="published"
+      @publish="publishNote" />
   </v-app>
 </template>
 <script>
 
-import { notesConstants } from '../../../javascript/eXo/wiki/notesConstants.js';
+import {notesConstants} from '../../../javascript/eXo/wiki/notesConstants.js';
 import html2canvas from 'html2canvas';
 import JSPDF from 'jspdf';
 
@@ -376,12 +391,19 @@ export default {
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       initialized: false,
       overviewExtensions: [],
+      isPublishing: false,
+      publishTargets: [],
+      canPublish: false,
+      canSchedule: false,
+      published: false
     };
   },
   watch: {
     note() {
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
+        this.getSavedNotePublicationSettings(this.note.id);
+        this.getCanSchedule();
       }
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
         this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
@@ -413,6 +435,9 @@ export default {
     }
   },
   computed: {
+    newPublicationDrawerEnabled() {
+      return eXo?.env?.portal?.newPublicationDrawerEnabled;
+    },
     extensionParams() {
       return {
         entityId: this.entityId,
@@ -575,10 +600,18 @@ export default {
     appName() {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
+    },
+    isNoteAuthor() {
+      return !this.published && this?.note.author === eXo.env.portal.userName;
+    },
+    canScheduleNotePublication() {
+      return this.isNoteAuthor || this.canSchedule || this.canPublish;
     }
   },
   created() {
     this.getAvailableLanguages();
+    this.getPublishTargets();
+    this.getCanPublish();
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('translation')) {
@@ -637,9 +670,9 @@ export default {
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
+    this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
     this.refreshOverviewExtensions();
-
   },
   mounted() {
     this.handleChangePages();
@@ -648,9 +681,62 @@ export default {
     });
   },
   methods: {
+    getSavedNotePublicationSettings(id, lang) {
+      return this.$notesService.getSavedNotePublicationSettings(id, lang).then(settings => {
+        if (settings) {
+          this.note = Object.assign(this.note, settings);
+        }
+        this.published = !!settings;
+      });
+    },
+    getCanPublish() {
+      this.$notesService.canPublish(this.spaceId).then(canPublish => {
+        this.canPublish = canPublish;
+      });
+    },
+    getCanSchedule() {
+      this.$notesService.canSchedule(this.spaceId, this.note?.id).then(canSchedule => {
+        this.canSchedule = canSchedule;
+      });
+    },
+    getPublishTargets() {
+      this.$notesService.getNotePublishTargets().then(targets => {
+        this.publishTargets = targets;
+      });
+    },
+    publishNote(publicationSettings, note) {
+      const scheduleSettings = publicationSettings?.scheduleSettings;
+      const article = structuredClone(note || this.note);
+      article.schedulePostDate = scheduleSettings?.postDate;
+      article.scheduleUnpublishDate = scheduleSettings?.unpublishDate;
+      article.activityPosted = publicationSettings?.post;
+      article.published = publicationSettings?.publish;
+      article.targets = publicationSettings?.selectedTargets;
+      article.audience = publicationSettings?.selectedAudience;
+      this.isPublishing = true;
+      if (note) {
+        this.$notesService.updateNoteById(note).then(() => {
+          this.$notesService.saveNoteArticle(this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
+            this.isPublishing = false;
+            this.$refs.publicationDrawer.close();
+            this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.success.message')});
+          });
+        });
+      } else {
+        const editScheduleAction = scheduleSettings?.editScheduleAction;
+        this.$notesService.updateNotePublication(editScheduleAction, scheduleSettings,
+          this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
+          this.isPublishing = false;
+          this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.success.message')});
+        });
+      }
+    },
+    openPublishDrawer() {
+      this.$refs.publicationDrawer.open(this.note);
+    },
     closeMobileActionMenu() {
       setTimeout(() => {
-        this.$refs.notesMobileActionMenu.close();
+        this.$refs.notesMobileActionMenu?.close();
       }, 200);
     },
     openNoteTreeView(note, action) {
@@ -1010,6 +1096,7 @@ export default {
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
       this.$root.$emit('open-note-by-name', noteName);
+      this.getSavedNotePublicationSettings(item.noteId);
     },
     updateNote(noteParam) {
       const note = {

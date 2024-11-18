@@ -12,6 +12,7 @@ import NoteContentTableItem from './components/NoteContentTableItem.vue';
 import NotesActionMenuItems from './components/menu/NotesActionMenuItems.vue';
 import NotesMobileActionMenu from './components/menu/NotesMobileActionMenu.vue';
 import NoteTreeviewItemPrepend from './components/NoteTreeviewItemPrepend.vue';
+import NoteEditorFeaturedImageDrawer from '../notes-rich-editor/components/note-properties/NoteEditorFeaturedImageDrawer.vue';
 
 const components = {
   'notes-overview': NotesOverview,
@@ -27,7 +28,8 @@ const components = {
   'note-content-table-item': NoteContentTableItem,
   'notes-action-menu-items': NotesActionMenuItems,
   'notes-mobile-action-menu': NotesMobileActionMenu,
-  'note-treeview-item-prepend': NoteTreeviewItemPrepend
+  'note-treeview-item-prepend': NoteTreeviewItemPrepend,
+  'note-featured-image-drawer': NoteEditorFeaturedImageDrawer
 };
 
 for (const key in components) {
