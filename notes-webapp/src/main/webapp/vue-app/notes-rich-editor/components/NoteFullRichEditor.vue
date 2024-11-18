@@ -402,7 +402,7 @@ export default {
       }
       this.postAndPublishNote();
     },
-    postAndPublishNote(note, publicationSettings) {
+    postAndPublishNote(publicationSettings, note) {
       if (this.newPublicationDrawerEnabled) {
         this.noteObject = note;
         this.updateData();
