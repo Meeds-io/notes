@@ -64,6 +64,7 @@
   </v-app>
 </template>
 <script>
+
 export default {
   data() {
     return {
@@ -130,7 +131,9 @@ export default {
       translationSwitch: false,
       newTranslation: false,
       autosaveProcessedFromEditorExtension: false,
-      extensionDataUpdated: false
+      extensionDataUpdated: false,
+      wikiDraftObjectType: 'wikiDraft',
+      wikiPageVersionObjectType: 'wikiPageVersion'
     };
   },
   computed: {
@@ -380,6 +383,7 @@ export default {
       const currentDraftId = this.note?.id;
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
+        this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
         this.originalNote = structuredClone(data);
         this.displayMessage({
           type: 'success',
@@ -395,6 +399,7 @@ export default {
       }).finally(() => {
         this.enableClickOnce();
         this.removeLocalStorageCurrentDraft(currentDraftId);
+        this.emitEditorChanges = true;
         this.extensionDataUpdated = false;
       });
     },
@@ -408,6 +413,7 @@ export default {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         this.note = data;
         this.noteId = data.id;
+        this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
         // delete draft note
@@ -583,8 +589,13 @@ export default {
     saveNoteDraft(update) {
       const draftNote = this.fillDraftNote();
       if (this.note.title || this.note.content) {
+        const sanitizedContent = this.$noteUtils.sanitizeSrcImageTags(this.note.content);
+        const isContentIncludeUploadedImages = sanitizedContent !== this.note.content;
+        if (isContentIncludeUploadedImages) {
+          draftNote.content = sanitizedContent;
+        }
         // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated) {
+        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeUploadedImages) {
           this.note.parentPageId = this.parentPageId;
           localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
           this.actualNote = {
@@ -620,6 +631,7 @@ export default {
             draftNote.properties.featuredImage = {};
           }
         }
+        const setEditorDataMutely = this.$noteUtils.isHasImagesToBeProcessed(draftNote.content, this.wikiDraftObjectType);
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
           if (update){
             this.actualNote = {
@@ -634,6 +646,9 @@ export default {
             this.newDraft=false;
             savedDraftNote.parentPageId = this.parentPageId;
             this.note = savedDraftNote;
+            if (setEditorDataMutely) {
+              this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
+            }
             localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
             this.newTranslation = false;
           } else {

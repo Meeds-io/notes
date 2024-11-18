@@ -65,6 +65,8 @@ import org.exoplatform.wiki.model.Wiki;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
+import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
+import org.exoplatform.wiki.service.plugin.WikiPageVersionAttachmentPlugin;
 
  public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -1033,5 +1035,51 @@ import io.meeds.notes.model.NotePageProperties;
      note = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), "en");
      assertTrue(note.getProperties().isHideAuthor());
      assertTrue(properties.isHideReaction());
+   }
+
+   public void testProcessingNoteContentImages() throws Exception {
+     this.bindMockedUploadService();
+
+     // processing draft content images
+     DraftPage draftPage = new DraftPage();
+     draftPage.setTitle("test");
+     draftPage.setContent("content include image <img cke_upload_id=\"123\" >");
+     draftPage = noteService.createDraftForNewPage(draftPage, new Date().getTime(), 1L);
+     assertNotNull(draftPage);
+     assertNotNull(draftPage.getContent());
+
+     String imageTagSuffix = "<img src=\"/portal/rest/v1/social/attachments/";
+     assertTrue(draftPage.getContent().contains(imageTagSuffix.concat(WikiDraftPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(draftPage.getId())));
+
+     //
+     Page note = new Page();
+     note.setTitle(draftPage.getTitle());
+     note.setContent(draftPage.getContent());
+     Identity root = new Identity("root");
+     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
+     note = noteService.createNote(portalWiki, "Home",note ,root);
+     noteService.createVersionOfNote(note, "root", WikiPageVersionAttachmentPlugin.OBJECT_TYPE, draftPage.getId());
+
+     // processing note version content images
+     assertNotNull(note);
+     assertNotNull(note.getId());
+
+     PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(note.getId()), null);
+
+     assertNotNull(pageVersion);
+     assertNotNull(pageVersion.getId());
+     assertNotNull(pageVersion.getContent());
+     assertTrue(pageVersion.getContent().contains(imageTagSuffix.concat(WikiPageVersionAttachmentPlugin.OBJECT_TYPE).concat("/").concat(pageVersion.getId())));
+
+     // processing draft for existing page content images
+     DraftPage draftForExistingPage = new DraftPage();
+     draftForExistingPage.setTitle(pageVersion.getTitle());
+     draftForExistingPage.setContent(pageVersion.getContent());
+     draftForExistingPage.setParentPageId(note.getId());
+     draftForExistingPage = noteService.createDraftForExistPage(draftForExistingPage, note, null, System.currentTimeMillis(), "root");
+
+     assertNotNull(draftForExistingPage);
+     assertNotNull(draftForExistingPage.getId());
+     assertTrue(draftForExistingPage.getContent().contains(imageTagSuffix.concat(WikiDraftPageAttachmentPlugin.OBJECT_TYPE).concat("/".concat(draftForExistingPage.getId()))));
    }
  }
