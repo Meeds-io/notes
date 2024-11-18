@@ -157,6 +157,7 @@
                           :publish="publicationSettings?.publish"
                           :is-publishing="isPublishing"
                           :edit-mode="editMode"
+                          :from-external-page="noteObject?.fromExternalPage"
                           :saved-schedule-settings="{
                             scheduled: currentScheduleSettings?.schedule,
                             postDate: currentScheduleSettings?.postDate,
