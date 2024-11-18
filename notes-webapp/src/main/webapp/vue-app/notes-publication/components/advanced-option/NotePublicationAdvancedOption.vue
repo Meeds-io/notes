@@ -91,6 +91,7 @@ export default {
     },
     initSettings() {
       if (!this.editMode) {
+        this.resetSettings();
         return;
       }
       this.hideAuthor = this.savedAdvancedSettings?.hideAuthor;
@@ -98,6 +99,10 @@ export default {
     },
     cancelChanges() {
       this.initSettings();
+    },
+    resetSettings() {
+      this.hideAuthor = false;
+      this.hideReaction = false;
     }
   }
 };

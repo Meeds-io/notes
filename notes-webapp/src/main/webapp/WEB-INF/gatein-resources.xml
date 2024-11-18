@@ -50,6 +50,12 @@
         <path>/javascript/notes.bundle.js</path>
       </script>
       <depends>
+        <module>NotesPublication</module>
+      </depends>
+      <depends>
+        <module>imageCropper</module>
+      </depends>
+      <depends>
         <module>html2canvas</module>
       </depends>
       <depends>
