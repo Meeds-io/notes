@@ -422,7 +422,7 @@ export default {
         return;
       }
       this.$emit('metadata-updated', this.noteObject.properties);
-      this.$emit('publish', this.noteObject, this.publicationSettings);
+      this.$emit('publish', this.publicationSettings, this.noteObject,);
     },
     updateCurrentNoteObjectProperties(properties) {
       this.noteObject.properties.noteId = Number(properties.noteId);
