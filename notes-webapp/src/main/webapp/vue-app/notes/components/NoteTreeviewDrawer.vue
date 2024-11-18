@@ -701,6 +701,7 @@ export default {
           this.$root.$emit('open-note-by-name', noteName, note.draftPage);
           this.$refs.breadcrumbDrawer.close();
         }
+        document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
       } else {
         this.$refs.breadcrumbDrawer.close();
       }

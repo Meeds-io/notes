@@ -25,8 +25,7 @@
     :bottom="true">
     <template slot="content">
       <notes-action-menu-items
-        :note="note"
-        :default-path="defaultPath" />
+        :note="note" />
     </template>
   </exo-drawer>
 </template>

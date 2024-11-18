@@ -30,8 +30,17 @@
       :multiple="isMultipleSelectionOption"
       class="d-flex ms-n1 mt-0 pt-0">
       <v-radio
-        :label="cancelOption.label"
-        :value="cancelOption.value" />
+        v-if="fromExternalPage && !hasSavedUnpublishSchedule"
+        :label="$t('notes.publication.externalPage.publish.cancel.label')"
+        :value="CANCEL_SCHEDULE_OPTION" />
+      <v-radio
+        v-else-if="hasSavedUnpublishSchedule"
+        :label="$t('notes.publication.publish.cancel.label')"
+        :value="CANCEL_PUBLICATION_OPTION" />
+      <v-radio
+        v-else
+        :label="$t('notes.publication.schedule.cancel.label')"
+        :value="CANCEL_SCHEDULE_OPTION" />
       <v-tooltip
         v-if="canPublish"
         :disabled="!isMultipleSelectionOption"
@@ -380,6 +389,7 @@ export default {
     },
     initSettings() {
       if (!this.editMode) {
+        this.resetSettings();
         return;
       }
       this.schedule = this.savedScheduleSettings.scheduled;
@@ -491,6 +501,17 @@ export default {
     },
     cancelChanges() {
       this.initSettings();
+    },
+    resetSettings() {
+      this.schedule = false;
+      this.savedScheduleSettings = {};
+      const {startDate, minStartDate, endDate} = this.initDateValues();
+      this.startDate = startDate;
+      this.endDate = endDate;
+      this.minStartDate = minStartDate;
+      this.minEndDate = minStartDate;
+      this.endTime = '18:00';
+      this.startTime= '08:00';
     }
   }
 };

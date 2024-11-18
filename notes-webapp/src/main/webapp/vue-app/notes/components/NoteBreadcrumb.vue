@@ -134,6 +134,7 @@ export default {
     openNote(note) {
       if (note.noteId !== this.actualNoteId ) {
         this.$emit('open-note',note.id);
+        document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
       }
     }
   }
