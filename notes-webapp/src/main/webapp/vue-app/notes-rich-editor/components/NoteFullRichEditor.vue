@@ -116,7 +116,8 @@ export default {
       editorExtensions: [],
       updatingProperties: false,
       enablePostKeys: 0,
-      isPublishing: false
+      isPublishing: false,
+      emitEditorChanges: true
     };
   },
   props: {
@@ -349,6 +350,14 @@ export default {
         this.$refs[this.editorBodyInputRef].value = content;
       }
     },
+    setEditorDataMutely(content) {
+      this.emitEditorChanges = false;
+      this.editor?.setData?.(content, {
+        callback: () => {
+          this.emitEditorChanges = true;
+        },
+      });
+    },
     cloneNoteObject() {
       this.noteObject = structuredClone(this.note);
     },
@@ -498,7 +507,7 @@ export default {
             self.setToolBarEffect();
           },
           change: function (evt) {
-            if (!self.initialized) {
+            if (!self.initialized || !self.emitEditorChanges) {
               // First time setting data
               self.initialized = true;
               return;

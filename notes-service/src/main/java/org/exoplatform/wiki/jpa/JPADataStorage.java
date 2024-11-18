@@ -1592,6 +1592,22 @@ public class JPADataStorage implements DataStorage {
     return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.find(versionId));
   }
 
+   @Override
+   public PageVersion updatePageVersionContent(long versionId, String content) {
+     PageVersionEntity pageVersionEntity = pageVersionDAO.find(versionId);
+     pageVersionEntity.setContent(content);
+     pageVersionEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
+     return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.update(pageVersionEntity));
+   }
+
+   @Override
+   public DraftPage updateDraftContent(long draftId, String content) {
+     DraftPageEntity draftPageEntity = draftPageDAO.find(draftId);
+     draftPageEntity.setContent(content);
+     draftPageEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
+     return EntityConverter.convertDraftPageEntityToDraftPage(draftPageDAO.update(draftPageEntity));
+   }
+
   /**
    * {@inheritDoc}
    */

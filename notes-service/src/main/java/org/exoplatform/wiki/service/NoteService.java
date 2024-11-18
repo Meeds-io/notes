@@ -466,6 +466,18 @@ public interface NoteService {
   void createVersionOfNote(Page note, String userName) throws WikiException;
 
   /**
+   * Creates a version of a note. This method only tag the current note data as
+   * a new version, it does not update the note data
+   *
+   * @param note The note
+   * @param objectType The object type to link to the page version's content images
+   * @param  draftId The ID of the latest draft, used as the source ID to move content images to the new version
+   * @param userName The author name
+   * @throws WikiException if an error occured
+   */
+  void createVersionOfNote(Page note, String userName, String objectType, String draftId) throws WikiException;
+
+  /**
    * Restores a version of a note
    * 
    * @param versionName The name of the version to restore
@@ -591,7 +603,6 @@ public interface NoteService {
                                     String revision,
                                     long currentTimeMillis,
                                     String username) throws WikiException;
-
   /**
    * Creates a draft for a new page
    *
