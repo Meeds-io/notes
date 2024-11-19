@@ -637,7 +637,7 @@ import io.meeds.notes.model.NotePageProperties;
     assertNotNull(note);
     assertEquals(note.getTitle(), "frenchTitle");
     noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
-    assertTrue(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
+    assertNull(fileService.getFile(featuredImage.getId()));
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertEquals(note.getTitle(), "testPage1");
     noteService.deleteNote(note1.getWikiType(), note1.getWikiOwner(), note1.getName());
@@ -795,7 +795,12 @@ import io.meeds.notes.model.NotePageProperties;
     noteService.saveNoteMetadata(notePageProperties, "fr", 1L);
 
     assertNotNull(properties.getFeaturedImage().getId());
-    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, 1L));
+    NoteFeaturedImage noteFeaturedImageInfo = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, 1L);
+    NoteFeaturedImage noteFeaturedImageInfoFr = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, 1L);
+
+    assertNotNull(noteFeaturedImageInfo);
+    assertNotNull(noteFeaturedImageInfoFr);
+    assertEquals(noteFeaturedImageInfoFr.getId(), noteFeaturedImageInfo.getId());
 
     noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
                                         properties.getFeaturedImage().getId(),
@@ -803,14 +808,8 @@ import io.meeds.notes.model.NotePageProperties;
                                         false,
                                         1L);
 
-    NoteFeaturedImage savedFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
-                                                                                null,
-                                                                                false,
-                                                                                null,
-                                                                                1L);
-    assertNull(savedFeaturedImage);
-
-    assertNotNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, 1L));
+    assertNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, 1L));
+    assertNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, 1L));
   }
 
   public void testGetNoteFeaturedImageInfo() throws Exception {
@@ -944,7 +943,7 @@ import io.meeds.notes.model.NotePageProperties;
                                      noteService.getNoteFeaturedImageInfo(Long.valueOf(draftPage.getId()), null, true, null, 1L);
      assertNotNull(featuredImage);
      noteService.removeDraftById(draftPage.getId());
-     assertTrue(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
+     assertNull(fileService.getFile(featuredImage.getId()));
 
      // Draft related to page
      // Once deleted we should be aware of illustration assigned to parent page or not
@@ -969,7 +968,7 @@ import io.meeds.notes.model.NotePageProperties;
      featuredImage = noteService.getNoteFeaturedImageInfo(Long.valueOf(draftPage.getId()), null, true, null, 1L);
      assertNotNull(featuredImage);
      noteService.removeDraftById(draftPage.getId());
-     assertFalse(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
+     assertNotNull(fileService.getFile(featuredImage.getId()));
 
      // Draft has different associated file, it should be deleted
      draftPage = noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
@@ -980,7 +979,7 @@ import io.meeds.notes.model.NotePageProperties;
      featuredImage = noteService.getNoteFeaturedImageInfo(Long.valueOf(draftPage.getId()), null, true, null, 1L);
      assertNotNull(featuredImage);
      noteService.removeDraftById(draftPage.getId());
-     assertTrue(fileService.getFile(featuredImage.getId()).getFileInfo().isDeleted());
+     assertNull(fileService.getFile(featuredImage.getId()));
    }
 
    public void testGetDraftsOfWiki() throws Exception {
