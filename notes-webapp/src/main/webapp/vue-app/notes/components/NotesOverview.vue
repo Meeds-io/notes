@@ -718,6 +718,7 @@ export default {
         this.$notesService.updateNoteById(note).then(() => {
           this.$notesService.saveNoteArticle(this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
             this.isPublishing = false;
+            this.getSavedNotePublicationSettings(this.note?.id);
             this.$refs.publicationDrawer.close();
             this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.success.message')});
           });
@@ -727,7 +728,8 @@ export default {
         this.$notesService.updateNotePublication(editScheduleAction, scheduleSettings,
           this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
           this.isPublishing = false;
-          this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.success.message')});
+          this.$refs.publicationDrawer.close();
+          this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.settings.update.success')});
         });
       }
     },
