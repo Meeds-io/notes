@@ -476,6 +476,7 @@ export async function getSavedNotePublicationSettings(id, lang) {
       audience: article.audience,
       schedulePostDate: article.schedulePostDate,
       scheduleUnpublishDate: article.scheduleUnpublishDate,
+      fromExternalPage: article.fromExternalPage,
       properties: article.properties ?? {}
     };
   } catch (error) {
