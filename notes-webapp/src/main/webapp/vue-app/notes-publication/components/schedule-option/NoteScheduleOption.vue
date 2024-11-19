@@ -30,8 +30,17 @@
       :multiple="isMultipleSelectionOption"
       class="d-flex ms-n1 mt-0 pt-0">
       <v-radio
-        :label="cancelOption.label"
-        :value="cancelOption.value" />
+        v-if="fromExternalPage"
+        :label="$t('notes.publication.externalPage.publish.cancel.label')"
+        :value="CANCEL_SCHEDULE_OPTION" />
+      <v-radio
+        v-else-if="hasSavedUnpublishSchedule"
+        :label="$t('notes.publication.publish.cancel.label')"
+        :value="CANCEL_PUBLICATION_OPTION" />
+      <v-radio
+        v-else
+        :label="$t('notes.publication.schedule.cancel.label')"
+        :value="CANCEL_SCHEDULE_OPTION" />
       <v-tooltip
         v-if="canPublish"
         :disabled="!isMultipleSelectionOption"
@@ -194,10 +203,10 @@
 </template>
 
 <script>
-const SCHEDULE_OPTION = 'schedule';
-const PUBLISH_NOW_OPTION = 'publish_now';
-const CANCEL_SCHEDULE_OPTION = 'cancel_schedule';
-const CANCEL_PUBLICATION_OPTION = 'cancel_unpublish';
+export const SCHEDULE_OPTION = 'schedule';
+export const PUBLISH_NOW_OPTION = 'publish_now';
+export const CANCEL_SCHEDULE_OPTION = 'cancel_schedule';
+export const CANCEL_PUBLICATION_OPTION = 'cancel_unpublish';
 export default {
   data() {
     const { startDate, minStartDate, endDate } = this.initDateValues();
@@ -205,6 +214,8 @@ export default {
     const untilScheduleType = {label: this.$t('notes.publication.schedule.until.label'), value: 'until'};
     const fromScheduleType = {label: this.$t('notes.publication.schedule.from.label'), value: 'from'};
     return {
+      CANCEL_SCHEDULE_OPTION,
+      CANCEL_PUBLICATION_OPTION,
       editScheduleOption: null,
       schedule: false,
       betweenScheduleType: betweenScheduleType,
@@ -257,6 +268,10 @@ export default {
     canPublish: {
       type: Boolean,
       default: false
+    },
+    fromExternalPage: {
+      type: Boolean,
+      default: false
     }
   },
   watch: {
@@ -297,10 +312,6 @@ export default {
   computed: {
     isMultipleSelectionOption() {
       return this.schedule && this.isUntilScheduleType && !this.hasSavedUnpublishSchedule;
-    },
-    cancelOption() {
-      return this.hasSavedUnpublishSchedule && {label: this.$t('notes.publication.publish.cancel.label'), value: CANCEL_PUBLICATION_OPTION}
-          || {label: this.$t('notes.publication.schedule.cancel.label'), value: CANCEL_SCHEDULE_OPTION};
     },
     formattedStartDate() {
       return this.startDate && this.formatDate(this.startDate) || '';
