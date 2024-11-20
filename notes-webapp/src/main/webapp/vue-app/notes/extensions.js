@@ -31,7 +31,7 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 30,
   actionEvent: 'open-publish-drawer',
-  enabled: (note) => eXo?.env?.portal?.newPublicationDrawerEnabled && !note.draftPage,
+  enabled: (note) => eXo?.env?.portal?.notePublicationEnabled && !note.draftPage,
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'noteHistory',
