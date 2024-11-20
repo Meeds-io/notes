@@ -22,14 +22,16 @@
                xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd http://www.exoplatform.org/xml/ns/kernel_1_3.xsd"
                xmlns="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd">
     <component>
-        <key>NotesEditorInsertImageOptionFeatureProperties</key>
+        <key>NoteFeatureProperties</key>
         <type>org.exoplatform.container.ExtendedPropertyConfigurator</type>
         <init-params>
             <properties-param>
-                <name>NotesEditorInsertImageOptionFeatureProperties</name>
-                <description>Insert image Feature enablement flag</description>
+                <name>NoteFeatureProperties</name>
+                <description>Note Feature enablement flag</description>
                 <property name="exo.feature.insertImage.enabled"
                           value="${exo.feature.insertImage.enabled:false}"/>
+                <property name="exo.feature.notePublication.enabled"
+                          value="${exo.feature.notePublication.enabled:false}"/>
             </properties-param>
         </init-params>
     </component>
