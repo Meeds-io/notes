@@ -61,7 +61,7 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 50,
   actionEvent: 'open-note-treeview',
-  enabled: (note) => note?.parentPageId
+  enabled: (note) => !note?.parentPageId
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'importNotes',
@@ -71,7 +71,7 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 60,
   actionEvent: 'open-note-import-drawer',
-  enabled: (note) => note?.parentPageId && note?.canImport
+  enabled: (note) => !note?.parentPageId && note?.canImport
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'deleteNote',
@@ -82,5 +82,5 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   iconCssClass: 'delete-option-color',
   rank: 70,
   actionEvent: 'delete-note',
-  enabled: (note) => !note?.parentPageId && note?.canManage
+  enabled: (note) => note?.parentPageId && note?.canManage
 });
