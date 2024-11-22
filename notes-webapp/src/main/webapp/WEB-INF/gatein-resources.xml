@@ -50,9 +50,6 @@
         <path>/javascript/notes.bundle.js</path>
       </script>
       <depends>
-        <module>NotePublishExtensions</module>
-      </depends>
-      <depends>
         <module>NotesPublication</module>
       </depends>
       <depends>
