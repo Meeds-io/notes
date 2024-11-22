@@ -24,16 +24,6 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   enabled: (note) => note?.canView,
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
-  id: 'publishNote',
-  labelKey: 'notes.publication.publish.save.label',
-  icon: 'fas fa-paper-plane',
-  sortable: true,
-  cssClass: 'ps-2 pe-4 action-menu-item',
-  rank: 30,
-  actionEvent: 'open-publish-drawer',
-  enabled: (note) => eXo?.env?.portal?.notePublicationEnabled && !note.draftPage,
-});
-extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'noteHistory',
   labelKey: 'notes.menu.label.noteHistory',
   icon: 'fas fa-history',

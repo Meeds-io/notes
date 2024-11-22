@@ -313,6 +313,7 @@
       ref="featuredImageDrawer"
       :note="note"
       :has-featured-image="hasFeaturedImage" />
+    <note-publication-target-drawer />
     <note-publication-drawer
       v-if="newPublicationDrawerEnabled"
       ref="publicationDrawer"
@@ -402,8 +403,6 @@ export default {
     note() {
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
-        this.getSavedNotePublicationSettings(this.note.id);
-        this.getCanSchedule();
       }
       if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
         this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
@@ -610,8 +609,6 @@ export default {
   },
   created() {
     this.getAvailableLanguages();
-    this.getPublishTargets();
-    this.getCanPublish();
     const queryPath = window.location.search;
     const urlParams = new URLSearchParams(queryPath);
     if (urlParams.has('translation')) {
@@ -672,6 +669,7 @@ export default {
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
+    document.addEventListener('note-published', this.handleNotePublished);
     this.refreshOverviewExtensions();
   },
   mounted() {
@@ -681,60 +679,45 @@ export default {
     });
   },
   methods: {
-    getSavedNotePublicationSettings(id, lang) {
-      return this.$notesService.getSavedNotePublicationSettings(id, lang).then(settings => {
-        if (settings) {
-          this.note = Object.assign(this.note, settings);
-        }
-        this.published = !!settings;
-      });
-    },
-    getCanPublish() {
-      this.$notesService.canPublish(this.spaceId).then(canPublish => {
-        this.canPublish = canPublish;
-      });
-    },
-    getCanSchedule() {
-      this.$notesService.canSchedule(this.spaceId, this.note?.id).then(canSchedule => {
-        this.canSchedule = canSchedule;
-      });
-    },
-    getPublishTargets() {
-      this.$notesService.getNotePublishTargets().then(targets => {
-        this.publishTargets = targets;
-      });
-    },
     publishNote(publicationSettings, note) {
       const scheduleSettings = publicationSettings?.scheduleSettings;
-      const article = structuredClone(note || this.note);
-      article.schedulePostDate = scheduleSettings?.postDate;
-      article.scheduleUnpublishDate = scheduleSettings?.unpublishDate;
-      article.activityPosted = publicationSettings?.post;
-      article.published = publicationSettings?.publish;
-      article.targets = publicationSettings?.selectedTargets;
-      article.audience = publicationSettings?.selectedAudience;
+      const noteArticle = structuredClone(note || this.note);
+      noteArticle.schedulePostDate = scheduleSettings?.postDate;
+      noteArticle.scheduleUnpublishDate = scheduleSettings?.unpublishDate;
+      noteArticle.activityPosted = publicationSettings?.post;
+      noteArticle.published = publicationSettings?.publish;
+      noteArticle.targets = publicationSettings?.selectedTargets;
+      noteArticle.audience = publicationSettings?.selectedAudience;
       this.isPublishing = true;
       if (note) {
         this.$notesService.updateNoteById(note).then(() => {
-          this.$notesService.saveNoteArticle(this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
-            this.isPublishing = false;
-            this.getSavedNotePublicationSettings(this.note?.id);
-            this.$refs.publicationDrawer.close();
-            this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.success.message')});
-          });
+          document.dispatchEvent(new CustomEvent('publish-note', {
+            detail: {
+              editPublication: false,
+              article: noteArticle
+            }
+          }));
         });
       } else {
-        const editScheduleAction = scheduleSettings?.editScheduleAction;
-        this.$notesService.updateNotePublication(editScheduleAction, scheduleSettings,
-          this.$noteUtils.noteToArticle(article, this.spaceId)).then(() => {
-          this.isPublishing = false;
-          this.$refs.publicationDrawer.close();
-          this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.publication.settings.update.success')});
-        });
+        document.dispatchEvent(new CustomEvent('publish-note', {
+          detail: {
+            editPublication: true,
+            article: noteArticle,
+            scheduleSettings: scheduleSettings,
+          }
+        }));
       }
     },
-    openPublishDrawer() {
-      this.$refs.publicationDrawer.open(this.note);
+    openPublishDrawer(publicationParams) {
+      const savedSettings = publicationParams?.savedSettings;
+      this.published = !!savedSettings;
+      this.publishTargets = publicationParams.targets;
+      this.canPublish = publicationParams?.canPublish;
+      this.canSchedule = publicationParams?.canSchedule;
+      this.note = Object.assign(this.note, savedSettings);
+      setTimeout(() => {
+        this.$refs.publicationDrawer.open(this.note);
+      },200);
     },
     closeMobileActionMenu() {
       setTimeout(() => {
@@ -1098,7 +1081,7 @@ export default {
     openNoteChild(item) {
       const noteName = item.path.split('%2F').pop();
       this.$root.$emit('open-note-by-name', noteName);
-      this.getSavedNotePublicationSettings(item.noteId);
+      document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: item}));
     },
     updateNote(noteParam) {
       const note = {
@@ -1191,6 +1174,19 @@ export default {
     },
     refreshOverviewExtensions() {
       this.overviewExtensions = extensionRegistry.loadComponents('NotesOverview') || [];
+    },
+    handleNotePublished(event) {
+      const {editPublication, isPublishSchedule, link} = event.detail;
+      this.isPublishing = false;
+      this.$refs.publicationDrawer.close();
+      document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
+        alertType: 'success',
+        alertMessage: isPublishSchedule && this.$t('notes.schedule.success.message')
+                                   || editPublication && this.$t('notes.publication.settings.update.success')
+                                   || this.$t('notes.publication.success.message'),
+        alertLink: link,
+        alertLinkText: this.$t('notes.view.label')
+      }}));
     }
   }
 };

@@ -156,26 +156,6 @@ function getString(body) {
   return new DOMParser().parseFromString(body, 'text/html').documentElement.textContent.replace(/&nbsp;/g, '').trim();
 }
 
-export function noteToArticle(note, spaceId) {
-  return {
-    id: note.id,
-    title: note.title,
-    body: note.content,
-    author: note.author,
-    published: note.published,
-    targets: note.targets,
-    spaceId: spaceId,
-    publicationState: 'posted',
-    schedulePostDate: note.schedulePostDate,
-    timeZoneId: null,
-    activityPosted: note.activityPosted,
-    audience: note.audience,
-    draftPage: false,
-    scheduleUnpublishDate: note.scheduleUnpublishDate,
-    properties: note?.properties
-  };
-}
-
 export function sanitizeSrcImageTags(content) {
   if (!content) {
     return content;

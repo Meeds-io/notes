@@ -343,6 +343,8 @@ export default {
         this.cloneScheduleSettings();
         this.cloneAdvancedSettings();
         this.clonePublicationSettings();
+      } else {
+        this.initSettings();
       }
       this.currentScheduleSettings = structuredClone(this.scheduleSettings);
       this.currentAdvancedSettings = structuredClone(this.advancedSettings);
@@ -400,6 +402,11 @@ export default {
       this.$refs?.publishOption?.cancelChanges();
       this.$refs?.scheduleOption?.cancelChanges();
       this.$refs?.advancedOption?.cancelChanges();
+    },
+    initSettings() {
+      this.scheduleSettings = {};
+      this.advancedSettings = {};
+      this.publicationSettings = {post: true};
     },
     reset() {
       setTimeout(() => {
