@@ -1641,8 +1641,8 @@ public class NoteServiceImpl implements NoteService {
     if (isDraft) {
       DraftPage draftPage = getDraftNoteById(String.valueOf(noteId),
                                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
-      if (draftPage != null && draftPage.getTargetPageId() != null
-          && isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang))) {
+      if (draftPage != null && (draftPage.getTargetPageId() == null
+          || isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang)))) {
         removeFeaturedImageFile = false;
       }
       note = draftPage;
@@ -1925,6 +1925,20 @@ public class NoteServiceImpl implements NoteService {
                   lang,
                   true,
                   Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+        } else if (note.isDraftPage()) {
+          // When delete a draft of non-existing page
+          // check if its featured image was linked to a saved page
+          List<MetadataItem> metadataItems =
+                                           metadataService.getMetadataItemsByMetadataNameAndTypeAndObjectAndMetadataItemProperty(NOTES_METADATA_TYPE.getName(),
+                                                                                                                                 NOTES_METADATA_TYPE.getName(),
+                                                                                                                                 NOTE_METADATA_PAGE_OBJECT_TYPE,
+                                                                                                                                 FEATURED_IMAGE_ID,
+                                                                                                                                 featuredImageId,
+                                                                                                                                 0,
+                                                                                                                                 0);
+          if (metadataItems == null || metadataItems.isEmpty()) {
+            fileService.deleteFile(Long.parseLong(featuredImageId));
+          }
         } else {
           fileService.deleteFile(Long.parseLong(featuredImageId));
         }
