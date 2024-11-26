@@ -604,7 +604,7 @@ export default {
       return !this.published && this?.note.author === eXo.env.portal.userName;
     },
     canScheduleNotePublication() {
-      return this.isNoteAuthor || this.canSchedule || this.canPublish;
+      return this.note?.canManage || this.canSchedule;
     }
   },
   created() {
