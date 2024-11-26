@@ -35,7 +35,7 @@ public class WikiDraftPageAttachmentPlugin  extends AttachmentPlugin {
 
     public static final String OBJECT_TYPE = "wikiDraft";
 
-    public WikiDraftPageAttachmentPlugin(NoteService noteService, SpaceService spaceService, IdentityManager identityManager) {
+    public WikiDraftPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
         this.noteService = noteService;
         this.spaceService = spaceService;
     }

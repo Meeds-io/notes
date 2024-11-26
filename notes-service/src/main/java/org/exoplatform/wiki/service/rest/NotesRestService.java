@@ -57,7 +57,6 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.exoplatform.wiki.service.plugin.WikiPageVersionAttachmentPlugin;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -509,7 +508,6 @@ public class NotesRestService implements ResourceContainer {
     }
     String noteBookType = note.getWikiType();
     String noteBookOwner = note.getWikiOwner();
-    String draftId = note.getProperties().isDraft() ? String.valueOf(note.getProperties().getNoteId()) : null;
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNotEmpty(note.getParentPageId())) {
@@ -544,7 +542,6 @@ public class NotesRestService implements ResourceContainer {
                                                 note.getParentPageName(),
                                                 io.meeds.notes.rest.utils.EntityBuilder.toPage(note),
                                                 identity);
-      noteService.createVersionOfNote(createdNote, currentUser, WikiPageVersionAttachmentPlugin.OBJECT_TYPE, draftId);
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", note.getName(), e);
@@ -571,7 +568,6 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Draft Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Draft Note's title should not be number}").build();
     }
-    draftNoteToSave.setContent(Utils.sanitizeSrcImageTags(draftNoteToSave.getContent()));
     String noteBookType = draftNoteToSave.getWikiType();
     String noteBookOwner = draftNoteToSave.getWikiOwner();
     Page parentNote = null;
@@ -665,7 +661,6 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
-    note.setContent(Utils.sanitizeSrcImageTags(note.getContent()));
     try {
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
         noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
@@ -694,7 +689,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
@@ -707,7 +702,7 @@ public class NotesRestService implements ResourceContainer {
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -736,7 +731,6 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
-    note.setContent(Utils.sanitizeSrcImageTags(note.getContent()));
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteById(noteId, identity);
@@ -775,7 +769,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -796,7 +790,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setTitle(note.getTitle());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -812,7 +806,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -836,7 +830,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);
       } else if (note.isExtensionDataUpdated()) {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId(), WikiPageVersionAttachmentPlugin.OBJECT_TYPE, null);
+        noteService.createVersionOfNote(note_, identity.getUserId());
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());

@@ -320,13 +320,13 @@ public interface DataStorage {
   PageVersion getPageVersionById(long versionId);
 
   /**
-   * Updates page version content by its given id
+   * Updates page content by its given id
    *
-   * @param versionId page version id
+   * @param page page to be updated
    * @param content page version content
-   * @return {@link PageVersion}
+   * @return {@link Page}
    */
-  PageVersion updatePageVersionContent(long versionId, String content) throws WikiException;
+  Page updatePageContent(Page page, String content) throws WikiException;
 
   /**
    * Updates draft page content by its given id

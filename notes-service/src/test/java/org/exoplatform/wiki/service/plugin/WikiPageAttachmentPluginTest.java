@@ -18,9 +18,8 @@
  */
 package org.exoplatform.wiki.service.plugin;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,11 +34,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.service.NoteService;
 
 @RunWith(MockitoJUnitRunner.class)
-public class WikiPageVersionAttachmentPluginTest {
+public class WikiPageAttachmentPluginTest {
 
   @Mock
   private NoteService                     noteService;
@@ -47,41 +45,32 @@ public class WikiPageVersionAttachmentPluginTest {
   @Mock
   private SpaceService                    spaceService;
 
-  private WikiPageVersionAttachmentPlugin plugin;
+  private WikiPageAttachmentPlugin plugin;
 
   @Before
   public void setUp() {
-    plugin = new WikiPageVersionAttachmentPlugin(noteService, spaceService);
+    plugin = new WikiPageAttachmentPlugin(noteService, spaceService);
   }
 
   @Test
   public void testGetObjectType() {
-    Assert.assertEquals(WikiPageVersionAttachmentPlugin.OBJECT_TYPE, plugin.getObjectType());
+    Assert.assertEquals(WikiPageAttachmentPlugin.OBJECT_TYPE, plugin.getObjectType());
   }
 
   @Test
   public void testHasAccessPermission() throws Exception {
     org.exoplatform.services.security.Identity userIdentity = mock(org.exoplatform.services.security.Identity.class);
-    PageVersion pageVersion = mock(PageVersion.class);
     Page page = mock(Page.class);
-
-    when(noteService.getPageVersionById(1L)).thenReturn(pageVersion);
-    when(pageVersion.getParent()).thenReturn(page);
-    when(page.getId()).thenReturn("1");
-    when(noteService.getNoteById("1", userIdentity)).thenReturn(page);
     when(page.isCanView()).thenReturn(true);
+
+    when(noteService.getNoteById("1", userIdentity)).thenReturn(page);
     assertTrue(plugin.hasAccessPermission(userIdentity, "1"));
   }
 
   @Test
   public void testHasEditPermission() throws Exception {
     org.exoplatform.services.security.Identity userIdentity = mock(org.exoplatform.services.security.Identity.class);
-    PageVersion pageVersion = mock(PageVersion.class);
     Page page = mock(Page.class);
-
-    when(noteService.getPageVersionById(1L)).thenReturn(pageVersion);
-    when(pageVersion.getParent()).thenReturn(page);
-    when(page.getId()).thenReturn("1");
     when(noteService.getNoteById("1", userIdentity)).thenReturn(page);
     when(page.isCanManage()).thenReturn(true);
     assertTrue(plugin.hasEditPermission(userIdentity, "1"));
@@ -89,13 +78,13 @@ public class WikiPageVersionAttachmentPluginTest {
 
   @Test
   public void getSpaceId() throws Exception {
-    PageVersion pageVersion = mock(PageVersion.class);
-    when(pageVersion.getWikiOwner()).thenReturn("spaces/test2");
-    when(noteService.getPageVersionById(1L)).thenReturn(pageVersion);
+    Page page = mock(Page.class);
+    when(page.getWikiOwner()).thenReturn("spaces/test2");
+    when(noteService.getNoteById(anyString())).thenReturn(page);
     Space space = mock(Space.class);
     when(space.getId()).thenReturn("1");
-    when(spaceService.getSpaceByGroupId(pageVersion.getWikiOwner())).thenReturn(space);
-    assertNotNull(plugin.getSpaceId("1"));
+    when(spaceService.getSpaceByGroupId(page.getWikiOwner())).thenReturn(space);
+    assertEquals(1L, plugin.getSpaceId("1"));
   }
 
 }

@@ -117,7 +117,7 @@ export default {
       updatingProperties: false,
       enablePostKeys: 0,
       isPublishing: false,
-      emitEditorChanges: true
+      contentImageUploadProgress: false
     };
   },
   props: {
@@ -350,14 +350,6 @@ export default {
         this.$refs[this.editorBodyInputRef].value = content;
       }
     },
-    setEditorDataMutely(content) {
-      this.emitEditorChanges = false;
-      this.editor?.setData?.(content, {
-        callback: () => {
-          this.emitEditorChanges = true;
-        },
-      });
-    },
     cloneNoteObject() {
       this.noteObject = structuredClone(this.note);
     },
@@ -507,7 +499,7 @@ export default {
             self.setToolBarEffect();
           },
           change: function (evt) {
-            if (!self.initialized || !self.emitEditorChanges) {
+            if (!self.initialized || self.contentImageUploadProgress) {
               // First time setting data
               self.initialized = true;
               return;
@@ -530,7 +522,11 @@ export default {
               });
             }
           },
+          fileUploadRequest: function () {
+            self.contentImageUploadProgress = true;
+          },
           fileUploadResponse: function() {
+            self.contentImageUploadProgress = false;
             /*add plugin fileUploadResponse to handle file upload response ,
               in this method we can get the response from server and update the editor content
               this method is called when file upload is finished*/

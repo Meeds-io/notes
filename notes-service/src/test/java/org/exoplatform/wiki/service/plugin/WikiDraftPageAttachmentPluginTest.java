@@ -55,7 +55,7 @@ public class WikiDraftPageAttachmentPluginTest {
 
   @Before
   public void setUp() {
-    plugin = new WikiDraftPageAttachmentPlugin(noteService, spaceService, null);
+    plugin = new WikiDraftPageAttachmentPlugin(noteService, spaceService);
   }
 
   @AfterClass
@@ -102,7 +102,7 @@ public class WikiDraftPageAttachmentPluginTest {
     when(space.getId()).thenReturn("1");
     when(noteService.getDraftNoteById("draft123", "user123")).thenReturn(draftPage);
     when(spaceService.getSpaceByGroupId(draftPage.getWikiOwner())).thenReturn(space);
-    assertNotNull(plugin.getSpaceId("draft123"));
+    assertEquals(1L, plugin.getSpaceId("draft123"));
   }
 
 }
