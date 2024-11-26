@@ -445,7 +445,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                 anyString()))
                   .thenReturn(identityEntity);
 
-    Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>());
+    Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>(), false);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 

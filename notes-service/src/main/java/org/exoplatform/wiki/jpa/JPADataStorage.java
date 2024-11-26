@@ -149,6 +149,7 @@ public class JPADataStorage implements DataStorage {
                                                                 wikiSearchData.getUserId(),
                                                                 wikiSearchData.getTagNames(),
                                                                 wikiSearchData.isFavorites(),
+                                                                wikiSearchData.isNotesTreeFilter(),
                                                                 (int) wikiSearchData.getOffset(),
                                                                 wikiSearchData.getLimit());
 

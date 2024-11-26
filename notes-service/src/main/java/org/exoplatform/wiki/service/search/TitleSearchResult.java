@@ -49,4 +49,6 @@ public class TitleSearchResult {
 
   private String                          lang;
 
+  private String                          pageName;
+
 }
