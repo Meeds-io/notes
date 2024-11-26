@@ -30,9 +30,9 @@
             <type>org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin</type>
         </component-plugin>
         <component-plugin>
-            <name>WikiPageVersionPlugin</name>
+            <name>WikiPageAttachmentPlugin</name>
             <set-method>addPlugin</set-method>
-            <type>org.exoplatform.wiki.service.plugin.WikiPageVersionAttachmentPlugin</type>
+            <type>org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin</type>
         </component-plugin>
     </external-component-plugins>
 </configuration>

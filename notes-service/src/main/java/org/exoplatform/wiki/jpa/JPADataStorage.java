@@ -101,7 +101,6 @@ public class JPADataStorage implements DataStorage {
   public static final String WIKI_TYPE_DRAFT = "draft";
 
   public static final String WIKI_FILES_NAMESPACE_NAME = "wiki";
-  public static final String WIKI_FILES_NAMESPACE_DESCRIPTION = "wiki application files";
 
   private WikiDAO        wikiDAO;
   private PageDAO        pageDAO;
@@ -1592,13 +1591,13 @@ public class JPADataStorage implements DataStorage {
     return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.find(versionId));
   }
 
-   @Override
-   public PageVersion updatePageVersionContent(long versionId, String content) {
-     PageVersionEntity pageVersionEntity = pageVersionDAO.find(versionId);
-     pageVersionEntity.setContent(content);
-     pageVersionEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
-     return EntityConverter.convertPageVersionEntityToPageVersion(pageVersionDAO.update(pageVersionEntity));
-   }
+  @Override
+  public Page updatePageContent(Page page, String content) {
+    PageEntity pageTobeUpdated = fetchPageEntity(page);
+    pageTobeUpdated.setContent(content);
+    pageTobeUpdated.setUpdatedDate(new Date(System.currentTimeMillis()));
+    return convertPageEntityToPage(pageDAO.update(pageTobeUpdated));
+  }
 
    @Override
    public DraftPage updateDraftContent(long draftId, String content) {

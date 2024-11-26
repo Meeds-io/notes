@@ -23,18 +23,17 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.attachment.AttachmentPlugin;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.service.NoteService;
 
-public class WikiPageVersionAttachmentPlugin extends AttachmentPlugin {
+public class WikiPageAttachmentPlugin extends AttachmentPlugin {
 
     private final NoteService noteService;
 
     private final SpaceService spaceService;
 
-    public static final String OBJECT_TYPE = "wikiPageVersion";
+    public static final String OBJECT_TYPE = "wikiPage";
 
-    public WikiPageVersionAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
+    public WikiPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
         this.noteService = noteService;
         this.spaceService = spaceService;
     }
@@ -45,22 +44,20 @@ public class WikiPageVersionAttachmentPlugin extends AttachmentPlugin {
     }
 
     @Override
-    public boolean hasAccessPermission(Identity identity, String versionId) {
+    public boolean hasAccessPermission(Identity identity, String noteId) {
         try {
-            PageVersion pageVersion = noteService.getPageVersionById(Long.parseLong(versionId));
-            Page note = noteService.getNoteById(pageVersion.getParent().getId(),identity);
-            return pageVersion != null && note != null && note.isCanView();
+            Page note = noteService.getNoteById(noteId, identity);
+            return note != null && note.isCanView();
         } catch (Exception e) {
             return false;
         }
     }
 
     @Override
-    public boolean hasEditPermission(Identity identity, String versionId) throws ObjectNotFoundException {
+    public boolean hasEditPermission(Identity identity, String noteId) throws ObjectNotFoundException {
         try {
-            PageVersion pageVersion = noteService.getPageVersionById(Long.parseLong(versionId));
-            Page note = noteService.getNoteById(pageVersion.getParent().getId(),identity);
-            return pageVersion != null && note != null && note.isCanManage();
+            Page note = noteService.getNoteById(noteId, identity);
+            return note != null && note.isCanManage();
         } catch (Exception e) {
             return false;
         }
@@ -72,10 +69,10 @@ public class WikiPageVersionAttachmentPlugin extends AttachmentPlugin {
     }
 
     @Override
-    public long getSpaceId(String versionId) throws ObjectNotFoundException {
+    public long getSpaceId(String noteId) throws ObjectNotFoundException {
         try {
-            PageVersion pageVersion = noteService.getPageVersionById(Long.parseLong(versionId));
-            return Long.parseLong(spaceService.getSpaceByGroupId(pageVersion.getWikiOwner()).getId());
+            Page note = noteService.getNoteById(noteId);
+            return Long.parseLong(spaceService.getSpaceByGroupId(note.getWikiOwner()).getId());
         } catch (Exception exception) {
             return 0;
         }

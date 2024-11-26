@@ -40,17 +40,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.suigeneris.jrcs.diff.DifferentiationFailedException;
 
 import org.exoplatform.commons.api.notification.NotificationContext;
@@ -796,39 +793,5 @@ public class Utils {
             .with(mentionNotificationCtx.makeCommand(PluginKey.key(MentionInNoteNotificationPlugin.ID)))
             .execute(mentionNotificationCtx);
   }
-  public static String sanitizeSrcImageTags(String content) {
-    if (StringUtils.isEmpty(content)) {
-      return content;
-    }
-    try {
-      // Regular expression to find the src attribute with Base64 data in <img> tags
-      String regex = "(<img[^>]*?)(\\s+src=\"data:image/[^;]+;base64,[^\"]*\")";
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(content);
 
-      // Remove only the src attribute, keeping the <img> tag and other attributes
-      content = matcher.replaceAll("$1");
-
-    } catch (Exception exception) {
-      return content;
-    }
-    return content;
-  }
-
-  public static String extractSourceObjectTypeFromHtml(String htmlContent) {
-    Document document = Jsoup.parse(htmlContent);
-    for (Element imgTag : document.select("img")) {
-      String src = imgTag.attr("src");
-      String prefix = "/portal/rest/v1/social/attachments/";
-      // Ensure the src starts with the prefix
-      if (src.startsWith(prefix)) {
-        String srcPart = src.substring(prefix.length());
-        String sourceObject = srcPart.substring(0, srcPart.indexOf('/'));
-        if (!sourceObject.equals(WikiDraftPageAttachmentPlugin.OBJECT_TYPE)) {
-          return sourceObject;
-        }
-      }
-    }
-    return null;
-  }
 }
