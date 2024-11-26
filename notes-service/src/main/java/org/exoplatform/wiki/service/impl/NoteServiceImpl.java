@@ -251,8 +251,11 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity, boolean importMode) throws WikiException,
-                                                                                                 IllegalAccessException {
+  public Page createNote(Wiki noteBook,
+                         String parentNoteName,
+                         Page note,
+                         Identity userIdentity,
+                         boolean importMode) throws WikiException, IllegalAccessException {
     if (importMode) {
       String pageName = TitleResolver.getId(note.getName(), false);
       if (pageName == null) {
@@ -272,6 +275,7 @@ import lombok.SneakyThrows;
       note.setContent(note.getContent());
       Page createdPage = createNote(noteBook, parentPage, note);
       NotePageProperties properties = note.getProperties();
+      String draftPageId = String.valueOf(properties != null && properties.isDraft() ? properties.getNoteId() : null);
       try {
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
@@ -286,9 +290,27 @@ import lombok.SneakyThrows;
       if (createdPage != null) {
         createdPage.setProperties(properties);
         Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
+        if (StringUtils.isNotEmpty(createdPage.getContent())) {
+          createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
+          createdPage = processImagesOnNoteCreation(createdPage,
+                                                    draftPageId,
+                                                    Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
+                                                                                .getId()));
+        }
         createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
         createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
         createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
+
+        dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
+        PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()),
+                                                                                 createdPage.getLang());
+        createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
+        if (pageVersion != null && draftPageId != null) {
+          Map<String, String> eventData = new HashMap<>();
+          eventData.put("draftPageId", draftPageId);
+          eventData.put("pageVersionId", pageVersion.getId());
+          Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
+        }
       }
       return createdPage;
     } else {
@@ -359,7 +381,7 @@ import lombok.SneakyThrows;
         || PageUpdateType.EDIT_PAGE_PROPERTIES.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
-    note.setContent(note.getContent());
+    note.setContent(updateNoteContentImages(note));
     Page updatedPage = dataStorage.updatePage(note);
     NotePageProperties properties = note.getProperties();
     if (userIdentity != null && properties != null) {
@@ -1021,14 +1043,11 @@ import lombok.SneakyThrows;
    */
   @Override
   public void createVersionOfNote(Page note, String userName) throws WikiException {
-      createVersionOfNote(note, userName, null, null);
-  }
-
-  @Override
-  public void createVersionOfNote(Page note, String userName, String objectType, String draftId) throws WikiException {
     PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
     String pageVersionId = pageVersion.getId();
     note.setLatestVersionId(pageVersionId);
+    pageVersion.setAttachmentObjectType(note.getAttachmentObjectType());
+    updateVersionContentImages(pageVersion);
     if (note.getLang() != null) {
       try {
         NotePageProperties properties = note.getProperties();
@@ -1052,27 +1071,14 @@ import lombok.SneakyThrows;
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
     }
-    DraftPage draftPage =
-                        StringUtils.isNotEmpty(draftId) ? dataStorage.getDraftPageById(draftId)
-                                                        : dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()),
-                                                                                                            note.getLang());
+    DraftPage draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
     if (draftPage != null) {
-      if (objectType != null) {
-        pageVersion.setId(pageVersionId);
-        pageVersion = processImagesOnPageVersionCreation(pageVersion,
-                                                         objectType,
-                                                         WikiDraftPageAttachmentPlugin.OBJECT_TYPE,
-                                                         draftPage.getId(),
-                                                         userName);
-        note.setContent(pageVersion.getContent());
-      }
       Map<String, String> eventData = new HashMap<>();
       eventData.put("draftPageId", draftPage.getId());
       eventData.put("pageVersionId", pageVersionId);
       Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
   }
-
   /**
    * {@inheritDoc}
    */
@@ -1259,17 +1265,9 @@ import lombok.SneakyThrows;
       eventData.put("pageVersionId", pageVersion.getId());
       eventData.put("draftForExistingPageId", newDraftPage.getId());
       Utils.broadcast(listenerService, "note.draft.for.exist.page.created", this, eventData);
-      processImagesOnDraftCreation(newDraftPage, pageVersion.getId(), Long.parseLong(userIdentity.getId()));
-
-    } else {
-      // page version is null and the draft has a lang
-      // is a first draft for new translation
-      if (draftPage.getLang() != null) {
-        // fetch the version original (without lang)
-        PageVersion originalPagVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()), null);
-        processImagesOnDraftCreation(newDraftPage, originalPagVersion.getId(), Long.valueOf(newDraftPage.getTargetPageId()));
-      }
     }
+    newDraftPage.setAttachmentObjectType(draftPage.getAttachmentObjectType());
+    newDraftPage = processImagesOnDraftCreation(newDraftPage, Long.parseLong(userIdentity.getId()));
     return newDraftPage;
   }
 
@@ -1305,7 +1303,8 @@ import lombok.SneakyThrows;
       log.error("Failed to save draft note metadata", e);
     }
     newDraftPage.setProperties(properties);
-    newDraftPage = processImagesOnDraftCreation(newDraftPage,null, userIdentityId);
+    newDraftPage.setAttachmentObjectType(draftPage.getAttachmentObjectType());
+    newDraftPage = processImagesOnDraftCreation(newDraftPage, userIdentityId);
     return newDraftPage;
   }
   
@@ -2397,44 +2396,12 @@ import lombok.SneakyThrows;
     }
   }
 
-  private PageVersion processImagesOnPageVersionCreation(PageVersion pageVersion,
-                                                         String objectType,
-                                                         String sourceObjectType,
-                                                         String sourceObjectId,
-                                                         String username) throws WikiException {
-    Long userIdentityId = Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId());
-    attachmentService.moveAttachments(sourceObjectType, sourceObjectId, objectType, pageVersion.getId(), null, userIdentityId);
-    String newContent = pageVersion.getContent()
-                                   .replaceAll("/attachments/" + sourceObjectType + "/" + sourceObjectId,
-                                               "/attachments/" + objectType + "/" + pageVersion.getId());
-    if (!newContent.equals(pageVersion.getContent())) {
-      return updatePageVersionContent(Long.parseLong(pageVersion.getId()), newContent);
-    }
-    return pageVersion;
-  }
-
   private DraftPage processImagesOnDraftCreation(DraftPage draftPage,
-                                                 String sourceObjectId,
                                                  long userIdentityId) throws WikiException {
     String newDraftContent = saveUploadedContentImages(draftPage.getContent(),
-                                                       WikiDraftPageAttachmentPlugin.OBJECT_TYPE,
-                                                       draftPage.getId(),
+                                                       draftPage.getAttachmentObjectType(),
+                                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() : draftPage.getId(),
                                                        userIdentityId);
-    boolean isDraftForExistingPage = StringUtils.isNotEmpty(sourceObjectId);
-    if (isDraftForExistingPage) {
-      String sourceObjectType = Utils.extractSourceObjectTypeFromHtml(draftPage.getContent());
-      if (sourceObjectType != null) {
-        attachmentService.copyAttachments(sourceObjectType,
-                                          sourceObjectId,
-                                          WikiDraftPageAttachmentPlugin.OBJECT_TYPE,
-                                          draftPage.getId(),
-                                          null,
-                                          userIdentityId);
-        newDraftContent = newDraftContent.replaceAll("/attachments/" + sourceObjectType + "/"
-            + sourceObjectId, "/attachments/" + WikiDraftPageAttachmentPlugin.OBJECT_TYPE + "/" + draftPage.getId());
-
-      }
-    }
     if (!newDraftContent.equals(draftPage.getContent())) {
       draftPage.setContent(newDraftContent);
       return updateDraftPageContent(Long.parseLong(draftPage.getId()), draftPage.getContent());
@@ -2444,36 +2411,26 @@ import lombok.SneakyThrows;
 
   private String processImagesOnDraftUpdate(DraftPage draftPage, long userIdentityId) {
     try {
-      String content = saveUploadedContentImages(draftPage.getContent(),
-                                                 WikiDraftPageAttachmentPlugin.OBJECT_TYPE,
-                                                 draftPage.getId(),
-                                                 userIdentityId);
-      // update the images list if any image is removed from the content
-      List<String> existingFileIds = getContentImagesIds(content, WikiDraftPageAttachmentPlugin.OBJECT_TYPE, draftPage.getId());
-      updateContentImages(existingFileIds, WikiDraftPageAttachmentPlugin.OBJECT_TYPE, draftPage.getId());
-
-      if (StringUtils.isNotEmpty(draftPage.getLang())) {
-        // trait the case of adding new translation, the draft created when the title is
-        // translated
-        // and updated when the content translated , so we need to copy attachments
-        String sourceObjectType = Utils.extractSourceObjectTypeFromHtml(draftPage.getContent());
-        if (StringUtils.isNotEmpty(sourceObjectType)) {
-          String sourceObjectId = getPublishedVersionByPageIdAndLang(Long.parseLong(draftPage.getTargetPageId()), null).getId();
-          attachmentService.copyAttachments(sourceObjectType,
-                                            sourceObjectId,
-                                            WikiDraftPageAttachmentPlugin.OBJECT_TYPE,
-                                            draftPage.getId(),
-                                            null,
-                                            userIdentityId);
-
-          content = content.replaceAll("/attachments/" + sourceObjectType + "/" + sourceObjectId,
-                                       "/attachments/" + WikiDraftPageAttachmentPlugin.OBJECT_TYPE + "/" + draftPage.getId());
-        }
-      }
-      return content;
+      return saveUploadedContentImages(draftPage.getContent(),
+                                       draftPage.getAttachmentObjectType(),
+                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
+                                                                                           : draftPage.getId(),
+                                       userIdentityId);
     } catch (Exception exception) {
       return draftPage.getContent();
     }
+  }
+
+  private Page processImagesOnNoteCreation(Page note, String draftId, long userIdentityId) throws WikiException {
+    String sourceObjectType = WikiDraftPageAttachmentPlugin.OBJECT_TYPE;
+    attachmentService.moveAttachments(sourceObjectType, draftId, note.getAttachmentObjectType(), note.getId(), null, userIdentityId);
+    String newContent = note.getContent()
+                                   .replaceAll("/attachments/" + sourceObjectType + "/" + draftId,
+                                               "/attachments/" + note.getAttachmentObjectType() + "/" + note.getId());
+    if (!newContent.equals(note.getContent())) {
+      return updateNoteContent(note, newContent);
+    }
+    return note;
   }
 
   private String saveUploadedContentImages(String content, String objectType, String objectId, long userId) {
@@ -2495,8 +2452,9 @@ import lombok.SneakyThrows;
 
           String fileId = uploadedAttachmentDetail.getId();
           String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
+          String archivedUploadId = "archived_cke_uploadId=".concat(uploadId);
           // Replace the entire img tag with the new src
-          String newImgTag = matcher.group(0).replaceAll("cke_upload_id=\"[^\"]*\"", newSrc);
+          String newImgTag = matcher.group(0).replaceAll("cke_upload_id=\"[^\"]*\"", archivedUploadId.concat(" ".concat(newSrc)));
           content = content.replace(matcher.group(0), newImgTag);
         }
       }
@@ -2507,37 +2465,35 @@ import lombok.SneakyThrows;
     return content;
   }
 
-  private void updateContentImages(List<String> fileIds, String objectType, String objectId) {
-    List<String> existingFiles = attachmentService.getAttachmentFileIds(objectType, objectId);
-    List<String> removedFiles = existingFiles.stream().filter(item -> !fileIds.contains(item)).toList();
-    if (CollectionUtils.isNotEmpty(removedFiles)) {
-      removedFiles.stream().forEach((item) -> {
-        try {
-          List<MetadataItem> metadataItemToDelete =
-                                                  metadataService.getMetadataItemsByMetadataNameAndTypeAndObject(item,
-                                                                                                                 AttachmentService.METADATA_TYPE.getName(),
-                                                                                                                 objectType,
-                                                                                                                 objectId,
-                                                                                                                 0,
-                                                                                                                 0);
-
-          if (org.apache.commons.collections.CollectionUtils.isNotEmpty(metadataItemToDelete)) {
-            metadataItemToDelete.forEach(metadataItem -> {
-              try {
-                metadataService.deleteMetadataItem(metadataItem.getId(), true);
-              } catch (ObjectNotFoundException e) {
-                log.error("Error while updating content images", e);
-              }
-            });
-          }
-
-        } catch (Exception exception) {
-          log.error("Error while updating content images", exception);
-        }
-      });
+  private String updateNoteContentImages(Page note) {
+    if (note.getContent().contains("cke_upload_id=")) {
+      long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser()).getId());
+      return saveUploadedContentImages(note.getContent(), note.getAttachmentObjectType(), note.getId(), userIdentityId);
     }
+    return note.getContent();
   }
 
+  private void updateVersionContentImages(PageVersion pageVersion) throws WikiException {
+    List<String> fileIds = getContentImagesIds(pageVersion.getContent(),
+                                               pageVersion.getAttachmentObjectType(),
+                                               pageVersion.getParentPageId());
+    List<String> existingFiles = attachmentService.getAttachmentFileIds(pageVersion.getAttachmentObjectType(),
+                                                                        pageVersion.getParentPageId());
+    List<String> removedFiles = existingFiles.stream().filter(item -> !fileIds.contains(item)).toList();
+    // remove image if not exist in any other version of note
+    List<String> versionsOfNoteContentList = dataStorage.getVersionsOfPage(pageVersion.getParent())
+                                                        .stream()
+                                                        .map(PageVersion::getContent)
+                                                        .toList();
+    removedFiles.stream()
+                .filter(fileId -> versionsOfNoteContentList.stream()
+                                                           .noneMatch(content -> content.contains(pageVersion.getAttachmentObjectType()
+                                                                                                             .concat("/".concat(pageVersion.getParentPageId()
+                                                                                                                                           .concat("/".concat(fileId)))))))
+                .forEach(fileId -> attachmentService.deleteAttachment(pageVersion.getAttachmentObjectType(),
+                                                                      pageVersion.getParentPageId(),
+                                                                      fileId));
+  }
   private List<String> getContentImagesIds(String content, String objectType, String objectId) {
     String existingIdRegex = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/([^\"]+)\"", objectType, objectId);
     Pattern existingPattern = Pattern.compile(existingIdRegex);
@@ -2555,8 +2511,8 @@ import lombok.SneakyThrows;
     return dataStorage.updateDraftContent(draftId, content);
   }
 
-  private PageVersion updatePageVersionContent(long versionId, String content) throws WikiException {
-    return dataStorage.updatePageVersionContent(versionId, content);
+  private Page updateNoteContent(Page note, String content) throws WikiException {
+    return dataStorage.updatePageContent(note, content);
   }
 
  }

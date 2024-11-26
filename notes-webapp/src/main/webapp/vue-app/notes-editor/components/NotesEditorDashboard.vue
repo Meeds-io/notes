@@ -383,7 +383,11 @@ export default {
       const currentDraftId = this.note?.id;
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
-        this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
+        document.dispatchEvent(new CustomEvent('update-processed-image-url', {
+          detail: {
+            content: data.content,
+          }
+        }));
         this.originalNote = structuredClone(data);
         this.displayMessage({
           type: 'success',
@@ -411,9 +415,11 @@ export default {
       }
       return this.$notesService.createNote(note).then(data => {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
+        document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
+          content: data.content
+        }}));
         this.note = data;
         this.noteId = data.id;
-        this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
         // delete draft note
@@ -589,13 +595,12 @@ export default {
     saveNoteDraft(update) {
       const draftNote = this.fillDraftNote();
       if (this.note.title || this.note.content) {
-        const sanitizedContent = this.$noteUtils.sanitizeSrcImageTags(this.note.content);
-        const isContentIncludeUploadedImages = sanitizedContent !== this.note.content;
-        if (isContentIncludeUploadedImages) {
-          draftNote.content = sanitizedContent;
+        let isContentIncludeImagesToBeProcessed = draftNote.content.includes('cke_upload_id');
+        if (draftNote.content.includes(`/${this.wikiPageVersionObjectType}/`) || draftNote.content.includes(`/${this.wikiDraftObjectType}/`)) {
+          isContentIncludeImagesToBeProcessed = true;
         }
         // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeUploadedImages) {
+        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeImagesToBeProcessed) {
           this.note.parentPageId = this.parentPageId;
           localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
           this.actualNote = {
@@ -631,8 +636,10 @@ export default {
             draftNote.properties.featuredImage = {};
           }
         }
-        const setEditorDataMutely = this.$noteUtils.isHasImagesToBeProcessed(draftNote.content, this.wikiDraftObjectType);
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
+            content: savedDraftNote.content,
+          }}));
           if (update){
             this.actualNote = {
               id: savedDraftNote.id,
@@ -646,9 +653,6 @@ export default {
             this.newDraft=false;
             savedDraftNote.parentPageId = this.parentPageId;
             this.note = savedDraftNote;
-            if (setEditorDataMutely) {
-              this.$refs?.editor?.setEditorDataMutely?.(this.note.content);
-            }
             localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
             this.newTranslation = false;
           } else {
