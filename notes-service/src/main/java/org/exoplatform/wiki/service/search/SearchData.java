@@ -47,6 +47,8 @@ public class SearchData {
 
   private List<String> tagNames;
 
+  private boolean isNotesTreeFilter;
+
   public SearchData(String title, String content, String wikiType, String wikiOwner, String pageId, String userId) {
     this.title = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(title);
     this.content = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(content);

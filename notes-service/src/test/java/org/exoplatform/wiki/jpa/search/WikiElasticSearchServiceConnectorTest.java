@@ -144,7 +144,7 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     // when
     List<String> tagNames = new ArrayList<>();
     tagNames.add("testNoteTag");
-    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", tagNames, false, 0, 20);
+    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", tagNames, false, false, 0, 20);
 
     // Then
     assertNotNull(searchResults);
