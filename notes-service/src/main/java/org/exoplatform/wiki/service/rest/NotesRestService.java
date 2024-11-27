@@ -1260,7 +1260,9 @@ public class NotesRestService implements ResourceContainer {
                                      int limit, @QueryParam("wikiType")
                                      String wikiType, @QueryParam("wikiOwner")
                                      String wikiOwner, @QueryParam("favorites")
-                                     boolean favorites, @QueryParam("tags") List<String> tagNames) throws Exception {
+                                     boolean favorites, @QueryParam("tags")
+                                     List<String> tagNames, @QueryParam("isNotesTreeFilter")
+                                     boolean isNotesTreeFilter) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
 
@@ -1268,6 +1270,7 @@ public class NotesRestService implements ResourceContainer {
       Identity currentIdentity = ConversationState.getCurrent().getIdentity();
       WikiSearchData data = new WikiSearchData(keyword, currentIdentity.getUserId());
       data.setLimit(limit);
+      data.setNotesTreeFilter(isNotesTreeFilter);
       data.setFavorites(favorites);
       data.setTagNames(tagNames);
       List<SearchResult> results = noteService.search(data).getAll();
@@ -1286,6 +1289,7 @@ public class NotesRestService implements ResourceContainer {
             TitleSearchResult titleSearchResult = new TitleSearchResult();
             titleSearchResult.setTitle(attachment.getName());
             titleSearchResult.setId(page.getId());
+            titleSearchResult.setPageName(page.getName());
             titleSearchResult.setActivityId(page.getActivityId());
             titleSearchResult.setType(searchResult.getType());
             titleSearchResult.setUrl(attachment.getDownloadURL());
@@ -1309,6 +1313,8 @@ public class NotesRestService implements ResourceContainer {
             TitleSearchResult titleSearchResult = new TitleSearchResult();
             titleSearchResult.setTitle(searchResult.getTitle());
             titleSearchResult.setId(page.getId());
+            titleSearchResult.setPageName(page.getName());
+            titleSearchResult.setPageName(page.getName());
             titleSearchResult.setActivityId(page.getActivityId());
             if (posterIdentity != null) {
               titleSearchResult.setPoster(posterIdentity);

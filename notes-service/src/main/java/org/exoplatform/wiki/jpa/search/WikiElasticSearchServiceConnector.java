@@ -78,6 +78,21 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       """;
 
+  public static final String         SEARCH_QUERY_TERM_FOR_NOTES_APPLICATION            = """
+          ,"must": [
+            @wildcard_query@
+          ]
+          """;
+
+  public static final String         WILDCARD_QUERY            = """
+          {
+            "wildcard": {
+              "name": "*@term@*"
+            }
+          }
+          """;
+
+
 
   public WikiElasticSearchServiceConnector(ConfigurationManager configurationManager,
                                            InitParams initParams,
@@ -120,13 +135,13 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, List<String> tagNames, boolean isFavorites, int offset, int limit) {
-      return filteredWikiSearch(searchedText, userId, tagNames, isFavorites, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, String userId, List<String> tagNames, boolean isFavorites, boolean isNotesTreeFilter, int offset, int limit) {
+      return filteredWikiSearch(searchedText, userId, tagNames, isFavorites, isNotesTreeFilter, offset, limit);
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, List<String> tagNames, boolean isFavorites, int offset, int limit) {
+  protected List<SearchResult> filteredWikiSearch(String query, String userId, List<String> tagNames, boolean isFavorites,boolean isNotesTreeFilter , int offset, int limit) {
     Set<String> ids = getUserSpaceIds(userId);
-    String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, offset, limit);
+    String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, isNotesTreeFilter,offset, limit);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
@@ -153,11 +168,33 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
             .toString();
   }
 
-  private String buildTermQuery(String termQuery) {
+  private String buildTermQuery(String termQuery, boolean isNotesTreeFilter) {
     if (StringUtils.isBlank(termQuery)) {
       return "";
     }
+
     termQuery = removeSpecialCharacters(termQuery);
+    if (isNotesTreeFilter) {
+      termQuery = termQuery.trim().replaceAll("\\s+", " ");
+      List<String> listTermQuery = List.of(termQuery.split(" "));
+      if (listTermQuery.size() == 0) {
+        return "";
+      }
+      String allWildcardQuery = "";
+      String termWildcardQuery = WILDCARD_QUERY.replace("@term@",listTermQuery.get(0));
+      allWildcardQuery = allWildcardQuery.concat(termWildcardQuery);
+      if (listTermQuery.size() > 1) {
+        int index = 0;
+        for(String term : listTermQuery) {
+          if (index > 0){
+            termWildcardQuery = WILDCARD_QUERY.replace("@term@", term);
+            allWildcardQuery = allWildcardQuery.concat(",").concat(termWildcardQuery);
+          }
+          index++;
+        };
+      }
+      return SEARCH_QUERY_TERM_FOR_NOTES_APPLICATION.replace("@wildcard_query@", allWildcardQuery);
+    } else {
     List<String> termsQuery = Arrays.stream(termQuery.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
       word = word.trim();
       if (word.length() > 5) {
@@ -165,7 +202,8 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       return word;
     }).toList();
-    return SEARCH_QUERY_TERM.replace("@term@", StringUtils.join(termsQuery, " "));
+      return SEARCH_QUERY_TERM.replace("@term@", StringUtils.join(termsQuery, " "));
+    }
   }
   
   private String buildQueryStatement(Set<String> calendarOwnersOfUser,
@@ -173,13 +211,14 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
                                      List<String> tagNames,
                                      String term,
                                      boolean isFavorites,
+                                     boolean isNotesTreeFilter,
                                      long offset,
                                      long limit) {
     term = removeSpecialCharacters(term);
     Map<String, List<String>> metadataFilters = buildMetadataFilter(isFavorites, userId);
     String metadataQuery = buildMetadataQueryStatement(metadataFilters);
     String tagsQuery = buildTagsQueryStatement(tagNames);
-    String termsQuery = buildTermQuery(term);
+    String termsQuery = buildTermQuery(term, isNotesTreeFilter);
     return retrieveSearchQuery().replace("@term_query@", termsQuery)
                                 .replace("@metadatas_query@", metadataQuery)
                                 .replace("@tags_query@", tagsQuery)

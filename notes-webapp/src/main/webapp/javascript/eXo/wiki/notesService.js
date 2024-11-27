@@ -1,7 +1,7 @@
 import { notesConstants } from './notesConstants.js';
 
 export function getNote(noteBookType, noteBookOwner, noteId,source,lang) {
-  let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`;
+let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteBookType}/${noteBookOwner}/${noteId}`;
   if (source){
     url=`${url}?source=${source}`;
   }
@@ -441,4 +441,18 @@ export function removeNoteFeaturedImage(noteId, isDraft, lang) {
       throw new Error('Error when deleting note featured image');
     }
   });
+}
+
+export function searchNotes(keyword, limit) {
+  document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/contextsearch?keyword=${keyword}&isNotesTreeFilter=true&limit=${limit}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp || !resp.ok) {
+      throw new Error('Response code indicates a server error', resp);
+    } else {
+      return resp.json();
+    }
+  }).finally(() => document.dispatchEvent(new CustomEvent('hideTopBarLoading')));
 }

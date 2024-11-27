@@ -470,7 +470,12 @@ export default {
     dataCreated: false,
     isLoading: false,
     selectionType: 'independent',
-    inProgressTreeFetches: []
+    inProgressTreeFetches: [],
+    filterItems: [],
+    filterItemsDraft: [],
+    limit: 20,
+    timeout: 1000,
+    searchTimer: null,
   }),
   computed: {
     homeLabel() {
@@ -492,7 +497,7 @@ export default {
     },
     active() {
       return this.search
-        && this.allItems
+        && this.allItems  
         && this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()))
         || this.activeItem;
     },
@@ -527,24 +532,26 @@ export default {
       this.isLoading = this.inProgressTreeFetches?.length;
     },
     search() {
+      clearTimeout(this.searchTimer);
       this.showTree = true;
       if (this.search) {
-        this.items = this.active;
-        this.items.forEach(item => {
-          item.children = null;
-        });
-        this.showTree = !!this.active.length;
+        this.searchTerm();
       } else {
         this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name);
       }
     },
     filter() {
-      if (this.note && this.note.id) {
-        if (this.note.draftPage) {
-          this.getDraftNote(this.note.id);
-        } else {
-          this.getNoteById(this.note.id);
+      if (!this.search) {
+        this.items = [];
+        if (this.note && this.note.id) {
+          if (this.note.draftPage) {
+            this.getDraftNote(this.note.id);
+          } else {
+            this.getNoteById(this.note.id);
+          }
         }
+      } else {
+        this.searchTerm();
       }
     },
   },
@@ -815,6 +822,9 @@ export default {
           }
           if (this.isDraftFilter) {
             this.naturalSort(this.items);
+            this.filterItems = this.items;
+            this.filterItemsDraft = [];
+            this.filterItemsForSearch(this.filterItems);
           }
           this.allItems = data.treeNodeData;
           this.allItemsHome = data.jsonList[0].children;
@@ -885,6 +895,49 @@ export default {
         this.exporting = false;
         this.$nextTick().then(() => this.close());
       }
+    },
+    searchTerm() {
+      this.items = [];
+      this.isLoading = true;
+      this.searchTimer = setTimeout(() => { 
+        if (this.isDraftFilter) {
+          this.items = this.filterItemsDraft.filter(item => item.name.includes(this.search));
+        } else { 
+          this.$notesService.searchNotes(this.search, this.limit).then(data => {
+            this.items = data?.jsonList.length ? this.toListNotes(data?.jsonList) : [];         
+            this.showTree = !!this.items.length;
+          });
+        }
+        this.isLoading = false;
+      }, this.timeout);
+    },
+    filterItemsForSearch(filterItems){
+      filterItems.forEach(filterItem => {
+        if (filterItem.draftPage) {
+          this.filterItemsDraft.push(filterItem);
+        }
+        if (filterItem.hasChild) {
+          this.filterItemsForSearch(filterItem.children);
+        }
+      });
+    },
+    toListNotes(items) {
+      const itemsNotes = [];
+      items.forEach(item => itemsNotes.push(this.toNote(item)));
+      return itemsNotes;
+    },
+    toNote(note) {
+      return {
+        children: [],
+        disabled: false,
+        draftPage: false,
+        name: note.title,
+        nodeType: note.type,
+        noteId: note.id,
+        url: note.url,
+        path: note.pageName,
+        parentPageId: ''
+      };
     }
   }
 };
