@@ -565,7 +565,6 @@ public class NotesRestService implements ResourceContainer {
       log.warn("Draft Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Draft Note's title should not be number}").build();
     }
-
     String noteBookType = draftNoteToSave.getWikiType();
     String noteBookOwner = draftNoteToSave.getWikiOwner();
     Page parentNote = null;

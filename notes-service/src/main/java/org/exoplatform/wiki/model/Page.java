@@ -25,7 +25,6 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import io.meeds.notes.model.NotePageProperties;
-import io.meeds.notes.rest.model.PagePropertiesEntity;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.wiki.service.BreadcrumbData;
 
@@ -105,6 +104,8 @@ public class Page {
 
   private NotePageProperties              properties;
 
+  private String                          attachmentObjectType;
+
   public Page(String name) {
     this.name = name;
   }
@@ -117,6 +118,10 @@ public class Page {
 
   public boolean isDraftPage() {
     return false;
+  }
+
+  public String getAttachmentObjectType() {
+    return attachmentObjectType != null ? attachmentObjectType : "wikiPage";
   }
 
 }

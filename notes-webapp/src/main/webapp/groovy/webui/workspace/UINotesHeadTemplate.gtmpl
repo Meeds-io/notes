@@ -1,0 +1,11 @@
+<%
+  import org.exoplatform.commons.api.settings.ExoFeatureService;
+  def rcontext = _ctx.getRequestContext();
+  ExoFeatureService featureService = uicomponent.getApplicationComponent(ExoFeatureService.class);
+  def userName = rcontext.getRemoteUser();
+%>
+
+<script type="text/javascript" id="NoteHeadScripts">
+    eXo.env.portal.notePublicationEnabled = <%=featureService.isFeatureActiveForUser("notePublication", userName)%>;
+    eXo.env.portal.insertImageOptionEnabled = <%=featureService.isFeatureActiveForUser("insertImage", userName)%>;
+</script>

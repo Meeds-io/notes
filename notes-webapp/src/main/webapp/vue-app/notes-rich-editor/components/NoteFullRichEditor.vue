@@ -90,7 +90,9 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
-      updatingProperties: null
+      enablePostKeys: 0,
+      isPublishing: false,
+      contentImageUploadProgress: false
     };
   },
   props: {
@@ -427,7 +429,7 @@ export default {
             self.setToolBarEffect();
           },
           change: function (evt) {
-            if (!self.initialized) {
+            if (!self.initialized || self.contentImageUploadProgress) {
               // First time setting data
               self.initialized = true;
               return;
@@ -449,7 +451,11 @@ export default {
               });
             }
           },
+          fileUploadRequest: function () {
+            self.contentImageUploadProgress = true;
+          },
           fileUploadResponse: function() {
+            self.contentImageUploadProgress = false;
             /*add plugin fileUploadResponse to handle file upload response ,
               in this method we can get the response from server and update the editor content
               this method is called when file upload is finished*/

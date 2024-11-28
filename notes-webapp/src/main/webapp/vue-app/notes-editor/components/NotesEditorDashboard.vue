@@ -129,6 +129,8 @@ export default {
       saveButtonIcon: 'fas fa-save',
       translationSwitch: false,
       newTranslation: false,
+      wikiDraftObjectType: 'wikiDraft',
+      wikiPageObjectType: 'wikiPage'
     };
   },
   computed: {
@@ -317,6 +319,11 @@ export default {
       const currentDraftId = this.note?.id;
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
+        document.dispatchEvent(new CustomEvent('update-processed-image-url', {
+          detail: {
+            content: data.content,
+          }
+        }));
         this.originalNote = structuredClone(data);
         this.displayMessage({
           type: 'success',
@@ -337,6 +344,9 @@ export default {
     createNote(note) {
       return this.$notesService.createNote(note).then(data => {
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
+        document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
+          content: data.content
+        }}));
         this.note = data;
         this.noteId = data.id;
         this.addParamToUrl('noteId', this.noteId);
@@ -516,8 +526,12 @@ export default {
     saveNoteDraft(update) {
       const draftNote = this.fillDraftNote();
       if (this.note.title || this.note.content) {
+        let isContentIncludeImagesToBeProcessed = draftNote.content.includes('cke_upload_id');
+        if (draftNote.content.includes(`/${this.wikiPageObjectType}/`) || draftNote.content.includes(`/${this.wikiDraftObjectType}/`)) {
+          isContentIncludeImagesToBeProcessed = true;
+        }
         // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated) {
+        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeImagesToBeProcessed) {
           this.note.parentPageId = this.parentPageId;
           localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
           this.actualNote = {
@@ -554,6 +568,9 @@ export default {
           }
         }
         this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+          document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
+            content: savedDraftNote.content,
+          }}));
           if (update){
             this.actualNote = {
               id: savedDraftNote.id,

@@ -25,8 +25,11 @@ import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
+import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 
 public class EntityBuilder {
 
@@ -102,6 +105,11 @@ public class EntityBuilder {
     draftPage.setTargetPageId(draftPageEntity.getTargetPageId());
     draftPage.setNewPage(draftPageEntity.isNewPage());
     draftPage.setProperties(toNotePageProperties(draftPageEntity.getProperties()));
+    if (StringUtils.isNotEmpty(draftPageEntity.getTargetPageId())) {
+      draftPage.setAttachmentObjectType(WikiPageAttachmentPlugin.OBJECT_TYPE);
+    } else {
+      draftPage.setAttachmentObjectType(WikiDraftPageAttachmentPlugin.OBJECT_TYPE);
+    }
     return draftPage;
   }
 }
