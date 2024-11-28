@@ -65,6 +65,8 @@ import org.exoplatform.wiki.model.Wiki;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
+import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
+import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 
  public class TestNoteService extends BaseTest {
   private WikiService wService;
@@ -1034,4 +1036,41 @@ import io.meeds.notes.model.NotePageProperties;
      assertTrue(note.getProperties().isHideAuthor());
      assertTrue(properties.isHideReaction());
    }
+
+   public void testProcessingNoteContentImages() throws Exception {
+     this.bindMockedUploadService();
+     // processing draft content images
+     DraftPage draftPage = new DraftPage();
+     draftPage.setTitle("test");
+     draftPage.setContent("content include image <img cke_upload_id=\"123\" >");
+     draftPage.setAttachmentObjectType(WikiDraftPageAttachmentPlugin.OBJECT_TYPE);
+     draftPage = noteService.createDraftForNewPage(draftPage, new Date().getTime(), 1L);
+     assertNotNull(draftPage);
+     assertNotNull(draftPage.getContent());
+     String imageSrcTagSuffix = "src=\"/portal/rest/v1/social/attachments/";
+     assertTrue(draftPage.getContent().contains(imageSrcTagSuffix.concat(WikiDraftPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(draftPage.getId())));
+     //
+     Page note = new Page();
+     note.setTitle(draftPage.getTitle());
+     note.setContent(draftPage.getContent());
+     note.setProperties(new NotePageProperties(Long.parseLong(draftPage.getId()), null, null, false, false, true));
+     Identity root = new Identity("root");
+     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
+     note = noteService.createNote(portalWiki, "Home",note ,root);
+
+     // processing note version content images
+     assertNotNull(note);
+     assertNotNull(note.getId());
+     assertTrue(note.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     // processing draft for existing page content images
+     DraftPage draftForExistingPage = new DraftPage();
+     draftForExistingPage.setTitle(note.getTitle());
+     draftForExistingPage.setContent(note.getContent());
+     draftForExistingPage.setParentPageId(note.getId());
+     draftForExistingPage = noteService.createDraftForExistPage(draftForExistingPage, note, null, System.currentTimeMillis(), "root");
+     assertNotNull(draftForExistingPage);
+     assertNotNull(draftForExistingPage.getId());
+     assertTrue(draftForExistingPage.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/".concat(note.getId()))));
+   }
+
  }

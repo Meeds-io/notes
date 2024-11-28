@@ -319,6 +319,23 @@ public interface DataStorage {
    */
   PageVersion getPageVersionById(long versionId);
 
+  /**
+   * Updates page content by its given id
+   *
+   * @param page page to be updated
+   * @param content page version content
+   * @return {@link Page}
+   */
+  Page updatePageContent(Page page, String content) throws WikiException;
+
+  /**
+   * Updates draft page content by its given id
+   *
+   * @param draftId draft page id
+   * @param content draft page content
+   * @return {@link PageVersion}
+   */
+  DraftPage updateDraftContent(long draftId, String content) throws WikiException;
 
   /**
    * Gets draft pages of a given wiki

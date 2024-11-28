@@ -18,20 +18,22 @@ CKEDITOR.editorConfig = function (config) {
 
 
   let extraPlugins = 'simpleLink,a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-        'autolink,colordialog,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon';
+        `autolink,colordialog,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,${eXo.env.portal.insertImageOptionEnabled && 'image2' || ''}`;
 
   let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed,tagSuggester,attachImage';
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
-    const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
-    if (ckEditorExtensions?.length) {
-      const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
-      const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
-      if (ckEditorExtraPlugins) {
-        extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
-      }
-      if (ckEditorRemovePlugins) {
-        removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
+    if (!eXo.env.portal.insertImageOptionEnabled) {
+      const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
+      if (ckEditorExtensions?.length) {
+        const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
+        const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
+        if (ckEditorExtraPlugins) {
+          extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
+        }
+        if (ckEditorRemovePlugins) {
+          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
+        }
       }
     }
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
