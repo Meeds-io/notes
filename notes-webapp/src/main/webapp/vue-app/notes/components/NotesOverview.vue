@@ -600,11 +600,8 @@ export default {
       const uris = eXo.env.portal.selectedNodeUri.split('/');
       return uris[uris.length - 1];
     },
-    isNoteAuthor() {
-      return !this.published && this?.note.author === eXo.env.portal.userName;
-    },
     canScheduleNotePublication() {
-      return this.isNoteAuthor || this.canSchedule || this.canPublish;
+      return this.note?.canManage || this.canSchedule;
     }
   },
   created() {
