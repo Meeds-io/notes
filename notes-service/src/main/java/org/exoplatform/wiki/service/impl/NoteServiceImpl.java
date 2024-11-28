@@ -1489,6 +1489,7 @@ import lombok.SneakyThrows;
       page.setTitle(publishedVersion.getTitle());
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
+      page.setProperties(publishedVersion.getProperties());
       page.setLatestVersionId(publishedVersion.getId());
     }
     return page;
