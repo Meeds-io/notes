@@ -1423,6 +1423,7 @@ public class NoteServiceImpl implements NoteService {
       page.setTitle(publishedVersion.getTitle());
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
+      page.setProperties(publishedVersion.getProperties());
     }
     return page;
   }
