@@ -4,20 +4,26 @@
       z-index="1031"
       :value="drawer"
       @click.native="drawer = false" />
-
     <exo-drawer
       ref="breadcrumbDrawer"
-      class="breadcrumbDrawer"
+      v-model="drawer"
       :confirm-close="exporting"
       :confirm-close-labels="confirmCloseLabels"
+      :right="!$vuetify.rtl"
       allow-expand
-      v-model="drawer"
       show-overlay
-      @closed="closeAllDrawer()"
-      right>
-      <template v-if="isIncludePage && displayArrow" slot="title">
+      class="breadcrumbDrawer"
+      @closed="closeAllDrawer()">
+      <template v-if="drawerTitle" slot="title">
+        {{ drawerTitle }}
+      </template>
+      <template v-else-if="isIncludePage && displayArrow" slot="title">
         <div class="d-flex">
-          <v-icon size="19" @click="backToPlugins(); close()">mdi-arrow-left</v-icon>
+          <v-icon
+            size="18"
+            @click="backToPlugins">
+            fas fa-arrow-left
+          </v-icon>
           <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
         </div>
       </template>
@@ -49,11 +55,12 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.started') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.started') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
-
             <v-list-item>
               <template>
                 <v-list-item-action class="mr-3">
@@ -70,15 +77,18 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title v-if="exportStatus.exportedNotesCount>0"> {{ $t('notes.export.status.label.preparingNotes') }} ({{ exportStatus.exportedNotesCount }} notes)</v-list-item-title>
-                  <v-list-item-title v-else> {{ $t('notes.export.status.label.preparingNotes') }}</v-list-item-title>
+                  <v-list-item-title v-if="exportStatus.exportedNotesCount>0">
+                    {{ $t('notes.export.status.label.preparingNotes.total', {0: exportStatus.exportedNotesCount}) }}
+                  </v-list-item-title>
+                  <v-list-item-title v-else>
+                    {{ $t('notes.export.status.label.preparingNotes') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
-
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -92,13 +102,15 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.updatingNoteParents') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.updatingNoteParents') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -112,13 +124,15 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.creatingJson') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.creatingJson') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -132,13 +146,15 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.updatingImages') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.updatingImages') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -152,13 +168,15 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.processingFeaturedImages') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.processingFeaturedImages') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -172,7 +190,9 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.creatingZip') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.creatingZip') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
@@ -192,13 +212,15 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.cleaningTemps') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.cleaningTemps') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
             <v-list-item>
               <template>
-                <v-list-item-action class="mr-3">
+                <v-list-item-action class="me-3">
                   <v-icon
                     color="success"
                     size="18"
@@ -212,7 +234,9 @@
                     size="18" />
                 </v-list-item-action>
                 <v-list-item-content>
-                  <v-list-item-title>{{ $t('notes.export.status.label.done') }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ $t('notes.export.status.label.done') }}
+                  </v-list-item-title>
                 </v-list-item-content>
               </template>
             </v-list-item>
@@ -223,42 +247,63 @@
         <v-layout v-if="movePage" column>
           <v-list-item>
             <v-list-item-content>
-              <v-list-item-title class="font-weight-bold text-color">{{ note.name }}</v-list-item-title>
+              <v-list-item-title class="font-weight-bold text-color">
+                {{ note.title }}
+              </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
           <v-list-item>
             <div class="d-flex align-center">
-              <div class="pr-4"><span class="font-weight-bold text-color">{{ $t('notes.label.movePageSpace') }}</span></div>
+              <div class="pe-4">
+                <span class="font-weight-bold text-color">
+                  {{ $t('notes.label.movePageSpace') }}
+                </span>
+              </div>
               <div class="identitySuggester no-border mt-0">
                 <v-chip
                   class="identitySuggesterItem me-2 mt-2">
                   <span class="text-truncate">
-                    {{ spaceDisplayName }}
+                    {{ currentSpaceDisplayName }}
                   </span>
                 </v-chip>
               </div>
             </div>
           </v-list-item>
-          <v-list-item>
+          <v-list-item v-if="showCurrentDestination">
             <div class="py-2 width-full">
-              <span class="font-weight-bold text-color  pb-2">{{ $t('notes.label.movePageCurrentPosition') }}</span>
+              <span class="font-weight-bold text-color pb-2">
+                {{ $t('notes.label.movePageCurrentPosition') }}
+              </span>
               <note-breadcrumb :note-breadcrumb="note ? note.breadcrumb : []" />
             </div>
           </v-list-item>
           <v-list-item>
-            <div class="py-2  width-full">
-              <span class="font-weight-bold text-color pb-2">{{ $t('notes.label.movePageDestination') }}</span>
-              <note-breadcrumb :note-breadcrumb="currentBreadcrumb" />
+            <div class="py-2 width-full">
+              <span class="font-weight-bold text-color pb-2">
+                {{ $t('notes.label.movePageDestination') }}
+              </span>
+              <p
+                v-if="!enableMove"
+                class="text-caption text-sub-title mb-2">
+                {{ $t('notes.move.select.destination.label') }}
+              </p>
+              <note-breadcrumb
+                v-else
+                :note-breadcrumb="currentBreadcrumb" />
             </div>
           </v-list-item>
           <v-list-item class="position-title">
             <div class="py-2">
-              <span class="font-weight-bold text-color">{{ $t('notes.label.movePagePosition') }}</span>
+              <span class="font-weight-bold text-color">
+                {{ $t('notes.label.movePagePosition') }}
+              </span>
             </div>
           </v-list-item>
         </v-layout>
         <v-col column>
-          <div v-if="!exportNotes && !movePage" class="d-flex mb-4">
+          <div
+            v-if="!exportNotes && !movePage"
+            class="d-flex mb-4">
             <div class="flex-grow-1 me-2 d-flex content-box-sizing">
               <v-text-field
                 v-model="search"
@@ -284,11 +329,20 @@
             </div>
           </div>
           <template v-if="home && !exportNotes && resultSearch && !search">
-            <v-list-item @click.prevent="openNote(event,home)" class="ma-0 border-box-sizing">
+            <v-list-item
+              class="ma-0 border-box-sizing"
+              @click.prevent="openNote(event,home)">
               <v-list-item-content>
                 <v-list-item-title class="body-2 treeview-home-link">
-                  <span v-if="filter === $t('notes.filter.label.drafts')" :style="{color: 'rgba(0, 0, 0, 0.38)!important', cursor: 'default'}">{{ home.name==='Home'?$t('notes.label.noteHome'):home.name }}</span>
-                  <a v-else :href="home.noteId">{{ home.name==='Home'?$t('notes.label.noteHome'):home.name }}</a>
+                  <span
+                    v-if="filter === $t('notes.filter.label.drafts')"
+                    class="text--disabled not-clickable">
+                    {{ homeLabel }}</span>
+                  <a
+                    v-else
+                    :href="home.noteId">
+                    {{ homeLabel }}
+                  </a>
                 </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
@@ -388,7 +442,9 @@
                 max-width="90"
                 contain
                 eager />
-              <p class="mt-3 text-light-color">{{ $t('notes.label.noteSearchNotFound') + search }}</p>
+              <p class="mt-3 text-light-color">
+                {{ $t('notes.label.noteSearchNotFound') + search }}
+              </p>
             </div>
           </template>
         </v-col>
@@ -402,9 +458,11 @@
             {{ $t('notes.button.cancel') }}
           </v-btn>
           <v-btn
-            @click="moveNote()"
-            class="btn btn-primary ml-2">
-            {{ $t('notes.button.move') }}
+            :loading="isLoading"
+            :disabled="!enableMove"
+            class="btn btn-primary ml-2"
+            @click="moveNote()">
+            {{ saveButtonLabel || $t('notes.button.move') }}
           </v-btn>
         </div>
       </template>
@@ -476,11 +534,16 @@ export default {
     limit: 20,
     timeout: 1000,
     searchTimer: null,
+    enableMove: false
   }),
   props: {
     selectedTranslation: {
       type: String,
       default: () => null,
+    },
+    settings: {
+      type: Object,
+      default: null
     }
   },
   computed: {
@@ -524,6 +587,18 @@ export default {
     },
     isDraftFilter() {
       return this.filter === this.$t('notes.filter.label.drafts');
+    },
+    drawerTitle() {
+      return this.settings?.drawerTitle;
+    },
+    saveButtonLabel() {
+      return this.settings?.saveButtonLabel;
+    },
+    showCurrentDestination() {
+      return this.settings?.showCurrentDestination ?? true;
+    },
+    currentSpaceDisplayName() {
+      return this.settings?.spaceDisplayName || this.spaceDisplayName;
     }
   },
   watch: {
@@ -661,6 +736,7 @@ export default {
       this.isIncludePage = source === 'includePages';
       this.displayArrow = !includeDisplay;
       if (source === 'movePage') {
+        this.enableMove = false;
         this.movePage = true;
         this.exportNotes = false;
       }
@@ -683,6 +759,7 @@ export default {
     },
     backToPlugins() {
       this.closeAll = false;
+      this.close();
     },
     openNote(event, note) {
       const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && note.noteId !== this.note.id;
@@ -696,7 +773,8 @@ export default {
         } else if (this.movePage) {
           if (note.noteId !== this.note.id) {
             this.$notesService.getNoteById(note.noteId,'', '', '', '', true).then(data => {
-              this.breadcrumb = data && data.breadcrumb || [];
+              this.breadcrumb = data?.breadcrumb || [];
+              this.enableMove = true;
               this.breadcrumb[0].name = this.$t('notes.label.noteHome');
               this.destinationNote = data;
             });
