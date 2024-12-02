@@ -1,5 +1,4 @@
 import NotesOverview from './components/NotesOverview.vue';
-import NoteTreeviewDrawer from './components/NoteTreeviewDrawer.vue';
 import NotesActionsMenu from './components/menu/NotesActionsMenu.vue';
 import NoteBreadcrumb from './components/NoteBreadcrumb.vue';
 import NoteImportDrawer from './components/NoteImportDrawer.vue';
@@ -16,7 +15,6 @@ import NoteEditorFeaturedImageDrawer from '../notes-rich-editor/components/note-
 
 const components = {
   'notes-overview': NotesOverview,
-  'note-treeview-drawer': NoteTreeviewDrawer,
   'notes-actions-menu': NotesActionsMenu,
   'note-breadcrumb': NoteBreadcrumb,
   'note-import-drawer': NoteImportDrawer,
