@@ -21,7 +21,7 @@ const config = {
     notePageView: './src/main/webapp/vue-app/note-page-view/main.js',
     notesNotificationExtension: './src/main/webapp/vue-app/notification-extensions/main.js',
     notesPublication: './src/main/webapp/vue-app/notes-publication/main.js',
-
+    notesTreeview: './src/main/webapp/vue-app/notes-treeview/main.js',
   },
   output: {
     publicPath: '',
