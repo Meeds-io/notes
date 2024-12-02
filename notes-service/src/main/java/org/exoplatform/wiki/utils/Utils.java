@@ -62,6 +62,7 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.webui.util.Util;
@@ -601,22 +602,17 @@ public class Utils {
   }
 
   public static String getPageUrl(Page page) {
-    try {
-      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (space != null) {
-        StringBuilder spaceUrl = new StringBuilder("/portal/s/");
-        spaceUrl.append(space.getId());
-        spaceUrl.append("/notes/");
-        if (!StringUtils.isEmpty(page.getId())) {
-          spaceUrl.append(page.getId());
-        }
-        return spaceUrl.toString();
-      }
-      return "";
-    } catch (Exception e) {
-      return "";
+    StringBuilder pageUrl = new StringBuilder();
+    if (!StringUtils.isEmpty(page.getId())) {
+      UserPortalConfigService userPortalConfigService = CommonsUtils.getService(UserPortalConfigService.class);
+      String metaPortal = userPortalConfigService.getMetaPortal();
+      pageUrl.append("/portal/");
+      pageUrl.append(metaPortal);
+      pageUrl.append("/home/notes/");
+      pageUrl.append(page.getId());
+
     }
+    return pageUrl.toString();
   }
 
   public static List<String> unzip(String zipFilePath, String folderPath) throws IOException {
