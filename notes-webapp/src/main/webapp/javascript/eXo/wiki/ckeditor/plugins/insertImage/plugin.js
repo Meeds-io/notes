@@ -179,59 +179,10 @@
       editor.on('paste', function (evt) {
         const files = Array.from(evt.data.dataTransfer._.files);
         const uploadSequentially = async () => {
+          document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
           for (const file of files) {
-            document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
             // eslint-disable-next-line
-            await new Promise((resolve) => {
-              const loader = editor.uploadRepository.create(file);
-              const reader = new FileReader();
-
-              reader.onload = function (e) {
-                const dataUrl = e.target.result;
-
-                const blob = dataURLtoBlob(dataUrl);
-                const blobUrl = URL.createObjectURL(blob);
-
-                // Create a temporary document to safely insert the image
-                const tempDoc = document.implementation.createHTMLDocument('');
-                const temp = new CKEDITOR.dom.element(tempDoc.body);
-                temp.data('cke-editable', 1);
-                temp.appendHtml(`<img class="cke_upload_uploading" cke_upload_id="${uploadId}" src="${blobUrl}" alt="" />`);
-
-                const img = temp.find('img').getItem(0);
-                loader.data = dataUrl;
-
-                // Insert the temporary image into the editor
-                editor.insertHtml(img.getOuterHtml());
-                editor.focus();
-                editor.execCommand('autogrow');
-
-                const range = editor.getSelection().getRanges()[0];
-                if (range) {
-                  range.moveToPosition(range.endContainer, CKEDITOR.POSITION_AFTER_END);
-                  editor.getSelection().selectRanges([range]);
-                  editor.insertHtml('<p>&nbsp;</p>');
-                  editor.focus();
-                  editor.execCommand('autogrow');
-                }
-                // Handle notifications and upload progress
-                fileTools.bindNotifications(editor, loader);
-
-                loader.upload(editor.config.uploadUrl + uploadId); // Ensure unique upload URL
-
-                loader.on('uploaded', function () {
-                  cleanWidget(blobUrl);
-                  resolve(); // Resolve the promise to move to the next image
-                });
-
-                loader.on('error', function () {
-                  img.remove(); // Remove failed image
-                  resolve(); // Continue with the next file
-                });
-              };
-
-              reader.readAsDataURL(file); // Trigger file reading
-            });
+            await handleFileUpload(file, true);
           }
         };
         if (files.length > 0) {
@@ -249,7 +200,12 @@
           editor.insertHtml('<p></p>');
           editor.focus();
         }
-        await new Promise((resolve) => {
+        await handleFileUpload(file, false);
+      }
+
+      // eslint-disable-next-line require-await
+      async function handleFileUpload(file, moveRange) {
+        return  new Promise((resolve) => {
           const loader = editor.uploadRepository.create(file);
           const reader = new FileReader();
 
@@ -272,6 +228,15 @@
             editor.insertHtml(img.getOuterHtml());
             editor.focus();
             editor.execCommand('autogrow');
+
+            const range = editor.getSelection().getRanges()[0];
+            if (range && moveRange) {
+              range.moveToPosition(range.endContainer, CKEDITOR.POSITION_AFTER_END);
+              editor.getSelection().selectRanges([range]);
+              editor.insertHtml('<p>&nbsp;</p>');
+              editor.focus();
+              editor.execCommand('autogrow');
+            }
             // Handle notifications and upload progress
             fileTools.bindNotifications(editor, loader);
 
@@ -287,7 +252,6 @@
               resolve(); // Continue with the next file
             });
           };
-
           reader.readAsDataURL(file); // Trigger file reading
         });
       }
