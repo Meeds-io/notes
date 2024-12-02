@@ -1,6 +1,5 @@
 import NoteCustomPlugins from '../notes-rich-editor/components/NoteCustomPlugins.vue';
 import TranslationsEditBar from '../notes-rich-editor/components/TranslationsEditBar.vue';
-import NoteTreeviewDrawer from '../notes/components/NoteTreeviewDrawer.vue';
 import NoteEditorTopBar from '../notes-rich-editor/components/NoteEditorTopBar.vue';
 import NoteFullRichEditor from './components/NoteFullRichEditor.vue';
 import NoteEditorMetadataDrawer from './components/note-properties/NoteEditorMetadataDrawer.vue';
@@ -9,7 +8,6 @@ import NoteMetadataPropertiesForm from './components/note-properties/NoteMetadat
 
 const components = {
   'note-custom-plugins': NoteCustomPlugins,
-  'note-treeview-drawer': NoteTreeviewDrawer,
   'note-translation-edit-bar': TranslationsEditBar,
   'note-editor-top-bar': NoteEditorTopBar,
   'note-full-rich-editor': NoteFullRichEditor,
