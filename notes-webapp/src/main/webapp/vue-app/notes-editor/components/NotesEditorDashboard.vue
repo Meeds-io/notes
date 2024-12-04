@@ -137,10 +137,11 @@ export default {
   },
   computed: {
     saveOrUpdateDisabled() {
-      return (!this.note?.title || this.note?.title?.length < 3
-                                || this.note?.title?.length > this.titleMaxLength)
-                                || (this.noteNotModified
+      return this.notValidTitle || (this.noteNotModified
                                 && !this.propertiesModified && !this.draftNote && !this.note.draftPage) || this.savingDraft;
+    },
+    notValidTitle() {
+      return !this.webPageNote && (!this.note?.title || this.note?.title?.length < 3 || this.note?.title?.length > this.titleMaxLength);
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.$noteUtils.isSameContent(this.note?.content, this.originalNote?.content);
@@ -616,7 +617,7 @@ export default {
             this.persistDraftNote(draftNote,update);
           }
         }
-      } else {
+      } else if (!this.newTranslation) {
         // delete draft
         this.deleteDraftNote();
       }
