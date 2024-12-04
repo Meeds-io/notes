@@ -410,7 +410,7 @@ export default {
         this.openPublicationDrawer(this.noteObject);
         return;
       }
-      this.postAndPublishNote();
+      this.postAndPublishNote(null, this.noteObject);
     },
     postAndPublishNote(publicationSettings, note) {
       if (this.newPublicationDrawerEnabled) {
