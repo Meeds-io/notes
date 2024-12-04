@@ -15,10 +15,13 @@ CKEDITOR.editorConfig = function (config) {
   CKEDITOR.plugins.addExternal('insertOptions','/notes/javascript/eXo/wiki/ckeditor/plugins/insertOptions/','plugin.js');
   CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
   CKEDITOR.plugins.addExternal('linkBalloon', '/social/js/ckeditorPlugins/linkBalloon/', 'plugin.js');
+  if (eXo.env.portal.insertImageOptionEnabled) {
+    CKEDITOR.plugins.addExternal('insertImage','/notes/javascript/eXo/wiki/ckeditor/plugins/insertImage/','plugin.js');
+  }
 
 
   let extraPlugins = 'simpleLink,a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-        `autolink,colordialog,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,${eXo.env.portal.insertImageOptionEnabled && 'image2' || ''}`;
+        `autolink,colordialog,emoji,link,font,justify,widget,insertOptions,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,${eXo.env.portal.insertImageOptionEnabled && 'image2,insertImage' || ''}`;
 
   let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed,tagSuggester,attachImage';
 

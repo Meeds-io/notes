@@ -230,6 +230,9 @@ export default {
     },
     saveNoteButtonDisabled() {
       return this.updatingProperties || this.saveButtonDisabled;
+    },
+    isContentImagesUploadProgress() {
+      return this.contentImageUploadProgress;
     }
   },
   created() {
@@ -241,6 +244,12 @@ export default {
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
     document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
+    document.addEventListener('notes-editor-upload-progress', () => {
+      this.contentImageUploadProgress = true ;
+    });
+    document.addEventListener('notes-editor-upload-done', () => {
+      this.contentImageUploadProgress = false;
+    });
   },
   methods: {
     metadataUpdated(properties) {
@@ -429,7 +438,7 @@ export default {
             self.setToolBarEffect();
           },
           change: function (evt) {
-            if (!self.initialized || self.contentImageUploadProgress) {
+            if (!self.initialized || self.isContentImagesUploadProgress) {
               // First time setting data
               self.initialized = true;
               return;
@@ -450,20 +459,6 @@ export default {
                 }
               });
             }
-          },
-          fileUploadRequest: function () {
-            self.contentImageUploadProgress = true;
-          },
-          fileUploadResponse: function() {
-            self.contentImageUploadProgress = false;
-            /*add plugin fileUploadResponse to handle file upload response ,
-              in this method we can get the response from server and update the editor content
-              this method is called when file upload is finished*/
-            self.editor.once('afterInsertHtml', ()=> {
-              window.setTimeout(() => {
-                self.editor.fire('mode');
-              }, 2000);
-            });
           },
           doubleclick: function(evt) {
             const element = evt.data.element;

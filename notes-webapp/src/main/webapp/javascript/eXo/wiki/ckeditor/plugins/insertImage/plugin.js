@@ -39,7 +39,10 @@
           input.onchange = function () {
             const file = input.files[0];
             if (file) {
-              handleFileUpload(file, false);
+              handleOnchangeFileUpload(file).then(() => {
+                document.dispatchEvent(new CustomEvent('notes-editor-upload-done'));
+                editor.fire('change');
+              });
             }
           };
         }
@@ -140,56 +143,6 @@
         }
         return new Blob([u8Array], {type: mime});
       }
-
-      function handleFileUpload(file, moveSelectionPosition) {
-        if (editor.getData().trim() === '') {
-          editor.insertHtml('<p></p>');
-          editor.focus();
-        }
-        const loader = editor.uploadRepository.create(file);
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-          const dataUrl = e.target.result;
-
-          const blob = dataURLtoBlob(dataUrl);
-          const blobUrl = URL.createObjectURL(blob);
-
-          // Create a temporary document to safely insert the image
-          const tempDoc = document.implementation.createHTMLDocument('');
-          const temp = new CKEDITOR.dom.element(tempDoc.body);
-          temp.data('cke-editable', 1);
-
-          temp.appendHtml(`<img class="cke_upload_uploading" cke_upload_id="${uploadId}" src="${blobUrl}" alt="" />`);
-
-          const img = temp.find('img').getItem(0);
-          loader.data = dataUrl;
-          loader.upload(editor.config.uploadUrl + uploadId); // Ensure unique upload URL
-
-          // Insert the image and trigger autogrow
-          editor.insertHtml(img.getOuterHtml());
-          editor.focus();
-
-          if (moveSelectionPosition) {
-            const range = editor.getSelection().getRanges()[0];
-            range.moveToPosition(range.endContainer, CKEDITOR.POSITION_AFTER_END);
-            editor.getSelection().selectRanges([range]);
-          }
-          editor.execCommand('autogrow');
-
-          // Bind notifications for the upload process
-          fileTools.bindNotifications(editor, loader);
-
-          loader.on('uploaded', function () {
-            // Clean up the uploaded image once done
-            cleanWidget(blobUrl);
-            editor.fire('change');
-          });
-        };
-
-        reader.readAsDataURL(file);
-      }
-
       // handel temp upload
       editor.on('fileUploadRequest', function (evt) {
         evt.stop();
@@ -224,16 +177,84 @@
       });
 
       editor.on('paste', function (evt) {
-        // For performance reason do not parse data if it does not contain img.
         const files = Array.from(evt.data.dataTransfer._.files);
-        if (files.length === 0) {
-          return;
+        const uploadSequentially = async () => {
+          document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
+          for (const file of files) {
+            // eslint-disable-next-line
+            await handleFileUpload(file, true);
+          }
+        };
+        if (files.length > 0) {
+          uploadSequentially().then(() => {
+            document.dispatchEvent(new CustomEvent('notes-editor-upload-done'));
+            editor.fire('change');
+            evt.stop();
+          });
         }
-        files.forEach((file) => {
-          handleFileUpload(file, true);
-        });
-        evt.stop();
       });
+
+      async function handleOnchangeFileUpload(file) {
+        document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
+        if (editor.getData().trim() === '') {
+          editor.insertHtml('<p></p>');
+          editor.focus();
+        }
+        await handleFileUpload(file, false);
+      }
+
+      // eslint-disable-next-line require-await
+      async function handleFileUpload(file, moveRange) {
+        return  new Promise((resolve) => {
+          const loader = editor.uploadRepository.create(file);
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+            const dataUrl = e.target.result;
+
+            const blob = dataURLtoBlob(dataUrl);
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Create a temporary document to safely insert the image
+            const tempDoc = document.implementation.createHTMLDocument('');
+            const temp = new CKEDITOR.dom.element(tempDoc.body);
+            temp.data('cke-editable', 1);
+            temp.appendHtml(`<img class="cke_upload_uploading" cke_upload_id="${uploadId}" src="${blobUrl}" alt="" />`);
+
+            const img = temp.find('img').getItem(0);
+            loader.data = dataUrl;
+
+            // Insert the temporary image into the editor
+            editor.insertHtml(img.getOuterHtml());
+            editor.focus();
+            editor.execCommand('autogrow');
+
+            const range = editor.getSelection().getRanges()[0];
+            if (range && moveRange) {
+              range.moveToPosition(range.endContainer, CKEDITOR.POSITION_AFTER_END);
+              editor.getSelection().selectRanges([range]);
+              editor.insertHtml('<p>&nbsp;</p>');
+              editor.focus();
+              editor.execCommand('autogrow');
+            }
+            // Handle notifications and upload progress
+            fileTools.bindNotifications(editor, loader);
+
+            loader.upload(editor.config.uploadUrl + uploadId); // Ensure unique upload URL
+
+            loader.on('uploaded', function () {
+              cleanWidget(blobUrl);
+              resolve(); // Resolve the promise to move to the next image
+            });
+
+            loader.on('error', function () {
+              img.remove(); // Remove failed image
+              resolve(); // Continue with the next file
+            });
+          };
+          reader.readAsDataURL(file); // Trigger file reading
+        });
+      }
 
       function cleanWidget(dataUrl) {
         const insertedImage = editor.document.findOne(`img[src="${dataUrl}"]`);
