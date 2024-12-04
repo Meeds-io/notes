@@ -53,6 +53,9 @@
         <module>NotesPublication</module>
       </depends>
       <depends>
+        <module>NotesTreeview</module>
+      </depends>
+      <depends>
         <module>imageCropper</module>
       </depends>
       <depends>
@@ -94,6 +97,9 @@
     </script>
     <depends>
       <module>NotesPublication</module>
+    </depends>
+    <depends>
+      <module>NotesTreeview</module>
     </depends>
     <depends>
       <module>commonVueComponents</module>
@@ -146,6 +152,29 @@
     </depends>
     <depends>
       <module>imageCropper</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>NotesTreeview</name>
+    <load-group>NotesGRP</load-group>
+    <script>
+      <path>/javascript/notesTreeview.bundle.js</path>
+    </script>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
     </depends>
   </module>
   
