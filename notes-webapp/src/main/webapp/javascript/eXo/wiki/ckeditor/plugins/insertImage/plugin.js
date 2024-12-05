@@ -47,6 +47,53 @@
           };
         }
       });
+
+      function moveSelectionToDropPosition(editor, dropEvt) {
+        const $evt = dropEvt,
+          range = editor.createRange();
+        let  $range;
+        // Webkits.
+        if (document.caretRangeFromPoint) {
+          $range = editor.document.$.caretRangeFromPoint($evt.clientX, $evt.clientY);
+          range.setStart(CKEDITOR.dom.node($range.startContainer), $range.startOffset);
+          range.collapse(true);
+        }
+        // FF.
+        else if ($evt.rangeParent) {
+          range.setStart(CKEDITOR.dom.node($evt.rangeParent), $evt.rangeOffset);
+          range.collapse(true);
+        }
+        range.select();
+      }
+
+      editor.on('contentDom', function () {
+        const iframeWin = window.document.getElementsByTagName('iframe')[0].contentWindow;
+        iframeWin.addEventListener('drop',function(event){
+          if (event.dataTransfer.getData('cke/widget-id')){
+            return;
+          }
+          event.preventDefault();
+          let files = Array.from(event.dataTransfer.files);
+          files = files.filter((file) => file.type.startsWith('image/'));
+          const dropSequentially = async () => {
+            document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
+            for (let index = 0; index < files.length; index++) {
+              const isLast = index === files.length - 1;
+              const file = files[index];
+              // eslint-disable-next-line
+              await handleFileUpload(file, !isLast);
+            }
+          };
+          if (files.length > 0) {
+            moveSelectionToDropPosition(editor, event);
+            dropSequentially().then(() => {
+              document.dispatchEvent(new CustomEvent('notes-editor-upload-done'));
+              editor.fire('change');
+            });
+          }
+        },false);
+      });
+
       document.addEventListener('update-processed-image-url', (event) => {
         const stringHtmlContent = event.detail.content;
         replaceProcessedImageUrl(stringHtmlContent);
@@ -180,9 +227,11 @@
         const files = Array.from(evt.data.dataTransfer._.files);
         const uploadSequentially = async () => {
           document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
-          for (const file of files) {
+          for (let index = 0; index < files.length; index++) {
+            const isLast = index === files.length - 1;
+            const file = files[index];
             // eslint-disable-next-line
-            await handleFileUpload(file, true);
+            await handleFileUpload(file, !isLast);
           }
         };
         if (files.length > 0) {
