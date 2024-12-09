@@ -1073,4 +1073,25 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
      assertTrue(draftForExistingPage.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/".concat(note.getId()))));
    }
 
+   public void testProcessingNoteImportedContentImages() throws Exception {
+
+     String fileName = "pexels-nout-gons-80280-378570(1).png";
+     File file = new File(System.getProperty("java.io.tmpdir") + File.separator + fileName);
+     file.createNewFile();
+     this.bindMockedUploadService();
+     String imageSrcTagSuffix = "src=\"/portal/rest/v1/social/attachments/";
+     //
+     Page note = new Page();
+     note.setTitle("imported note title");
+     note.setContent("content include imported image matcher <img src=\"//-" + fileName + "-//\" >");
+     Identity root = new Identity("root");
+     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
+     note = noteService.createNote(portalWiki, "Home",note ,root);
+     //
+     assertNotNull(note);
+     assertNotNull(note.getId());
+     assertTrue(note.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     file.delete();
+   }
+
  }
