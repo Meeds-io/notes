@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -817,6 +818,19 @@ public class Utils {
     mentionNotificationCtx.getNotificationExecutor()
             .with(mentionNotificationCtx.makeCommand(PluginKey.key(MentionInNoteNotificationPlugin.ID)))
             .execute(mentionNotificationCtx);
+  }
+
+  public static List<String> getContentImagesIds(String content, String objectType, String objectId) {
+    String existingIdRegex = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/([^\"]+)\"", objectType, objectId);
+    Pattern existingPattern = Pattern.compile(existingIdRegex);
+    Matcher existingMatcher = existingPattern.matcher(content);
+
+    List<String> existingFileIds = new ArrayList<>();
+    while (existingMatcher.find()) {
+      String fileId = existingMatcher.group(1);
+      existingFileIds.add(fileId);
+    }
+    return existingFileIds;
   }
 
 }

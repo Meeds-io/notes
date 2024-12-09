@@ -509,6 +509,7 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 
   public void testExportNotes() throws Exception {
     Identity root = new Identity("root");
+    startSessionAs("root");
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "exportPortal");
     Page page1 = new Page("exported1", "exported1");
     page1.setContent("<figure class=\"image\"><img src=\"/portal/rest/wiki/attachments/group/space//spaces/base_de_connaissances/page/4.01-_Profil_et_paramètres/Navigation paramètres.png\"></figure>");
@@ -522,9 +523,14 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
     page3.setContent("<a class=\"noteLink\" href=\"" + note2.getId() + "\">Home</a>");
     Page note3 = noteService.createNote(portalWiki, "Home", page3, root);
 
+    bindMockedUploadService();
+    note3.setContent(note3.getContent().concat("<img cke_upload_id=\"123\" >"));
+    noteService.updateNote(note3);
+
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note1.getName()));
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note2.getName()));
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, "exportPortal", note3.getName()));
+    assertTrue(note3.getContent().contains("src=\"/portal/rest/v1/social/attachments/wikiPage/"));
 
     String[] notes = new String[3];
     notes[0] = note1.getId();
@@ -1036,6 +1042,47 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
      assertNotNull(draftForExistingPage);
      assertNotNull(draftForExistingPage.getId());
      assertTrue(draftForExistingPage.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/".concat(note.getId()))));
+   }
+
+   public void testProcessingNoteImportedContentImages() throws Exception {
+
+     String fileName = "pexels-nout-gons-80280-378570(1).png";
+     File file = new File(System.getProperty("java.io.tmpdir") + File.separator + fileName);
+     file.createNewFile();
+     this.bindMockedUploadService();
+     String imageSrcTagSuffix = "src=\"/portal/rest/v1/social/attachments/";
+     //
+     Page note = new Page();
+     note.setTitle("imported note title");
+     note.setContent("content include imported image matcher <img src=\"//-" + fileName + "-//\" >");
+     Identity root = new Identity("root");
+     startSessionAs("root");
+     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "classic");
+     note = noteService.createNote(portalWiki, "Home",note ,root);
+     //
+     assertNotNull(note);
+     assertNotNull(note.getId());
+     assertTrue(note.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     file.delete();
+
+     String file1Name = "importedImage.png";
+     File file1 = new File(System.getProperty("java.io.tmpdir") + File.separator + file1Name);
+     file1.createNewFile();
+     //
+     note.setContent(note.getContent().concat("<img src=\"//-" + file1Name + "-//\" >"));
+     note = noteService.updateNote(note);
+     //
+     assertNotNull(note);
+     assertNotNull(note.getId());
+     assertTrue(note.getContent().contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     
+     String content = note.getContent();
+     // remove the first image src url
+     content = content.substring(content.indexOf(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     // assert that the note content contains the second image src url
+     assertTrue(content.contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
+     
+     file1.delete();
    }
 
  }

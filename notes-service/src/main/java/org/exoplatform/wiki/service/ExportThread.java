@@ -51,6 +51,8 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
+import org.exoplatform.wiki.utils.Utils;
 import org.springframework.util.MimeTypeUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -507,7 +509,7 @@ import io.meeds.notes.model.NotePageProperties;
   }
 
   /**
-   * Process images by creting images found in the content
+   * Process images by creating images found in the content
    *
    * @param note
    * @return content
@@ -534,6 +536,32 @@ import io.meeds.notes.model.NotePageProperties;
         break;
       }
     }
+
+    List<String> contentImageIds = Utils.getContentImagesIds(content, note.getAttachmentObjectType(), note.getId());
+    if (!contentImageIds.isEmpty()) {
+      String noteAttachmentRestUrl = new StringBuilder("/portal/rest/v1/social/attachments/")
+              .append(note.getAttachmentObjectType())
+              .append("/")
+              .append(note.getId())
+              .append("/")
+              .toString();
+     contentImageIds.forEach(fileId -> {
+      try {
+        FileItem imageFile = fileService.getFile(Long.parseLong(fileId));
+        if (imageFile != null && imageFile.getFileInfo() != null) {
+          FileInfo fileInfo = imageFile.getFileInfo();
+          String extension = "." + MimeTypeUtils.parseMimeType(fileInfo.getMimetype()).getSubtype();
+          String filePath = System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + fileId + extension;
+          File file = new File(filePath);
+          FileUtils.copyInputStreamToFile(imageFile.getAsStream(), file);
+          urlToReplaces.put(noteAttachmentRestUrl.concat(fileId), IMAGE_URL_REPLACEMENT_PREFIX.concat(file.getName()).concat(IMAGE_URL_REPLACEMENT_SUFFIX));
+        }
+      } catch (Exception exception) {
+        log.error("Error when processing note content image", exception);
+      }
+     });
+    }
+
     if (!urlToReplaces.isEmpty()) {
       content = replaceUrl(note.getContent(), urlToReplaces);
     }

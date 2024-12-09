@@ -43,7 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.social.attachment.AttachmentService;
@@ -129,6 +128,13 @@ import lombok.SneakyThrows;
 
   private static final String                             FILE_NAME_SPACE                        = "wiki";
 
+  private static final String                             IMAGE_URL_REPLACEMENT_PREFIX           = "//-";
+
+  private static final String                             IMAGE_URL_REPLACEMENT_SUFFIX           = "-//";
+
+  private static final Pattern                            IMAGES_IMPORT_PATTERN                  =
+                                                                                Pattern.compile("src=\"//-(.*?)-//\"");
+
   private static final Log                                log                                    =
                                                               ExoLogger.getLogger(NoteServiceImpl.class);
 
@@ -184,8 +190,6 @@ import lombok.SneakyThrows;
 
   private final AttachmentService                          attachmentService;
 
-  private final HTMLUploadImageProcessor                  htmlUploadImageProcessor;
-
   public NoteServiceImpl(DataStorage dataStorage,
                          CacheService cacheService,
                          WikiService wikiService,
@@ -211,38 +215,7 @@ import lombok.SneakyThrows;
     this.metadataService = metadataService;
     this.imageThumbnailService = imageThumbnailService;
     this.attachmentService = attachmentService;
-    this.htmlUploadImageProcessor = null;
   }
-
-  public NoteServiceImpl(DataStorage dataStorage,
-                         CacheService cacheService,
-                         WikiService wikiService,
-                         IdentityManager identityManager,
-                         SpaceService spaceService,
-                         CMSService cmsService,
-                         ListenerService listenerService,
-                         FileService fileService,
-                         UploadService uploadService,
-                         MetadataService metadataService,
-                         ImageThumbnailService imageThumbnailService,
-                         AttachmentService attachmentService,
-                         HTMLUploadImageProcessor htmlUploadImageProcessor) {
-    this.dataStorage = dataStorage;
-    this.wikiService = wikiService;
-    this.identityManager = identityManager;
-    this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
-    this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
-    this.spaceService = spaceService;
-    this.listenerService = listenerService;
-    this.cmsService = cmsService;
-    this.fileService = fileService;
-    this.uploadService = uploadService;
-    this.metadataService = metadataService;
-    this.imageThumbnailService = imageThumbnailService;
-    this.attachmentService = attachmentService;
-    this.htmlUploadImageProcessor = htmlUploadImageProcessor;
-  }
-  
   /**
    * {@inheritDoc}
    */
@@ -350,10 +323,7 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
-                                                                                IllegalAccessException,
-                                                                                EntityNotFoundException,
-                                                                                Exception {
+  public Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws Exception {
     Page existingNote = getNoteById(note.getId());
     if (existingNote == null) {
       throw new EntityNotFoundException("Note to update not found");
@@ -1334,9 +1304,7 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws WikiException,
-          IllegalAccessException,
-          IOException, Exception {
+  public void importNotes(List<String> files, Page parent, String conflict, Identity userIdentity) throws Exception {
 
     Map<String, String> featuredImages = new HashMap<>();
     String notesFilePath = "";
@@ -1996,28 +1964,16 @@ import lombok.SneakyThrows;
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
-                                                                              wiki.getOwner(),
-                                                                              imagesSubLocationPath);
-        note.setContent(processedContent);
         note_ = createNote(wiki, parent_.getName(), note, userIdentity, false);
         targetNote = note_;
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
-                                                                                  wiki.getOwner(),
-                                                                                  imagesSubLocationPath);
-            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity, false);
             targetNote = note_;
           }
           if (conflict.equals("duplicate")) {
-            String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
-                                                                                  wiki.getOwner(),
-                                                                                  imagesSubLocationPath);
-            note.setContent(processedContent);
             note_ = createNote(wiki, parent_.getName(), note, userIdentity);
             targetNote = note_;
           }
@@ -2025,10 +1981,6 @@ import lombok.SneakyThrows;
             if (!note_2.getTitle().equals(note.getTitle()) || !note_2.getContent().equals(note.getContent())
                 || !Objects.equals(note_2.getProperties(), note.getProperties())) {
               note_2.setTitle(note.getTitle());
-              String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
-                                                                                    wiki.getOwner(),
-                                                                                    imagesSubLocationPath);
-              note_2.setContent(processedContent);
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
               createVersionOfNote(note_2, userIdentity.getUserId());
               targetNote = note_2;
@@ -2041,11 +1993,7 @@ import lombok.SneakyThrows;
           && (conflict.equals("update") || conflict.equals("overwrite") || conflict.equals("replaceAll"))) {
         Page note_1 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
         if (!note.getContent().equals(note_1.getContent()) || !Objects.equals(note_1.getProperties(), note.getProperties())) {
-          String processedContent = htmlUploadImageProcessor.processSpaceImages(note.getContent(),
-                                                                                wiki.getOwner(),
-                                                                                imagesSubLocationPath);
-          note.setContent(processedContent);
-          note_1.setContent(processedContent);
+          note_1.setContent(note.getContent());
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
           createVersionOfNote(note_1, userIdentity.getUserId());
           targetNote = note_1;
@@ -2381,11 +2329,24 @@ import lombok.SneakyThrows;
   }
 
   private Page processImagesOnNoteCreation(Page note, String draftId, long userIdentityId) throws WikiException {
-    String sourceObjectType = WikiDraftPageAttachmentPlugin.OBJECT_TYPE;
-    attachmentService.moveAttachments(sourceObjectType, draftId, note.getAttachmentObjectType(), note.getId(), null, userIdentityId);
-    String newContent = note.getContent()
-                                   .replaceAll("/attachments/" + sourceObjectType + "/" + draftId,
-                                               "/attachments/" + note.getAttachmentObjectType() + "/" + note.getId());
+    String newContent = note.getContent();
+    if (StringUtils.isNotEmpty(draftId) && !draftId.equals("null")) {
+      String sourceObjectType = WikiDraftPageAttachmentPlugin.OBJECT_TYPE;
+      attachmentService.moveAttachments(sourceObjectType,
+                                        draftId,
+                                        note.getAttachmentObjectType(),
+                                        note.getId(),
+                                        null,
+                                        userIdentityId);
+      newContent = note.getContent()
+                       .replaceAll("/attachments/" + sourceObjectType + "/" + draftId,
+                                   "/attachments/" + note.getAttachmentObjectType() + "/" + note.getId());
+    }
+
+    if (IMAGES_IMPORT_PATTERN.matcher(newContent).find()) {
+      // process imported images
+      newContent = processImportedNoteImages(note, userIdentityId);
+    }
     if (!newContent.equals(note.getContent())) {
       return updateNoteContent(note, newContent);
     }
@@ -2425,17 +2386,28 @@ import lombok.SneakyThrows;
   }
 
   private String updateNoteContentImages(Page note) {
+    String processedContent = note.getContent();
     if (note.getContent().contains("cke_upload_id=")) {
-      long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser()).getId());
-      return saveUploadedContentImages(note.getContent(), note.getAttachmentObjectType(), note.getId(), userIdentityId);
+      processedContent = saveUploadedContentImages(note.getContent(),
+                                                   note.getAttachmentObjectType(),
+                                                   note.getId(),
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                                                 .getId()));
     }
-    return note.getContent();
+
+    if (IMAGES_IMPORT_PATTERN.matcher(processedContent).find()) {
+      // process imported images
+      processedContent = processImportedNoteImages(note,
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                                                 .getId()));
+    }
+    return processedContent;
   }
 
   private void updateVersionContentImages(PageVersion pageVersion) throws WikiException {
-    List<String> fileIds = getContentImagesIds(pageVersion.getContent(),
-                                               pageVersion.getAttachmentObjectType(),
-                                               pageVersion.getParentPageId());
+    List<String> fileIds = Utils.getContentImagesIds(pageVersion.getContent(),
+                                                     pageVersion.getAttachmentObjectType(),
+                                                     pageVersion.getParentPageId());
     List<String> existingFiles = attachmentService.getAttachmentFileIds(pageVersion.getAttachmentObjectType(),
                                                                         pageVersion.getParentPageId());
     List<String> removedFiles = existingFiles.stream().filter(item -> !fileIds.contains(item)).toList();
@@ -2453,25 +2425,55 @@ import lombok.SneakyThrows;
                                                                       pageVersion.getParentPageId(),
                                                                       fileId));
   }
-  private List<String> getContentImagesIds(String content, String objectType, String objectId) {
-    String existingIdRegex = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/([^\"]+)\"", objectType, objectId);
-    Pattern existingPattern = Pattern.compile(existingIdRegex);
-    Matcher existingMatcher = existingPattern.matcher(content);
-
-    List<String> existingFileIds = new ArrayList<>();
-    while (existingMatcher.find()) {
-      String fileId = existingMatcher.group(1);
-      existingFileIds.add(fileId);
-    }
-    return existingFileIds;
-  }
-
+  
   private DraftPage updateDraftPageContent(long draftId, String content) throws WikiException {
     return dataStorage.updateDraftContent(draftId, content);
   }
 
   private Page updateNoteContent(Page note, String content) throws WikiException {
     return dataStorage.updatePageContent(note, content);
+  }
+
+  private String processImportedNoteImages(Page note, long userIdentityId) {
+    String processedContent = note.getContent();
+    Matcher matcher = IMAGES_IMPORT_PATTERN.matcher(processedContent);
+    while (matcher.find()) {
+      String fileName = processedContent.split("src=\"//-")[1].split("-//")[0];
+      File file = new File(System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + fileName);
+      try (InputStream inputStream = new FileInputStream(file)) {
+        String mimeType = Files.probeContentType(file.toPath());
+        FileItem fileItem = new FileItem(0L,
+                                         fileName,
+                                         mimeType,
+                                         "attachment",
+                                         inputStream.available(),
+                                         new Date(),
+                                         null,
+                                         false,
+                                         inputStream);
+        fileItem = fileService.writeFile(fileItem);
+        if (fileItem.getFileInfo().getId() != null) {
+          attachmentService.createAttachment(String.valueOf(fileItem.getFileInfo().getId()),
+                                             note.getAttachmentObjectType(),
+                                             note.getId(),
+                                             null,
+                                             userIdentityId,
+                                             new HashMap<>());
+          String urlToReplace = IMAGE_URL_REPLACEMENT_PREFIX + fileName + IMAGE_URL_REPLACEMENT_SUFFIX;
+          String newImageUrl = new StringBuilder("/portal/rest/v1/social/attachments/").append(note.getAttachmentObjectType())
+                                                                                       .append("/")
+                                                                                       .append(note.getId())
+                                                                                       .append("/")
+                                                                                       .append(fileItem.getFileInfo().getId())
+                                                                                       .toString();
+          processedContent = processedContent.replace(urlToReplace, newImageUrl);
+
+        }
+      } catch (Exception exception) {
+        log.error("Error while processing note images");
+      }
+    }
+    return processedContent;
   }
 
  }
