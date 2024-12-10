@@ -38,7 +38,7 @@
 
           input.onchange = function () {
             const file = input.files[0];
-            if (file) {
+            if (file && isSupportedType(file.type)) {
               handleOnchangeFileUpload(file).then(() => {
                 document.dispatchEvent(new CustomEvent('notes-editor-upload-done'));
                 editor.fire('change');
@@ -48,6 +48,13 @@
         }
       });
 
+      function isSupportedType (type) {
+        try {
+          return CKEDITOR.fileTools.isTypeSupported( { type: type }, /image\/(gif|jpeg|png|jpg)/ );
+        } catch (error) {
+          return false;
+        }
+      }
       function moveSelectionToDropPosition(editor, dropEvt) {
         const $evt = dropEvt,
           range = editor.createRange();
@@ -56,6 +63,11 @@
         if (document.caretRangeFromPoint) {
           $range = editor.document.$.caretRangeFromPoint($evt.clientX, $evt.clientY);
           range.setStart(CKEDITOR.dom.node($range.startContainer), $range.startOffset);
+          range.collapse(true);
+        }
+        else if (document.caretPositionFromPoint) {
+          $range = document.caretPositionFromPoint($evt.clientX, $evt.clientY);
+          range.setStart(CKEDITOR.dom.node($range.offsetNode), $range.offset);
           range.collapse(true);
         }
         // FF.
@@ -70,6 +82,16 @@
         const iframeWin = window.document.getElementsByTagName('iframe')[0].contentWindow;
         iframeWin.addEventListener('drop',function(event){
           if (event.dataTransfer.getData('cke/widget-id')){
+            const sourceWidget = editor.widgets.instances[event.dataTransfer.getData('cke/widget-id')];
+            const dropedElement = sourceWidget?.getClipboardHtml();
+            if (dropedElement) {
+              const range = editor.getSelection().getRanges()[0];
+              moveSelectionToDropPosition(editor, event);
+              editor.editable().extractHtmlFromRange(range);
+              editor.insertHtml(dropedElement);
+              editor.widgets.destroy(sourceWidget, true);
+              event.preventDefault();
+            }
             return;
           }
           event.preventDefault();
@@ -80,8 +102,10 @@
             for (let index = 0; index < files.length; index++) {
               const isLast = index === files.length - 1;
               const file = files[index];
-              // eslint-disable-next-line
-              await handleFileUpload(file, !isLast);
+              if (isSupportedType(file?.type)) {
+                // eslint-disable-next-line
+                await handleFileUpload(file, !isLast);
+              }
             }
           };
           if (files.length > 0) {
@@ -230,8 +254,11 @@
           for (let index = 0; index < files.length; index++) {
             const isLast = index === files.length - 1;
             const file = files[index];
-            // eslint-disable-next-line
-            await handleFileUpload(file, !isLast);
+            if (isSupportedType(file?.type)) {
+              // eslint-disable-next-line
+              await handleFileUpload(file, !isLast);
+            }
+
           }
         };
         if (files.length > 0) {
