@@ -58,6 +58,11 @@
           range.setStart(CKEDITOR.dom.node($range.startContainer), $range.startOffset);
           range.collapse(true);
         }
+        else if (document.caretPositionFromPoint) {
+          $range = document.caretPositionFromPoint($evt.clientX, $evt.clientY);
+          range.setStart(CKEDITOR.dom.node($range.offsetNode), $range.offset);
+          range.collapse(true);
+        }
         // FF.
         else if ($evt.rangeParent) {
           range.setStart(CKEDITOR.dom.node($evt.rangeParent), $evt.rangeOffset);
@@ -70,6 +75,16 @@
         const iframeWin = window.document.getElementsByTagName('iframe')[0].contentWindow;
         iframeWin.addEventListener('drop',function(event){
           if (event.dataTransfer.getData('cke/widget-id')){
+            const sourceWidget = editor.widgets.instances[event.dataTransfer.getData('cke/widget-id')];
+            const dropedElement = sourceWidget?.getClipboardHtml();
+            if (dropedElement) {
+              const range = editor.getSelection().getRanges()[0];
+              moveSelectionToDropPosition(editor, event);
+              editor.editable().extractHtmlFromRange(range);
+              editor.insertHtml(dropedElement);
+              editor.widgets.destroy(sourceWidget, true);
+              event.preventDefault();
+            }
             return;
           }
           event.preventDefault();
