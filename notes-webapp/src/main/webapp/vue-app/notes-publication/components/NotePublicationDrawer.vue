@@ -298,6 +298,14 @@ export default {
       }
     }
   },
+  created() {
+    const lang = eXo.env.portal.language;
+    const urls = `/content/i18n/locale.portlet.notes.notesPortlet?lang=${lang}`;
+
+    exoi18n.loadLanguageAsync(lang, urls)
+      .then(() => this.$nextTick())
+      .finally(() => this.loading = false);
+  },
   methods: {
     updateAdvancedSettings(settings) {
       this.advancedSettings = structuredClone(settings);
