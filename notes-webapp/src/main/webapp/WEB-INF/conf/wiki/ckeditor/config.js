@@ -20,15 +20,13 @@ CKEDITOR.editorConfig = function (config) {
   }
   CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
   CKEDITOR.plugins.addExternal('linkBalloon', '/social/js/ckeditorPlugins/linkBalloon/', 'plugin.js');
-  if (eXo.env.portal.insertImageOptionEnabled) {
-    CKEDITOR.plugins.addExternal('insertImage','/notes/javascript/eXo/wiki/ckeditor/plugins/insertImage/','plugin.js');
-  }
+  CKEDITOR.plugins.addExternal('insertImage','/notes/javascript/eXo/wiki/ckeditor/plugins/insertImage/','plugin.js');
 
   const blocksToolbarGroup = [
     'Blockquote',
     'tagSuggester',
     'emoji',
-    `${eXo.env.portal.insertImageOptionEnabled && 'insertImage' || 'selectImage'}`,
+    'insertImage',
     'Table',
     'EmbedSemantic',
     'CodeSnippet',
@@ -74,23 +72,13 @@ CKEDITOR.editorConfig = function (config) {
       items: ['Blockquote']
     },
   ];
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester,${eXo.env.portal.insertImageOptionEnabled && 'image2,insertImage' || ''}`;
+  if (!webPageNote) {
+    mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push('attachFile');
+  }
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog${!webPageNote && ',tagSuggester' || ''},emoji,link,font,justify,widget,${!webPageNote && ',insertOptions' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,suggester,image2,insertImage`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
-    if (!eXo.env.portal.insertImageOptionEnabled) {
-      const ckEditorExtensions = extensionRegistry.loadExtensions('WYSIWYGPlugins', 'image');
-      if (ckEditorExtensions?.length) {
-        const ckEditorExtraPlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.extraPlugin).join(',');
-        const ckEditorRemovePlugins = ckEditorExtensions.map(ckEditorExtension => ckEditorExtension.removePlugin).join(',');
-        if (ckEditorExtraPlugins) {
-          extraPlugins = `${extraPlugins},${ckEditorExtraPlugins}`;
-        }
-        if (ckEditorRemovePlugins) {
-          removePlugins = `${removePlugins},${ckEditorRemovePlugins}`;
-        }
-      }
-    }
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
     if (notesEditorExtensions?.length && this.useExtraPlugins) {
       notesEditorExtensions.forEach(notesEditorExtension => {
