@@ -43,6 +43,8 @@
                 document.dispatchEvent(new CustomEvent('notes-editor-upload-done'));
                 editor.fire('change');
               });
+            } else {
+              displayImageNotSupportedAlert();
             }
           };
         }
@@ -54,6 +56,12 @@
         } catch (error) {
           return false;
         }
+      }
+      function displayImageNotSupportedAlert() {
+        document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
+          alertType: 'error',
+          alertMessage: editor.lang.insertImage.imageNotSupported
+        }}));
       }
       function moveSelectionToDropPosition(editor, dropEvt) {
         const $evt = dropEvt,
@@ -95,8 +103,7 @@
             return;
           }
           event.preventDefault();
-          let files = Array.from(event.dataTransfer.files);
-          files = files.filter((file) => file.type.startsWith('image/'));
+          const files = Array.from(event.dataTransfer.files);
           const dropSequentially = async () => {
             document.dispatchEvent(new CustomEvent('notes-editor-upload-progress'));
             for (let index = 0; index < files.length; index++) {
@@ -105,6 +112,8 @@
               if (isSupportedType(file?.type)) {
                 // eslint-disable-next-line
                 await handleFileUpload(file, !isLast);
+              } else {
+                displayImageNotSupportedAlert();
               }
             }
           };
@@ -258,7 +267,6 @@
               // eslint-disable-next-line
               await handleFileUpload(file, !isLast);
             }
-
           }
         };
         if (files.length > 0) {
