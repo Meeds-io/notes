@@ -28,8 +28,6 @@
             <properties-param>
                 <name>NoteFeatureProperties</name>
                 <description>Note Feature enablement flag</description>
-                <property name="exo.feature.insertImage.enabled"
-                          value="${exo.feature.insertImage.enabled:false}"/>
                 <property name="exo.feature.notePublication.enabled"
                           value="${exo.feature.notePublication.enabled:false}"/>
             </properties-param>

@@ -7,5 +7,4 @@
 
 <script type="text/javascript" id="NoteHeadScripts">
     eXo.env.portal.notePublicationEnabled = <%=featureService.isFeatureActiveForUser("notePublication", userName)%>;
-    eXo.env.portal.insertImageOptionEnabled = <%=featureService.isFeatureActiveForUser("insertImage", userName)%>;
 </script>
