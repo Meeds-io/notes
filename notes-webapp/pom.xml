@@ -41,16 +41,6 @@
         <artifactId>frontend-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <configuration>
-          <!--
-            Don't include libraries into Web Archives, except webjars
-          -->
-          <packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
           <execution>
@@ -83,6 +73,43 @@
                 </resource>
               </resources>
               <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+          <execution>
+            <id>c-copy-resources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/src/main/webapp/skin/css/toc</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/webapp/javascript/eXo/wiki/ckeditor/plugins</directory>
+                  <includes>
+                    <include>toc/*.css</include>
+                  </includes>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/src/main/webapp/skin/css/toc</source>
+              </sources>
             </configuration>
           </execution>
         </executions>
@@ -139,6 +166,16 @@
               </goals>
             </execution>
           </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <!--
+            Don't include libraries into Web Archives, except webjars
+          -->
+          <packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>
+        </configuration>
       </plugin>
     </plugins>
   </build>

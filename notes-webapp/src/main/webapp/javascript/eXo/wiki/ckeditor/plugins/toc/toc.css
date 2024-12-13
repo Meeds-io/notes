@@ -39,8 +39,7 @@
 }
 
 .navigation-img-wrapper .cke_widget_selectImage {
-	margin-bottom: 0!important;
-	margin-right: 4px !important;
+	margin: 0 0 0 10px !important;
 }
 
 #remove-treeview {
