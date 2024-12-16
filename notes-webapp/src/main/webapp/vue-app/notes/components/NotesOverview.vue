@@ -685,6 +685,8 @@ export default {
       noteArticle.published = publicationSettings?.publish;
       noteArticle.targets = publicationSettings?.selectedTargets;
       noteArticle.audience = publicationSettings?.selectedAudience;
+      noteArticle.isHomeDefaultContent = this.isHomeNoteDefaultContent;
+      noteArticle.hasChildren = this.hasChildren;
       this.isPublishing = true;
       if (note) {
         this.$notesService.updateNoteById(note).then(() => {

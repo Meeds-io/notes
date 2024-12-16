@@ -247,6 +247,7 @@ export default {
     instanceReady() {
       if (this.instanceReady) {
         this.$emit('editor-ready', this.editor);
+        this.bindNavigationRemoveListener();
       }
     }
   },
@@ -488,20 +489,9 @@ export default {
 
             const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
-              treeviewParentWrapper.contentEditable='false';
+              treeviewParentWrapper.contentEditable = 'false';
             }
 
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if ( removeTreeviewBtn ) {
-              evt.editor.editable().attachListener( removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  treeviewParentWrapper.remove();
-                  self.noteObject.content = evt.editor.getData();
-                }
-                self.setFocus();
-              });
-            }
             window.setTimeout(() => self.setFocus(), 50);
             self.$root.$applicationLoaded();
             self.instanceReady = true;
@@ -627,6 +617,20 @@ export default {
       component.typingTimer = setTimeout(function () {
         component.isUserTyping = false;
       }, 1000);
+    },
+    bindNavigationRemoveListener() {
+      const removeTreeviewBtn = this.editor.document.getById('remove-treeview');
+      if (removeTreeviewBtn) {
+        const self = this;
+        this.editor.editable().attachListener(removeTreeviewBtn, 'click', function () {
+          const treeviewParentWrapper = self.editor.document.getById('note-children-container');
+          if (treeviewParentWrapper) {
+            treeviewParentWrapper.remove();
+            self.noteObject.content = self.editor.getData();
+          }
+          self.setFocus();
+        });
+      }
     }
   }
 };

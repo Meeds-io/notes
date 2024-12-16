@@ -38,9 +38,8 @@
 	cursor: default;
 }
 
-.navigation-img-wrapper .cke_widget_selectImage {
-	margin-bottom: 0!important;
-	margin-right: 4px !important;
+.navigation-img-wrapper .cke_widget_image {
+	margin: 0 0 0 10px !important;
 }
 
 #remove-treeview {
@@ -57,7 +56,7 @@
     display: none;
 }
 
-.cke_widget_wrapper.cke_widget_inline.cke_widget_selectImage.cke_image_nocaption #remove-treeview {
+.cke_widget_wrapper.cke_widget_inline.cke_widget_image.cke_image_nocaption #remove-treeview {
 	top: -55px!important;
     right: -95px!important;
 
