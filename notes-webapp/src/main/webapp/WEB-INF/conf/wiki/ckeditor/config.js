@@ -112,6 +112,6 @@ CKEDITOR.editorConfig = function (config) {
   ];
 
   config.autoGrow_minHeight = 500;
-  config.height = 'auto'
+  config.height = 'auto';
   config.format_tags = 'p;h1;h2;h3';
 };
