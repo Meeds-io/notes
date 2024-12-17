@@ -90,6 +90,7 @@ export default {
       initialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
+      updatingProperties: null,
       enablePostKeys: 0,
       isPublishing: false,
       contentImageUploadProgress: false
