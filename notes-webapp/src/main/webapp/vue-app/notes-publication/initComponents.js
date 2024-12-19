@@ -6,6 +6,8 @@ import NotePublicationTargetList from './components/publish-option/NotePublicati
 import NoteScheduleOption from './components/schedule-option/NoteScheduleOption.vue';
 import NotePublicationAdvancedOption from './components/advanced-option/NotePublicationAdvancedOption.vue';
 
+import * as notesService from '../../javascript/eXo/wiki/notesService.js';
+
 const components = {
   'note-publication-drawer': NotePublicationDrawer,
   'note-metadata-properties-form': NoteMetadataPropertiesForm,
@@ -18,4 +20,11 @@ const components = {
 
 for (const key in components) {
   Vue.component(key, components[key]);
+}
+
+
+if (!Vue.prototype.$notesService) {
+  window.Object.defineProperty(Vue.prototype, '$notesService', {
+    value: notesService,
+  });
 }

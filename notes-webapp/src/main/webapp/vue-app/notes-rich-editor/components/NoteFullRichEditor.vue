@@ -282,9 +282,6 @@ export default {
     isTranslation() {
       return !!this.noteObject?.lang;
     },
-    newPublicationDrawerEnabled() {
-      return eXo?.env?.portal?.newPublicationDrawerEnabled;
-    },
     isContentImagesUploadProgress() {
       return this.contentImageUploadProgress;
     }
@@ -406,15 +403,14 @@ export default {
       }
     },
     postNote() {
-      if (this.newPublicationDrawerEnabled && this.publicationParams
-          && !this.isTranslation && !this.editMode) {
+      if (this.publicationParams && !this.isTranslation && !this.editMode) {
         this.openPublicationDrawer(this.noteObject);
         return;
       }
       this.postAndPublishNote();
     },
     postAndPublishNote(publicationSettings, note) {
-      if (this.newPublicationDrawerEnabled && this.publicationParams) {
+      if (this.publicationParams) {
         this.noteObject = note;
         this.updateData();
       }

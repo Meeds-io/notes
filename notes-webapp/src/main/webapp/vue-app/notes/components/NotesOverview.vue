@@ -315,7 +315,6 @@
       :has-featured-image="hasFeaturedImage" />
     <note-publication-target-drawer />
     <note-publication-drawer
-      v-if="newPublicationDrawerEnabled"
       ref="publicationDrawer"
       :has-featured-image="hasFeaturedImage"
       :is-publishing="isPublishing"
@@ -434,9 +433,6 @@ export default {
     }
   },
   computed: {
-    newPublicationDrawerEnabled() {
-      return eXo?.env?.portal?.newPublicationDrawerEnabled;
-    },
     extensionParams() {
       return {
         entityId: this.entityId,
