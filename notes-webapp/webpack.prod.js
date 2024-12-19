@@ -22,6 +22,7 @@ const config = {
     notesNotificationExtension: './src/main/webapp/vue-app/notification-extensions/main.js',
     notesPublication: './src/main/webapp/vue-app/notes-publication/main.js',
     notesTreeview: './src/main/webapp/vue-app/notes-treeview/main.js',
+    generalSettingsTermsExtension: './src/main/webapp/vue-app/general-settings-extension/main.js'
   },
   output: {
     publicPath: '',
