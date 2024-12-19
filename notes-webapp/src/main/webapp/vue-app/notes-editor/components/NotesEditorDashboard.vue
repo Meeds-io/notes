@@ -233,6 +233,12 @@ export default {
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
+    if (urlParams.has('owner')) {
+      this.note.wikiOwner = urlParams.get('owner');
+    }
+    if (urlParams.has('type')) {
+      this.note.wikiType = urlParams.get('type');
+    }
     this.displayFormTitle(urlParams);
     this.$root.$on('show-alert', this.displayMessage);
     this.$root.$on('display-treeview-items', filter => {
