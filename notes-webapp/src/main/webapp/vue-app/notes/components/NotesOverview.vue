@@ -433,9 +433,6 @@ export default {
     }
   },
   computed: {
-    newPublicationDrawerEnabled() {
-      return eXo?.env?.portal?.newPublicationDrawerEnabled;
-    },
     extensionParams() {
       return {
         entityId: this.entityId,

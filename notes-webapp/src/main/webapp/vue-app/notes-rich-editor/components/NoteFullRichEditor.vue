@@ -294,9 +294,6 @@ export default {
     },
     isTranslation() {
       return !!this.noteObject?.lang;
-    },
-    newPublicationDrawerEnabled() {
-      return eXo?.env?.portal?.newPublicationDrawerEnabled;
     }
   },
   created() {
