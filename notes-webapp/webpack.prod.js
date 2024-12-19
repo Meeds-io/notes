@@ -19,7 +19,8 @@ const config = {
     engagementCenterExtensions: './src/main/webapp/vue-app/engagementCenterExtensions/extensions.js',
     connectorEventExtensions: './src/main/webapp/vue-app/connectorEventExtensions/extensions.js',
     notePageView: './src/main/webapp/vue-app/note-page-view/main.js',
-    notesNotificationExtension: './src/main/webapp/vue-app/notification-extensions/main.js'
+    notesNotificationExtension: './src/main/webapp/vue-app/notification-extensions/main.js',
+    generalSettingsTermsExtension: './src/main/webapp/vue-app/general-settings-extension/main.js'
   },
   output: {
     publicPath: '',
