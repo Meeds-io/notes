@@ -5,6 +5,7 @@ import NotePublicationTargetDrawer from './components/publish-option/NotePublica
 import NotePublicationTargetList from './components/publish-option/NotePublicationTargetList.vue';
 import NoteScheduleOption from './components/schedule-option/NoteScheduleOption.vue';
 import NotePublicationAdvancedOption from './components/advanced-option/NotePublicationAdvancedOption.vue';
+import NotePublicationTargetListItem from './components/publish-option/NotePublicationTargetListItem.vue';
 
 import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 
@@ -15,7 +16,8 @@ const components = {
   'note-publication-target-drawer': NotePublicationTargetDrawer,
   'note-publication-target-list': NotePublicationTargetList,
   'note-schedule-option': NoteScheduleOption,
-  'note-publication-advanced-option': NotePublicationAdvancedOption
+  'note-publication-advanced-option': NotePublicationAdvancedOption,
+  'note-publication-target-list-item': NotePublicationTargetListItem
 };
 
 for (const key in components) {

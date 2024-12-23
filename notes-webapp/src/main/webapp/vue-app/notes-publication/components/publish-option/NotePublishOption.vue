@@ -221,9 +221,6 @@ export default {
     },
     isAllUsersAudience() {
       return this.selectedAudience?.value === 'all';
-    },
-    selectedTargetsValues() {
-      return this.cleanSelectedTargets?.map(target => target.name);
     }
   },
   created() {
@@ -251,7 +248,7 @@ export default {
     emitUpdatedSettings() {
       this.$emit('updated', {
         publish: this.publish,
-        selectedTargets: this.selectedTargetsValues,
+        selectedTargets: this.cleanSelectedTargets,
         selectedAudience: this.selectedAudience?.value
       });
     },
