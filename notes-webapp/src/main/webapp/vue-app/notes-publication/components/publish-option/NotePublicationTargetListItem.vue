@@ -16,49 +16,49 @@
  along with this program; if not, write to the Free Software Foundation,
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
-
 <template>
-  <div>
-    <div
-      v-for="target in targetList"
-      :key="target.name"
-      class="d-flex align-center">
-      <note-publication-target-list-item
-        :target="target" />
-      <v-btn
-        :aria-label="$t('notes.publication.remove.selected.target.label')"
-        class="btn flex-column no-border ms-auto error-color"
-        width="28"
-        min-width="28"
-        height="28"
-        icon
-        @click="removeSelectedTarget(target.name)">
-        <v-icon
-          class="error-color"
-          size="20">
-          fas fa-times
-        </v-icon>
-      </v-btn>
-    </div>
-  </div>
+  <v-tooltip bottom>
+    <template #activator="{ on, attrs }">
+      <p
+        v-on="on"
+        v-bind="attrs"
+        class="text-truncate mb-0 flex-grow-1 text-start">
+        <span
+          class="font-weight-bold">
+          {{ target.label }}:
+        </span>
+        {{ target.description }}
+      </p>
+    </template>
+    <p class="caption mb-0">
+      {{ targetTooTip }}
+    </p>
+  </v-tooltip>
 </template>
 
 <script>
 export default {
+  data() {
+    return {
+      lang: eXo.env.portal.language
+    };
+  },
   props: {
-    targets: {
-      type: Array,
-      default: () => []
+    target: {
+      type: Object,
+      default: null
     }
   },
   computed: {
-    targetList() {
-      return this.targets.filter(target => !!target.name);
-    }
-  },
-  methods: {
-    removeSelectedTarget(targetName) {
-      this.$emit('unselect', targetName);
+    formattedPublishedDate() {
+      return new Date(this.target?.publishedDate).toLocaleDateString(this.lang);
+    },
+    hasPublishedDate() {
+      return !!this.target?.publishedDate;
+    },
+    targetTooTip() {
+      return this.hasPublishedDate && `${this.formattedPublishedDate} - ${this.target.tooltipInfo}`
+                                   || this.target.tooltipInfo;
     }
   }
 };
