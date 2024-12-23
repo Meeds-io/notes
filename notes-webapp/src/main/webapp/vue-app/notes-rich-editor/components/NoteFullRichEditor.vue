@@ -66,7 +66,6 @@
                 :placeholder="bodyPlaceholder"
                 :name="editorBodyInputRef"
                 class="notesFormInput">
-
             </textarea>
             </div>
           </div>
@@ -285,15 +284,6 @@ export default {
     },
     isContentImagesUploadProgress() {
       return this.contentImageUploadProgress;
-    },
-    newPageDraft() {
-      return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
-    },
-    editMode() {
-      return this.noteObject?.id && !this.newPageDraft;
-    },
-    isTranslation() {
-      return !!this.noteObject?.lang;
     }
   },
   created() {

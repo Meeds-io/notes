@@ -287,15 +287,6 @@ import lombok.SneakyThrows;
           Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
         }
       }
-      dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
-      PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()), createdPage.getLang());
-      createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
-      if (pageVersion != null && draftPageId != null) {
-        Map<String, String> eventData = new HashMap<>();
-        eventData.put("draftPageId", draftPageId);
-        eventData.put("pageVersionId", pageVersion.getId());
-        Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
-      }
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not found");
@@ -1029,8 +1020,6 @@ import lombok.SneakyThrows;
     note.setLatestVersionId(pageVersionId);
     pageVersion.setAttachmentObjectType(note.getAttachmentObjectType());
     updateVersionContentImages(pageVersion);
-    String pageVersionId = pageVersion.getId();
-    note.setLatestVersionId(pageVersionId);
     if (note.getLang() != null) {
       try {
         NotePageProperties properties = note.getProperties();
@@ -1252,14 +1241,6 @@ import lombok.SneakyThrows;
     }
     newDraftPage.setAttachmentObjectType(draftPage.getAttachmentObjectType());
     newDraftPage = processImagesOnDraftCreation(newDraftPage, Long.parseLong(userIdentity.getId()));
-    //
-    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()), newDraftPage.getLang());
-    if (pageVersion != null) {
-      Map<String, String> eventData = new HashMap<>();
-      eventData.put("pageVersionId", pageVersion.getId());
-      eventData.put("draftForExistingPageId", newDraftPage.getId());
-      Utils.broadcast(listenerService, "note.draft.for.exist.page.created", this, eventData);
-    }
     return newDraftPage;
   }
 

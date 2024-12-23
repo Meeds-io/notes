@@ -37,8 +37,6 @@ public class PagePropertiesEntity implements Serializable {
 
   private boolean             hideAuthor;
 
-  private boolean             hideAuthor;
-
   private boolean             hideReaction;
 
   private boolean             isDraft;

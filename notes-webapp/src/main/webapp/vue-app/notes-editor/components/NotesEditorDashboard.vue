@@ -132,9 +132,7 @@ export default {
       autosaveProcessedFromEditorExtension: false,
       extensionDataUpdated: false,
       wikiDraftObjectType: 'wikiDraft',
-      wikiPageObjectType: 'wikiPage',
-      autosaveProcessedFromEditorExtension: false,
-      extensionDataUpdated: false
+      wikiPageObjectType: 'wikiPage'
     };
   },
   computed: {
