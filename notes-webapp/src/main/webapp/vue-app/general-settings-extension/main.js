@@ -17,6 +17,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
+
+import './services.js';
+
 import TermsAndConditions from './components/TermsAndConditions.vue';
 import TermsAndConditionsDrawer from './components/TermsAndConditionsDrawer.vue';
 
