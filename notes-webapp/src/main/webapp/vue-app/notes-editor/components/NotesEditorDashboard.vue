@@ -323,6 +323,11 @@ export default {
     },
     updateNote(note) {
       const currentDraftId = this.note?.id;
+      const queryPath = window.location.search;
+      const urlParams = new URLSearchParams(queryPath);
+      if (urlParams.has('pageName')) {
+        note.name = urlParams.get('pageName');
+      }
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {
