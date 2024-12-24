@@ -33,25 +33,84 @@
         <div>
           {{ $t('generalSettings.termsAndConditions.description') }}
         </div>
-        <div class="d-flex align-center justify-center mt-4">
-          <v-btn
-            class="btn btn-primary"
-            @click="addTerms">
-            {{ $t('generalSettings.termsAndConditions.create') }}
-          </v-btn>
-        </div>
+        <template v-if="noteId">
+          <v-list-item class="px-0" two-line>
+            <v-list-item-content>
+              <v-list-item-title class="font-weight-bold">
+                {{ $t('generalSettings.termsAndConditions.published') }}
+              </v-list-item-title>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-switch
+                v-model="published"
+                :loading="loading"
+                class="my-auto"
+                hide-details />
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item class="px-0" two-line>
+            <v-list-item-content>
+              <v-list-item-title class="font-weight-bold">
+                {{ $t('generalSettings.termsAndConditions.previewAsUser') }}
+              </v-list-item-title>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-btn
+                icon>
+                <v-icon size="18" class="icon-default-color">fas fa-eye</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item class="px-0" two-line>
+            <v-list-item-content>
+              <v-list-item-title class="font-weight-bold">
+                {{ $t('generalSettings.termsAndConditions.editContent') }}
+              </v-list-item-title>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-btn
+                icon
+                @click="editTerms">
+                <v-icon size="18" class="icon-default-color">fas fa-edit</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+        </template>
+        <template v-else>
+          <div class="d-flex align-center justify-center mt-4">
+            <v-btn
+              class="btn btn-primary"
+              @click="addTerms">
+              {{ $t('generalSettings.termsAndConditions.create') }}
+            </v-btn>
+          </div>
+        </template>
       </v-card>
     </template>
   </exo-drawer>
 </template>
 
 <script>
+
 export default {
   data: () => ({
     drawer: false,
+    note: null,
+    published: false,
+    loading: false,
+    lang: eXo.env.portal.language,
   }),
+  computed: {
+    parentPageId() {
+      return this.note?.parentPageId;
+    },
+    noteId() {
+      return this.note?.id;
+    },
+  },
   created() {
     this.$root.$on('terms-and-conditions-create', this.open);
+    this.retrieveTerms();
   },
   methods: {
     open() {
@@ -60,9 +119,36 @@ export default {
     close() {
       this.$refs.drawer.close();
     },
-    addTerms() {
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?showMaxWindow=true&hideSharedLayout=true&owner=__system&type=terms`, '_blank');
+    retrieveTerms() {
+      return this.$termsAndConditionsService.getTermsAndConditions(this.lang).then(note => {
+        this.note = note;
+      }).finally(() => this.saving = false);
     },
+    addTerms() {
+      this.saving = true;
+      return this.$termsAndConditionsService.saveTermsAndConditions('', this.lang).then(note => {
+        this.note = note;
+        this.editTerms();
+      })
+        .finally(() => this.saving = false);
+    },
+    editTerms() {
+      const formData = new FormData();
+      formData.append('noteId', this.note?.id);
+      formData.append('parentNoteId', this.parentPageId);
+      formData.append('pageName', 'termsAndConditions');
+      if (eXo.env.portal?.spaceGroup) {
+        formData.append('spaceGroupId', eXo.env.portal?.spaceGroup);
+      }
+      formData.append('isDraft', 'false');
+      formData.append('showMaxWindow', 'true');
+      formData.append('hideSharedLayout', 'true');
+      if (this.note?.lang) {
+        formData.append('translation', this.lang);
+      }
+      const urlParams = new URLSearchParams(formData).toString();
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
+    }
   },
 };
 </script>
