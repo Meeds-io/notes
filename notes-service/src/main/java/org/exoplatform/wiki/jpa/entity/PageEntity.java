@@ -19,28 +19,11 @@
 
 package org.exoplatform.wiki.jpa.entity;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Created by The eXo Platform SAS
@@ -60,6 +43,8 @@ import jakarta.persistence.Table;
     @NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC"),
     @NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false"),
 })
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class PageEntity extends BasePageEntity {
 
   @Id
@@ -125,119 +110,10 @@ public class PageEntity extends BasePageEntity {
   @Column(name = "DELETED")
   private boolean deleted;
 
-  public long getId() {
-    return id;
-  }
+  @ElementCollection(fetch = FetchType.EAGER)
+  @MapKeyColumn(name = "NAME")
+  @Column(name = "VALUE")
+  @CollectionTable(name = "WIKI_PAGES_SETTINGS", joinColumns = { @JoinColumn(name = "PAGE_ID") })
+  private Map<String, String> settings;
 
-  public String getOwner() {
-    return owner;
-  }
-
-  public void setOwner(String owner) {
-    this.owner = owner;
-  }
-
-  public String getComment() {
-    return comment;
-  }
-
-  public void setComment(String comment) {
-    this.comment = comment;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public void setUrl(String url) {
-    this.url = url;
-  }
-
-  public boolean isMinorEdit() {
-    return minorEdit;
-  }
-
-  public void setMinorEdit(boolean minorEdit) {
-    this.minorEdit = minorEdit;
-  }
-
-  public String getActivityId() {
-    return activityId;
-  }
-
-  public void setActivityId(String activityId) {
-    this.activityId = activityId;
-  }
-
-  public List<PermissionEntity> getPermissions() {
-    return permissions;
-  }
-
-  public void setPermissions(List<PermissionEntity> permission) {
-    this.permissions = permission;
-  }
-
-  public WikiEntity getWiki() {
-    return wiki;
-  }
-
-  public void setWiki(WikiEntity wiki) {
-    this.wiki = wiki;
-  }
-
-  public PageEntity getParentPage() {
-    return parentPage;
-  }
-
-  public void setParentPage(PageEntity parentPage) {
-    this.parentPage = parentPage;
-  }
-
-  public List<PageVersionEntity> getVersions() {
-    return versions;
-  }
-
-  public void setVersions(List<PageVersionEntity> versions) {
-    this.versions = versions;
-  }
-
-  public List<PageAttachmentEntity> getAttachments() {
-    return attachments;
-  }
-
-  public void setAttachments(List<PageAttachmentEntity> attachments) {
-    this.attachments = attachments;
-  }
-
-  public Set<String> getWatchers() {
-    return watchers;
-  }
-
-  public void setWatchers(Set<String> watchers) {
-    this.watchers = watchers;
-  }
-
-  public List<PageEntity> getRelatedPages() {
-    return relatedPages;
-  }
-
-  public void setRelatedPages(List<PageEntity> relatedPages) {
-    this.relatedPages = relatedPages;
-  }
-
-  public List<PageMoveEntity> getMoves() {
-    return moves;
-  }
-
-  public void setMoves(List<PageMoveEntity> moves) {
-    this.moves = moves;
-  }
-
-  public boolean isDeleted() {
-    return deleted;
-  }
-
-  public void setDeleted(boolean deleted) {
-    this.deleted = deleted;
-  }
 }
