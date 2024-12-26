@@ -94,7 +94,7 @@ public class Page {
 
   private boolean                         hasChild;
 
-  private String                         latestVersionId;
+  private String                          latestVersionId;
 
   private boolean                         isDeleted;
 
@@ -107,6 +107,8 @@ public class Page {
   private NotePageProperties              properties;
 
   private String                          attachmentObjectType;
+
+  private Map<String, String>             settings;
 
   public Page(String name) {
     this.name = name;
