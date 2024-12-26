@@ -60,3 +60,27 @@ export function saveTermsAndConditions(content, lang) {
     }
   });
 }
+
+export function updateTermsAndConditionsSettings(settings, lang) {
+  const payload = {
+    settings: settings || {},
+    lang: lang || '',
+  };
+
+  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/settings`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  }).then((resp) => {
+    if (resp?.ok) {
+      return resp.json();
+    } else if (resp?.status === 401) {
+      throw new Error('User doesn\'t have enough privileges to update settings.');
+    } else {
+      throw new Error('Error updating terms and conditions settings.');
+    }
+  });
+}
