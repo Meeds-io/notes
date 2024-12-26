@@ -147,6 +147,7 @@ public class EntityConverter {
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
       page.setUrl(Utils.getPageUrl(page));
+      page.setSettings(pageEntity.getSettings());
       buildNotePageMetadata(page, page.isDraftPage());
     }
     return page;
@@ -252,6 +253,9 @@ public class EntityConverter {
       pageEntity.setUrl(page.getUrl());
       pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
+      if (page.getSettings() != null) {
+        pageEntity.setSettings(page.getSettings());
+      }
     }
     return pageEntity;
   }
