@@ -19,6 +19,7 @@
 package io.meeds.notes.service;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,9 +34,11 @@ import org.exoplatform.wiki.service.WikiService;
 
 public class TermsAndConditionsService {
 
-  private static final String NOTE_TYPE = "terms";
+  public static final String  ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE = "Error retrieving terms and conditions note";
 
-  private static final String NOTE_NAME = "termsAndConditions";
+  private static final String NOTE_TYPE                                  = "terms";
+
+  private static final String NOTE_NAME                                  = "termsAndConditions";
 
   private final NoteService   noteService;
 
@@ -52,9 +55,27 @@ public class TermsAndConditionsService {
   public Page saveTermsAndConditions(String content, String lang, Identity currentUserAclIdentity) throws IllegalAccessException {
     String username = currentUserAclIdentity.getUserId();
     if (!userACL.isAdministrator(currentUserAclIdentity)) {
-      throw new IllegalAccessException("User doesn't have enough privileges to update terms and conditions page");
+      throw new IllegalAccessException("User doesn't have enough privileges to create terms and conditions page");
     }
     return saveTermsAndConditions(content, lang, username);
+  }
+
+  public Page updateTermsAndConditionsSettings(Map<String, String> settings,
+                                               String lang,
+                                               Identity currentUserAclIdentity) throws IllegalAccessException {
+    if (!userACL.isAdministrator(currentUserAclIdentity)) {
+      throw new IllegalAccessException("User doesn't have enough privileges to update terms and conditions settings");
+    }
+    try {
+      Page page = getTermsAndConditions(lang);
+      if (page != null && !settings.isEmpty()) {
+        page.setSettings(settings);
+        noteService.updateNote(page);
+      }
+      return getTermsAndConditions(lang);
+    } catch (WikiException e) {
+      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
+    }
   }
 
   private Page saveTermsAndConditions(String content, String lang, String username) {
@@ -74,7 +95,7 @@ public class TermsAndConditionsService {
       }
       return getTermsAndConditions(lang);
     } catch (WikiException e) {
-      throw new IllegalStateException("Error retrieving terms and conditions note", e);
+      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
     }
   }
 
@@ -100,7 +121,7 @@ public class TermsAndConditionsService {
       }
       return page;
     } catch (WikiException e) {
-      throw new IllegalStateException("Error retrieving terms and conditions note", e);
+      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
     }
   }
 }

@@ -21,12 +21,7 @@ package io.meeds.notes.rest;
 import java.util.Date;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -37,6 +32,7 @@ import javax.ws.rs.core.Response.Status;
 
 import com.google.javascript.jscomp.jarjar.com.google.common.base.Objects;
 
+import io.meeds.notes.rest.model.TermsAndConditionsSettings;
 import io.meeds.notes.service.TermsAndConditionsService;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
@@ -130,6 +126,38 @@ public class TermsAndConditionsRest implements ResourceContainer {
     } catch (IllegalAccessException e) {
       LOG.warn("User '{}' doesn't have enough privileges to create terms and conditions page", RestUtils.getCurrentUser(), e);
       return Response.status(Status.UNAUTHORIZED).build();
+    }
+    return Response.ok(page).build();
+  }
+
+  @PUT
+  @Path("/settings")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Update terms and conditions settings",
+          description = "Updates the settings for the terms and conditions page",
+          method = "PUT")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "400", description = "Bad Request")
+  })
+  public Response updateTermsAndConditionsSettings(TermsAndConditionsSettings termsAndConditionsSettings) {
+    Page page;
+    try {
+      page = termsAndConditionsService.updateTermsAndConditionsSettings(
+              termsAndConditionsSettings.getSettings(),
+              termsAndConditionsSettings.getLang(),
+              RestUtils.getCurrentUserAclIdentity()
+      );
+    } catch (IllegalAccessException e) {
+      LOG.warn("User '{}' doesn't have enough privileges to update terms and conditions settings",
+              RestUtils.getCurrentUser(), e);
+      return Response.status(Status.UNAUTHORIZED).entity("Unauthorized").build();
+    } catch (Exception e) {
+      LOG.error("Error updating terms and conditions settings", e);
+      return Response.status(Status.BAD_REQUEST).entity("Error updating settings").build();
     }
     return Response.ok(page).build();
   }
