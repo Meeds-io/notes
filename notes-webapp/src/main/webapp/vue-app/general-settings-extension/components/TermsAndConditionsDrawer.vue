@@ -40,12 +40,18 @@
                 {{ $t('generalSettings.termsAndConditions.published') }}
               </v-list-item-title>
             </v-list-item-content>
+            <v-list-item-action v-if="publishedDate">
+              <v-list-item-subtitle v-if="publishedDate">
+                {{ formattedPublishedDate }}
+              </v-list-item-subtitle>
+            </v-list-item-action>
             <v-list-item-action>
               <v-switch
                 v-model="published"
                 :loading="loading"
                 class="my-auto"
-                hide-details />
+                hide-details
+                @change="updatePublishedSetting" />
             </v-list-item-action>
           </v-list-item>
           <v-list-item class="px-0" two-line>
@@ -97,8 +103,14 @@ export default {
     drawer: false,
     note: null,
     published: false,
+    publishedDate: null,
     loading: false,
     lang: eXo.env.portal.language,
+    dateFormat: {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    },
   }),
   computed: {
     parentPageId() {
@@ -107,10 +119,19 @@ export default {
     noteId() {
       return this.note?.id;
     },
+    formattedPublishedDate() {
+      const date = new Date(this.publishedDate);
+      return new window.Intl.DateTimeFormat(this.lang, this.dateFormat).format(date);
+    },
   },
   created() {
     this.$root.$on('terms-and-conditions-create', this.open);
     this.retrieveTerms();
+  },
+  watch: {
+    published() {
+      console.warn(this.published);
+    },
   },
   methods: {
     open() {
@@ -122,7 +143,13 @@ export default {
     retrieveTerms() {
       return this.$termsAndConditionsService.getTermsAndConditions(this.lang).then(note => {
         this.note = note;
-      }).finally(() => this.saving = false);
+        if (note?.settings) {
+          this.published = note?.settings?.published === 'true' || false;
+          this.publishedDate = note?.settings?.publishedDate
+            ? parseInt(note.settings.publishedDate, 10)
+            : null;
+        }
+      }).finally(() => (this.saving = false));
     },
     addTerms() {
       this.saving = true;
@@ -148,7 +175,14 @@ export default {
       }
       const urlParams = new URLSearchParams(formData).toString();
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
-    }
+    },
+    updatePublishedSetting() {
+      this.loading = true;
+      const settings = { published: this.published,
+        publishedDate: this.published ? Date.now() : null,
+      };
+      this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang).then(this.retrieveTerms).finally(() => this.loading = false);
+    },
   },
 };
 </script>
