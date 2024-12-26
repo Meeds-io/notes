@@ -144,6 +144,11 @@ export default {
     this.$root.$on('terms-and-conditions-create', this.open);
     this.retrieveTerms();
   },
+  watch: {
+    published() {
+      console.warn(this.published);
+    },
+  },
   methods: {
     open() {
       this.$refs.drawer.open();
@@ -204,7 +209,21 @@ export default {
       }
       const urlParams = new URLSearchParams(formData).toString();
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
-    }
+    },
+    updatePublishedSetting() {
+      this.loading = true;
+      const settings = { published: this.published,
+        publishedDate: this.published ? Date.now() : null,
+      };
+      this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
+        .then(() => this.retrieveTerms())
+        .then(() => {
+          if (this.published) {
+            this.$root.$emit('alert-message', this.$t('generalSettings.termsAndConditions.successfullyPublished'), 'success');
+          }
+        })
+        .finally(() => this.loading = false);
+    },
   },
 };
 </script>
