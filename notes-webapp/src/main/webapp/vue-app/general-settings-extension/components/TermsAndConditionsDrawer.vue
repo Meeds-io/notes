@@ -181,7 +181,14 @@ export default {
       const settings = { published: this.published,
         publishedDate: this.published ? Date.now() : null,
       };
-      this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang).then(this.retrieveTerms).finally(() => this.loading = false);
+      this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
+        .then(() => this.retrieveTerms())
+        .then(() => {
+          if (this.published) {
+            this.$root.$emit('alert-message', this.$t('generalSettings.termsAndConditions.successfullyPublished'), 'success');
+          }
+        })
+        .finally(() => this.loading = false);
     },
   },
 };
