@@ -70,6 +70,7 @@ public class TermsAndConditionsService {
       Page page = getTermsAndConditions(lang);
       if (page != null && !settings.isEmpty()) {
         page.setSettings(settings);
+        page.setUpdatedDate(new Date());
         noteService.updateNote(page);
       }
       return getTermsAndConditions(lang);
