@@ -84,3 +84,46 @@ export function updateTermsAndConditionsSettings(settings, lang) {
     }
   });
 }
+
+export function acceptTermsAndConditions(lang) {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  const params = new URLSearchParams(formData).toString();
+
+  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/accept`, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    method: 'POST',
+    credentials: 'include',
+    body: params,
+  }).then((resp) => {
+    if (resp?.ok) {
+      return true;
+    } else {
+      throw new Error('Error accepting terms and conditions.');
+    }
+  });
+}
+
+export function isTermsAcceptedForUser(lang) {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  const urlParams = new URLSearchParams(formData).toString();
+  const params = urlParams.length && `?${decodeURIComponent(urlParams)}` || '';
+
+  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/status${params}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then((resp) => {
+    if (resp?.ok) {
+      return resp.json();
+    } else {
+      throw new Error('Error checking terms and conditions status.');
+    }
+  });
+}
