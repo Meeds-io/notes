@@ -36,7 +36,7 @@
             contain
             eager />
         </div>
-        <div class="d-flex flex-column ms-auto">
+        <div v-if="!alreadyAccepted" class="d-flex flex-column ms-auto">
           <v-checkbox
             v-model="accepted"
             class="mb-2"
@@ -49,6 +49,7 @@
           </v-checkbox>
           <v-btn
             :disabled="!accepted"
+            :loading="loading"
             class="width-fit-content align-self-end"
             color="primary"
             depressed
@@ -66,8 +67,10 @@ export default {
     return {
       dialog: false,
       accepted: false,
+      alreadyAccepted: false,
       page: null,
       lang: eXo.env.portal.language,
+      loading: false
     };
   },
   computed: {
@@ -89,6 +92,7 @@ export default {
   },
   created() {
     this.retrieveTerms();
+    this.isTermsAccepted();
   },
   methods: {
     retrieveTerms() {
@@ -97,7 +101,15 @@ export default {
       });
     },
     accept() {
-      // TO DO
+      this.loading = true;
+      return this.$termsAndConditionsService.acceptTermsAndConditions(this.lang).then(() => {
+        window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}`;
+      });
+    },
+    isTermsAccepted() {
+      return this.$termsAndConditionsService.isTermsAcceptedForUser(this.lang).then((accepted) => {
+        this.alreadyAccepted = accepted;
+      }).finally(() => this.loading = false);
     }
   },
 };

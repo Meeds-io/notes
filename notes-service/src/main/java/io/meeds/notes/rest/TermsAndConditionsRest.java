@@ -136,8 +136,8 @@ public class TermsAndConditionsRest implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "Update terms and conditions settings",
-          description = "Updates the settings for the terms and conditions page",
-          method = "PUT")
+             description = "Updates the settings for the terms and conditions page",
+             method = "PUT")
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -161,5 +161,56 @@ public class TermsAndConditionsRest implements ResourceContainer {
     }
     return Response.ok(page).build();
   }
+
+  @POST
+  @Path("/accept")
+  @RolesAllowed("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Accept terms and conditions",
+             description = "Marks the terms and conditions as accepted for the current user",
+             method = "POST")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Terms accepted successfully"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error")
+  })
+  public Response acceptTermsAndConditions(@Parameter(description = "User language")
+                                           @FormParam("lang")
+                                           String lang) {
+    try {
+      String currentUser = RestUtils.getCurrentUser();
+      termsAndConditionsService.markTermsAsAcceptedForUser(currentUser, lang);
+      return Response.ok().build();
+    } catch (Exception e) {
+      LOG.error("Error accepting terms and conditions for user {}", RestUtils.getCurrentUser(), e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error accepting terms and conditions").build();
+    }
+  }
+
+  @GET
+  @Path("/status")
+  @RolesAllowed("users")
+  @Produces(MediaType.TEXT_PLAIN)
+  @Operation(summary = "Check terms and conditions status for the current user",
+          description = "Check the terms and conditions status for the current user",
+          method = "GET")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error")
+  })
+  public Response isTermsAcceptedForUser(@Parameter(description = "User language")
+                                         @QueryParam("lang")
+                                         String lang) {
+    try {
+      String currentUser = RestUtils.getCurrentUser();
+      boolean accepted = termsAndConditionsService.isTermsAcceptedForUser(currentUser, lang);
+      return Response.ok().entity(String.valueOf(accepted)).type(MediaType.TEXT_PLAIN).build();
+    } catch (Exception e) {
+      LOG.error("Error checking terms and conditions status for user {}", RestUtils.getCurrentUser(), e);
+      return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error checking terms and conditions status").build();
+    }
+  }
+
 
 }
