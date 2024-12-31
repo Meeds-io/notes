@@ -342,7 +342,11 @@ export default {
     },
     savedTargets(targets) {
       return targets?.map(target => {
-        return this.allowedTargets[this.allowedTargets.findIndex(allowedTarget => allowedTarget.name === target)];
+        const targetIndex = this.allowedTargets.findIndex(allowedTarget => allowedTarget.name === target?.name);
+        return {
+          ...this.allowedTargets[targetIndex],
+          publishedDate: target.publishedDate
+        };
       });
     },
     open(noteObject) {
