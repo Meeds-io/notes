@@ -23,6 +23,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
+import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -32,23 +35,35 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
+import static org.exoplatform.commons.api.settings.data.Context.USER;
+
 public class TermsAndConditionsService {
 
-  public static final String  ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE = "Error retrieving terms and conditions note";
+  public static final String   ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE = "Error retrieving terms and conditions note";
 
-  private static final String NOTE_TYPE                                  = "terms";
+  private static final String  NOTE_TYPE                                  = "terms";
 
-  private static final String NOTE_NAME                                  = "termsAndConditions";
+  private static final String  NOTE_NAME                                  = "termsAndConditions";
 
-  private final NoteService   noteService;
+  public static final Scope    SETTINGS_APP_SCOPE                         = Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
 
-  private final WikiService   noteBookService;
+  public static final String   SETTINGS_KEY                               = "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
 
-  private final UserACL       userACL;
+  private final NoteService    noteService;
 
-  public TermsAndConditionsService(NoteService noteService, WikiService noteBookService, UserACL userACL) {
+  private final WikiService    noteBookService;
+
+  private final SettingService settingService;
+
+  private final UserACL        userACL;
+
+  public TermsAndConditionsService(NoteService noteService,
+                                   WikiService noteBookService,
+                                   SettingService settingService,
+                                   UserACL userACL) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
+    this.settingService = settingService;
     this.userACL = userACL;
   }
 
@@ -79,6 +94,43 @@ public class TermsAndConditionsService {
     }
   }
 
+  public Page getTermsAndConditions(String lang) {
+    try {
+      Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
+      if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
+        Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
+        if (publishedVersion != null) {
+          page.setTitle(publishedVersion.getTitle());
+          page.setContent(publishedVersion.getContent());
+          page.setLang(publishedVersion.getLang());
+          page.setLatestVersionId(publishedVersion.getId());
+        }
+      }
+      return page;
+    } catch (WikiException e) {
+      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
+    }
+  }
+
+  public void markTermsAsAcceptedForUser(String userId, String lang) {
+    Page terms = getTermsAndConditions(lang);
+    if (terms != null) {
+      settingService.set(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY, SettingValue.create(terms.getLatestVersionId()));
+    }
+  }
+
+  public boolean isTermsAcceptedForUser(String userId, String lang) {
+    Page terms = getTermsAndConditions(lang);
+    if (terms != null && terms.getSettings() != null && terms.getSettings().get("published").equals("true")) {
+      SettingValue<?> acceptedVersion = settingService.get(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY);
+      String acceptedVersionValue = acceptedVersion == null
+          || acceptedVersion.getValue() == null ? null : acceptedVersion.getValue().toString();
+
+      return acceptedVersionValue != null && acceptedVersionValue.equals(terms.getLatestVersionId());
+    }
+    return true;
+  }
+
   private Page saveTermsAndConditions(String content, String lang, String username) {
     try {
       Wiki noteBook = getNote();
@@ -106,23 +158,6 @@ public class TermsAndConditionsService {
       return noteBookService.createWiki(NOTE_TYPE, IdentityConstants.SYSTEM);
     } else {
       return noteBook;
-    }
-  }
-
-  public Page getTermsAndConditions(String lang) {
-    try {
-      Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
-      if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
-        Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
-        if (publishedVersion != null) {
-          page.setTitle(publishedVersion.getTitle());
-          page.setContent(publishedVersion.getContent());
-          page.setLang(publishedVersion.getLang());
-        }
-      }
-      return page;
-    } catch (WikiException e) {
-      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
     }
   }
 }
