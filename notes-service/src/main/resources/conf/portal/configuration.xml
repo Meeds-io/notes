@@ -44,6 +44,10 @@
   </component>
 
   <component>
+    <type>io.meeds.notes.service.TermsAndConditionsWebSocketService</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.wiki.service.WikiService</key>
     <type>org.exoplatform.wiki.service.impl.WikiServiceImpl</type>
     <init-params>
