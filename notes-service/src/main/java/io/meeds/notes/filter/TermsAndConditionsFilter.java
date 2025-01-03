@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import io.meeds.notes.service.TermsAndConditionsService;
 import jakarta.servlet.FilterChain;
@@ -30,8 +31,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
+import org.exoplatform.services.resources.LocaleContextInfo;
+import org.exoplatform.services.resources.LocalePolicy;
 import org.exoplatform.web.filter.Filter;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -58,9 +63,9 @@ public class TermsAndConditionsFilter implements Filter {
     // Check if the request is for the terms and conditions page or if the user has
     // accepted terms
     String requestURI = httpRequest.getRequestURI();
-    boolean hasAcceptedTerms = httpRequest.getRemoteUser() != null
-        && termsAndConditionsService.isTermsAcceptedForUser(httpRequest.getRemoteUser(),
-                                                            servletRequest.getLocale().getLanguage());
+    String remoteUser = httpRequest.getRemoteUser();
+    boolean hasAcceptedTerms = remoteUser != null
+        && termsAndConditionsService.isTermsAcceptedForUser(remoteUser, getLanguage(remoteUser));
 
     if (httpRequest.getRemoteUser() != null && !hasAcceptedTerms && !requestURI.contains(TERMS_AND_CONDITIONS)
         && excludedUrls.stream().noneMatch(requestURI::startsWith)) {
@@ -70,5 +75,16 @@ public class TermsAndConditionsFilter implements Filter {
       return;
     }
     chain.doFilter(servletRequest, servletResponse);
+  }
+
+  private String getLanguage(String username) {
+    LocaleContextInfo localeCtx = LocaleContextInfoUtils.buildLocaleContextInfo(username);
+    LocalePolicy localePolicy = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(LocalePolicy.class);
+    String lang = null;
+    if (localePolicy != null) {
+      Locale locale = localePolicy.determineLocale(localeCtx);
+      lang = locale.toString();
+    }
+    return lang;
   }
 }
