@@ -123,15 +123,13 @@ export default {
       const date = new Date(this.publishedDate);
       return new window.Intl.DateTimeFormat(this.lang, this.dateFormat).format(date);
     },
+    latestVersionId() {
+      return this.note?.latestVersionId;
+    }
   },
   created() {
     this.$root.$on('terms-and-conditions-create', this.open);
     this.retrieveTerms();
-  },
-  watch: {
-    published() {
-      console.warn(this.published);
-    },
   },
   methods: {
     open() {
@@ -160,6 +158,32 @@ export default {
         .finally(() => this.saving = false);
     },
     editTerms() {
+      if (this.published) {
+        this.published = false;
+        return this.updatePublishedSetting().then(() => {
+          this.openEditor();
+        });
+      } else {
+        this.openEditor();
+      }
+    },
+    updatePublishedSetting() {
+      this.loading = true;
+      const settings = {
+        published: this.published,
+        publishedDate: this.published ? Date.now() : null,
+        latestVersionId: this.published ? this.latestVersionId : ''
+      };
+      return this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
+        .then(() => this.retrieveTerms())
+        .then(() => {
+          if (this.published) {
+            this.$root.$emit('alert-message', this.$t('generalSettings.termsAndConditions.successfullyPublished'), 'success');
+          }
+        })
+        .finally(() => this.loading = false);
+    },
+    openEditor() {
       const formData = new FormData();
       formData.append('noteId', this.note?.id);
       formData.append('parentNoteId', this.parentPageId);
@@ -175,21 +199,7 @@ export default {
       }
       const urlParams = new URLSearchParams(formData).toString();
       window.open(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
-    },
-    updatePublishedSetting() {
-      this.loading = true;
-      const settings = { published: this.published,
-        publishedDate: this.published ? Date.now() : null,
-      };
-      this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
-        .then(() => this.retrieveTerms())
-        .then(() => {
-          if (this.published) {
-            this.$root.$emit('alert-message', this.$t('generalSettings.termsAndConditions.successfullyPublished'), 'success');
-          }
-        })
-        .finally(() => this.loading = false);
-    },
+    }
   },
 };
 </script>
