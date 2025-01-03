@@ -123,15 +123,13 @@ export default {
       const date = new Date(this.publishedDate);
       return new window.Intl.DateTimeFormat(this.lang, this.dateFormat).format(date);
     },
+    latestVersionId() {
+      return this.note?.latestVersionId;
+    }
   },
   created() {
     this.$root.$on('terms-and-conditions-create', this.open);
     this.retrieveTerms();
-  },
-  watch: {
-    published() {
-      console.warn(this.published);
-    },
   },
   methods: {
     open() {
@@ -178,8 +176,10 @@ export default {
     },
     updatePublishedSetting() {
       this.loading = true;
-      const settings = { published: this.published,
+      const settings = {
+        published: this.published,
         publishedDate: this.published ? Date.now() : null,
+        latestVersionId: this.latestVersionId
       };
       this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
         .then(() => this.retrieveTerms())
