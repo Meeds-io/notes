@@ -19,8 +19,11 @@
 package io.meeds.notes.service;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.commons.api.settings.SettingService;
@@ -39,31 +42,46 @@ import static org.exoplatform.commons.api.settings.data.Context.USER;
 
 public class TermsAndConditionsService {
 
-  public static final String   ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE = "Error retrieving terms and conditions note";
+  public static final String                       ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
+                                                                                              "Error retrieving terms and conditions note";
 
-  private static final String  NOTE_TYPE                                  = "terms";
+  private static final String                      NOTE_TYPE                                  = "terms";
 
-  private static final String  NOTE_NAME                                  = "termsAndConditions";
+  private static final String                      NOTE_NAME                                  = "termsAndConditions";
 
-  public static final Scope    SETTINGS_APP_SCOPE                         = Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
+  public static final Scope                        SETTINGS_APP_SCOPE                         =
+                                                                      Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
 
-  public static final String   SETTINGS_KEY                               = "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
+  public static final String                       SETTINGS_KEY                               =
+                                                                "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
 
-  private final NoteService    noteService;
+  public static final String                       PUBLISHED                                  = "published";
 
-  private final WikiService    noteBookService;
+  public static final String                       TERMS_AND_CONDITIONS_ADDED                 = "termsAndConditionsAdded";
 
-  private final SettingService settingService;
+  public static final String                       TERMS_AND_CONDITIONS_UPDATED               = "termsAndConditionsUpdated";
 
-  private final UserACL        userACL;
+  public static final String                       LATEST_VERSION_ID                          = "latestVersionId";
+
+  private final NoteService                        noteService;
+
+  private final WikiService                        noteBookService;
+
+  private final SettingService                     settingService;
+
+  private final TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
+
+  private final UserACL                            userACL;
 
   public TermsAndConditionsService(NoteService noteService,
                                    WikiService noteBookService,
                                    SettingService settingService,
+                                   TermsAndConditionsWebSocketService termsAndConditionsWebSocketService,
                                    UserACL userACL) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.settingService = settingService;
+    this.termsAndConditionsWebSocketService = termsAndConditionsWebSocketService;
     this.userACL = userACL;
   }
 
@@ -83,10 +101,15 @@ public class TermsAndConditionsService {
     }
     try {
       Page page = getTermsAndConditions(lang);
-      if (page != null && !settings.isEmpty()) {
+      if (page != null && MapUtils.isNotEmpty(settings)) {
         page.setSettings(settings);
         page.setUpdatedDate(new Date());
         noteService.updateNote(page);
+        if (settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true")
+            && !Objects.equals(settings.get(LATEST_VERSION_ID), page.getLatestVersionId())) {
+          termsAndConditionsWebSocketService.sendMessage(page.getLatestVersionId().equals("2") ? TERMS_AND_CONDITIONS_ADDED
+                                                                                               : TERMS_AND_CONDITIONS_UPDATED);
+        }
       }
       return getTermsAndConditions(lang);
     } catch (WikiException e) {
@@ -99,6 +122,8 @@ public class TermsAndConditionsService {
       Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
       if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
         Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
+        publishedVersion = publishedVersion != null ? publishedVersion
+                                                    : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()) , Locale.ENGLISH.getLanguage());
         if (publishedVersion != null) {
           page.setTitle(publishedVersion.getTitle());
           page.setContent(publishedVersion.getContent());
@@ -121,7 +146,8 @@ public class TermsAndConditionsService {
 
   public boolean isTermsAcceptedForUser(String userId, String lang) {
     Page terms = getTermsAndConditions(lang);
-    if (terms != null && terms.getSettings() != null && terms.getSettings().get("published").equals("true")) {
+    if (terms != null && MapUtils.isNotEmpty(terms.getSettings()) && terms.getSettings().get(PUBLISHED) != null
+        && terms.getSettings().get(PUBLISHED).equals("true")) {
       SettingValue<?> acceptedVersion = settingService.get(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY);
       String acceptedVersionValue = acceptedVersion == null
           || acceptedVersion.getValue() == null ? null : acceptedVersion.getValue().toString();
@@ -140,6 +166,7 @@ public class TermsAndConditionsService {
         page.setContent(content);
         page.setCreatedDate(new Date());
         page.setUpdatedDate(new Date());
+        page.setAuthor(username);
         page.setOwner(IdentityConstants.SYSTEM);
         page.setLang(lang);
         page.setToBePublished(true);

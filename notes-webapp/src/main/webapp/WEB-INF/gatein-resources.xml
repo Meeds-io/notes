@@ -41,6 +41,14 @@
     <additional-module>Notes</additional-module>
   </portlet-skin>
 
+  <portlet-skin>
+    <application-name>notes</application-name>
+    <portlet-name>TermsAndConditionsUpdater</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>Notes</additional-module>
+  </portlet-skin>
+
+
   <portlet>
     <name>Notes</name>
     <module>
@@ -436,5 +444,34 @@
       <module>extensionRegistry</module>
     </depends>
   </module>
+
+  <portlet>
+    <name>TermsAndConditionsUpdater</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/termsAndConditionsUpdater.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>commons-cometd3</module>
+        <as>cCometd</as>
+      </depends>
+    </module>
+  </portlet>
 
 </gatein-resources>
