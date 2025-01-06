@@ -19,6 +19,7 @@
 package io.meeds.notes.service;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -121,6 +122,8 @@ public class TermsAndConditionsService {
       Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
       if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
         Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
+        publishedVersion = publishedVersion != null ? publishedVersion
+                                                    : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()) , Locale.ENGLISH.getLanguage());
         if (publishedVersion != null) {
           page.setTitle(publishedVersion.getTitle());
           page.setContent(publishedVersion.getContent());
