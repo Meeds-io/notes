@@ -1,7 +1,11 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
+<<<<<<< HEAD
  * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+=======
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+>>>>>>> e087547a8 (feat: Publish Terms and conditions using Snackbar - MEED-8028 - Meeds-io/MIPs#157 (#1271))
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
