@@ -172,7 +172,7 @@ export default {
       const settings = {
         published: this.published,
         publishedDate: this.published ? Date.now() : null,
-        latestVersionId: this.published ? this.latestVersionId : ''
+        latestVersionId: this.latestVersionId
       };
       return this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
         .then(() => this.retrieveTerms())

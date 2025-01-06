@@ -474,4 +474,24 @@
     </module>
   </portlet>
 
+  <module>
+    <name>termsAndConditionsNotesEditorExtension</name>
+    <load-group>NotesEditorGRP</load-group>
+    <script>
+      <path>/javascript/termsAndConditionsEditorExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
