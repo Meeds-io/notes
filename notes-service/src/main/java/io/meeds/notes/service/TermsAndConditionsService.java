@@ -101,12 +101,13 @@ public class TermsAndConditionsService {
     }
     try {
       Page page = getTermsAndConditions(lang);
-      if (page != null && MapUtils.isNotEmpty(settings)) {
+      String latestPublishedVersionId = MapUtils.isNotEmpty(page.getSettings()) ? page.getSettings().get(LATEST_VERSION_ID) : "";
+      if (MapUtils.isNotEmpty(settings)) {
         page.setSettings(settings);
         page.setUpdatedDate(new Date());
         noteService.updateNote(page);
         if (settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true")
-            && !Objects.equals(settings.get(LATEST_VERSION_ID), page.getLatestVersionId())) {
+            && !Objects.equals(settings.get(LATEST_VERSION_ID), latestPublishedVersionId)) {
           termsAndConditionsWebSocketService.sendMessage(page.getLatestVersionId().equals("2") ? TERMS_AND_CONDITIONS_ADDED
                                                                                                : TERMS_AND_CONDITIONS_UPDATED);
         }
