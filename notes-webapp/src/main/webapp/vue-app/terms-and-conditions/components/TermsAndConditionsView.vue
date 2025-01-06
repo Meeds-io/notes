@@ -103,11 +103,7 @@ export default {
     accept() {
       this.loading = true;
       return this.$termsAndConditionsService.acceptTermsAndConditions(this.lang).then(() => {
-        if (window.history.length > 1) {
-          window.history.back(); // Go back to the previous page
-        } else {
-          window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}`;
-        }
+        window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}`;
       });
     },
     isTermsAccepted() {
