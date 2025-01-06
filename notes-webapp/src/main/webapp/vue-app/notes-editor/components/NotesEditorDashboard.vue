@@ -120,6 +120,7 @@ export default {
       newDraft: false,
       spaceDisplayName: null,
       noteEditorExtensions: null,
+      snackbarExtensions: null,
       editor: null,
       loadedNote: null,
       draftNote: null,
@@ -400,12 +401,18 @@ export default {
           }
         }));
         this.originalNote = structuredClone(data);
-        this.displayMessage({
-          type: 'success',
-          message: this.$t('notes.save.success.message'),
-          linkText: this.$t('notes.view.label'),
-          alertLink: this.redirectAfterSaveLink(data || note)
-        });
+        this.refreshSnackbarExtensions();
+        const matchingSnackbarExtension = this.snackbarExtensions?.find(extension => extension.type === note.name);
+        if (matchingSnackbarExtension) {
+          matchingSnackbarExtension?.options?.displayMessage(this, this.note);
+        } else {
+          this.displayMessage({
+            type: 'success',
+            message: this.$t('notes.save.success.message'),
+            linkText: this.$t('notes.view.label'),
+            alertLink: this.redirectAfterSaveLink(data || note)
+          });
+        }
       }).catch(e => {
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -900,6 +907,12 @@ export default {
     refreshTranslationExtensions() {
       this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
     },
+    refreshSnackbarExtensions() {
+      if (!this.snackbarExtensions) {
+        this.snackbarExtensions = extensionRegistry.loadExtensions('notesEditor', 'snackbar-extension');
+      }
+      return this.snackbarExtensions;
+    }
   }
 };
 </script>
