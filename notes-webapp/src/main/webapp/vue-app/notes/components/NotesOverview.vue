@@ -429,7 +429,19 @@ export default {
         this.stopGetStatus();
         this.exportStatus={};
       }
-    }
+    },
+    initialized() {
+      if (this.initialized) {
+        const urlHash = window.location.hash;
+        if (urlHash) {
+          const elementId = urlHash.substring(1);
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    },
   },
   computed: {
     extensionParams() {
@@ -1091,12 +1103,13 @@ export default {
       }
     },
     updateURL(){
+      const urlHash = window.location.hash;
       const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
       let translation = '';
       if (this.selectedTranslation.value) {
         translation = `?translation=${this.selectedTranslation.value}`;
       }
-      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}`;
+      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}${urlHash}`;
       if (!this.popStateChange) {
         window.history.replaceState(window.history.state, window.document.title, notesConstants.PORTAL_BASE_URL);
       }
