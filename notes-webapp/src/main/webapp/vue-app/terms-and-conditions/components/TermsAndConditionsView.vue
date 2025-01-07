@@ -23,22 +23,22 @@
     <v-card flat>
       <v-sheet height="12" class="primary no-border-bottom" />
       <v-card-title class="text-h4 font-weight-bold text-color">{{ pageTitle }}</v-card-title>
-      <v-card-text
-        v-sanitized-html="pageContentDisplay" />
-      <v-card-actions class="px-4">
+      <v-card-text v-sanitized-html="pageContentDisplay" />
+      <v-card-actions class="px-4 align-end">
         <div v-if="!isMobile" :style="brandingLogoDisplay">
           <v-img
             :src="brandingLogoUrl"
-            width="9em"
+            width="6em"
             max-width="150px"
             max-height="6em"
             role="presentation"
             contain
             eager />
         </div>
-        <div v-if="!alreadyAccepted" class="d-flex flex-column ms-auto">
+        <div v-if="!alreadyAccepted || isPreviewMode" class="d-flex flex-column ms-auto">
           <v-checkbox
             v-model="accepted"
+            :class="isPreviewMode && 'not-clickable-link'"
             class="mb-2"
             dense>
             <template #label>
@@ -70,7 +70,8 @@ export default {
       alreadyAccepted: false,
       page: null,
       lang: eXo.env.portal.language,
-      loading: false
+      loading: false,
+      isPreviewMode: false
     };
   },
   computed: {
@@ -94,8 +95,14 @@ export default {
     },
   },
   created() {
+    this.isPreviewMode = new URLSearchParams(window.location.search).has('preview');
+    if (this.isPreviewMode) {
+      this.accepted = false;
+    }
     this.retrieveTerms();
-    this.isTermsAccepted();
+    if (!this.isPreviewMode) {
+      this.isTermsAccepted();
+    }
   },
   methods: {
     retrieveTerms() {
