@@ -61,10 +61,21 @@
               </v-list-item-title>
             </v-list-item-content>
             <v-list-item-action>
-              <v-btn
-                icon>
-                <v-icon size="18" class="icon-default-color">fas fa-eye</v-icon>
-              </v-btn>
+              <v-tooltip
+                :disabled="$root.isMobile"
+                bottom>
+                <template #activator="{ on }">
+                  <div v-on="on">
+                    <v-btn
+                      :href="previewLink"
+                      target="_blank"
+                      icon>
+                      <v-icon size="18" class="icon-default-color">fas fa-eye</v-icon>
+                    </v-btn>
+                  </div>
+                </template>
+                <span> {{ $t('generalSettings.termsAndConditions.preview') }}</span>
+              </v-tooltip>
             </v-list-item-action>
           </v-list-item>
           <v-list-item class="px-0" two-line>
@@ -125,6 +136,9 @@ export default {
     },
     latestVersionId() {
       return this.note?.latestVersionId;
+    },
+    previewLink() {
+      return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/terms-and-conditions?preview`;
     }
   },
   created() {
