@@ -26,7 +26,7 @@
       <v-card-text
         v-sanitized-html="pageContentDisplay" />
       <v-card-actions class="px-4">
-        <div :style="brandingLogoDisplay">
+        <div v-if="!isMobile" :style="brandingLogoDisplay">
           <v-img
             :src="brandingLogoUrl"
             width="9em"
@@ -84,7 +84,10 @@ export default {
       return this.pageContent && this.$noteUtils.getContentToDisplay(this.pageContent) || '';
     },
     brandingLogoDisplay() {
-      return this.$vuetify.breakpoint.width >= 1720 ? 'position: fixed; right: 3%;bottom: 3%' : '';
+      return this.$vuetify.breakpoint.width >= this.$vuetify.breakpoint.thresholds.xl ? 'position: fixed; right: 3%;bottom: 3%' : '';
+    },
+    isMobile() {
+      return this.$vuetify.breakpoint.width < this.$vuetify.breakpoint.thresholds.sm;
     },
     brandingLogoUrl() {
       return `/portal/rest/v1/platform/branding/logo?v=${Date.now()}`;
