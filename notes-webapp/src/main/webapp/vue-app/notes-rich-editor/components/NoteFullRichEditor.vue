@@ -57,7 +57,8 @@
                 type="text"
                 :maxlength="noteTitleMaxLength + 1"
                 class="title text-color ma-0 pa-0"
-                @input="waitUserTyping()">
+                @input="waitUserTyping()"
+                @keydown.enter.prevent="focusEditor">
             </div>
             <div class="formInputGroup white overflow-auto flex notes-content-wrapper px-5 pb-5">
               <textarea
@@ -330,6 +331,9 @@ export default {
     },
     hideTranslationsBar() {
       this.$root.$emit('hide-translations');
+    },
+    focusEditor() {
+      this.editor.focus();
     },
     setEditorData(content) {
       if (content) {
