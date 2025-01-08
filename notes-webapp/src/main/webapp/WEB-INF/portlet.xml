@@ -124,4 +124,26 @@
     </portlet-info>
   </portlet>
 
+  <portlet>
+    <portlet-name>TermsAndConditionsUserSettings</portlet-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/termsAndConditionsUserSettings.html</value>
+    </init-param>
+    <init-param>
+      <description>portlet of Terms And Conditions User settings</description>
+      <name>exo.profiles</name>
+      <value>wallet</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.TermsAndConditionsView</resource-bundle>
+    <portlet-info>
+        <title>Terms And Conditions User Settings</title>
+    </portlet-info>
+  </portlet>
+
 </portlet-app>

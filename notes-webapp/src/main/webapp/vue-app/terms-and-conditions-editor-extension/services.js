@@ -17,7 +17,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import * as termsAndConditionsService from '../general-settings-extension/js/TermsAndConditionsService';
+import * as termsAndConditionsService from '../terms-and-conditions-admin-settings/js/TermsAndConditionsService';
 
 if (!Vue.prototype.$termsAndConditionsService) {
   window.Object.defineProperty(Vue.prototype, '$termsAndConditionsService', {
