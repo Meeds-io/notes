@@ -250,7 +250,7 @@ export default {
       return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return (!this.editMode || this.publicationSettingsUpdated) && (this.canPublish && this.validPublishSettings || true);
+      return (!this.editMode || this.publicationSettingsUpdated) && (this.canPublish && this.validPublishSettings);
     },
     validPublishSettings() {
       return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
