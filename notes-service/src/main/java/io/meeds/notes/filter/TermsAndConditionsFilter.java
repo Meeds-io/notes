@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,10 +20,10 @@
 package io.meeds.notes.filter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import io.meeds.notes.service.TermsAndConditionsService;
 import jakarta.servlet.FilterChain;
@@ -31,6 +31,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
@@ -39,52 +40,78 @@ import org.exoplatform.services.resources.LocaleContextInfo;
 import org.exoplatform.services.resources.LocalePolicy;
 import org.exoplatform.web.filter.Filter;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 public class TermsAndConditionsFilter implements Filter {
 
-  public static final String TERMS_AND_CONDITIONS = "/terms-and-conditions";
+  private static final String TERMS_AND_CONDITIONS_PAGE          = "/terms-and-conditions";
 
-  private final List<String> excludedUrls         = new ArrayList<>(Arrays.asList("/portal/skins",
-                                                                                  "/portal/scripts",
-                                                                                  "/portal/javascript",
-                                                                                  "/portal/rest",
-                                                                                  "/portal/service-worker.js"));
+  private static final String TERMS_AND_CONDITIONS_SETTINGS_PAGE = "/settings#terms-and-conditions";
+
+  private final Set<String>   excludedUrls                       = new HashSet<>(Arrays.asList("/portal/skins",
+                                                                                               "/portal/scripts",
+                                                                                               "/portal/javascript",
+                                                                                               "/portal/rest",
+                                                                                               "/portal/service-worker.js"));
 
   @Override
-  public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, // NOSONAR
+  public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException,
                                                                                                           ServletException {
 
     HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
     HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-    PortalContainer container = PortalContainer.getInstance();
-    TermsAndConditionsService termsAndConditionsService = container.getComponentInstanceOfType(TermsAndConditionsService.class);
 
-    // Check if the request is for the terms and conditions page or if the user has
-    // accepted terms
     String requestURI = httpRequest.getRequestURI();
     String remoteUser = httpRequest.getRemoteUser();
-    boolean hasAcceptedTerms = remoteUser != null
-        && termsAndConditionsService.isTermsAcceptedForUser(remoteUser, getLanguage(remoteUser));
 
-    if (httpRequest.getRemoteUser() != null && !hasAcceptedTerms && !requestURI.contains(TERMS_AND_CONDITIONS)
-        && excludedUrls.stream().noneMatch(requestURI::startsWith)) {
-      UserPortalConfigService portalConfigService =
-                                                  (UserPortalConfigService) PortalContainer.getComponent(UserPortalConfigService.class);
-      httpResponse.sendRedirect("/portal/" + portalConfigService.getMetaPortal() + TERMS_AND_CONDITIONS);
+    if (remoteUser == null || isExcludedUrl(requestURI)) {
+      chain.doFilter(servletRequest, servletResponse);
       return;
     }
+
+    PortalContainer container = PortalContainer.getInstance();
+    TermsAndConditionsService termsService = container.getComponentInstanceOfType(TermsAndConditionsService.class);
+    UserPortalConfigService portalConfigService = container.getComponentInstanceOfType(UserPortalConfigService.class);
+
+    if (termsService == null || portalConfigService == null) {
+      chain.doFilter(servletRequest, servletResponse);
+      return;
+    }
+
+    boolean hasAcceptedTerms = termsService.isTermsAcceptedForUser(remoteUser, getLanguage(remoteUser));
+
+    if (hasAcceptedTerms && requestURI.contains(TERMS_AND_CONDITIONS_PAGE) && httpRequest.getQueryString() == null) {
+      redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_SETTINGS_PAGE);
+      return;
+    }
+
+    if (!hasAcceptedTerms && !isTermsPage(requestURI)) {
+      redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_PAGE);
+      return;
+    }
+
     chain.doFilter(servletRequest, servletResponse);
+  }
+
+  private boolean isExcludedUrl(String requestURI) {
+    return excludedUrls.stream().anyMatch(requestURI::startsWith);
+  }
+
+  private boolean isTermsPage(String requestURI) {
+    return requestURI.contains(TERMS_AND_CONDITIONS_PAGE);
+  }
+
+  private void redirect(HttpServletResponse response,
+                        UserPortalConfigService portalConfigService,
+                        String path) throws IOException {
+    response.sendRedirect("/portal/" + portalConfigService.getMetaPortal() + path);
   }
 
   private String getLanguage(String username) {
     LocaleContextInfo localeCtx = LocaleContextInfoUtils.buildLocaleContextInfo(username);
     LocalePolicy localePolicy = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(LocalePolicy.class);
-    String lang = null;
     if (localePolicy != null) {
       Locale locale = localePolicy.determineLocale(localeCtx);
-      lang = locale.toString();
+      return locale.toString();
     }
-    return lang;
+    return null;
   }
 }
