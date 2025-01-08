@@ -43,13 +43,15 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class TermsAndConditionsFilter implements Filter {
 
-  public static final String TERMS_AND_CONDITIONS = "/terms-and-conditions";
+  public static final String TERMS_AND_CONDITIONS          = "/terms-and-conditions";
 
-  private final List<String> excludedUrls         = new ArrayList<>(Arrays.asList("/portal/skins",
-                                                                                  "/portal/scripts",
-                                                                                  "/portal/javascript",
-                                                                                  "/portal/rest",
-                                                                                  "/portal/service-worker.js"));
+  public static final String TERMS_AND_CONDITIONS_SETTINGS = "/settings#terms-and-conditions";
+
+  private final List<String> excludedUrls                  = new ArrayList<>(Arrays.asList("/portal/skins",
+                                                                                           "/portal/scripts",
+                                                                                           "/portal/javascript",
+                                                                                           "/portal/rest",
+                                                                                           "/portal/service-worker.js"));
 
   @Override
   public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, // NOSONAR
@@ -66,11 +68,13 @@ public class TermsAndConditionsFilter implements Filter {
     String remoteUser = httpRequest.getRemoteUser();
     boolean hasAcceptedTerms = remoteUser != null
         && termsAndConditionsService.isTermsAcceptedForUser(remoteUser, getLanguage(remoteUser));
-
-    if (httpRequest.getRemoteUser() != null && !hasAcceptedTerms && !requestURI.contains(TERMS_AND_CONDITIONS)
+    UserPortalConfigService portalConfigService =
+                                                (UserPortalConfigService) PortalContainer.getComponent(UserPortalConfigService.class);
+    if (hasAcceptedTerms && requestURI.contains(TERMS_AND_CONDITIONS) && httpRequest.getQueryString() == null) {
+      httpResponse.sendRedirect("/portal/" + portalConfigService.getMetaPortal() + TERMS_AND_CONDITIONS_SETTINGS);
+      return;
+    } else if (!hasAcceptedTerms && !requestURI.contains(TERMS_AND_CONDITIONS)
         && excludedUrls.stream().noneMatch(requestURI::startsWith)) {
-      UserPortalConfigService portalConfigService =
-                                                  (UserPortalConfigService) PortalContainer.getComponent(UserPortalConfigService.class);
       httpResponse.sendRedirect("/portal/" + portalConfigService.getMetaPortal() + TERMS_AND_CONDITIONS);
       return;
     }
