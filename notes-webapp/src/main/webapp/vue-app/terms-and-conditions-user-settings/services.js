@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,19 +17,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import * as notesService from '../../javascript/eXo/wiki/notesService.js';
 import * as termsAndConditionsService from '../terms-and-conditions-admin-settings/js/TermsAndConditionsService';
 import * as noteUtils from '../notes-rich-editor/js/Utils';
 
 if (!Vue.prototype.$termsAndConditionsService) {
   window.Object.defineProperty(Vue.prototype, '$termsAndConditionsService', {
     value: termsAndConditionsService,
-  });
-}
-
-if (!Vue.prototype.$notesService) {
-  window.Object.defineProperty(Vue.prototype, '$notesService', {
-    value: notesService,
   });
 }
 
