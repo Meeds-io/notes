@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,7 @@
  */
 package io.meeds.notes.service;
 
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +27,9 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.services.listener.ListenerService;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -38,9 +38,13 @@ import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
+import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
 import static org.exoplatform.commons.api.settings.data.Context.USER;
 
 public class TermsAndConditionsService {
+
+  private static final Log                         LOG                                        =
+                                                       ExoLogger.getLogger(TermsAndConditionsService.class);
 
   public static final String                       ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
                                                                                               "Error retrieving terms and conditions note";
@@ -69,6 +73,8 @@ public class TermsAndConditionsService {
 
   private final SettingService                     settingService;
 
+  private final ListenerService                    listenerService;
+
   private final TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
 
   private final UserACL                            userACL;
@@ -76,11 +82,13 @@ public class TermsAndConditionsService {
   public TermsAndConditionsService(NoteService noteService,
                                    WikiService noteBookService,
                                    SettingService settingService,
+                                   ListenerService listenerService,
                                    TermsAndConditionsWebSocketService termsAndConditionsWebSocketService,
                                    UserACL userACL) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.settingService = settingService;
+    this.listenerService = listenerService;
     this.termsAndConditionsWebSocketService = termsAndConditionsWebSocketService;
     this.userACL = userACL;
   }
@@ -123,8 +131,10 @@ public class TermsAndConditionsService {
       Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
       if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
         Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
-        publishedVersion = publishedVersion != null ? publishedVersion
-                                                    : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()) , Locale.ENGLISH.getLanguage());
+        publishedVersion =
+                         publishedVersion != null ? publishedVersion
+                                                  : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()),
+                                                                                                   Locale.ENGLISH.getLanguage());
         if (publishedVersion != null) {
           page.setTitle(publishedVersion.getTitle());
           page.setContent(publishedVersion.getContent());
@@ -142,6 +152,7 @@ public class TermsAndConditionsService {
     Page terms = getTermsAndConditions(lang);
     if (terms != null) {
       settingService.set(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY, SettingValue.create(terms.getLatestVersionId()));
+      createGamificationRealization(userId);
     }
   }
 
@@ -186,6 +197,20 @@ public class TermsAndConditionsService {
       return noteBookService.createWiki(NOTE_TYPE, IdentityConstants.SYSTEM);
     } else {
       return noteBook;
+    }
+  }
+
+  private void createGamificationRealization(String userIdentityId) {
+    try {
+      Map<String, String> gam = new HashMap<>();
+      gam.put("senderId", userIdentityId);
+      gam.put("receiverId", userIdentityId);
+      gam.put("objectId", userIdentityId);
+      gam.put("ruleTitle", "acceptConditions");
+      listenerService.broadcast(GENERIC_EVENT_NAME, gam, "");
+      LOG.info("Accept conditions action broadcasted for user {}", userIdentityId);
+    } catch (Exception e) {
+      LOG.warn("An error occurred while broadcasting accept conditions event", e);
     }
   }
 }

@@ -27,4 +27,12 @@ export function init() {
       isExtensible: true
     },
   });
+  extensionRegistry.registerExtension('engagementCenterActions', 'user-actions', {
+    type: 'TermsAndConditions',
+    options: {
+      rank: 80,
+      icon: 'fab fa-readme',
+      match: (actionLabel) => actionLabel === 'acceptConditions',
+    },
+  });
 }
