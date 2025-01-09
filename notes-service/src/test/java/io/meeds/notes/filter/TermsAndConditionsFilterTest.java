@@ -27,11 +27,14 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 
 import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 class TermsAndConditionsFilterTest {
 
   private TermsAndConditionsFilter  filter;

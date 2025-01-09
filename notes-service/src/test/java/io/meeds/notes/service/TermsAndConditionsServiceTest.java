@@ -25,12 +25,11 @@ import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -41,7 +40,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class TermsAndConditionsServiceTest {
+public class TermsAndConditionsServiceTest extends BaseTest {
 
   private TermsAndConditionsService          service;
 
@@ -60,14 +59,14 @@ class TermsAndConditionsServiceTest {
   @Mock
   private UserACL                            userACL;
 
-  @BeforeEach
-  void setUp() {
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
     MockitoAnnotations.openMocks(this);
     service = new TermsAndConditionsService(noteService, wikiService, settingService, webSocketService, userACL);
   }
 
-  @Test
-  void testSaveTermsAndConditionsAdminUser() throws Exception {
+  public void testSaveTermsAndConditionsAdminUser() throws Exception {
     Identity adminIdentity = mock(Identity.class);
 
     // When
@@ -86,8 +85,7 @@ class TermsAndConditionsServiceTest {
     assertNotNull(result);
   }
 
-  @Test
-  void testSaveTermsAndConditionsSimpleUser() throws WikiException {
+  public void testSaveTermsAndConditionsSimpleUser() throws WikiException {
     Identity identity = mock(Identity.class);
 
     // When
@@ -102,8 +100,7 @@ class TermsAndConditionsServiceTest {
     verify(noteService, never()).createNote(any(), any(), any());
   }
 
-  @Test
-  void testIsTermsAcceptedForUserWhenAccepted() throws WikiException {
+  public void testIsTermsAcceptedForUserWhenAccepted() throws WikiException {
     // Given
     Page page = new Page("termsAndConditions", "content");
     page.setSettings(new HashMap<>() {
@@ -131,8 +128,7 @@ class TermsAndConditionsServiceTest {
     assertTrue(service.isTermsAcceptedForUser("user", "en"));
   }
 
-  @Test
-  void testIsTermsAcceptedForUserWhenNotAccepted() throws WikiException {
+  public void testIsTermsAcceptedForUserWhenNotAccepted() throws WikiException {
     // Given
     Page page = new Page("termsAndConditions", "content");
     page.setSettings(new HashMap<>() {
@@ -158,8 +154,7 @@ class TermsAndConditionsServiceTest {
     assertFalse(service.isTermsAcceptedForUser("user", "en"));
   }
 
-  @Test
-  void testMarkTermsAsAcceptedForUser() throws WikiException {
+  public void testMarkTermsAsAcceptedForUser() throws WikiException {
     // Given
     Page page = new Page("termsAndConditions", "content");
     page.setId("1");
