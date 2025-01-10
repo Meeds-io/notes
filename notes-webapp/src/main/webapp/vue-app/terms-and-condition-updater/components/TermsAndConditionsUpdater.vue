@@ -1,7 +1,7 @@
 <!--
   This file is part of the Meeds project (https://meeds.io/).
 
-  Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+  Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -32,8 +32,8 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          :href="termsAndConditionsUrl"
-          class="ignore-vuetify-classes btn btn-primary me-2">
+          class="ignore-vuetify-classes btn btn-primary me-2"
+          @click="goToTermsAndConditions">
           {{ $t('termsAndConditions.label.next') }}
         </v-btn>
         <v-spacer />
@@ -63,6 +63,10 @@ export default {
     handleTermsAndConditionsUpdates(updateParams) {
       this.eventName = updateParams?.wsEventName;
       this.dialog = true;
+    },
+    goToTermsAndConditions() {
+      const currentPage = window.location.pathname + window.location.search;
+      window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}/terms-and-conditions?redirect=${encodeURIComponent(currentPage)}`;
     }
   },
 };
