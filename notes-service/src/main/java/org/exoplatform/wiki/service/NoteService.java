@@ -62,6 +62,18 @@ public interface NoteService {
    * Create a new note in the given notebook, under the given parent note.
    *
    * @param noteBook Notebook object.
+   * @param parentNote parent note.
+   * @param note the note to create.
+   * @param broadcast broadcast the note creation event
+   * @return The new note.
+   * @throws WikiException if an error occured
+   */
+  Page createNote(Wiki noteBook, Page parentNote, Page note, boolean broadcast) throws WikiException;
+
+  /**
+   * Create a new note in the given notebook, under the given parent note.
+   *
+   * @param noteBook Notebook object.
    * @param parentNoteName parent note name.
    * @param note the note object to create.
    * @param userIdentity user Identity.
@@ -72,7 +84,7 @@ public interface NoteService {
    */
   Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity) throws WikiException,
                                                                                           IllegalAccessException;
-  
+
   /**
    * Create a new note in the given notebook, under the given parent note.
    *
@@ -80,14 +92,33 @@ public interface NoteService {
    * @param parentNoteName parent note name.
    * @param note the note object to create.
    * @param userIdentity user Identity.
-   * @param importMode true if the creation is without timestamp for import mode. 
+   * @param importMode true if the creation is without timestamp for import mode.
+   * @param broadcast broadcast the note creation event if true
    * @return The new note.
    * @throws WikiException if an error occured
    * @throws IllegalAccessException if the user don't have edit rights to the
    *           parent note
    */
-  Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity, boolean importMode) throws WikiException,
+  Page createNote(Wiki noteBook, String parentNoteName, Page note, Identity userIdentity, boolean importMode, boolean broadcast) throws WikiException,
                                                                                           IllegalAccessException;
+  /**
+   * Create a new note in the given notebook, under the given parent note.
+   *
+   * @param noteBook Notebook object.
+   * @param parentNoteName parent note name.
+   * @param note the note object to create.
+   * @param userIdentity user Identity.
+   * @param broadcast broadcast the note creation event if true.
+   * @return The new note.
+   * @throws WikiException if an error occured
+   * @throws IllegalAccessException if the user don't have edit rights to the
+   *           parent note
+   */
+  Page createNote(Wiki noteBook,
+                  String parentNoteName,
+                  Page note,
+                  Identity userIdentity,
+                  boolean broadcast) throws WikiException, IllegalAccessException;
 
   /**
    * Deletes a note.
@@ -500,10 +531,25 @@ public interface NoteService {
    *           note
    * @throws EntityNotFoundException if the the note to update don't exist
    */
-  Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws WikiException,
-                                                                         IllegalAccessException,
-                                                                         EntityNotFoundException,
-                                                                         Exception;
+  Page updateNote(Page note, PageUpdateType type, Identity userIdentity) throws Exception;
+
+  /**
+   * Update the given note. This does not automatically create a new version. If
+   * a new version must be created it should be explicitly done by calling
+   * createVersionOfNote(). The second parameter is the type of update done
+   * (title only, content only, both, move, ...).
+   *
+   * @param note Updated note
+   * @param type Type of update
+   * @param userIdentity user Identity
+   * @param broadcast broadcast the update note event if true
+   * @return The updated note
+   * @throws WikiException if an error occure
+   * @throws IllegalAccessException if the user don't have edit rights on the
+   *           note
+   * @throws EntityNotFoundException if the the note to update don't exist
+   */
+  Page updateNote(Page note, PageUpdateType type, Identity userIdentity, boolean broadcast) throws Exception;
 
   /**
    * Update the given note. This does not automatically create a new version. If
