@@ -2,7 +2,7 @@
 
  This file is part of the Meeds project (https://meeds.io/).
 
- Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -112,9 +112,12 @@ export default {
     },
     accept() {
       this.loading = true;
-      return this.$termsAndConditionsService.acceptTermsAndConditions(this.lang).then(() => {
-        window.location.href = `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}`;
-      });
+      return this.$termsAndConditionsService.acceptTermsAndConditions(this.lang)
+        .then(() => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirectUrl = urlParams.get('redirect');
+          window.location.href = redirectUrl || `${eXo.env.portal.context}/${eXo.env.portal.engagementSiteName}`;
+        });
     },
     isTermsAccepted() {
       return this.$termsAndConditionsService.isTermsAcceptedForUser(this.lang).then((accepted) => {
