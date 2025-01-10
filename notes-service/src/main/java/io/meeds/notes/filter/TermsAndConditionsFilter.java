@@ -84,7 +84,23 @@ public class TermsAndConditionsFilter implements Filter {
     }
 
     if (!hasAcceptedTerms && !isTermsPage(requestURI)) {
-      redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_PAGE);
+      String previousPage = httpRequest.getRequestURI();
+      String queryString = httpRequest.getQueryString();
+
+      if (queryString != null) {
+        previousPage += "?" + queryString;
+      }
+
+      String initURI = "/" + PortalContainer.getCurrentPortalContainerName() + "/";
+
+      if (initURI.equals(requestURI)) {
+        redirect(httpResponse,
+                 portalConfigService,
+                 TERMS_AND_CONDITIONS_PAGE + "?redirect=" + portalConfigService.getUserHomePage(remoteUser));
+      } else {
+        redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_PAGE + "?redirect=" + previousPage);
+      }
+
       return;
     }
 
