@@ -22,8 +22,24 @@
   <v-app v-if="pageContent" class="application-body">
     <v-card flat>
       <v-sheet height="12" class="primary no-border-bottom" />
-      <v-card-title class="text-h4 font-weight-bold text-color">{{ pageTitle }}</v-card-title>
-      <v-card-text v-sanitized-html="pageContentDisplay" />
+      <div class="px-4">
+        <v-img
+          v-if="hasFeaturedImage"
+          :lazy-src="featuredImageLink"
+          :alt="featuredImageAltText"
+          :src="featuredImageLink"
+          contain
+          class="mb-5 mt-2"
+          width="100%"
+          max-height="400" />
+        <v-card-title class="text-h4 font-weight-bold text-color px-0">{{ pageTitle }}</v-card-title>
+        <p
+          v-if="hasSummary"
+          class="note-summary text-break text-sub-title mt-4 mb-0">
+          {{ noteSummary }}
+        </p>
+        <v-card-text class="px-0" v-sanitized-html="pageContentDisplay" />
+      </div>
       <v-card-actions class="px-4 align-end">
         <div v-if="!isMobile" :style="brandingLogoDisplay">
           <v-img
@@ -71,7 +87,8 @@ export default {
       page: null,
       lang: eXo.env.portal.language,
       loading: false,
-      isPreviewMode: false
+      isPreviewMode: false,
+      illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
     };
   },
   computed: {
@@ -92,6 +109,24 @@ export default {
     },
     brandingLogoUrl() {
       return `/portal/rest/v1/platform/branding/logo?v=${Date.now()}`;
+    },
+    hasSummary() {
+      return this.page?.properties?.summary?.length;
+    },
+    noteSummary() {
+      return this.page?.properties?.summary;
+    },
+    noteFeatureImageUpdatedDate() {
+      return this.page?.properties?.featuredImage?.lastUpdated || 0;
+    },
+    hasFeaturedImage() {
+      return !!this.page?.properties?.featuredImage?.id;
+    },
+    featuredImageAltText() {
+      return this.page?.properties?.featuredImage?.altText;
+    },
+    featuredImageLink() {
+      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=en&size=0x400`;
     },
   },
   created() {
