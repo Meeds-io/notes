@@ -22,6 +22,15 @@
   <v-app v-if="pageContent" class="application-body">
     <v-card flat>
       <v-sheet height="12" class="primary no-border-bottom" />
+      <v-img
+        v-if="hasFeaturedImage"
+        :lazy-src="featuredImageLink"
+        :alt="featuredImageAltText"
+        :src="featuredImageLink"
+        contain
+        class="mb-5 mt-2"
+        width="100%"
+        max-height="400" />
       <v-card-title class="text-h4 font-weight-bold text-color">{{ pageTitle }}</v-card-title>
       <v-card-text v-sanitized-html="pageContentDisplay" />
       <v-card-actions class="px-4 align-end">
@@ -71,7 +80,8 @@ export default {
       page: null,
       lang: eXo.env.portal.language,
       loading: false,
-      isPreviewMode: false
+      isPreviewMode: false,
+      illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
     };
   },
   computed: {
@@ -92,6 +102,18 @@ export default {
     },
     brandingLogoUrl() {
       return `/portal/rest/v1/platform/branding/logo?v=${Date.now()}`;
+    },
+    noteFeatureImageUpdatedDate() {
+      return this.page?.properties?.featuredImage?.lastUpdated || 0;
+    },
+    hasFeaturedImage() {
+      return !!this.page?.properties?.featuredImage?.id;
+    },
+    featuredImageAltText() {
+      return this.page?.properties?.featuredImage?.altText;
+    },
+    featuredImageLink() {
+      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=en&size=0x400`;
     },
   },
   created() {
