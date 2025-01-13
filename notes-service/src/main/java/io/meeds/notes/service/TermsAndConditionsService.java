@@ -28,8 +28,6 @@ import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.listener.ListenerService;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
@@ -37,13 +35,9 @@ import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
-import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
 import static org.exoplatform.commons.api.settings.data.Context.USER;
 
 public class TermsAndConditionsService {
-
-  private static final Log                         LOG                                        =
-                                                       ExoLogger.getLogger(TermsAndConditionsService.class);
 
   public static final String                       ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
                                                                                               "Error retrieving terms and conditions note";
@@ -152,7 +146,7 @@ public class TermsAndConditionsService {
     Page terms = getTermsAndConditions(lang);
     if (terms != null) {
       settingService.set(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY, SettingValue.create(terms.getLatestVersionId()));
-      createGamificationRealization(userId);
+      listenerService.broadcast("terms.condition.accepted", userId, null);
     }
   }
 
@@ -197,20 +191,6 @@ public class TermsAndConditionsService {
       return noteBookService.createWiki(TC_NOTE_TYPE, IdentityConstants.SYSTEM);
     } else {
       return noteBook;
-    }
-  }
-
-  private void createGamificationRealization(String userIdentityId) {
-    try {
-      Map<String, String> gam = new HashMap<>();
-      gam.put("senderId", userIdentityId);
-      gam.put("receiverId", userIdentityId);
-      gam.put("objectId", userIdentityId);
-      gam.put("ruleTitle", "acceptConditions");
-      listenerService.broadcast(GENERIC_EVENT_NAME, gam, "");
-      LOG.info("Accept conditions action broadcasted for user {}", userIdentityId);
-    } catch (Exception e) {
-      LOG.warn("An error occurred while broadcasting accept conditions event", e);
     }
   }
 }
