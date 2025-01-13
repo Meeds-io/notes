@@ -20,6 +20,8 @@
 package io.meeds.notes.filter;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -96,14 +98,13 @@ public class TermsAndConditionsFilter implements Filter {
       if (initURI.equals(requestURI)) {
         redirect(httpResponse,
                  portalConfigService,
-                 TERMS_AND_CONDITIONS_PAGE + "?redirect=" + portalConfigService.getUserHomePage(remoteUser));
+                 TERMS_AND_CONDITIONS_PAGE + "?redirect=" + portalConfigService.getDefaultPath(remoteUser));
       } else {
-        redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_PAGE + "?redirect=" + previousPage);
+        String encodedPreviousPage = URLEncoder.encode(previousPage, StandardCharsets.UTF_8);
+        redirect(httpResponse, portalConfigService, TERMS_AND_CONDITIONS_PAGE + "?redirect=" + encodedPreviousPage);
       }
-
       return;
     }
-
     chain.doFilter(servletRequest, servletResponse);
   }
 
