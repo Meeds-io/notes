@@ -112,6 +112,9 @@ import io.meeds.social.cms.service.CMSService;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_NAME;
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
+
 
  public class NoteServiceImpl implements NoteService {
 
@@ -2144,9 +2147,14 @@ import lombok.SneakyThrows;
 
   private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
     if (space != null) {
-      return !page.isDraftPage() ? spaceService.canViewSpace(space, authenticatedUser) : Utils.canManageNotes(authenticatedUser, space, page);
+      return !page.isDraftPage() ? spaceService.canViewSpace(space, authenticatedUser)
+                                 : Utils.canManageNotes(authenticatedUser, space, page);
+    } else if (TC_NOTE_TYPE.equals(page.getWikiType()) && TC_NOTE_NAME.equals(page.getName())) {
+      return true;
     } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
-      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser),
+                                            NotePageViewService.CMS_CONTENT_TYPE,
+                                            page.getName());
     } else {
       return spaceService.isSuperManager(space, authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
