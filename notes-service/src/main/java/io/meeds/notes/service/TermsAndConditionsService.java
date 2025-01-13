@@ -33,8 +33,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
@@ -49,9 +48,9 @@ public class TermsAndConditionsService {
   public static final String                       ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
                                                                                               "Error retrieving terms and conditions note";
 
-  private static final String                      NOTE_TYPE                                  = "terms";
+  public static final String                       TC_NOTE_TYPE                               = "terms";
 
-  private static final String                      NOTE_NAME                                  = "termsAndConditions";
+  public static final String                       TC_NOTE_NAME                               = "termsAndConditions";
 
   public static final Scope                        SETTINGS_APP_SCOPE                         =
                                                                       Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
@@ -128,7 +127,7 @@ public class TermsAndConditionsService {
 
   public Page getTermsAndConditions(String lang) {
     try {
-      Page page = noteService.getNoteOfNoteBookByName(NOTE_TYPE, IdentityConstants.SYSTEM, NOTE_NAME);
+      Page page = noteService.getNoteOfNoteBookByName(TC_NOTE_TYPE, IdentityConstants.SYSTEM, TC_NOTE_NAME);
       if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
         Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
         publishedVersion =
@@ -174,7 +173,7 @@ public class TermsAndConditionsService {
       Wiki noteBook = getNote();
       Page page = getTermsAndConditions(lang);
       if (page == null) {
-        page = new Page(NOTE_NAME, "");
+        page = new Page(TC_NOTE_NAME, "");
         page.setContent(content);
         page.setCreatedDate(new Date());
         page.setUpdatedDate(new Date());
@@ -192,9 +191,9 @@ public class TermsAndConditionsService {
   }
 
   private Wiki getNote() throws WikiException {
-    Wiki noteBook = noteBookService.getWikiByTypeAndOwner(NOTE_TYPE, IdentityConstants.SYSTEM);
+    Wiki noteBook = noteBookService.getWikiByTypeAndOwner(TC_NOTE_TYPE, IdentityConstants.SYSTEM);
     if (noteBook == null) {
-      return noteBookService.createWiki(NOTE_TYPE, IdentityConstants.SYSTEM);
+      return noteBookService.createWiki(TC_NOTE_TYPE, IdentityConstants.SYSTEM);
     } else {
       return noteBook;
     }
