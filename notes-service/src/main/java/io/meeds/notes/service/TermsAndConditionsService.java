@@ -34,57 +34,51 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static org.exoplatform.commons.api.settings.data.Context.USER;
 
+@Service
 public class TermsAndConditionsService {
 
-  public static final String                       ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
-                                                                                              "Error retrieving terms and conditions note";
+  public static final String                 ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
+                                                                                        "Error retrieving terms and conditions note";
 
-  public static final String                       TC_NOTE_TYPE                               = "terms";
+  public static final String                 TC_NOTE_TYPE                               = "terms";
 
-  public static final String                       TC_NOTE_NAME                               = "termsAndConditions";
+  public static final String                 TC_NOTE_NAME                               = "termsAndConditions";
 
-  public static final Scope                        SETTINGS_APP_SCOPE                         =
-                                                                      Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
+  public static final Scope                  SETTINGS_APP_SCOPE                         =
+                                                                Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
 
-  public static final String                       SETTINGS_KEY                               =
-                                                                "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
+  public static final String                 SETTINGS_KEY                               = "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
 
-  public static final String                       PUBLISHED                                  = "published";
+  public static final String                 PUBLISHED                                  = "published";
 
-  public static final String                       TERMS_AND_CONDITIONS_ADDED                 = "termsAndConditionsAdded";
+  public static final String                 TERMS_AND_CONDITIONS_ADDED                 = "termsAndConditionsAdded";
 
-  public static final String                       TERMS_AND_CONDITIONS_UPDATED               = "termsAndConditionsUpdated";
+  public static final String                 TERMS_AND_CONDITIONS_UPDATED               = "termsAndConditionsUpdated";
 
-  public static final String                       LATEST_VERSION_ID                          = "latestVersionId";
+  public static final String                 LATEST_VERSION_ID                          = "latestVersionId";
 
-  private final NoteService                        noteService;
+  @Autowired
+  private NoteService                        noteService;
 
-  private final WikiService                        noteBookService;
+  @Autowired
+  private WikiService                        noteBookService;
 
-  private final SettingService                     settingService;
+  @Autowired
+  private SettingService                     settingService;
 
-  private final ListenerService                    listenerService;
+  @Autowired
+  private ListenerService                    listenerService;
 
-  private final TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
+  @Autowired
+  private TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
 
-  private final UserACL                            userACL;
-
-  public TermsAndConditionsService(NoteService noteService,
-                                   WikiService noteBookService,
-                                   SettingService settingService,
-                                   ListenerService listenerService,
-                                   TermsAndConditionsWebSocketService termsAndConditionsWebSocketService,
-                                   UserACL userACL) {
-    this.noteService = noteService;
-    this.noteBookService = noteBookService;
-    this.settingService = settingService;
-    this.listenerService = listenerService;
-    this.termsAndConditionsWebSocketService = termsAndConditionsWebSocketService;
-    this.userACL = userACL;
-  }
+  @Autowired
+  private UserACL                            userACL;
 
   public Page saveTermsAndConditions(String content, String lang, Identity currentUserAclIdentity) throws IllegalAccessException {
     String username = currentUserAclIdentity.getUserId();
