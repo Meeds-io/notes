@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,26 +18,16 @@
  */
 package io.meeds.notes.rest;
 
-import java.util.Date;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import com.google.javascript.jscomp.jarjar.com.google.common.base.Objects;
+import javax.ws.rs.core.*;
 
 import io.meeds.notes.rest.model.TermsAndConditionsSettings;
 import io.meeds.notes.service.TermsAndConditionsService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.wiki.model.Page;
 
@@ -46,29 +36,25 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
-@Path("/notes/terms/")
-@Tag(name = "/notes/terms/", description = "Managing terms and conditions")
-public class TermsAndConditionsRest implements ResourceContainer {
+@RestController
+@RequestMapping("terms")
+@Tag(name = "terms", description = "Managing terms and conditions") // NOSONAR
+public class TermsAndConditionsRest {
 
-  private static final CacheControl CACHE_CONTROL    = new CacheControl();
+  private static final Log          LOG = ExoLogger.getLogger(TermsAndConditionsRest.class);
 
-  private static final int          CACHE_IN_SECONDS = 365 * 86400;
+  @Autowired
+  private TermsAndConditionsService termsAndConditionsService;
 
-  private static final Log          LOG              = ExoLogger.getLogger(TermsAndConditionsRest.class);
-
-  static {
-    CACHE_CONTROL.setMaxAge(CACHE_IN_SECONDS);
-    CACHE_CONTROL.setMustRevalidate(true);
-  }
-
-  private final TermsAndConditionsService termsAndConditionsService;
-
-  public TermsAndConditionsRest(TermsAndConditionsService termsAndConditionsService) {
-    this.termsAndConditionsService = termsAndConditionsService;
-  }
-
-  @GET
+  @GetMapping
+  @Secured("users")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Retrieves the terms and conditions page", description = "Retrieves the terms and conditions page", method = "GET")
   @ApiResponses(value = {
@@ -76,35 +62,30 @@ public class TermsAndConditionsRest implements ResourceContainer {
           @ApiResponse(responseCode = "304", description = "Not modified"),
           @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "404", description = "Resource not found"), })
-  public Response getNotePage(@Context
-                              Request request,
-                              @Parameter(description = "User language")
-                              @QueryParam("lang")
-                              String lang) {
+  public ResponseEntity<Page> getNotePage(HttpServletRequest request,
+                                          @Parameter(description = "User language")
+                                          @RequestParam("lang")
+                                          String lang) {
     try {
       Page note = termsAndConditionsService.getTermsAndConditions(lang);
       if (note == null) {
-        return Response.status(Status.NOT_FOUND).build();
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
       }
       note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      Date updatedDate = note.getUpdatedDate();
-      EntityTag eTag = new EntityTag(String.valueOf(Objects.hashCode(lang, String.valueOf(updatedDate.getTime()))));
-      Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
-      if (builder == null) {
-        builder = Response.ok(note);
+      String eTagValue = String.valueOf(note.hashCode());
+      String requestETag = request.getHeader(HttpHeaders.IF_NONE_MATCH);
+      if (requestETag != null && requestETag.equals(eTagValue)) {
+        return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
       }
-      builder.lastModified(updatedDate);
-      builder.tag(eTag);
-      builder.cacheControl(CACHE_CONTROL);
-      return builder.build();
+      return ResponseEntity.ok().eTag(eTagValue).body(note);
     } catch (Exception e) {
       LOG.warn("Error retrieving terms and conditions page content for user {}", RestUtils.getCurrentUser(), e);
-      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @PUT
-  @RolesAllowed("users")
+  @PutMapping
+  @Secured("users")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Saves a terms and conditions page content",
              description = "Saves a terms and conditions page content",
@@ -112,27 +93,21 @@ public class TermsAndConditionsRest implements ResourceContainer {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "401", description = "Unauthorized") })
-  public Response saveNotePage(@Context
-                               Request request,
-                               @Parameter(description = "Note Content", required = true)
-                               @FormParam("content")
-                               String content,
-                               @Parameter(description = "User language")
-                               @FormParam("lang")
-                               String lang) {
-    Page page;
+  public Page saveNotePage(@Parameter(description = "Note Content", required = true)
+                           @RequestParam("content")
+                           String content,
+                           @Parameter(description = "User language")
+                           @RequestParam("lang")
+                           String lang) {
     try {
-      page = termsAndConditionsService.saveTermsAndConditions(content, lang, RestUtils.getCurrentUserAclIdentity());
+      return termsAndConditionsService.saveTermsAndConditions(content, lang, RestUtils.getCurrentUserAclIdentity());
     } catch (IllegalAccessException e) {
-      LOG.warn("User '{}' doesn't have enough privileges to create terms and conditions page", RestUtils.getCurrentUser(), e);
-      return Response.status(Status.UNAUTHORIZED).build();
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
-    return Response.ok(page).build();
   }
 
-  @PUT
-  @Path("/settings")
-  @RolesAllowed("users")
+  @PutMapping(path = "/settings")
+  @Secured("users")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "Update terms and conditions settings",
@@ -143,28 +118,20 @@ public class TermsAndConditionsRest implements ResourceContainer {
           @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "400", description = "Bad Request")
   })
-  public Response updateTermsAndConditionsSettings(TermsAndConditionsSettings termsAndConditionsSettings) {
-    Page page;
+  public Page updateTermsAndConditionsSettings(@RequestBody TermsAndConditionsSettings termsAndConditionsSettings) {
     try {
-      page = termsAndConditionsService.updateTermsAndConditionsSettings(
-              termsAndConditionsSettings.getSettings(),
-              termsAndConditionsSettings.getLang(),
-              RestUtils.getCurrentUserAclIdentity()
-      );
+      return termsAndConditionsService.updateTermsAndConditionsSettings(termsAndConditionsSettings.getSettings(),
+                                                                        termsAndConditionsSettings.getLang(),
+                                                                        RestUtils.getCurrentUserAclIdentity());
     } catch (IllegalAccessException e) {
-      LOG.warn("User '{}' doesn't have enough privileges to update terms and conditions settings",
-              RestUtils.getCurrentUser(), e);
-      return Response.status(Status.UNAUTHORIZED).entity("Unauthorized").build();
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
     } catch (Exception e) {
-      LOG.error("Error updating terms and conditions settings", e);
-      return Response.status(Status.BAD_REQUEST).entity("Error updating settings").build();
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
-    return Response.ok(page).build();
   }
 
-  @POST
-  @Path("/accept")
-  @RolesAllowed("users")
+  @PostMapping(path = "/accept")
+  @Secured("users")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Accept terms and conditions",
              description = "Marks the terms and conditions as accepted for the current user",
@@ -174,22 +141,15 @@ public class TermsAndConditionsRest implements ResourceContainer {
           @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "500", description = "Internal Server Error")
   })
-  public Response acceptTermsAndConditions(@Parameter(description = "User language")
-                                           @FormParam("lang")
-                                           String lang) {
-    try {
-      String currentUser = RestUtils.getCurrentUser();
-      termsAndConditionsService.markTermsAsAcceptedForUser(currentUser, lang);
-      return Response.ok().build();
-    } catch (Exception e) {
-      LOG.error("Error accepting terms and conditions for user {}", RestUtils.getCurrentUser(), e);
-      return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error accepting terms and conditions").build();
-    }
+  public void acceptTermsAndConditions(HttpServletRequest request,
+                                       @Parameter(description = "User language")
+                                       @RequestParam("lang")
+                                       String lang) {
+    termsAndConditionsService.markTermsAsAcceptedForUser(request.getRemoteUser(), lang);
   }
 
-  @GET
-  @Path("/status")
-  @RolesAllowed("users")
+  @GetMapping(path = "/status")
+  @Secured("users")
   @Produces(MediaType.TEXT_PLAIN)
   @Operation(summary = "Check terms and conditions status for the current user",
           description = "Check the terms and conditions status for the current user",
@@ -199,18 +159,10 @@ public class TermsAndConditionsRest implements ResourceContainer {
           @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "500", description = "Internal Server Error")
   })
-  public Response isTermsAcceptedForUser(@Parameter(description = "User language")
-                                         @QueryParam("lang")
-                                         String lang) {
-    try {
-      String currentUser = RestUtils.getCurrentUser();
-      boolean accepted = termsAndConditionsService.isTermsAcceptedForUser(currentUser, lang);
-      return Response.ok().entity(String.valueOf(accepted)).type(MediaType.TEXT_PLAIN).build();
-    } catch (Exception e) {
-      LOG.error("Error checking terms and conditions status for user {}", RestUtils.getCurrentUser(), e);
-      return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error checking terms and conditions status").build();
-    }
+  public boolean isTermsAcceptedForUser(HttpServletRequest request,
+                                        @Parameter(description = "User language")
+                                        @RequestParam("lang")
+                                        String lang) {
+    return termsAndConditionsService.isTermsAcceptedForUser(request.getRemoteUser(), lang);
   }
-
-
 }
