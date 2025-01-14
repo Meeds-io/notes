@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,13 +18,7 @@
  */
 
 export function getTermsAndConditions(lang) {
-  const formData = new FormData();
-  if (lang) {
-    formData.append('lang', lang);
-  }
-  const urlParams = new URLSearchParams(formData).toString();
-  const params = urlParams.length && `?${decodeURIComponent(urlParams)}` || '';
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms${params}`, {
+  return fetch(`/notes/rest/terms?lang=${lang|| 'en'}`, {
     method: 'GET',
     credentials: 'include',
   }).then((resp) => {
@@ -45,7 +39,7 @@ export function saveTermsAndConditions(content, lang) {
   }
   formData.append('content', content || '');
   const params = new URLSearchParams(formData).toString();
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms`, {
+  return fetch('/notes/rest/terms/terms', {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -66,8 +60,7 @@ export function updateTermsAndConditionsSettings(settings, lang) {
     settings: settings || {},
     lang: lang || '',
   };
-
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/settings`, {
+  return fetch('/notes/rest/terms/settings', {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -92,7 +85,7 @@ export function acceptTermsAndConditions(lang) {
   }
   const params = new URLSearchParams(formData).toString();
 
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/accept`, {
+  return fetch('/notes/rest/terms/accept', {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -116,7 +109,7 @@ export function isTermsAcceptedForUser(lang) {
   const urlParams = new URLSearchParams(formData).toString();
   const params = urlParams.length && `?${decodeURIComponent(urlParams)}` || '';
 
-  return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/terms/status${params}`, {
+  return fetch(`/notes/rest/terms/status${params}`, {
     method: 'GET',
     credentials: 'include',
   }).then((resp) => {
