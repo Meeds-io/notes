@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2023 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,14 +18,17 @@
  */
 package io.meeds.notes.service;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.websocket.entity.WebSocketMessage;
 import org.exoplatform.ws.frameworks.cometd.ContinuationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class TermsAndConditionsWebSocketService {
 
   public static final String  COMETD_CHANNEL = "/TermsAndConditions";
 
+  @Autowired
   private ContinuationService continuationService;
 
   /**
@@ -36,14 +39,7 @@ public class TermsAndConditionsWebSocketService {
    *          behavior to adopt in order to update UI
    */
   public void sendMessage(String eventName) {
-    getContinuationService();
     String wsMessage = new WebSocketMessage(eventName).toJsonString();
     continuationService.sendBroadcastMessage(COMETD_CHANNEL, wsMessage);
-  }
-
-  private void getContinuationService() {
-    if (continuationService == null) {
-      continuationService = CommonsUtils.getService(ContinuationService.class);
-    }
   }
 }
