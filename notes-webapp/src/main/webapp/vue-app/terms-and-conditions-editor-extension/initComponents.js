@@ -17,11 +17,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import * as termsAndConditionsService from '../terms-and-conditions-admin-settings/js/TermsAndConditionsService';
+import termsAndConditionsReminder from './components/termsAndConditionsReminder.vue';
 
-if (!Vue.prototype.$termsAndConditionsService) {
-  window.Object.defineProperty(Vue.prototype, '$termsAndConditionsService', {
-    value: termsAndConditionsService,
-  });
+const components = {
+  'terms-and-conditions-reminder': termsAndConditionsReminder,
+};
+
+for (const key in components) {
+  Vue.component(key, components[key]);
 }
-

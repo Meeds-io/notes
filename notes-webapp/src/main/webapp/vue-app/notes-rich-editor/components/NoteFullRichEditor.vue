@@ -74,7 +74,7 @@
       </div>
     </div>
     <extension-registry-components
-      v-if="editorExtensions.length > 0"
+      v-if="initialized && editorExtensions.length > 0"
       name="NotesRichEditor"
       type="notes-editor-extensions"
       :params="extensionParams" />
@@ -265,7 +265,8 @@ export default {
         entityId: this.entityId,
         entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
         lang: this.note.lang,
-        isEmptyNoteTranslation: this.newEmptyTranslation
+        isEmptyNoteTranslation: this.newEmptyTranslation,
+        name: this.note?.name
       };
     },
     hasFeaturedImage() {
@@ -314,7 +315,9 @@ export default {
       }
     },
     refreshEditorExtensions() {
-      this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
+      this.$nextTick().then(() => {
+        this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
+      });
     },
     editorClosed(){
       this.$emit('editor-closed');
