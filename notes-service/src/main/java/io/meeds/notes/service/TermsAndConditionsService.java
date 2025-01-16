@@ -20,6 +20,8 @@ package io.meeds.notes.service;
 
 import java.util.*;
 
+import io.meeds.notes.model.TermsAndConditionPage;
+import lombok.SneakyThrows;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,7 +32,11 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.wiki.WikiException;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.social.metadata.model.MetadataKey;
+import org.exoplatform.social.metadata.model.MetadataObject;
+import org.exoplatform.social.metadata.model.MetadataType;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
@@ -42,45 +48,51 @@ import static org.exoplatform.commons.api.settings.data.Context.USER;
 @Service
 public class TermsAndConditionsService {
 
-  public static final String                 ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE =
-                                                                                        "Error retrieving terms and conditions note";
+  public static final String       TC_NOTE_TYPE            = "terms";
 
-  public static final String                 TC_NOTE_TYPE                               = "terms";
+  public static final String       TC_NOTE_NAME            = "termsAndConditions";
 
-  public static final String                 TC_NOTE_NAME                               = "termsAndConditions";
+  public static final Scope        SETTINGS_APP_SCOPE      = Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
 
-  public static final Scope                  SETTINGS_APP_SCOPE                         =
-                                                                Scope.APPLICATION.id("TERMS_AND_CONDITIONS");
+  public static final String       SETTINGS_KEY            = "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
 
-  public static final String                 SETTINGS_KEY                               = "TERMS_AND_CONDITIONS_ACCEPTED_VERSION";
+  public static final String       PUBLISHED               = "published";
 
-  public static final String                 PUBLISHED                                  = "published";
+  public static final String       PUBLISHED_DATE          = "publishedDate";
 
-  public static final String                 TERMS_AND_CONDITIONS_ADDED                 = "termsAndConditionsAdded";
+  public static final String       EVENT_NAME_ADDED        = "terms.and.conditions.added";
 
-  public static final String                 TERMS_AND_CONDITIONS_UPDATED               = "termsAndConditionsUpdated";
+  public static final String       EVENT_NAME_UPDATED      = "terms.and.conditions.updated";
 
-  public static final String                 LATEST_VERSION_ID                          = "latestVersionId";
+  public static final String       LATEST_VERSION_ID       = "latestVersionId";
 
-  @Autowired
-  private NoteService                        noteService;
+  public static final String       TC_METADATA_OBJECT_TYPE = "termsAndConditions";
 
-  @Autowired
-  private WikiService                        noteBookService;
+  public static final MetadataType TC_METADATA_TYPE        = new MetadataType(1002, TC_NOTE_NAME);
+
+  public static final MetadataKey  TC_METADATA_KEY         = new MetadataKey(TC_METADATA_TYPE.getName(), TC_NOTE_NAME, 0);
 
   @Autowired
-  private SettingService                     settingService;
+  private NoteService              noteService;
 
   @Autowired
-  private ListenerService                    listenerService;
+  private WikiService              noteBookService;
 
   @Autowired
-  private TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
+  private SettingService           settingService;
 
   @Autowired
-  private UserACL                            userACL;
+  private ListenerService          listenerService;
 
-  public Page saveTermsAndConditions(String content, String lang, Identity currentUserAclIdentity) throws IllegalAccessException {
+  @Autowired
+  private MetadataService          metadataService;
+
+  @Autowired
+  private UserACL                  userACL;
+
+  public TermsAndConditionPage saveTermsAndConditions(String content,
+                                                      String lang,
+                                                      Identity currentUserAclIdentity) throws IllegalAccessException {
     String username = currentUserAclIdentity.getUserId();
     if (!userACL.isAdministrator(currentUserAclIdentity)) {
       throw new IllegalAccessException("User doesn't have enough privileges to create terms and conditions page");
@@ -88,56 +100,59 @@ public class TermsAndConditionsService {
     return saveTermsAndConditions(content, lang, username);
   }
 
-  public Page updateTermsAndConditionsSettings(Map<String, String> settings,
-                                               String lang,
-                                               Identity currentUserAclIdentity) throws IllegalAccessException {
+  @SneakyThrows
+  public TermsAndConditionPage updateTermsAndConditionsSettings(Map<String, String> settings,
+                                                                String lang,
+                                                                Identity currentUserAclIdentity) throws IllegalAccessException {
     if (!userACL.isAdministrator(currentUserAclIdentity)) {
       throw new IllegalAccessException("User doesn't have enough privileges to update terms and conditions settings");
     }
-    try {
-      Page page = getTermsAndConditions(lang);
-      String latestPublishedVersionId = MapUtils.isNotEmpty(page.getSettings()) ? page.getSettings().get(LATEST_VERSION_ID) : "";
-      if (MapUtils.isNotEmpty(settings)) {
-        page.setSettings(settings);
-        page.setUpdatedDate(new Date());
-        noteService.updateNote(page);
-        if (settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true")
-            && !Objects.equals(settings.get(LATEST_VERSION_ID), latestPublishedVersionId)) {
-          termsAndConditionsWebSocketService.sendMessage(page.getLatestVersionId().equals("2") ? TERMS_AND_CONDITIONS_ADDED
-                                                                                               : TERMS_AND_CONDITIONS_UPDATED);
-        }
+    TermsAndConditionPage page = getTermsAndConditions(lang);
+
+    if (MapUtils.isNotEmpty(settings)) {
+      MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
+
+      boolean published = settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true");
+      String eventName;
+      if (metadataItem != null) {
+        metadataItem.setProperties(settings);
+        metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
+        eventName = EVENT_NAME_UPDATED;
+      } else {
+        MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
+        metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));
+        eventName = EVENT_NAME_ADDED;
       }
-      return getTermsAndConditions(lang);
-    } catch (WikiException e) {
-      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
+      if (published) {
+        listenerService.broadcast(eventName, page.getId(), null);
+      }
     }
+    return getTermsAndConditions(lang);
   }
 
-  public Page getTermsAndConditions(String lang) {
-    try {
-      Page page = noteService.getNoteOfNoteBookByName(TC_NOTE_TYPE, IdentityConstants.SYSTEM, TC_NOTE_NAME);
-      if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
-        Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
-        publishedVersion =
-                         publishedVersion != null ? publishedVersion
+  @SneakyThrows
+  public TermsAndConditionPage getTermsAndConditions(String lang) {
+    Page page = noteService.getNoteOfNoteBookByName(TC_NOTE_TYPE, IdentityConstants.SYSTEM, TC_NOTE_NAME);
+    if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
+      Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
+      publishedVersion = publishedVersion != null ? publishedVersion
                                                   : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()),
                                                                                                    Locale.ENGLISH.getLanguage());
-        if (publishedVersion != null) {
-          page.setTitle(publishedVersion.getTitle());
-          page.setContent(publishedVersion.getContent());
-          page.setLang(publishedVersion.getLang());
-          page.setProperties(publishedVersion.getProperties());
-          page.setLatestVersionId(publishedVersion.getId());
-        }
+      if (publishedVersion != null) {
+        page.setTitle(publishedVersion.getTitle());
+        page.setContent(publishedVersion.getContent());
+        page.setLang(publishedVersion.getLang());
+        page.setProperties(publishedVersion.getProperties());
+        page.setLatestVersionId(publishedVersion.getId());
       }
-      return page;
-    } catch (WikiException e) {
-      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
+      return buildTermsAndConditionPage(page);
+
     }
+    return null;
   }
 
   public void markTermsAsAcceptedForUser(String userId, String lang) {
-    Page terms = getTermsAndConditions(lang);
+    TermsAndConditionPage terms = getTermsAndConditions(lang);
     if (terms != null) {
       settingService.set(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY, SettingValue.create(terms.getLatestVersionId()));
       listenerService.broadcast("terms.condition.accepted", userId, null);
@@ -145,9 +160,8 @@ public class TermsAndConditionsService {
   }
 
   public boolean isTermsAcceptedForUser(String userId, String lang) {
-    Page terms = getTermsAndConditions(lang);
-    if (terms != null && MapUtils.isNotEmpty(terms.getSettings()) && terms.getSettings().get(PUBLISHED) != null
-        && terms.getSettings().get(PUBLISHED).equals("true")) {
+    TermsAndConditionPage terms = getTermsAndConditions(lang);
+    if (terms != null && terms.isPublished()) {
       SettingValue<?> acceptedVersion = settingService.get(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY);
       String acceptedVersionValue = acceptedVersion == null
           || acceptedVersion.getValue() == null ? null : acceptedVersion.getValue().toString();
@@ -157,34 +171,66 @@ public class TermsAndConditionsService {
     return true;
   }
 
-  private Page saveTermsAndConditions(String content, String lang, String username) {
-    try {
-      Wiki noteBook = getNote();
-      Page page = getTermsAndConditions(lang);
-      if (page == null) {
-        page = new Page(TC_NOTE_NAME, "");
-        page.setContent(content);
-        page.setCreatedDate(new Date());
-        page.setUpdatedDate(new Date());
-        page.setAuthor(username);
-        page.setOwner(IdentityConstants.SYSTEM);
-        page.setLang(lang);
-        page.setToBePublished(true);
-        page = noteService.createNote(noteBook, noteBook.getWikiHome(), page);
-        noteService.createVersionOfNote(page, username);
-      }
-      return getTermsAndConditions(lang);
-    } catch (WikiException e) {
-      throw new IllegalStateException(ERROR_RETRIEVING_TERMS_AND_CONDITIONS_NOTE, e);
+  @SneakyThrows
+  private TermsAndConditionPage saveTermsAndConditions(String content, String lang, String username) {
+    Wiki noteBook = geTermsAndConditions();
+    TermsAndConditionPage termsAndConditionPage = getTermsAndConditions(lang);
+    if (termsAndConditionPage == null) {
+      Page page = new Page(TC_NOTE_NAME, "");
+      page.setContent(content);
+      page.setCreatedDate(new Date());
+      page.setUpdatedDate(new Date());
+      page.setAuthor(username);
+      page.setOwner(IdentityConstants.SYSTEM);
+      page.setLang(lang);
+      page.setToBePublished(true);
+      page = noteService.createNote(noteBook, noteBook.getWikiHome(), page);
+      noteService.createVersionOfNote(page, username);
     }
+    return getTermsAndConditions(lang);
   }
 
-  private Wiki getNote() throws WikiException {
+  @SneakyThrows
+  private Wiki geTermsAndConditions() {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(TC_NOTE_TYPE, IdentityConstants.SYSTEM);
     if (noteBook == null) {
       return noteBookService.createWiki(TC_NOTE_TYPE, IdentityConstants.SYSTEM);
     } else {
       return noteBook;
     }
+  }
+
+  private TermsAndConditionPage buildTermsAndConditionPage(Page page) {
+    TermsAndConditionPage termsAndConditionPage = new TermsAndConditionPage();
+
+    termsAndConditionPage.setId(page.getId());
+    termsAndConditionPage.setParentPageId(page.getParentPageId());
+    termsAndConditionPage.setName(page.getName());
+    termsAndConditionPage.setTitle(page.getTitle());
+    termsAndConditionPage.setContent(page.getContent());
+    termsAndConditionPage.setLang(page.getLang());
+    termsAndConditionPage.setProperties(page.getProperties());
+    termsAndConditionPage.setLatestVersionId("");
+    MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
+
+    if (metadataItem != null) {
+      boolean published = MapUtils.isNotEmpty(metadataItem.getProperties())
+          && Boolean.parseBoolean(metadataItem.getProperties().get(PUBLISHED));
+      String publishedDateStr = metadataItem.getProperties().get(PUBLISHED_DATE);
+      long publishedDate = StringUtils.isNotBlank(publishedDateStr) ? Long.parseLong(publishedDateStr) : 0;
+      String latestPublishedVersionId = MapUtils.isNotEmpty(metadataItem.getProperties())
+                                                                                          ? metadataItem.getProperties()
+                                                                                                        .get(LATEST_VERSION_ID)
+                                                                                          : "";
+      termsAndConditionPage.setPublished(published);
+      termsAndConditionPage.setPublishedDate(publishedDate);
+      termsAndConditionPage.setLatestVersionId(latestPublishedVersionId);
+    }
+    return termsAndConditionPage;
+  }
+
+  private MetadataItem getTermsAndConditionsMetadataItem(String pageId) {
+    MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, pageId);
+    return metadataService.getMetadataItemsByMetadataAndObject(TC_METADATA_KEY, metadataObject).stream().findFirst().orElse(null);
   }
 }

@@ -55,16 +55,20 @@ public class PageEntity extends BasePageEntity {
 
   @ManyToOne
   @JoinColumn(name = "WIKI_ID")
+  @EqualsAndHashCode.Exclude
   private WikiEntity wiki;
 
   @ManyToOne
   @JoinColumn(name = "PARENT_PAGE_ID")
+  @EqualsAndHashCode.Exclude
   private PageEntity parentPage;
 
   @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
+  @EqualsAndHashCode.Exclude
   private List<PageVersionEntity> versions;
 
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "page")
+  @EqualsAndHashCode.Exclude
   private List<PageAttachmentEntity> attachments;
 
   @ManyToMany
@@ -72,6 +76,7 @@ public class PageEntity extends BasePageEntity {
       joinColumns = {@JoinColumn(name = "PAGE_ID")},
       inverseJoinColumns = {@JoinColumn(name = "RELATED_PAGE_ID")}
   )
+  @EqualsAndHashCode.Exclude
   private List<PageEntity> relatedPages;
 
   @Column(name = "OWNER")
@@ -95,6 +100,7 @@ public class PageEntity extends BasePageEntity {
       joinColumns=@JoinColumn(name = "PAGE_ID")
   )
   @Column(name="USERNAME")
+  @EqualsAndHashCode.Exclude
   private Set<String> watchers = new HashSet<>();
 
   @ElementCollection
@@ -102,18 +108,14 @@ public class PageEntity extends BasePageEntity {
       name = "WIKI_PAGE_PERMISSIONS",
       joinColumns=@JoinColumn(name = "PAGE_ID")
   )
+  @EqualsAndHashCode.Exclude
   private List<PermissionEntity> permissions;
 
   @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
+  @EqualsAndHashCode.Exclude
   private List<PageMoveEntity> moves = new ArrayList<>();
 
   @Column(name = "DELETED")
   private boolean deleted;
-
-  @ElementCollection(fetch = FetchType.EAGER)
-  @MapKeyColumn(name = "NAME")
-  @Column(name = "VALUE")
-  @CollectionTable(name = "WIKI_PAGES_SETTINGS", joinColumns = { @JoinColumn(name = "PAGE_ID") })
-  private Map<String, String> settings;
 
 }
