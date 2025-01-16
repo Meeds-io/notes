@@ -742,21 +742,4 @@
     </sql>
   </changeSet>
 
-  <changeSet author="wiki" id="1.0.0-mip-157-01">
-    <createTable tableName="WIKI_PAGES_SETTINGS">
-      <column name="PAGE_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_WIKI_PAGES_SETTINGS" references="WIKI_PAGES(PAGE_ID)" deferrable="false" initiallyDeferred="false" deleteCascade="true" />
-      </column>
-      <column name="NAME" type="NVARCHAR(255)">
-        <constraints nullable="false" />
-      </column>
-      <column name="VALUE" type="LONGTEXT">
-        <constraints nullable="false" />
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
-    </modifySql>
-  </changeSet>
-
 </databaseChangeLog>

@@ -31,16 +31,16 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(classes = { TermsAndConditionsAnalyticsListener.class, })
+@TestPropertySource(properties = { "spring.profiles.active=analytics", })
 class TermsAndConditionsAnalyticsListenerTest {
 
   @MockBean
-
   private ListenerService                     listenerService;
 
   @MockBean
-
   private Event<String, Object>               event;
 
   @Autowired
