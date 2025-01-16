@@ -114,7 +114,7 @@ export default {
     checkTermsAndConditionsPublished() {
       this.displayed = false;
       return this.$termsAndConditionsService.getTermsAndConditions(this.lang).then(page => {
-        this.displayed = page?.settings?.published === 'true';
+        this.displayed = page?.published;
       });
     },
   },
