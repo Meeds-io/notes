@@ -16,38 +16,48 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.notes.filter;
+package io.meeds.notes.handler;
 
 import io.meeds.notes.service.TermsAndConditionsService;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.web.ControllerContext;
+import org.exoplatform.web.WebAppController;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(classes = { TermsAndConditionsFilter.class, })
-class TermsAndConditionsFilterTest {
+@SpringBootTest(classes = { TermsAndConditionsHandler.class, })
+class TermsAndConditionsHandlerTest {
+
+  @Mock
+  private WebAppController          webAppController;
+
+  @Mock
+  private ServletConfig             servletConfig;
+
+  @MockBean
+  ControllerContext                 controllerContext;
 
   @MockBean
   private HttpServletRequest        httpRequest;
 
   @MockBean
   private HttpServletResponse       httpResponse;
-
-  @MockBean
-  private FilterChain               filterChain;
 
   @MockBean
   private TermsAndConditionsService termsService;
@@ -59,66 +69,66 @@ class TermsAndConditionsFilterTest {
   private PortalContainer           container;
 
   @Autowired
-  private TermsAndConditionsFilter  filter;
+  private TermsAndConditionsHandler handler;
 
   @Test
-  void testUserHasAcceptedTermsAndRequestIsForTermsPage() throws ServletException, IOException {
+  void testUserHasAcceptedTermsAndRequestIsForTermsPage() throws Exception {
     when(container.getComponentInstanceOfType(TermsAndConditionsService.class)).thenReturn(termsService);
     when(container.getComponentInstanceOfType(UserPortalConfigService.class)).thenReturn(portalConfigService);
+    when(controllerContext.getRequest()).thenReturn(httpRequest);
+    when(controllerContext.getResponse()).thenReturn(httpResponse);
+    when(httpRequest.getContextPath()).thenReturn("/portal");
     when(httpRequest.getRemoteUser()).thenReturn("testUser");
     when(httpRequest.getRequestURI()).thenReturn("/portal/terms-and-conditions");
     when(httpRequest.getQueryString()).thenReturn(null);
-    when(termsService.isTermsAcceptedForUser("testUser", null)).thenReturn(true);
+    when(httpRequest.getLocale()).thenReturn(Locale.ENGLISH);
+    when(termsService.isTermsAcceptedForUser("testUser", "en")).thenReturn(true);
     when(portalConfigService.getMetaPortal()).thenReturn("classic");
 
     try (MockedStatic<PortalContainer> mockedStatic = mockStatic(PortalContainer.class)) {
       mockedStatic.when(PortalContainer::getInstance).thenReturn(container);
-
-      filter.doFilter(httpRequest, httpResponse, filterChain);
+      handler.onInit(webAppController, servletConfig);
+      boolean executed = handler.execute(controllerContext);
 
       verify(httpResponse).sendRedirect("/portal/classic/settings#terms-and-conditions");
-      verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+      assertTrue(executed);
     }
   }
 
   @Test
-  void testUserHasNotAcceptedTerms() throws ServletException, IOException {
+  void testUserHasNotAcceptedTerms() throws Exception {
     when(container.getComponentInstanceOfType(TermsAndConditionsService.class)).thenReturn(termsService);
     when(container.getComponentInstanceOfType(UserPortalConfigService.class)).thenReturn(portalConfigService);
+    when(controllerContext.getRequest()).thenReturn(httpRequest);
+    when(controllerContext.getResponse()).thenReturn(httpResponse);
+    when(httpRequest.getContextPath()).thenReturn("/portal");
     when(httpRequest.getRemoteUser()).thenReturn("testUser");
     when(httpRequest.getRequestURI()).thenReturn("/portal/home");
+    when(httpRequest.getLocale()).thenReturn(Locale.ENGLISH);
     when(termsService.isTermsAcceptedForUser("testUser", null)).thenReturn(false);
     when(portalConfigService.getMetaPortal()).thenReturn("classic");
+
     try (MockedStatic<PortalContainer> mockedStatic = mockStatic(PortalContainer.class)) {
       mockedStatic.when(PortalContainer::getInstance).thenReturn(container);
-
-      filter.doFilter(httpRequest, httpResponse, filterChain);
+      handler.onInit(webAppController, servletConfig);
+      boolean executed = handler.execute(controllerContext);
 
       String encodedPreviousPage = URLEncoder.encode("/portal/home", StandardCharsets.UTF_8);
-
       verify(httpResponse).sendRedirect("/portal/classic/terms-and-conditions?redirect=" + encodedPreviousPage);
-      verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+      assertTrue(executed);
     }
   }
 
   @Test
-  void testExcludedUrl() throws ServletException, IOException {
-    when(httpRequest.getRemoteUser()).thenReturn("testUser");
-    when(httpRequest.getRequestURI()).thenReturn("/portal/skins/theme.css");
-
-    filter.doFilter(httpRequest, httpResponse, filterChain);
-
-    verify(filterChain).doFilter(httpRequest, httpResponse);
-    verify(httpResponse, never()).sendRedirect(anyString());
-  }
-
-  @Test
-  void testAnonymousUser() throws ServletException, IOException {
+  void testAnonymousUser() throws Exception {
+    when(controllerContext.getRequest()).thenReturn(httpRequest);
+    when(controllerContext.getResponse()).thenReturn(httpResponse);
     when(httpRequest.getRemoteUser()).thenReturn(null);
 
-    filter.doFilter(httpRequest, httpResponse, filterChain);
+    handler.onInit(webAppController, servletConfig);
+    boolean executed = handler.execute(controllerContext);
 
-    verify(filterChain).doFilter(httpRequest, httpResponse);
     verify(httpResponse, never()).sendRedirect(anyString());
+    assertFalse(executed);
   }
 }

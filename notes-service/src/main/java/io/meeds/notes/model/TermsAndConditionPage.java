@@ -9,20 +9,38 @@
  * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
  */
+package io.meeds.notes.model;
 
-import TermsAndConditionsReminder from './components/TermsAndConditionsReminder.vue';
+import lombok.Data;
 
-const components = {
-  'terms-and-conditions-reminder': TermsAndConditionsReminder,
-};
+@Data
+public class TermsAndConditionPage {
 
-for (const key in components) {
-  Vue.component(key, components[key]);
+  private String             id;
+
+  private String             parentPageId;
+
+  private String             name;
+
+  private String             title;
+
+  private String             content;
+
+  private String             lang;
+
+  private NotePageProperties properties;
+
+  private boolean            published;
+
+  private long               publishedDate;
+
+  private String             latestVersionId;
+
 }

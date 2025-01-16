@@ -108,8 +108,6 @@ public class Page {
 
   private String                          attachmentObjectType;
 
-  private Map<String, String>             settings;
-
   public Page(String name) {
     this.name = name;
   }
