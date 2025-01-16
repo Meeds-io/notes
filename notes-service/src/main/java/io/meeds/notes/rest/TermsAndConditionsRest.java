@@ -22,6 +22,7 @@ package io.meeds.notes.rest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import io.meeds.notes.model.TermsAndConditionPage;
 import io.meeds.notes.rest.model.TermsAndConditionsSettings;
 import io.meeds.notes.service.TermsAndConditionsService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +30,6 @@ import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.rest.api.RestUtils;
-import org.exoplatform.wiki.model.Page;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,28 +60,22 @@ public class TermsAndConditionsRest {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "304", description = "Not modified"),
-          @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "404", description = "Resource not found"), })
-  public ResponseEntity<Page> getNotePage(HttpServletRequest request,
-                                          @Parameter(description = "User language")
-                                          @RequestParam("lang")
-                                          String lang) {
-    try {
-      Page note = termsAndConditionsService.getTermsAndConditions(lang);
-      if (note == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-      }
-      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
-      String eTagValue = String.valueOf(note.hashCode());
-      String requestETag = request.getHeader(HttpHeaders.IF_NONE_MATCH);
-      if (requestETag != null && requestETag.equals(eTagValue)) {
-        return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
-      }
-      return ResponseEntity.ok().eTag(eTagValue).body(note);
-    } catch (Exception e) {
-      LOG.warn("Error retrieving terms and conditions page content for user {}", RestUtils.getCurrentUser(), e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+  public ResponseEntity<TermsAndConditionPage> getTermsAndConditionPage(HttpServletRequest request,
+                                                                        @Parameter(description = "User language")
+                                                                        @RequestParam("lang")
+                                                                        String lang) {
+    TermsAndConditionPage termsAndConditionPage = termsAndConditionsService.getTermsAndConditions(lang);
+    if (termsAndConditionPage == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
+    termsAndConditionPage.setContent(sanitizeContent(termsAndConditionPage.getContent()));
+    String eTagValue = String.valueOf(termsAndConditionPage.hashCode());
+    String requestETag = request.getHeader(HttpHeaders.IF_NONE_MATCH);
+    if (requestETag != null && requestETag.equals(eTagValue)) {
+      return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+    }
+    return ResponseEntity.ok().eTag(eTagValue).body(termsAndConditionPage);
   }
 
   @PutMapping
@@ -93,12 +87,12 @@ public class TermsAndConditionsRest {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "401", description = "Unauthorized") })
-  public Page saveNotePage(@Parameter(description = "Note Content", required = true)
-                           @RequestParam("content")
-                           String content,
-                           @Parameter(description = "User language")
-                           @RequestParam("lang")
-                           String lang) {
+  public TermsAndConditionPage saveTermsAndConditions(@Parameter(description = "Note Content", required = true)
+                                                      @RequestParam("content")
+                                                      String content,
+                                                      @Parameter(description = "User language")
+                                                      @RequestParam("lang")
+                                                      String lang) {
     try {
       return termsAndConditionsService.saveTermsAndConditions(content, lang, RestUtils.getCurrentUserAclIdentity());
     } catch (IllegalAccessException e) {
@@ -115,10 +109,9 @@ public class TermsAndConditionsRest {
              method = "PUT")
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-          @ApiResponse(responseCode = "401", description = "Unauthorized"),
           @ApiResponse(responseCode = "400", description = "Bad Request")
   })
-  public Page updateTermsAndConditionsSettings(@RequestBody TermsAndConditionsSettings termsAndConditionsSettings) {
+  public TermsAndConditionPage updateTermsAndConditionsSettings(@RequestBody TermsAndConditionsSettings termsAndConditionsSettings) {
     try {
       return termsAndConditionsService.updateTermsAndConditionsSettings(termsAndConditionsSettings.getSettings(),
                                                                         termsAndConditionsSettings.getLang(),
@@ -156,13 +149,21 @@ public class TermsAndConditionsRest {
           method = "GET")
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-          @ApiResponse(responseCode = "401", description = "Unauthorized"),
-          @ApiResponse(responseCode = "500", description = "Internal Server Error")
+          @ApiResponse(responseCode = "401", description = "Unauthorized")
   })
   public boolean isTermsAcceptedForUser(HttpServletRequest request,
                                         @Parameter(description = "User language")
                                         @RequestParam("lang")
                                         String lang) {
     return termsAndConditionsService.isTermsAcceptedForUser(request.getRemoteUser(), lang);
+  }
+
+  private String sanitizeContent(String content) {
+    try {
+      return HTMLSanitizer.sanitize(content);
+    } catch (Exception e) {
+      LOG.warn("Error sanitizing terms and conditions content");
+    }
+    return "";
   }
 }

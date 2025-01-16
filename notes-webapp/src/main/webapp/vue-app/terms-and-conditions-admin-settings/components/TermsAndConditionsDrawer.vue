@@ -139,7 +139,7 @@ export default {
     },
     previewLink() {
       return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/terms-and-conditions?preview`;
-    }
+    },
   },
   created() {
     this.$root.$on('terms-and-conditions-create', this.open);
@@ -153,15 +153,12 @@ export default {
       this.$refs.drawer.close();
     },
     retrieveTerms() {
+      this.loading = true;
       return this.$termsAndConditionsService.getTermsAndConditions(this.lang).then(note => {
         this.note = note;
-        if (note?.settings) {
-          this.published = note?.settings?.published === 'true' || false;
-          this.publishedDate = note?.settings?.publishedDate
-            ? parseInt(note.settings.publishedDate, 10)
-            : null;
-        }
-      }).finally(() => (this.saving = false));
+        this.published = note?.published;
+        this.publishedDate = note?.publishedDate;
+      }).finally(() => (this.loading = false));
     },
     addTerms() {
       this.saving = true;

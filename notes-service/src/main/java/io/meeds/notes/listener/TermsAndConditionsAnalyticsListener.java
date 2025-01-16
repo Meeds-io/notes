@@ -23,6 +23,7 @@ import static io.meeds.analytics.utils.AnalyticsUtils.getUserIdentityId;
 
 import io.meeds.analytics.model.StatisticData;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.services.listener.*;
@@ -33,6 +34,7 @@ import jakarta.annotation.PostConstruct;
 
 @Asynchronous
 @Component
+@Profile("analytics")
 public class TermsAndConditionsAnalyticsListener extends Listener<String, Object> {
 
   private static final Log LOG = ExoLogger.getLogger(TermsAndConditionsAnalyticsListener.class);
