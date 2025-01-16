@@ -39,7 +39,7 @@ export function saveTermsAndConditions(content, lang) {
   }
   formData.append('content', content || '');
   const params = new URLSearchParams(formData).toString();
-  return fetch('/notes/rest/terms/terms', {
+  return fetch('/notes/rest/terms', {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },

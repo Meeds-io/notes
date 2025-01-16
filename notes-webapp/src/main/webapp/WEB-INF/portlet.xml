@@ -88,10 +88,6 @@
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsView.html</value>
     </init-param>
-    <init-param>
-      <name>layout-content-editable</name>
-      <value>true</value>
-    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -110,10 +106,6 @@
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsUpdater.html</value>
     </init-param>
-    <init-param>
-      <name>layout-content-editable</name>
-      <value>true</value>
-    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -130,11 +122,6 @@
     <init-param>
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsUserSettings.html</value>
-    </init-param>
-    <init-param>
-      <description>portlet of Terms And Conditions User settings</description>
-      <name>exo.profiles</name>
-      <value>wallet</value>
     </init-param>
     <supports>
       <mime-type>text/html</mime-type>
