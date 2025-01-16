@@ -31,8 +31,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.ListenerService;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(classes = { TermsAndConditionsGamificationListener.class, })
+@TestPropertySource(properties = { "spring.profiles.active=gamification", })
 class TermsAndConditionsGamificationListenerTest {
 
   @MockBean

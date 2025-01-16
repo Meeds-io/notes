@@ -21,6 +21,7 @@ package io.meeds.notes.listener;
 import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.services.listener.Asynchronous;
@@ -36,6 +37,7 @@ import java.util.Map;
 
 @Asynchronous
 @Component
+@Profile("gamification")
 public class TermsAndConditionsGamificationListener extends Listener<String, Object> {
 
   private static final Log LOG = ExoLogger.getLogger(TermsAndConditionsGamificationListener.class);

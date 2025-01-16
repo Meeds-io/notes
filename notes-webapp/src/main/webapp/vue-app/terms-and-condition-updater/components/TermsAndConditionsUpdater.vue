@@ -22,7 +22,7 @@
     width="500px"
     content-class="uiPopup"
     max-width="100vw">
-    <v-card class="elevation-12">
+    <v-card v-if="dialog" class="elevation-12">
       <div class="ignore-vuetify-classes popupHeader ClearFix">
         <span class="ignore-vuetify-classes text-title">{{ $t('termsAndConditions.label.termsAndConditions') }}
         </span>

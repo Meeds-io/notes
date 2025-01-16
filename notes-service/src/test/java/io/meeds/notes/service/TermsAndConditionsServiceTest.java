@@ -18,6 +18,7 @@
  */
 package io.meeds.notes.service;
 
+import io.meeds.notes.model.TermsAndConditionPage;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
@@ -25,6 +26,9 @@ import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.MetadataItem;
+import org.exoplatform.social.metadata.model.MetadataObject;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
@@ -36,9 +40,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.meeds.notes.service.TermsAndConditionsService.TC_METADATA_KEY;
+import static io.meeds.notes.service.TermsAndConditionsService.TC_METADATA_OBJECT_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -46,25 +53,25 @@ import static org.mockito.Mockito.*;
 class TermsAndConditionsServiceTest {
 
   @MockBean
-  private NoteService                        noteService;
+  private NoteService               noteService;
 
   @MockBean
-  private WikiService                        wikiService;
+  private WikiService               wikiService;
 
   @MockBean
-  private SettingService                     settingService;
+  private SettingService            settingService;
 
   @MockBean
-  private TermsAndConditionsWebSocketService webSocketService;
+  private ListenerService           listenerService;
 
   @MockBean
-  private ListenerService                    listenerService;
+  private MetadataService           metadataService;
 
   @MockBean
-  private UserACL                            userACL;
+  private UserACL                   userACL;
 
   @Autowired
-  private TermsAndConditionsService          termsAndConditionsService;
+  private TermsAndConditionsService termsAndConditionsService;
 
   @Test
   void testSaveTermsAndConditionsAdminUser() throws Exception {
@@ -81,7 +88,7 @@ class TermsAndConditionsServiceTest {
     when(wikiService.getWikiByTypeAndOwner(any(), any())).thenReturn(new Wiki("termsAndConditions", "__system"));
 
     // Then
-    Page result = termsAndConditionsService.saveTermsAndConditions("content", "en", adminIdentity);
+    TermsAndConditionPage result = termsAndConditionsService.saveTermsAndConditions("content", "en", adminIdentity);
 
     assertNotNull(result);
   }
@@ -106,11 +113,9 @@ class TermsAndConditionsServiceTest {
   void testIsTermsAcceptedForUserWhenAccepted() throws WikiException {
     // Given
     Page page = new Page("termsAndConditions", "content");
-    page.setSettings(new HashMap<>() {
-      {
-        put("published", "true");
-      }
-    });
+    /*
+     * page.setSettings(new HashMap<>() { { put("published", "true"); } });
+     */
     page.setId("1");
     page.setLatestVersionId("123");
 
@@ -135,11 +140,16 @@ class TermsAndConditionsServiceTest {
   void testIsTermsAcceptedForUserWhenNotAccepted() throws WikiException {
     // Given
     Page page = new Page("termsAndConditions", "content");
-    page.setSettings(new HashMap<>() {
+    MetadataItem metadataItem = mock(MetadataItem.class);
+    when(metadataItem.getProperties()).thenReturn(new HashMap<>() {
       {
         put("published", "true");
       }
     });
+    MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, "1");
+    when(metadataService.getMetadataItemsByMetadataAndObject(TC_METADATA_KEY,
+                                                             metadataObject)).thenReturn(Collections.singletonList(metadataItem));
+
     page.setId("1");
     page.setLatestVersionId("123");
 
@@ -164,6 +174,18 @@ class TermsAndConditionsServiceTest {
     Page page = new Page("termsAndConditions", "content");
     page.setId("1");
     page.setLatestVersionId("123");
+
+    MetadataItem metadataItem = mock(MetadataItem.class);
+    when(metadataItem.getProperties()).thenReturn(new HashMap<>() {
+      {
+        put("published", "true");
+        put("latestVersionId", "123");
+        put("publishedDate", "112322341");
+      }
+    });
+    MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, "1");
+    when(metadataService.getMetadataItemsByMetadataAndObject(TC_METADATA_KEY,
+                                                             metadataObject)).thenReturn(Collections.singletonList(metadataItem));
 
     // When
     when(noteService.getNoteOfNoteBookByName(any(), any(), any())).thenReturn(page);

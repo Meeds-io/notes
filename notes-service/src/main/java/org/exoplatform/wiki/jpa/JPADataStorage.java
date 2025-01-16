@@ -1260,7 +1260,6 @@ public class JPADataStorage implements DataStorage {
       pageEntity.setUrl(page.getUrl());
       pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
-      pageEntity.setSettings(page.getSettings());
 
       return convertPageEntityToPage(pageDAO.update(pageEntity));
     }
