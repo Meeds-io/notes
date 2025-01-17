@@ -21,63 +21,62 @@ package org.exoplatform.wiki.service.plugin;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.attachment.AttachmentPlugin;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.utils.Utils;
 
-public class WikiDraftPageAttachmentPlugin  extends AttachmentPlugin {
+public class WikiDraftPageAttachmentPlugin extends AttachmentPlugin {
 
-    private final NoteService noteService;
+  public static final String OBJECT_TYPE = "wikiDraft";
 
-    private final SpaceService spaceService;
+  private final NoteService  noteService;
 
-    public static final String OBJECT_TYPE = "wikiDraft";
+  private final SpaceService spaceService;
 
-    public WikiDraftPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
-        this.noteService = noteService;
-        this.spaceService = spaceService;
+  public WikiDraftPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
+    this.noteService = noteService;
+    this.spaceService = spaceService;
+  }
+
+  @Override
+  public String getObjectType() {
+    return OBJECT_TYPE;
+  }
+
+  @Override
+  public boolean hasAccessPermission(Identity identity, String draftId) {
+    try {
+      DraftPage draftPage = noteService.getDraftNoteById(draftId, identity.getUserId());
+      return draftPage != null && draftPage.isCanView();
+    } catch (Exception e) {
+      return false;
     }
+  }
 
-    @Override
-    public String getObjectType() {
-        return OBJECT_TYPE;
+  @Override
+  public boolean hasEditPermission(Identity identity, String draftId) throws ObjectNotFoundException {
+    try {
+      DraftPage draftPage = noteService.getDraftNoteById(draftId, identity.getUserId());
+      return draftPage != null && draftPage.isCanManage();
+    } catch (Exception e) {
+      return false;
     }
+  }
 
-    @Override
-    public boolean hasAccessPermission(Identity identity, String draftId) {
-        try {
-            DraftPage draftPage = noteService.getDraftNoteById(draftId, identity.getUserId());
-            return draftPage != null && draftPage.isCanView();
-        } catch (Exception e) {
-            return false;
-        }
-    }
+  @Override
+  public long getAudienceId(String s) throws ObjectNotFoundException {
+    return 0;
+  }
 
-    @Override
-    public boolean hasEditPermission(Identity identity, String draftId) throws ObjectNotFoundException {
-        try {
-            DraftPage draftPage = noteService.getDraftNoteById(draftId, identity.getUserId());
-            return draftPage != null && draftPage.isCanManage();
-        } catch (Exception e) {
-            return false;
-        }
+  @Override
+  public long getSpaceId(String draftId) throws ObjectNotFoundException {
+    try {
+      String username = Utils.getCurrentUser();
+      DraftPage draftPage = noteService.getDraftNoteById(draftId, username);
+      return Long.parseLong(spaceService.getSpaceByGroupId(draftPage.getWikiOwner()).getId());
+    } catch (Exception exception) {
+      return 0;
     }
-
-    @Override
-    public long getAudienceId(String s) throws ObjectNotFoundException {
-        return 0;
-    }
-
-    @Override
-    public long getSpaceId(String draftId) throws ObjectNotFoundException {
-        try {
-            String username = Utils.getCurrentUser();
-            DraftPage draftPage = noteService.getDraftNoteById(draftId, username);
-            return Long.parseLong(spaceService.getSpaceByGroupId(draftPage.getWikiOwner()).getId());
-        } catch (Exception exception) {
-            return 0;
-        }
-    }
+  }
 }
