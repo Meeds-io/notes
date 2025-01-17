@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,12 +38,15 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.resources.LocaleConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.attachment.AttachmentService;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 
 import io.meeds.notes.model.NotePageData;
 import io.meeds.social.cms.model.CMSSetting;
@@ -51,30 +56,40 @@ import lombok.SneakyThrows;
 
 public class NotePageViewService {
 
-  private static final String DEFAULT_CONTENT_LANG = "";
+  public static final String   CMS_CONTENT_TYPE             = "notePage";
 
-  public static final String  CMS_CONTENT_TYPE     = "notePage";
+  private static final Pattern NOTES_ATTACHMENT_URI_PATTERN = Pattern.compile("wikiPage/(\\d*)/(\\d*)\"");
 
-  private static final Log    LOG                  = ExoLogger.getLogger(NotePageViewService.class);
+  private static final String  DEFAULT_CONTENT_LANG         = "";
 
-  private NoteService         noteService;
+  private static final Log     LOG                          = ExoLogger.getLogger(NotePageViewService.class);
 
-  private WikiService         noteBookService;
+  private NoteService          noteService;
 
-  private CMSService          cmsService;
+  private WikiService          noteBookService;
 
-  private UserACL             userACL;
+  private CMSService           cmsService;
 
-  private LocaleConfigService localeConfigService;
+  private AttachmentService    attachmentService;
+
+  private IdentityManager      identityManager;
+
+  private UserACL              userACL;
+
+  private LocaleConfigService  localeConfigService;
 
   public NotePageViewService(NoteService noteService,
                              WikiService noteBookService,
                              CMSService cmsService,
+                             AttachmentService attachmentService,
+                             IdentityManager identityManager,
                              UserACL userACL,
                              LocaleConfigService localeConfigService) {
     this.noteService = noteService;
     this.noteBookService = noteBookService;
     this.cmsService = cmsService;
+    this.attachmentService = attachmentService;
+    this.identityManager = identityManager;
     this.userACL = userACL;
     this.localeConfigService = localeConfigService;
   }
@@ -101,6 +116,7 @@ public class NotePageViewService {
     return pageData;
   }
 
+  @SneakyThrows
   public void savePageData(String name, NotePageData pageData) {
     Map<String, String> pages = pageData.getPages();
     if (MapUtils.isEmpty(pages)) {
@@ -108,6 +124,14 @@ public class NotePageViewService {
     }
     String pageContent = pages.get(DEFAULT_CONTENT_LANG);
     Page page = saveNotePage(name, pageContent, null, userACL.getSuperUser());
+    String pageId = page.getId(); // NOSONAR
+    String pageContentReplacement = clonePageAttachments(pageId, pageContent);
+    if (!StringUtils.equals(pageContentReplacement, pageContent)) {
+      page.setLang(null);
+      page.setContent(pageContentReplacement);
+      page.setUpdatedDate(new Date());
+      noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
+    }
     pages.forEach((lang, content) -> {
       if (!StringUtils.equals(lang, page.getLang())) {
         page.setContent(content);
@@ -217,6 +241,23 @@ public class NotePageViewService {
     }
   }
 
+  private String clonePageAttachments(String pageId, String pageContent) {
+    Matcher matcher = NOTES_ATTACHMENT_URI_PATTERN.matcher(pageContent);
+    String pageContentReplacement = pageContent;
+    while (matcher.find()) {
+      String oldPageId = matcher.group(1);
+      String fileId = matcher.group(2);
+      try {
+        createAttachment(pageId, fileId);
+        pageContentReplacement = pageContentReplacement.replace(String.format("wikiPage/%s/%s\"", oldPageId, fileId),
+                                                                String.format("wikiPage/%s/%s\"", pageId, fileId));
+      } catch (Exception e) {
+        LOG.warn("Error while creating File attachment {} for page with id {}", fileId, pageId);
+      }
+    }
+    return pageContentReplacement;
+  }
+
   private Wiki getNote(PageKey pageKey) throws WikiException {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(pageKey.getType(), pageKey.getId());
     if (noteBook == null) {
@@ -260,6 +301,20 @@ public class NotePageViewService {
 
   private String getDefaultLanguage() {
     return localeConfigService.getDefaultLocaleConfig().getLocale().toLanguageTag();
+  }
+
+  @SneakyThrows
+  private void createAttachment(String pageId, String fileId) {
+    attachmentService.createAttachment(fileId,
+                                       WikiPageAttachmentPlugin.OBJECT_TYPE,
+                                       pageId,
+                                       null,
+                                       getSuperUserIdentityId(),
+                                       Collections.emptyMap());
+  }
+
+  private long getSuperUserIdentityId() {
+    return Long.parseLong(identityManager.getOrCreateUserIdentity(userACL.getSuperUser()).getId());
   }
 
 }
