@@ -27,54 +27,54 @@ import org.exoplatform.wiki.service.NoteService;
 
 public class WikiPageAttachmentPlugin extends AttachmentPlugin {
 
-    private final NoteService noteService;
+  public static final String OBJECT_TYPE = "wikiPage";
 
-    private final SpaceService spaceService;
+  private final NoteService  noteService;
 
-    public static final String OBJECT_TYPE = "wikiPage";
+  private final SpaceService spaceService;
 
-    public WikiPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
-        this.noteService = noteService;
-        this.spaceService = spaceService;
+  public WikiPageAttachmentPlugin(NoteService noteService, SpaceService spaceService) {
+    this.noteService = noteService;
+    this.spaceService = spaceService;
+  }
+
+  @Override
+  public String getObjectType() {
+    return OBJECT_TYPE;
+  }
+
+  @Override
+  public boolean hasAccessPermission(Identity identity, String noteId) {
+    try {
+      Page note = noteService.getNoteById(noteId, identity);
+      return note != null && note.isCanView();
+    } catch (Exception e) {
+      return false;
     }
+  }
 
-    @Override
-    public String getObjectType() {
-        return OBJECT_TYPE;
+  @Override
+  public boolean hasEditPermission(Identity identity, String noteId) throws ObjectNotFoundException {
+    try {
+      Page note = noteService.getNoteById(noteId, identity);
+      return note != null && note.isCanManage();
+    } catch (Exception e) {
+      return false;
     }
+  }
 
-    @Override
-    public boolean hasAccessPermission(Identity identity, String noteId) {
-        try {
-            Page note = noteService.getNoteById(noteId, identity);
-            return note != null && note.isCanView();
-        } catch (Exception e) {
-            return false;
-        }
-    }
+  @Override
+  public long getAudienceId(String s) throws ObjectNotFoundException {
+    return 0;
+  }
 
-    @Override
-    public boolean hasEditPermission(Identity identity, String noteId) throws ObjectNotFoundException {
-        try {
-            Page note = noteService.getNoteById(noteId, identity);
-            return note != null && note.isCanManage();
-        } catch (Exception e) {
-            return false;
-        }
+  @Override
+  public long getSpaceId(String noteId) throws ObjectNotFoundException {
+    try {
+      Page note = noteService.getNoteById(noteId);
+      return Long.parseLong(spaceService.getSpaceByGroupId(note.getWikiOwner()).getId());
+    } catch (Exception exception) {
+      return 0;
     }
-
-    @Override
-    public long getAudienceId(String s) throws ObjectNotFoundException {
-        return 0;
-    }
-
-    @Override
-    public long getSpaceId(String noteId) throws ObjectNotFoundException {
-        try {
-            Page note = noteService.getNoteById(noteId);
-            return Long.parseLong(spaceService.getSpaceByGroupId(note.getWikiOwner()).getId());
-        } catch (Exception exception) {
-            return 0;
-        }
-    }
+  }
 }
