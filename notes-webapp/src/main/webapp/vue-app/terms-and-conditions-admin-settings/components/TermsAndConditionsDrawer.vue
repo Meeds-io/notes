@@ -37,21 +37,15 @@
           <v-list-item class="px-0" two-line>
             <v-list-item-content>
               <v-list-item-title class="font-weight-bold">
-                {{ $t('generalSettings.termsAndConditions.published') }}
+                {{ $t('generalSettings.termsAndConditions.editContent') }}
               </v-list-item-title>
             </v-list-item-content>
-            <v-list-item-action v-if="publishedDate">
-              <v-list-item-subtitle v-if="publishedDate">
-                {{ formattedPublishedDate }}
-              </v-list-item-subtitle>
-            </v-list-item-action>
             <v-list-item-action>
-              <v-switch
-                v-model="published"
-                :loading="loading"
-                class="my-auto"
-                hide-details
-                @change="updatePublishedSetting" />
+              <v-btn
+                icon
+                @click="editTerms">
+                <v-icon size="18" class="icon-default-color">fas fa-edit</v-icon>
+              </v-btn>
             </v-list-item-action>
           </v-list-item>
           <v-list-item class="px-0" two-line>
@@ -81,15 +75,21 @@
           <v-list-item class="px-0" two-line>
             <v-list-item-content>
               <v-list-item-title class="font-weight-bold">
-                {{ $t('generalSettings.termsAndConditions.editContent') }}
+                {{ $t('generalSettings.termsAndConditions.published') }}
               </v-list-item-title>
             </v-list-item-content>
+            <v-list-item-action v-if="publishedDate">
+              <v-list-item-subtitle v-if="publishedDate">
+                {{ formattedPublishedDate }}
+              </v-list-item-subtitle>
+            </v-list-item-action>
             <v-list-item-action>
-              <v-btn
-                icon
-                @click="editTerms">
-                <v-icon size="18" class="icon-default-color">fas fa-edit</v-icon>
-              </v-btn>
+              <v-switch
+                v-model="published"
+                :loading="loading"
+                class="my-auto"
+                hide-details
+                @change="updatePublishedSetting" />
             </v-list-item-action>
           </v-list-item>
         </template>
@@ -106,7 +106,6 @@
     </template>
   </exo-drawer>
 </template>
-
 <script>
 
 export default {
