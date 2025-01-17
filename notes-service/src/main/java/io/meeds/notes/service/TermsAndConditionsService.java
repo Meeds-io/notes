@@ -60,6 +60,8 @@ public class TermsAndConditionsService {
 
   public static final String       PUBLISHED_DATE          = "publishedDate";
 
+  public static final String       PUBLISHED_VERSION_ID    = "latestVersionId";
+
   public static final String       EVENT_NAME_ADDED        = "terms.and.conditions.added";
 
   public static final String       EVENT_NAME_UPDATED      = "terms.and.conditions.updated";
@@ -113,17 +115,19 @@ public class TermsAndConditionsService {
       MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
 
       boolean published = settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true");
+      String latestVersionId = settings.get(PUBLISHED_VERSION_ID) != null ? settings.get(PUBLISHED_VERSION_ID) : "";
       String eventName;
       if (metadataItem != null) {
+        String storedLatestVersionId = metadataItem.getProperties().get(PUBLISHED_VERSION_ID);
         metadataItem.setProperties(settings);
         metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
-        eventName = EVENT_NAME_UPDATED;
+        eventName = !latestVersionId.equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
       } else {
         MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
         metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));
         eventName = EVENT_NAME_ADDED;
       }
-      if (published) {
+      if (published && eventName != null) {
         listenerService.broadcast(eventName, page.getId(), null);
       }
     }
