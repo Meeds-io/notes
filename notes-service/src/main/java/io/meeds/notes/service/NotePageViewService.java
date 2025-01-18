@@ -134,9 +134,9 @@ public class NotePageViewService {
     }
     pages.forEach((lang, content) -> {
       if (!StringUtils.equals(lang, page.getLang())) {
-        page.setContent(content);
-        page.setLang(lang);
         try {
+          page.setContent(clonePageAttachments(pageId, content));
+          page.setLang(lang);
           noteService.createVersionOfNote(page, userACL.getSuperUser());
         } catch (Exception e) {
           LOG.warn("Error saving SNV {} content for lang {}", name, lang, e);
@@ -305,12 +305,14 @@ public class NotePageViewService {
 
   @SneakyThrows
   private void createAttachment(String pageId, String fileId) {
-    attachmentService.createAttachment(fileId,
-                                       WikiPageAttachmentPlugin.OBJECT_TYPE,
-                                       pageId,
-                                       null,
-                                       getSuperUserIdentityId(),
-                                       Collections.emptyMap());
+    if (attachmentService.getAttachment(WikiPageAttachmentPlugin.OBJECT_TYPE, pageId, fileId) == null) {
+      attachmentService.createAttachment(fileId,
+                                         WikiPageAttachmentPlugin.OBJECT_TYPE,
+                                         pageId,
+                                         null,
+                                         getSuperUserIdentityId(),
+                                         Collections.emptyMap());
+    }
   }
 
   private long getSuperUserIdentityId() {
