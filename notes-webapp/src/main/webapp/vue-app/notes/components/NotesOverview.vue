@@ -54,7 +54,7 @@
               cols="6">
               <div
                 id="note-actions-menu"
-                v-show="loadData && !hideElementsForSavingPDF"
+                v-if="loadData && !hideElementsForSavingPDF"
                 class="notes-header-icons text-right d-flex justify-end">
                 <div
                   class="d-inline-flex">
