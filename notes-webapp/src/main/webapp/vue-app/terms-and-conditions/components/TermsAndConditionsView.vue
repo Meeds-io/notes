@@ -116,6 +116,9 @@ export default {
     noteSummary() {
       return this.page?.properties?.summary;
     },
+    noteLang() {
+      return this.page?.lang || 'en';
+    },
     noteFeatureImageUpdatedDate() {
       return this.page?.properties?.featuredImage?.lastUpdated || 0;
     },
@@ -126,7 +129,7 @@ export default {
       return this.page?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=en&size=0x400`;
+      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=${this.noteLang}&size=0x400`;
     },
   },
   created() {
