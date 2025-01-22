@@ -23,6 +23,8 @@ import org.exoplatform.ws.frameworks.cometd.ContinuationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static io.meeds.notes.listener.TermsAndConditionsWebSocketListener.TERMS_AND_CONDITIONS_ACCEPTED;
+
 @Service
 public class TermsAndConditionsWebSocketService {
 
@@ -33,13 +35,17 @@ public class TermsAndConditionsWebSocketService {
 
   /**
    * Propagate an event from Backend to frontend through WebSocket Message when
-   * terms and conditions added or updated
+   * terms and conditions added, updated or accepted
    *
    * @param eventName event name that will allow Browser to distinguish which
    *          behavior to adopt in order to update UI
    */
-  public void sendMessage(String eventName) {
+  public void sendMessage(String eventName, String remoteId) {
     String wsMessage = new WebSocketMessage(eventName).toJsonString();
-    continuationService.sendBroadcastMessage(COMETD_CHANNEL, wsMessage);
+    if (TERMS_AND_CONDITIONS_ACCEPTED.equals(eventName)) {
+      continuationService.sendMessage(remoteId, COMETD_CHANNEL, wsMessage);
+    } else {
+      continuationService.sendBroadcastMessage(COMETD_CHANNEL, wsMessage);
+    }
   }
 }

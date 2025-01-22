@@ -66,6 +66,8 @@ public class TermsAndConditionsService {
 
   public static final String       EVENT_NAME_UPDATED      = "terms.and.conditions.updated";
 
+  public static final String       EVENT_NAME_ACCEPTED     = "terms.and.conditions.accepted";
+
   public static final String       LATEST_VERSION_ID       = "latestVersionId";
 
   public static final String       TC_METADATA_OBJECT_TYPE = "termsAndConditions";
@@ -103,7 +105,7 @@ public class TermsAndConditionsService {
   }
 
   @SneakyThrows
-  public TermsAndConditionPage updateTermsAndConditionsSettings(Map<String, String> settings,
+  public TermsAndConditionPage updateTermsAndConditionsSettings(boolean published,
                                                                 String lang,
                                                                 Identity currentUserAclIdentity) throws IllegalAccessException {
     if (!userACL.isAdministrator(currentUserAclIdentity)) {
@@ -111,25 +113,25 @@ public class TermsAndConditionsService {
     }
     TermsAndConditionPage page = getTermsAndConditions(lang);
 
-    if (MapUtils.isNotEmpty(settings)) {
-      MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
+    MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
 
-      boolean published = settings.get(PUBLISHED) != null && settings.get(PUBLISHED).equals("true");
-      String latestVersionId = settings.get(PUBLISHED_VERSION_ID) != null ? settings.get(PUBLISHED_VERSION_ID) : "";
-      String eventName;
-      if (metadataItem != null) {
-        String storedLatestVersionId = metadataItem.getProperties().get(PUBLISHED_VERSION_ID);
-        metadataItem.setProperties(settings);
-        metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
-        eventName = !latestVersionId.equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
-      } else {
-        MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
-        metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));
-        eventName = EVENT_NAME_ADDED;
-      }
-      if (published && eventName != null) {
-        listenerService.broadcast(eventName, page.getId(), null);
-      }
+    String eventName;
+    Map<String, String> settings = new HashMap<>();
+    settings.put(PUBLISHED, String.valueOf(published));
+    settings.put(PUBLISHED_DATE, published ? String.valueOf(System.currentTimeMillis()) : "");
+    settings.put(PUBLISHED_VERSION_ID, String.valueOf(page.getLatestVersionId()));
+    if (metadataItem != null) {
+      String storedLatestVersionId = metadataItem.getProperties().get(PUBLISHED_VERSION_ID);
+      metadataItem.setProperties(settings);
+      metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
+      eventName = !page.getLatestVersionId().equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
+    } else {
+      MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
+      metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));
+      eventName = EVENT_NAME_ADDED;
+    }
+    if (published && eventName != null) {
+      listenerService.broadcast(eventName, page.getId(), null);
     }
     return getTermsAndConditions(lang);
   }
@@ -158,8 +160,11 @@ public class TermsAndConditionsService {
   public void markTermsAsAcceptedForUser(String userId, String lang) {
     TermsAndConditionPage terms = getTermsAndConditions(lang);
     if (terms != null) {
-      settingService.set(USER.id(userId), SETTINGS_APP_SCOPE, SETTINGS_KEY, SettingValue.create(terms.getLatestVersionId()));
-      listenerService.broadcast("terms.condition.accepted", userId, null);
+      settingService.set(USER.id(userId),
+                         SETTINGS_APP_SCOPE,
+                         SETTINGS_KEY,
+                         SettingValue.create(terms.getLatestPublishedVersionId()));
+      listenerService.broadcast(EVENT_NAME_ACCEPTED, userId, null);
     }
   }
 
@@ -170,7 +175,7 @@ public class TermsAndConditionsService {
       String acceptedVersionValue = acceptedVersion == null
           || acceptedVersion.getValue() == null ? null : acceptedVersion.getValue().toString();
 
-      return acceptedVersionValue != null && acceptedVersionValue.equals(terms.getLatestVersionId());
+      return acceptedVersionValue != null && acceptedVersionValue.equals(terms.getLatestPublishedVersionId());
     }
     return true;
   }
@@ -214,7 +219,7 @@ public class TermsAndConditionsService {
     termsAndConditionPage.setContent(page.getContent());
     termsAndConditionPage.setLang(page.getLang());
     termsAndConditionPage.setProperties(page.getProperties());
-    termsAndConditionPage.setLatestVersionId("");
+    termsAndConditionPage.setLatestVersionId(page.getLatestVersionId());
     MetadataItem metadataItem = getTermsAndConditionsMetadataItem(page.getId());
 
     if (metadataItem != null) {
@@ -228,7 +233,7 @@ public class TermsAndConditionsService {
                                                                                           : "";
       termsAndConditionPage.setPublished(published);
       termsAndConditionPage.setPublishedDate(publishedDate);
-      termsAndConditionPage.setLatestVersionId(latestPublishedVersionId);
+      termsAndConditionPage.setLatestPublishedVersionId(latestPublishedVersionId);
     }
     return termsAndConditionPage;
   }
