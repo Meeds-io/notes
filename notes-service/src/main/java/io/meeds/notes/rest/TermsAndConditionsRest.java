@@ -23,7 +23,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import io.meeds.notes.model.TermsAndConditionPage;
-import io.meeds.notes.rest.model.TermsAndConditionsSettings;
 import io.meeds.notes.service.TermsAndConditionsService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.exoplatform.commons.utils.HTMLSanitizer;
@@ -42,6 +41,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("terms")
@@ -111,10 +112,15 @@ public class TermsAndConditionsRest {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Bad Request")
   })
-  public TermsAndConditionPage updateTermsAndConditionsSettings(@RequestBody TermsAndConditionsSettings termsAndConditionsSettings) {
+  public TermsAndConditionPage updateTermsAndConditionsSettings(@Parameter(description = "Whether the terms and conditions update is a publish or not")
+                                                                @RequestParam(name = "published")
+                                                                Optional<Boolean> published,
+                                                                @Parameter(description = "User language")
+                                                                @RequestParam("lang")
+                                                                String lang) {
     try {
-      return termsAndConditionsService.updateTermsAndConditionsSettings(termsAndConditionsSettings.getSettings(),
-                                                                        termsAndConditionsSettings.getLang(),
+      return termsAndConditionsService.updateTermsAndConditionsSettings(published.orElse(true),
+                                                                        lang,
                                                                         RestUtils.getCurrentUserAclIdentity());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());

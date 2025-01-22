@@ -62,7 +62,7 @@ export default {
   methods: {
     handleTermsAndConditionsUpdates(updateParams) {
       this.eventName = updateParams?.wsEventName;
-      this.dialog = true;
+      this.dialog = this.eventName !== 'termsAndConditionsAccepted';
     },
     goToTermsAndConditions() {
       const currentPage = window.location.pathname + window.location.search;
