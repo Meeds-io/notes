@@ -55,18 +55,13 @@ export function saveTermsAndConditions(content, lang) {
   });
 }
 
-export function updateTermsAndConditionsSettings(settings, lang) {
-  const payload = {
-    settings: settings || {},
-    lang: lang || '',
-  };
-  return fetch('/notes/rest/terms/settings', {
+export function updateTermsAndConditionsSettings(published, lang) {
+  return fetch(`/notes/rest/terms/settings?published=${published || false}&lang=${lang || 'en'}`, {
     headers: {
       'Content-Type': 'application/json',
     },
     method: 'PUT',
     credentials: 'include',
-    body: JSON.stringify(payload),
   }).then((resp) => {
     if (resp?.ok) {
       return resp.json();

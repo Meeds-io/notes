@@ -179,12 +179,7 @@ export default {
     },
     updatePublishedSetting() {
       this.loading = true;
-      const settings = {
-        published: this.published,
-        publishedDate: this.published ? Date.now() : null,
-        latestVersionId: this.latestVersionId
-      };
-      return this.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, this.lang)
+      return this.$termsAndConditionsService.updateTermsAndConditionsSettings(this.published, this.lang)
         .then(() => this.retrieveTerms())
         .then(() => {
           if (this.published) {

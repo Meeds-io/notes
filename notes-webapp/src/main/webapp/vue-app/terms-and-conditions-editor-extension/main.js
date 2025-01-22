@@ -24,12 +24,12 @@ export function init() {
     type: 'termsAndConditions',
     options: {
       name: 'termsAndConditions',
-      displayMessage: (vm, page) => {
+      displayMessage: (vm) => {
         document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
           alertMessage: vm.$t('notes.content.save.success.message'),
           alertType: 'success',
           alertLinkText: vm.$t('notes.publication.publish.save.label'),
-          alertLinkCallback: () => this.updatePublishedSetting(vm, page),
+          alertLinkCallback: () => this.updatePublishedSetting(vm),
         }}));
       },
     },
@@ -43,13 +43,8 @@ export function init() {
   });
 }
 
-export function updatePublishedSetting(vm, page) {
-  const settings = {
-    published: true,
-    publishedDate: Date.now(),
-    latestVersionId: page.latestVersionId,
-  };
-  return Vue.prototype.$termsAndConditionsService.updateTermsAndConditionsSettings(settings, eXo.env.portal.language || 'en')
+export function updatePublishedSetting(vm) {
+  return Vue.prototype.$termsAndConditionsService.updateTermsAndConditionsSettings(true, eXo.env.portal.language || 'en')
     .then(() => {
       document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
         alertMessage: vm.$t('notes.content.publish.success.message'),
