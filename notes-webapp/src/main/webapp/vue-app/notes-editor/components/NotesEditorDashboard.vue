@@ -120,6 +120,7 @@ export default {
       newDraft: false,
       spaceDisplayName: null,
       noteEditorExtensions: null,
+      snackbarExtensions: null,
       editor: null,
       loadedNote: null,
       draftNote: null,
@@ -232,6 +233,12 @@ export default {
       this.spaceGroupId  = urlParams.get('spaceGroupId');
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
+    }
+    if (urlParams.has('owner')) {
+      this.note.wikiOwner = urlParams.get('owner');
+    }
+    if (urlParams.has('type')) {
+      this.note.wikiType = urlParams.get('type');
     }
     this.displayFormTitle(urlParams);
     this.$root.$on('show-alert', this.displayMessage);
@@ -381,6 +388,11 @@ export default {
     },
     updateNote(note) {
       const currentDraftId = this.note?.id;
+      const queryPath = window.location.search;
+      const urlParams = new URLSearchParams(queryPath);
+      if (urlParams.has('pageName')) {
+        note.name = urlParams.get('pageName');
+      }
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {
@@ -389,12 +401,18 @@ export default {
           }
         }));
         this.originalNote = structuredClone(data);
-        this.displayMessage({
-          type: 'success',
-          message: this.$t('notes.save.success.message'),
-          linkText: this.$t('notes.view.label'),
-          alertLink: this.redirectAfterSaveLink(data || note)
-        });
+        this.refreshSnackbarExtensions();
+        const matchingSnackbarExtension = this.snackbarExtensions?.find(extension => extension.type === note.name);
+        if (matchingSnackbarExtension) {
+          matchingSnackbarExtension?.options?.displayMessage(this);
+        } else {
+          this.displayMessage({
+            type: 'success',
+            message: this.$t('notes.save.success.message'),
+            linkText: this.$t('notes.view.label'),
+            alertLink: this.redirectAfterSaveLink(data || note)
+          });
+        }
       }).catch(e => {
         this.$root.$emit('show-alert', {
           type: 'error',
@@ -889,6 +907,12 @@ export default {
     refreshTranslationExtensions() {
       this.noteEditorExtensions = extensionRegistry.loadExtensions('notesEditor', 'translation-extension');
     },
+    refreshSnackbarExtensions() {
+      if (!this.snackbarExtensions) {
+        this.snackbarExtensions = extensionRegistry.loadExtensions('notesEditor', 'snackbar-extension');
+      }
+      return this.snackbarExtensions;
+    }
   }
 };
 </script>

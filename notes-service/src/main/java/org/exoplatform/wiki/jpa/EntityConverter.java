@@ -157,26 +157,25 @@ public class EntityConverter {
       return;
     }
     Space space = getSpaceService().getSpaceByGroupId(note.getWikiOwner());
-    if (space != null) {
-      String noteId = note.getId();
-      if (note.getLang() != null) {
-        noteId = noteId + "-" + note.getLang();
-      }
-      Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, space.getId());
-      NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
-                                                                     noteId,
-                                                                     note.getParentPageId(),
-                                                                     Long.parseLong(space.getId()));
-      getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
-                          .stream()
-                          .findFirst()
-                          .ifPresent(metadataItem -> {
-                            if (!MapUtils.isEmpty(metadataItem.getProperties())) {
-                              buildPageProperties(metadataItem.getProperties(), originalNoteSharedProperties, note);
-                            }
-                          });
-
+    String spaceId = space != null ? space.getId() : "0";
+    String noteId = note.getId();
+    if (note.getLang() != null) {
+      noteId = noteId + "-" + note.getLang();
     }
+    Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, spaceId);
+    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
+                                                                   noteId,
+                                                                   note.getParentPageId(),
+                                                                   Long.parseLong(spaceId));
+    getMetadataService().getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
+                        .stream()
+                        .findFirst()
+                        .ifPresent(metadataItem -> {
+                          if (!MapUtils.isEmpty(metadataItem.getProperties())) {
+                            buildPageProperties(metadataItem.getProperties(), originalNoteSharedProperties, note);
+                          }
+                        });
+
   }
 
   public static List<PermissionEntry> convertPermissionEntitiesToPermissionEntries(List<PermissionEntity> permissionEntities,

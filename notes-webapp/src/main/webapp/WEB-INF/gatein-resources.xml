@@ -41,6 +41,13 @@
     <additional-module>Notes</additional-module>
   </portlet-skin>
 
+  <portlet-skin>
+    <application-name>notes</application-name>
+    <portlet-name>TermsAndConditionsUserSettings</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>Notes</additional-module>
+  </portlet-skin>
+
   <portlet>
     <name>Notes</name>
     <module>
@@ -235,6 +242,31 @@
     </module>
   </portlet>
 
+  <portlet>
+    <name>TermsAndConditionsView</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/termsAndConditionsView.bundle.js</path>
+      </script>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+    </module>
+  </portlet>
+
   <module>
     <name>NotesActivityStreamExtension</name>
     <load-group>ActivityStreamGRP</load-group>
@@ -389,6 +421,103 @@
     </depends>
     <depends>
       <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>generalSettingsTermsExtension</name>
+    <load-group>generalSettingsGrp</load-group>
+    <script>
+      <path>/javascript/generalSettingsTermsExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <portlet>
+    <name>TermsAndConditionsUpdater</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/termsAndConditionsUpdater.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>commons-cometd3</module>
+        <as>cCometd</as>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>TermsAndConditionsUserSettings</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/userSettingsTermsExtension.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <module>
+    <name>termsAndConditionsNotesEditorExtension</name>
+    <load-group>NotesEditorGRP</load-group>
+    <script>
+      <path>/javascript/termsAndConditionsEditorExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
     </depends>
   </module>
 

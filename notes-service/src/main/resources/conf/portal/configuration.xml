@@ -280,4 +280,13 @@
     </component-plugin>
   </external-component-plugins>
 
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.WebAppController</target-component>
+    <component-plugin>
+      <name>TermsAndConditionsHandler</name>
+      <set-method>register</set-method>
+      <type>io.meeds.notes.handler.TermsAndConditionsHandler</type>
+    </component-plugin>
+  </external-component-plugins>
+
 </configuration>

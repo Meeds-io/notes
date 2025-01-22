@@ -80,4 +80,57 @@
     </portlet-info>
   </portlet>
 
+  <portlet>
+    <portlet-name>TermsAndConditionsView</portlet-name>
+    <display-name xml:lang="EN">Terms And Conditions View</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/termsAndConditionsView.html</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.TermsAndConditionsView</resource-bundle>
+    <portlet-info>
+      <title>Terms And Conditions View</title>
+      <keywords>Terms And Conditions View</keywords>
+    </portlet-info>
+  </portlet>
+
+  <portlet>
+    <portlet-name>TermsAndConditionsUpdater</portlet-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/termsAndConditionsUpdater.html</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.TermsAndConditionsView</resource-bundle>
+    <portlet-info>
+      <title>Terms And Conditions Updater</title>
+    </portlet-info>
+  </portlet>
+
+  <portlet>
+    <portlet-name>TermsAndConditionsUserSettings</portlet-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/termsAndConditionsUserSettings.html</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.TermsAndConditionsView</resource-bundle>
+    <portlet-info>
+        <title>Terms And Conditions User Settings</title>
+    </portlet-info>
+  </portlet>
+
 </portlet-app>
