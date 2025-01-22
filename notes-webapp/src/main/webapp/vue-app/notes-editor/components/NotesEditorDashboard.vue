@@ -404,7 +404,7 @@ export default {
         this.refreshSnackbarExtensions();
         const matchingSnackbarExtension = this.snackbarExtensions?.find(extension => extension.type === note.name);
         if (matchingSnackbarExtension) {
-          matchingSnackbarExtension?.options?.displayMessage(this, this.note);
+          matchingSnackbarExtension?.options?.displayMessage(this);
         } else {
           this.displayMessage({
             type: 'success',

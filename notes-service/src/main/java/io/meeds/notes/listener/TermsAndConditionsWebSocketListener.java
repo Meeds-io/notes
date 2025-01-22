@@ -31,18 +31,20 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.meeds.notes.service.TermsAndConditionsService.EVENT_NAME_ADDED;
-import static io.meeds.notes.service.TermsAndConditionsService.EVENT_NAME_UPDATED;
+import static io.meeds.notes.service.TermsAndConditionsService.*;
 
 @Component
 @Asynchronous
-public class TermsAndConditionsWebSocketListener extends Listener<Long, Object> {
+public class TermsAndConditionsWebSocketListener extends Listener<String, Object> {
 
-  public static final String                 TERMS_AND_CONDITIONS_ADDED   = "termsAndConditionsAdded";
+  public static final String                 TERMS_AND_CONDITIONS_ADDED    = "termsAndConditionsAdded";
 
-  public static final String                 TERMS_AND_CONDITIONS_UPDATED = "termsAndConditionsUpdated";
+  public static final String                 TERMS_AND_CONDITIONS_UPDATED  = "termsAndConditionsUpdated";
 
-  protected static final List<String>        EVENT_NAMES                  = Arrays.asList(EVENT_NAME_ADDED, EVENT_NAME_UPDATED);
+  public static final String                 TERMS_AND_CONDITIONS_ACCEPTED = "termsAndConditionsAccepted";
+
+  protected static final List<String>        EVENT_NAMES                   =
+                                                         Arrays.asList(EVENT_NAME_ADDED, EVENT_NAME_UPDATED, EVENT_NAME_ACCEPTED);
 
   @Autowired
   private TermsAndConditionsWebSocketService termsAndConditionsWebSocketService;
@@ -57,8 +59,9 @@ public class TermsAndConditionsWebSocketListener extends Listener<Long, Object> 
 
   @Override
   @ContainerTransactional
-  public void onEvent(Event<Long, Object> event) throws Exception {
+  public void onEvent(Event<String, Object> event) throws Exception {
     String message;
+    String remoteId = null;
     switch (event.getEventName()) {
     case EVENT_NAME_ADDED: {
       message = TERMS_AND_CONDITIONS_ADDED;
@@ -68,9 +71,14 @@ public class TermsAndConditionsWebSocketListener extends Listener<Long, Object> 
       message = TERMS_AND_CONDITIONS_UPDATED;
       break;
     }
+    case EVENT_NAME_ACCEPTED: {
+      message = TERMS_AND_CONDITIONS_ACCEPTED;
+      remoteId = event.getSource();
+      break;
+    }
     default:
       throw new IllegalArgumentException("Unexpected listener event name: " + event.getEventName());
     }
-    termsAndConditionsWebSocketService.sendMessage(message);
+    termsAndConditionsWebSocketService.sendMessage(message, remoteId);
   }
 }

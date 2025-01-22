@@ -20,6 +20,7 @@ package io.meeds.notes.listener;
 
 import static io.meeds.analytics.utils.AnalyticsUtils.addStatisticData;
 import static io.meeds.analytics.utils.AnalyticsUtils.getUserIdentityId;
+import static io.meeds.notes.service.TermsAndConditionsService.EVENT_NAME_ACCEPTED;
 
 import io.meeds.analytics.model.StatisticData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ public class TermsAndConditionsAnalyticsListener extends Listener<String, Object
 
   @PostConstruct
   public void init() {
-    listenerService.addListener("terms.condition.accepted", this);
+    listenerService.addListener(EVENT_NAME_ACCEPTED, this);
   }
 
   @Override

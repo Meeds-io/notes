@@ -19,6 +19,7 @@
 package io.meeds.notes.listener;
 
 import static io.meeds.gamification.listener.GamificationGenericListener.GENERIC_EVENT_NAME;
+import static io.meeds.notes.service.TermsAndConditionsService.EVENT_NAME_ACCEPTED;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -47,7 +48,7 @@ public class TermsAndConditionsGamificationListener extends Listener<String, Obj
 
   @PostConstruct
   public void init() {
-    listenerService.addListener("terms.condition.accepted", this);
+    listenerService.addListener(EVENT_NAME_ACCEPTED, this);
   }
 
   @Override

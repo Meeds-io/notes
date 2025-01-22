@@ -43,4 +43,5 @@ public class TermsAndConditionPage {
 
   private String             latestVersionId;
 
+  private String             latestPublishedVersionId;
 }
