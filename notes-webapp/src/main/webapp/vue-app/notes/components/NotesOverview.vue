@@ -54,7 +54,7 @@
               cols="6">
               <div
                 id="note-actions-menu"
-                v-show="loadData && !hideElementsForSavingPDF"
+                v-if="loadData && !hideElementsForSavingPDF"
                 class="notes-header-icons text-right d-flex justify-end">
                 <div
                   class="d-inline-flex">
@@ -963,50 +963,52 @@ export default {
     },
     createPDF(note) {
       this.hideElementsForSavingPDF = true;
-      const title = `${this.noteTitle}`;
-      if (note.title !== title) {
-        this.noteTitle = note.title;
-      }
-      const self = this;
-      this.$nextTick(() => {
-        const element = this.$refs.content;
-        this.hideElementsForSavingPDF = false;
-        html2canvas(element, {
-          useCORS: true
-        }).then(function (canvas) {
-          if (note.title !== title) {
-            self.noteTitle = title;
-          }
-          const pdf = new JSPDF('p', 'mm', 'a4');
-          const ctx = canvas.getContext('2d');
-          const a4w = 170;
-          const a4h = 257;
-          const imgHeight = Math.floor(a4h * canvas.width / a4w);
-          let renderedHeight = 0;
-
-          while (renderedHeight < canvas.height) {
-            const page = document.createElement('canvas');
-            page.width = canvas.width;
-            page.height = Math.min(imgHeight, canvas.height - renderedHeight);
-
-            page.getContext('2d').putImageData(ctx.getImageData(0, renderedHeight, canvas.width, Math.min(imgHeight, canvas.height - renderedHeight)), 0, 0);
-            pdf.addImage(page.toDataURL('image/jpeg', 1.0), 'JPEG', 10, 10, a4w, Math.min(a4h, a4w * page.height / page.width));
-            renderedHeight += imgHeight;
-            if (renderedHeight < canvas.height) {
-              pdf.addPage();
-            }
-          }
-          const filename = `${note.title}.pdf`;
-          pdf.save(filename);
-        }).catch(e => {
-          this.displayMessage({
-            type: 'error',
-            message: this.$t('notes.message.export.error')
-          });
-          console.error('Error when exporting note: ', e);
-        });
-      });
       this.closeMobileActionMenu();
+      window.setTimeout(() => {
+        const title = `${this.noteTitle}`;
+        if (note.title !== title) {
+          this.noteTitle = note.title;
+        }
+        const self = this;
+        this.$nextTick(() => {
+          const element = this.$refs.content;
+          this.hideElementsForSavingPDF = false;
+          html2canvas(element, {
+            useCORS: true
+          }).then(function (canvas) {
+            if (note.title !== title) {
+              self.noteTitle = title;
+            }
+            const pdf = new JSPDF('p', 'mm', 'a4');
+            const ctx = canvas.getContext('2d');
+            const a4w = 170;
+            const a4h = 257;
+            const imgHeight = Math.floor(a4h * canvas.width / a4w);
+            let renderedHeight = 0;
+
+            while (renderedHeight < canvas.height) {
+              const page = document.createElement('canvas');
+              page.width = canvas.width;
+              page.height = Math.min(imgHeight, canvas.height - renderedHeight);
+
+              page.getContext('2d').putImageData(ctx.getImageData(0, renderedHeight, canvas.width, Math.min(imgHeight, canvas.height - renderedHeight)), 0, 0);
+              pdf.addImage(page.toDataURL('image/jpeg', 1.0), 'JPEG', 10, 10, a4w, Math.min(a4h, a4w * page.height / page.width));
+              renderedHeight += imgHeight;
+              if (renderedHeight < canvas.height) {
+                pdf.addPage();
+              }
+            }
+            const filename = `${note.title}.pdf`;
+            pdf.save(filename);
+          }).catch(e => {
+            this.displayMessage({
+              type: 'error',
+              message: this.$t('notes.message.export.error')
+            });
+            console.error('Error when exporting note: ', e);
+          });
+        });
+      }, 200);
     },
     displayMessage(message) {
       this.$root.$emit('alert-message', message?.message, message?.type || 'success');
