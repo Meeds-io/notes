@@ -223,7 +223,7 @@
       </value-param>
       <value-param>
         <name>containerName</name>
-        <value>bottom-all-container</value>
+        <value>body-end-container</value>
       </value-param>
       <object-param>
         <name>terms-and-conditions-updater-portlet</name>
