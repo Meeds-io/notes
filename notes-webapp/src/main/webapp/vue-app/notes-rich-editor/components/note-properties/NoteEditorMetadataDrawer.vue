@@ -28,7 +28,6 @@
       ref="metadataDrawer"
       v-model="drawer"
       allow-expand
-      show-overlay
       right
       @closed="resetProperties">
       <template slot="title">

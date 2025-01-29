@@ -7,7 +7,6 @@
     <exo-drawer
       ref="customPluginsDrawer"
       v-model="drawer"
-      show-overlay
       class="customPluginsDrawer"
       right>
       <template slot="title">
