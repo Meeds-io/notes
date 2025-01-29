@@ -11,7 +11,6 @@
       :confirm-close-labels="confirmCloseLabels"
       :right="!$vuetify.rtl"
       allow-expand
-      show-overlay
       class="breadcrumbDrawer"
       @closed="closeAllDrawer()">
       <template v-if="drawerTitle" slot="title">
