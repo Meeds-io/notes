@@ -4,7 +4,6 @@
       ref="importNotesDrawer"
       class="notesImportDrawer"
       v-model="drawer"
-      show-overlay
       right>
       <template slot="title">
         {{ $t('notes.label.importNotes') }}

@@ -29,7 +29,6 @@
       v-model="drawer"
       :right="!$vuetify.rtl"
       allow-expand
-      show-overlay
       @expand-updated="expanded = $event"
       @closed="reset">
       <template slot="title">
