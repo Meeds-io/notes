@@ -26,7 +26,7 @@
       indeterminate />
     <div
       v-else
-      v-sanitized-html="pageContent"
+      v-html="sanitizedPageContent"
       class="reset-style-box rich-editor-content extended-rich-content overflow-hidden full-width"></div>
   </div>
 </template>
@@ -34,8 +34,14 @@
 <script>
 export default {
   computed: {
-    pageContent() {
-      return this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
+    sanitizedPageContent() {
+      const DOMPurify = require('dompurify');
+      const pageContent = this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
+      const sanitizedContent = DOMPurify.sanitize(pageContent, {
+        tagNameCheck: () => true,
+        attributeNameCheck: () => true,
+      });
+      return sanitizedContent;
     },
   },
 };
