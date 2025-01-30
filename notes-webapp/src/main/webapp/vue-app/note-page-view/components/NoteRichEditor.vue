@@ -125,7 +125,7 @@ export default {
             unit: 'px'
           },
           format_tags: 'p;h1;h2;h3',
-          bodyClass: 'notesContent',
+          bodyClass: 'notesContent notesRichEditorContent',
           dialog_noConfirmCancel: true,
           pasteFilter: 'p; a[!href]; strong; i', 
           on: {
