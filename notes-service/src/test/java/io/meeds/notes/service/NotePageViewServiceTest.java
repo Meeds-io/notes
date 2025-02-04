@@ -40,20 +40,27 @@ import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
 
+import io.meeds.notes.model.NotePageData;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.cms.service.CMSServiceImpl;
 
+import lombok.SneakyThrows;
+
 public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
-  protected static final Random RANDOM               = new Random();
+  private static final String PAGE_NAME_PREFIX = "pageName";
 
-  private static final long     USER_IDENTITY_ID     = 5l;
+  private static final String   PAGE_NOTE_NAME_PREFIX = "pageNoteName";
 
-  private static final String   USERS_GROUP          = "*:/platform/users";
+  protected static final Random RANDOM                = new Random();
 
-  private static final String   ADMINISTRATORS_GROUP = "*:/platform/administrators";
+  private static final long     USER_IDENTITY_ID      = 5l;
 
-  private static final String   USERNAME             = "testUser";
+  private static final String   USERS_GROUP           = "*:/platform/users";
+
+  private static final String   ADMINISTRATORS_GROUP  = "*:/platform/administrators";
+
+  private static final String   USERNAME              = "testUser";
 
   private NoteService           noteService;
 
@@ -78,9 +85,9 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
   public void testGetNotePageWithAnonim() throws IllegalAccessException, ObjectAlreadyExistsException, ObjectNotFoundException {
     assertNull(notePageViewService.getNotePage("notExistingPage", null, null));
 
-    String pageNoteName = "pageNoteName" + RANDOM.nextLong();
+    String pageNoteName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
     String pageContent = "pageContent" + RANDOM.nextLong();
-    String pageReference = createPage("pageName" + RANDOM.nextLong(), UserACL.EVERYONE, ADMINISTRATORS_GROUP);
+    String pageReference = createPage(PAGE_NAME_PREFIX + RANDOM.nextLong(), UserACL.EVERYONE, ADMINISTRATORS_GROUP);
     cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
 
     Page notePage = notePageViewService.getNotePage(pageNoteName, null, null);
@@ -99,10 +106,10 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
                                                  ObjectAlreadyExistsException,
                                                  ObjectNotFoundException,
                                                  WikiException {
-    String pageNoteName = "pageNoteName" + RANDOM.nextLong();
+    String pageNoteName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
     String pageContentEn = "pageContentEn" + RANDOM.nextLong();
     String pageContentFr = "pageContentFr" + RANDOM.nextLong();
-    String pageReference = createPage("pageName" + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+    String pageReference = createPage(PAGE_NAME_PREFIX + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
     cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
 
     assertThrows(IllegalAccessException.class, () -> notePageViewService.getNotePage(pageNoteName, null, null));
@@ -111,7 +118,8 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     assertThrows(ObjectNotFoundException.class,
                  () -> notePageViewService.saveNotePage(pageNoteName + "22", pageContentEn, null, null));
     assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, null));
-    assertThrows(IllegalAccessException.class, () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, registerInternalUser(USERNAME)));
+    assertThrows(IllegalAccessException.class,
+                 () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, registerInternalUser(USERNAME)));
     notePageViewService.saveNotePage(pageNoteName, pageContentFr, null, registerAdministratorUser(USERNAME));
     // Test save a language not saved, which has to change the default lang
     notePageViewService.saveNotePage(pageNoteName, pageContentEn, "fr", registerAdministratorUser(USERNAME));
@@ -140,6 +148,60 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     notePage = notePageViewService.getNotePage(pageNoteName, "it", registerInternalUser(USERNAME));
     assertNotNull(notePage);
     assertEquals(pageContentEn, notePage.getContent());
+  }
+
+  @SneakyThrows
+  public void testGetNotePageNoLang() {
+    String pageReference = createPage(PAGE_NAME_PREFIX + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+
+    String pageContent = "pageContent" + RANDOM.nextLong();
+    String pageContentModified = "pageContentModified" + RANDOM.nextLong();
+
+    String pageNoteName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
+
+    notePageViewService.saveNotePage(pageNoteName, pageContent, null, registerAdministratorUser(USERNAME));
+
+    Page notePage = notePageViewService.getNotePage(pageNoteName, null, registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContent, notePage.getContent());
+    notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContent, notePage.getContent());
+
+    notePageViewService.saveNotePage(pageNoteName, pageContentModified, null, registerAdministratorUser(USERNAME));
+
+    notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContentModified, notePage.getContent());
+
+    notePage = notePageViewService.getNotePage(pageNoteName, null, registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContentModified, notePage.getContent());
+
+    NotePageData notePageData = notePageViewService.getNotePageData(pageNoteName);
+    assertNotNull(notePageData);
+    assertEquals(pageContentModified, notePageData.getPages().get(""));
+    assertEquals(1, notePageData.getPages().size());
+
+    pageNoteName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
+    notePageViewService.savePageData(pageNoteName, notePageData);
+
+    notePageViewService.saveNotePage(pageNoteName, pageContent, null, registerAdministratorUser(USERNAME));
+
+    notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContent, notePage.getContent());
+
+    notePage = notePageViewService.getNotePage(pageNoteName, null, registerInternalUser(USERNAME));
+    assertNotNull(notePage);
+    assertEquals(pageContent, notePage.getContent());
+
+    notePageData = notePageViewService.getNotePageData(pageNoteName);
+    assertNotNull(notePageData);
+    assertEquals(pageContent, notePageData.getPages().get(""));
+    assertEquals(1, notePageData.getPages().size());
   }
 
   private String createPage(String pageName, String accessPermission, String editPermission) {
