@@ -771,7 +771,7 @@ export default {
           this.$root.$emit('include-page', note);
           this.$refs.breadcrumbDrawer.close();
         } else if (this.movePage) {
-          if (note.noteId !== this.note.id) {
+          if (note.noteId !== this.note.id && note.noteId !== this.note.parentPageId) {
             this.$notesService.getNoteById(note.noteId,'', '', '', '', true).then(data => {
               this.breadcrumb = data?.breadcrumb || [];
               this.enableMove = true;
@@ -779,6 +779,8 @@ export default {
               this.destinationNote = data;
             });
           } else {
+            this.enableMove=false;
+            this.breadcrumb = [];
             Object.assign(this.destinationNote, this.note);
           }
         } else {
