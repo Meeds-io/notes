@@ -163,9 +163,11 @@ public class NotePageViewService {
       long pageId = Long.parseLong(page.getId());
       List<String> languages = noteService.getPageAvailableTranslationLanguages(pageId, false);
       languages.forEach(lang -> {
-        Page pageByLang = noteService.getNoteByIdAndLang(pageId, lang);
-        if (pageByLang != null) {
-          pages.put(lang, pageByLang);
+        if (!pages.containsKey(lang)) {
+          Page pageByLang = noteService.getNoteByIdAndLang(pageId, lang);
+          if (pageByLang != null) {
+            pages.put(lang, pageByLang);
+          }
         }
       });
       return pages;
