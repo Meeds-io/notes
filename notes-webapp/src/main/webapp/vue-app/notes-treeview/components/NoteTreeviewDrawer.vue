@@ -961,7 +961,6 @@ export default {
     },
     closeAllDrawer() {
       this.checkbox = false;
-      $('.spaceButtomNavigation').removeClass('hidden');
       this.search = '';
       if (this.exporting) {
         this.$root.$emit('cancel-export-notes');
