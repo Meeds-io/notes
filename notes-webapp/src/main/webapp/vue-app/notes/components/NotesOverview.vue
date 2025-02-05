@@ -680,7 +680,6 @@ export default {
   },
   mounted() {
     this.handleChangePages();
-    Vue.prototype.$utils.includeExtensions('NotesExtension');
     $(document).on('click', () => {
       this.translationsMenu = false;
     });
