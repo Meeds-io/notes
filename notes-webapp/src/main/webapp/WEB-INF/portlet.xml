@@ -88,6 +88,8 @@
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsView.html</value>
     </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -106,6 +108,8 @@
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsUpdater.html</value>
     </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -123,6 +127,8 @@
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/termsAndConditionsUserSettings.html</value>
     </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
