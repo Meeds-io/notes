@@ -250,7 +250,7 @@ export default {
       return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return (!this.editMode || this.publicationSettingsUpdated) && (this.canPublish && this.validPublishSettings);
+      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
     },
     validPublishSettings() {
       return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
@@ -310,6 +310,7 @@ export default {
     updateAdvancedSettings(settings) {
       this.advancedSettings = structuredClone(settings);
       this.publicationSettings.advancedSettings = this.advancedSettings;
+      this.currentPublicationSettings = { ...this.currentPublicationSettings };
       this.noteObject.properties.hideAuthor = this.advancedSettings?.hideAuthor;
       this.noteObject.properties.hideReaction = this.advancedSettings?.hideReaction;
     },
