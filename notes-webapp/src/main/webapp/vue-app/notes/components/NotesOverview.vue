@@ -433,6 +433,7 @@ export default {
     },
     initialized() {
       if (this.initialized) {
+        Vue.prototype.$utils.includeExtensions('NotesExtension');
         const urlHash = window.location.hash;
         if (urlHash) {
           const elementId = urlHash.substring(1);
@@ -679,7 +680,6 @@ export default {
   },
   mounted() {
     this.handleChangePages();
-    Vue.prototype.$utils.includeExtensions('NotesExtension');
     $(document).on('click', () => {
       this.translationsMenu = false;
     });
