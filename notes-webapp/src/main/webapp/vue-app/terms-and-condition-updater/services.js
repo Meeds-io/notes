@@ -19,7 +19,7 @@
  */
 import * as termsAndConditionsWebSocket from './js/WebSocket';
 
-if (!Vue.prototype.$connectorWebSocket) {
+if (!Vue.prototype.$termsAndConditionsWebSocket) {
   window.Object.defineProperty(Vue.prototype, '$termsAndConditionsWebSocket', {
     value: termsAndConditionsWebSocket,
   });
