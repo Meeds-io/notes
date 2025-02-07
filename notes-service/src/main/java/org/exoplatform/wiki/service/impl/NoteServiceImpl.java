@@ -2041,17 +2041,17 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       note.setId(null);
       Page note_2 = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
       if (note_2 == null) {
-        note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, false);
+        note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, true);
         targetNote = note_;
       } else {
         if (StringUtils.isNotEmpty(conflict)) {
           if (conflict.equals("overwrite") || conflict.equals("replaceAll")) {
             deleteNote(wiki.getType(), wiki.getOwner(), note.getName());
-            note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, false);
+            note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, true);
             targetNote = note_;
           }
           if (conflict.equals("duplicate")) {
-            note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, false);
+            note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, true);
             targetNote = note_;
           }
           if (conflict.equals("update")) {
