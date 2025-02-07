@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 export function initCometd(callback) {
+  Vue.prototype.$socialWebSocket.initCometd('/TermsAndConditions');
   cCometd.subscribe('/TermsAndConditions', null, (event) => {
     const data = event.data && JSON.parse(event.data);
     if (!data) {
