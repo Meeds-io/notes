@@ -611,6 +611,9 @@ export default {
     },
     canScheduleNotePublication() {
       return this.note?.canManage || this.canSchedule;
+    },
+    targetLang() {
+      return this.selectedTranslation?.value || this.lang;
     }
   },
   created() {
@@ -750,6 +753,9 @@ export default {
       this.noteSummary = summary;
     },
     updateSelectedTranslation(translation) {
+      if (!this.initialized) {
+        return;
+      }
       this.selectedTranslation = translation;
     },
     getNoteLink(noteId) {
@@ -903,15 +909,14 @@ export default {
       });
     },
     getNoteByName(noteName, source, viewNote) {
-      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.selectedTranslation.value).then(data => {
+      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.targetLang).then(data => {
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.getNoteLanguages(this.note.id);
-        if (!this.note.lang || this.note.lang === '') {
-          this.updateSelectedTranslation(this.originalVersion);
-        }
+        const translation = this.note.lang ? { value: this.targetLang } : this.originalVersion;
+        this.updateSelectedTranslation(translation);
         this.updateURL();
         if (viewNote){
           this.viewNoteStatistics(this.note);
