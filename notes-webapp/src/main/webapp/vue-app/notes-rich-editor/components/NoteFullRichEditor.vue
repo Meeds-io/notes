@@ -74,7 +74,7 @@
       </div>
     </div>
     <extension-registry-components
-      v-if="initialized && editorExtensions.length > 0"
+      v-if="editorExtensions.length > 0"
       name="NotesRichEditor"
       type="notes-editor-extensions"
       :params="extensionParams" />
@@ -109,7 +109,7 @@ export default {
     return {
       noteObject: null,
       editor: null,
-      initialized: false,
+      noteContentInitialized: false,
       instanceReady: false,
       noteTitleMaxLength: 500,
       typingTimer: null,
@@ -229,7 +229,7 @@ export default {
       this.updateData();
     },
     'noteObject.content': function () {
-      if (this.initialized) {
+      if (this.noteContentInitialized) {
         this.updateData();
       }
     },
@@ -497,7 +497,7 @@ export default {
             self.setToolBarEffect();
           },
           change: function (evt) {
-            if (!self.initialized || self.isContentImagesUploadProgress) {
+            if (!self.noteContentInitialized || self.isContentImagesUploadProgress) {
               // First time setting data
               self.initialized = true;
               return;
