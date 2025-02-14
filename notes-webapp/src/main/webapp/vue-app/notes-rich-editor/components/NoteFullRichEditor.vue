@@ -499,7 +499,7 @@ export default {
           change: function (evt) {
             if (!self.noteContentInitialized || self.isContentImagesUploadProgress) {
               // First time setting data
-              self.initialized = true;
+              self.noteContentInitialized = true;
               return;
             }
             self.waitUserTyping(self);
