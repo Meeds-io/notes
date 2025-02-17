@@ -22,6 +22,8 @@ import static io.meeds.analytics.utils.AnalyticsUtils.addSpaceStatistics;
 
 import java.util.concurrent.CompletableFuture;
 
+import io.meeds.social.cms.model.CMSSetting;
+import io.meeds.social.cms.service.CMSService;
 import org.apache.commons.lang3.StringUtils;
 
 import io.meeds.analytics.model.StatisticData;
@@ -29,6 +31,7 @@ import io.meeds.analytics.utils.AnalyticsUtils;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.portal.pom.data.PageKey;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
@@ -48,21 +51,19 @@ public class NotesPageListener extends PageWikiListener {
 
   private static final Log    LOG                        = ExoLogger.getLogger(NotesPageListener.class);
 
-  private static final String WIKI_ADD_PAGE_OPERATION    = "noteCreated";
+  private static final String WIKI_ADD_PAGE_OPERATION    = "createContent";
 
-  private static final String WIKI_UPDATE_PAGE_OPERATION = "noteUpdated";
+  private static final String WIKI_UPDATE_PAGE_OPERATION = "updateContent";
 
-  private static final String WIKI_DELETE_PAGE_OPERATION = "noteDeleted";
-
-  private static final String WIKI_OPEN_PAGE_TREE = "openNoteByTree";
-
-  private static final String WIKI_OPEN_PAGE_BREAD_CRUMB = "openNoteByBreadCrumb";
+  private static final String WIKI_DELETE_PAGE_OPERATION = "deleteContent";
 
   protected PortalContainer   container;
 
   protected IdentityManager   identityManager;
 
   protected SpaceService      spaceService;
+  
+  protected CMSService        cmsService;
 
   public NotesPageListener() {
     this.container = PortalContainer.getInstance();
@@ -70,7 +71,7 @@ public class NotesPageListener extends PageWikiListener {
 
   @Override
   public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_ADD_PAGE_OPERATION, null);
+    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_ADD_PAGE_OPERATION);
   }
 
   @Override
@@ -80,49 +81,47 @@ public class NotesPageListener extends PageWikiListener {
                              Page page,
                              PageUpdateType wikiUpdateType) throws WikiException {
     if (!(page instanceof DraftPage) && wikiUpdateType != null) {
-      computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_UPDATE_PAGE_OPERATION, wikiUpdateType);
+      computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_UPDATE_PAGE_OPERATION);
     }
   }
 
   @Override
   public void postDeletePage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_DELETE_PAGE_OPERATION, null);
+    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_DELETE_PAGE_OPERATION);
   }
 
   @Override
   public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_OPEN_PAGE_TREE, null);
+    // Nothing
   }
 
   @Override
   public void postgetPagefromBreadCrumb(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-    computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_OPEN_PAGE_BREAD_CRUMB, null);
+    // Nothing
   }
 
   private void computeWikiPageStatistics(Page page,
                                          String wikiType,
                                          String wikiOwner,
-                                         String operation,
-                                         PageUpdateType wikiUpdateType) {
+                                         String operation) {
     ConversationState conversationstate = ConversationState.getCurrent();
     final String modifierUsername = conversationstate == null
         || conversationstate.getIdentity() == null ? null : conversationstate.getIdentity().getUserId();
 
-    computeWikiPageStatisticsAsync(page, wikiType, wikiOwner, modifierUsername, operation, wikiUpdateType);
+    computeWikiPageStatisticsAsync(page, wikiType, wikiOwner, modifierUsername, operation);
   }
 
   private void computeWikiPageStatisticsAsync(final Page page,
                                               final String wikiType,
                                               final String wikiOwner,
                                               final String modifierUsername,
-                                              final String operation,
-                                              final PageUpdateType wikiUpdateType) {
+                                              final String operation) {
     CompletableFuture.supplyAsync(() -> {
       ExoContainerContext.setCurrentContainer(container);
       RequestLifeCycle.begin(container);
       try {
         long userIdentityId = getUserIdentityId(modifierUsername);
-        createWikiPageStatistic(page, wikiType, wikiOwner, userIdentityId, operation, wikiUpdateType);
+        createWikiPageStatistic(page, wikiType, wikiOwner, userIdentityId, operation);
       } catch (Exception e) {
         LOG.warn("Error computing wiki statistics", e);
       } finally {
@@ -136,34 +135,35 @@ public class NotesPageListener extends PageWikiListener {
                                        String wikiType,
                                        String wikiOwner,
                                        long userIdentityId,
-                                       String operation,
-                                       PageUpdateType wikiUpdateType) {
+                                       String operation) {
     StatisticData statisticData = new StatisticData();
-    statisticData.setModule("Note");
-    statisticData.setSubModule("Note");
+    statisticData.setModule("contents");
+    statisticData.setSubModule("contents");
     statisticData.setOperation(operation);
     statisticData.setUserId(userIdentityId);
-
-    if (StringUtils.isNotBlank(wikiOwner)
-        && StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
-      Space space = getSpaceService().getSpaceByGroupId(wikiOwner);
-      addSpaceStatistics(statisticData, space);
-    }
+    
     if (page != null) {
-      statisticData.addParameter("wikiPageId", page.getId());
-      statisticData.addParameter("wikiId", page.getWikiId());
-      statisticData.addParameter("contentLength", page.getContent() == null ? 0 : page.getContent().length());
-      statisticData.addParameter("titleLength", page.getTitle() == null ? 0 : page.getTitle().length());
-      statisticData.addParameter("authorId", getUserIdentityId(page.getAuthor()));
-      statisticData.addParameter("ownerId", getUserIdentityId(page.getOwner()));
-      statisticData.addParameter("wikiType", page.getWikiType());
-      statisticData.addParameter("createdDate", page.getCreatedDate());
-    }
-    if (wikiUpdateType != null) {
-      statisticData.addParameter("updateType", wikiUpdateType.name());
-    }
+      CMSSetting cmsSetting = getCmsService().getSetting("notePage", page.getName());
+      String title = page.getTitle();
+      if (cmsSetting != null) {
+        String pageReference = cmsSetting.getPageReference();
+        PageKey pageKey = PageKey.create(pageReference);
+        title = "SNV in " + pageKey.getName();
+      }
+      statisticData.addParameter("contentId", page.getId());
+      statisticData.addParameter("contentTitle", title);
+      statisticData.addParameter("contentAuthor", page.getAuthor());
+      statisticData.addParameter("contentLastModifier", page.getAuthor());
+      statisticData.addParameter("contentType", cmsSetting != null ? "SNV" : "Note");
+      statisticData.addParameter("contentUpdatedDate", page.getUpdatedDate());
+      statisticData.addParameter("contentCreationDate", page.getCreatedDate());
 
-    AnalyticsUtils.addStatisticData(statisticData);
+      if (StringUtils.isNotBlank(wikiOwner) && StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+        Space space = getSpaceService().getSpaceByGroupId(wikiOwner);
+        addSpaceStatistics(statisticData, space);
+      }
+      AnalyticsUtils.addStatisticData(statisticData);
+    }
   }
 
   private long getUserIdentityId(final String username) {
@@ -190,5 +190,13 @@ public class NotesPageListener extends PageWikiListener {
     }
     return identityManager;
   }
+
+  private CMSService getCmsService() {
+    if (cmsService == null) {
+      cmsService = this.container.getComponentInstanceOfType(CMSService.class);
+    }
+    return cmsService;
+  }
+
 
 }
