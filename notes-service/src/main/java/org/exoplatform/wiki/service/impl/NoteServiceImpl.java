@@ -1048,6 +1048,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    */
   @Override
   public void createVersionOfNote(Page note, String userName) throws WikiException {
+    DraftPage draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
+    PageVersion previousPageVersion = getPublishedVersionByPageIdAndLang(Long.parseLong(note.getId()), note.getLang());
     PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
     String pageVersionId = pageVersion.getId();
     note.setLatestVersionId(pageVersionId);
@@ -1076,13 +1078,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
     }
-    DraftPage draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
-    if (draftPage != null) {
-      Map<String, String> eventData = new HashMap<>();
-      eventData.put("draftPageId", draftPage.getId());
-      eventData.put("pageVersionId", pageVersionId);
-      Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
-    }
+    broadcastPageVersionCreationEvent(pageVersionId, draftPage != null ? draftPage.getId() : null, previousPageVersion != null ? previousPageVersion.getId() : null);
   }
 
   /**
@@ -2556,6 +2552,19 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
     }
     return processedContent;
+  }
+
+  private void broadcastPageVersionCreationEvent(String pageVersionId, String draftPageId, String previousPageVersionId) {
+    Map<String, String> eventData = new HashMap<>();
+    if (draftPageId != null) {
+      eventData.put("draftPageId", draftPageId);
+    } else if (previousPageVersionId != null) {
+      eventData.put("previousPageVersionId", previousPageVersionId);
+    }
+    if (!eventData.isEmpty()) {
+      eventData.put("pageVersionId", pageVersionId);
+      Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
+    }
   }
 
  }
