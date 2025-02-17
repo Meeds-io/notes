@@ -258,6 +258,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
           properties.setDraft(false);
+          properties.setSummary("");
           properties = saveNoteMetadata(properties,
                                         note.getLang(),
                                         Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
