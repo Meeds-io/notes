@@ -521,4 +521,50 @@
     </depends>
   </module>
 
+  <module>
+    <name>analyticsExtensionNotes</name>
+    <load-group>commonAnalyticsVueComponentsGroup</load-group>
+    <script>
+      <path>/javascript/notesAnalyticsExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>NotesAnalyticsTableExtension</name>
+    <load-group>commonAnalyticsVueComponentsGroup</load-group>
+    <script>
+      <path>/javascript/notesAnalyticsTableExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
+
 </gatein-resources>
