@@ -146,9 +146,7 @@ public class NotesPageListener extends PageWikiListener {
       CMSSetting cmsSetting = getCmsService().getSetting("notePage", page.getName());
       String title = page.getTitle();
       if (cmsSetting != null) {
-        String pageReference = cmsSetting.getPageReference();
-        PageKey pageKey = PageKey.create(pageReference);
-        title = "SNV in " + pageKey.getName();
+        title = cmsSetting.getPageReference();
       }
       statisticData.addParameter("contentId", page.getId());
       statisticData.addParameter("contentTitle", title);

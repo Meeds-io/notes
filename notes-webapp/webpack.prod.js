@@ -27,6 +27,8 @@ const config = {
     termsAndConditionsView: './src/main/webapp/vue-app/terms-and-conditions/main.js',
     termsAndConditionsUpdater: './src/main/webapp/vue-app/terms-and-condition-updater/main.js',
     termsAndConditionsEditorExtension : './src/main/webapp/vue-app/terms-and-conditions-editor-extension/main.js',
+    notesAnalyticsExtension: './src/main/webapp/vue-app/notes-analytics-extension/main.js',
+    notesAnalyticsTableExtension: './src/main/webapp/vue-app/notes-analytics-table-extension/main.js'
   },
   output: {
     publicPath: '',
