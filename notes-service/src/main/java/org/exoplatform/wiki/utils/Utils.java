@@ -87,7 +87,6 @@ import org.exoplatform.social.notification.LinkProviderUtils;
 import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.web.url.navigation.NavigationResource;
 import org.exoplatform.web.url.navigation.NodeURL;
-import org.exoplatform.webui.application.WebuiRequestContext;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.Page;
@@ -205,11 +204,11 @@ public class Utils {
    * @return The value of key in resource bundle
    */
   public static String getWikiResourceBundle(String key, ClassLoader cl) {
-    Locale locale = WebuiRequestContext.getCurrentInstance().getLocale();
+    Locale locale = PortalRequestContext.getCurrentInstance().getLocale();
     ResourceBundle resourceBundle = ResourceBundle.getBundle(WIKI_RESOUCE_BUNDLE_NAME, locale,cl);
     return resourceBundle.getString(key);
   }
-  
+
   /**
    * Log the edit page action of user
    * 
