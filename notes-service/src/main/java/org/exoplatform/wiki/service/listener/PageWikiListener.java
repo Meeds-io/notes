@@ -46,4 +46,7 @@ public abstract class PageWikiListener extends BaseComponentPlugin {
     // Nothing
   }
 
+  public void markNoteAsViewed(Page note, String viewer) {
+    // Nothing
+  }
 }
