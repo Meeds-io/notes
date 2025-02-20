@@ -1903,7 +1903,21 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
     }
   }
-  
+
+  @Override
+  public void markNoteAsViewed(Page note, Identity userIdentity) {
+      List<PageWikiListener> listeners = wikiService.getPageListeners();
+      for (PageWikiListener l : listeners) {
+          try {
+              l.markNoteAsViewed(note, userIdentity.getUserId());
+          } catch (Exception e) {
+              if (log.isWarnEnabled()) {
+                  log.warn(String.format("Executing listener [%s] on [%s] failed", l, note.getName()), e);
+              }
+          }
+      }
+  }
+
   protected void invalidateCache(Page page) {
     WikiPageParams params = new WikiPageParams(page.getWikiType(), page.getWikiOwner(), page.getName());
     List<WikiPageParams> linkedPages = pageLinksMap.get(params);
