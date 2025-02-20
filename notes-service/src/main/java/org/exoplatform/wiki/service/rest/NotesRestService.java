@@ -1440,6 +1440,32 @@ public class NotesRestService implements ResourceContainer {
       return Response.serverError().build();
     }
   }
+  
+  @POST
+  @Path("/note/view/{noteId}/{lang}")
+  @Operation(summary = "mark a note as viewed", method = "POST", description = "This marks a note as viewed.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "401", description = "User not authorized to get the note"),
+      @ApiResponse(responseCode = "500", description = "Internal server error") })
+  public Response markNoteAsViewed(@Parameter(description = "News id") @PathParam("noteId") String noteId,
+                                   @Parameter(description = "News target lang") @PathParam("lang") String lang) {
+    
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
+    }
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note = noteService.getNoteByIdAndLang(Long.parseLong(noteId), identity, null, lang);
+      noteService.markNoteAsViewed(note, identity);
+      return Response.ok().build();
+    } catch (IllegalAccessException e) {
+      log.warn("User is not authorized to view note", e);
+      return Response.status(Response.Status.UNAUTHORIZED).build();
+    } catch (Exception e) {
+      log.error("An error occurred while marking a note as read", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+  }
 
   private List<JsonNodeData> getJsonTree(WikiPageParams params, Map<String, Object> context, Identity identity, Locale locale) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());

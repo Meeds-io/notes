@@ -443,3 +443,16 @@ export function searchNotes(keyword, limit) {
     }
   }).finally(() => document.dispatchEvent(new CustomEvent('hideTopBarLoading')));
 }
+
+export function markNoteAsViewed(noteId, lang){
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/view/${noteId}/${lang}`, {
+    credentials: 'include',
+    method: 'POST',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp.text();
+    } else {
+      throw new Error('Error while marking note as viewed');
+    }
+  });
+}
