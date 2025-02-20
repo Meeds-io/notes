@@ -35,4 +35,12 @@
             <type>org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin</type>
         </component-plugin>
     </external-component-plugins>
+    <external-component-plugins>
+        <target-component>org.exoplatform.services.listener.ListenerService</target-component>
+        <component-plugin>
+            <name>space.templates.initialized</name>
+            <set-method>addListener</set-method>
+            <type>io.meeds.notes.listener.DefaultSpacesTemplatesListener</type>
+        </component-plugin>
+    </external-component-plugins>
 </configuration>
