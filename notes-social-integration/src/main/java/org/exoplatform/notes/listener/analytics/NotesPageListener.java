@@ -43,19 +43,23 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 
 public class NotesPageListener extends PageWikiListener {
 
-  private static final Log    LOG                        = ExoLogger.getLogger(NotesPageListener.class);
+  private static final Log    LOG                         = ExoLogger.getLogger(NotesPageListener.class);
 
-  private static final String WIKI_ADD_PAGE_OPERATION    = "createContent";
+  private static final String WIKI_ADD_PAGE_OPERATION     = "createContent";
 
-  private static final String WIKI_UPDATE_PAGE_OPERATION = "updateContent";
+  private static final String WIKI_UPDATE_PAGE_OPERATION  = "updateContent";
 
-  private static final String WIKI_DELETE_PAGE_OPERATION = "deleteContent";
+  private static final String WIKI_DELETE_PAGE_OPERATION  = "deleteContent";
+
+  private static final String NOTE_VIEW_CONTENT_OPERATION = "viewContent";
 
   protected PortalContainer   container;
 
@@ -64,6 +68,8 @@ public class NotesPageListener extends PageWikiListener {
   protected SpaceService      spaceService;
   
   protected CMSService        cmsService;
+  
+  protected NoteService       noteService;
 
   public NotesPageListener() {
     this.container = PortalContainer.getInstance();
@@ -88,6 +94,13 @@ public class NotesPageListener extends PageWikiListener {
   @Override
   public void postDeletePage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
     computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_DELETE_PAGE_OPERATION);
+  }
+
+  @Override
+  public void markNoteAsViewed(Page note, String viewer) {
+    if (!(note instanceof DraftPage)) {
+      computeWikiPageStatisticsAsync(note, note.getWikiType(), note.getWikiOwner(), viewer, NOTE_VIEW_CONTENT_OPERATION);
+    }
   }
 
   @Override
@@ -120,8 +133,7 @@ public class NotesPageListener extends PageWikiListener {
       ExoContainerContext.setCurrentContainer(container);
       RequestLifeCycle.begin(container);
       try {
-        long userIdentityId = getUserIdentityId(modifierUsername);
-        createWikiPageStatistic(page, wikiType, wikiOwner, userIdentityId, operation);
+        createWikiPageStatistic(page, wikiType, wikiOwner, modifierUsername, operation);
       } catch (Exception e) {
         LOG.warn("Error computing wiki statistics", e);
       } finally {
@@ -134,8 +146,9 @@ public class NotesPageListener extends PageWikiListener {
   private void createWikiPageStatistic(Page page,
                                        String wikiType,
                                        String wikiOwner,
-                                       long userIdentityId,
+                                       String modifierUsername,
                                        String operation) {
+    long userIdentityId = getUserIdentityId(modifierUsername);
     StatisticData statisticData = new StatisticData();
     statisticData.setModule("contents");
     statisticData.setSubModule("contents");
@@ -150,8 +163,16 @@ public class NotesPageListener extends PageWikiListener {
       }
       statisticData.addParameter("contentId", page.getId());
       statisticData.addParameter("contentTitle", title);
-      statisticData.addParameter("contentAuthor", page.getAuthor());
-      statisticData.addParameter("contentLastModifier", page.getAuthor());
+      if (operation.equals(NOTE_VIEW_CONTENT_OPERATION)) {
+        statisticData.addParameter("contentLanguage", page.getLang());
+      }
+      statisticData.addParameter("contentCreator", page.getAuthor());
+      String lastModifier = page.getAuthor();
+      PageVersion pageVersion = getNoteService().getPublishedVersionByPageIdAndLang(Long.valueOf(page.getId()), page.getLang());
+      if (pageVersion != null) {
+        lastModifier = pageVersion.getAuthor();
+      }
+      statisticData.addParameter("contentLastModifier", lastModifier);
       statisticData.addParameter("contentType", cmsSetting != null ? "SNV" : "Note");
       statisticData.addParameter("contentUpdatedDate", page.getUpdatedDate());
       statisticData.addParameter("contentCreationDate", page.getCreatedDate());
@@ -196,5 +217,10 @@ public class NotesPageListener extends PageWikiListener {
     return cmsService;
   }
 
-
+  private NoteService getNoteService() {
+    if (noteService == null) {
+      noteService = this.container.getComponentInstanceOfType(NoteService.class);
+    }
+    return noteService;
+  }
 }
