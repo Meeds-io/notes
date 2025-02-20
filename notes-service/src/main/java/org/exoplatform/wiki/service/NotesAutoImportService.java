@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -49,6 +50,10 @@ import org.exoplatform.wiki.model.ImportList;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.utils.Utils;
+
+import io.meeds.social.space.service.SpaceLayoutService;
+import io.meeds.social.space.template.model.SpaceTemplate;
+import io.meeds.social.space.template.service.SpaceTemplateService;
 
 public class NotesAutoImportService implements Startable {
 
@@ -89,6 +94,9 @@ public class NotesAutoImportService implements Startable {
   private final NoteService    noteService;
 
   private final SpaceService   spaceService;
+  private final SpaceTemplateService spaceTemplateService;
+
+  private final SpaceLayoutService spaceLayoutService;
 
   private final WikiService    wikiService;
 
@@ -118,12 +126,16 @@ public class NotesAutoImportService implements Startable {
                                 NoteService noteService,
                                 WikiService wikiService,
                                 SpaceService spaceService,
+                                SpaceTemplateService spaceTemplateService,
+                                SpaceLayoutService spaceLayoutService,
                                 UserACL userACL) {
     this.initParams = initParams;
     this.settingService = settingService;
     this.noteService = noteService;
     this.wikiService = wikiService;
     this.spaceService = spaceService;
+    this.spaceTemplateService = spaceTemplateService;
+    this.spaceLayoutService = spaceLayoutService;
     this.userACL = userACL;
     if (initParams != null) {
       if (initParams.getValueParam(IMPORT_ENABLED_PARAM) != null) {
@@ -156,29 +168,7 @@ public class NotesAutoImportService implements Startable {
 
   @Override
   public void start() {
-    if (importEnabled) {
-      RequestLifeCycle.begin(PortalContainer.getInstance());
-      try {
-
-        List<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
-        membershipEntries.add(new MembershipEntry(userACL.getAdminGroups(), "*"));
-        Identity superUserIdentity = new Identity(userACL.getSuperUser(), membershipEntries);
-        importNotes(enKnowledgeBaseSpaceName,
-                    enKnowledgeBaseSpaceDispalyName,
-                    enKnowledgeBaseSpaceDescription,
-                    EN_EXPORT_ZIP_LOCATION,
-                    superUserIdentity);
-        importNotes(frKnowledgeBaseSpaceName,
-                    frKnowledgeBaseSpaceDispalyName,
-                    frKnowledgeBaseSpaceDescription,
-                    FR_EXPORT_ZIP_LOCATION,
-                    superUserIdentity);
-      } catch (Exception e) {
-        log.error(" Error occured when trying to import notes for spaces {} and {}", enKnowledgeBaseSpaceName, frKnowledgeBaseSpaceName,e);
-      } finally {
-        RequestLifeCycle.end();
-      }
-    }
+    createKnowledgeBase();
   }
 
   @Override
@@ -186,82 +176,108 @@ public class NotesAutoImportService implements Startable {
 
   }
 
+  synchronized public void createKnowledgeBase() {
+    RequestLifeCycle.begin(PortalContainer.getInstance());
+    try {
+
+      List<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
+      membershipEntries.add(new MembershipEntry(userACL.getAdminGroups(), "*"));
+      Identity superUserIdentity = new Identity(userACL.getSuperUser(), membershipEntries);
+      importNotes(enKnowledgeBaseSpaceName,
+              enKnowledgeBaseSpaceDispalyName,
+              enKnowledgeBaseSpaceDescription,
+              EN_EXPORT_ZIP_LOCATION,
+              superUserIdentity);
+      importNotes(frKnowledgeBaseSpaceName,
+              frKnowledgeBaseSpaceDispalyName,
+              frKnowledgeBaseSpaceDescription,
+              FR_EXPORT_ZIP_LOCATION,
+              superUserIdentity);
+    } catch (Exception e) {
+      log.error(" Error occured when trying to import notes for spaces {} and {}", enKnowledgeBaseSpaceName, frKnowledgeBaseSpaceName, e);
+    } finally {
+      RequestLifeCycle.end();
+    }
+  }
+
   private void importNotes(String spaceName,
                            String spaceDisplayName,
                            String spaceDescription,
                            String zipPath,
                            Identity superUserIdentity) {
-    String groupId  = "/spaces/" + spaceName;
-    Space space = spaceService.getSpaceByGroupId(groupId);
-    if (space == null) {
-      space = createSpace(spaceName, spaceDisplayName, spaceDescription, superUserIdentity);
-    }
-
-    try {
-      String folderPath = System.getProperty(TEMP_DIRECTORY_PATH);
-      List<String> files = new ArrayList<>();
-      File destDir = new File(folderPath);
-      if (!destDir.exists()) {
-        destDir.mkdir();
-      }
-      String notesFilePath = "";
-      InputStream in = getClass().getResourceAsStream(zipPath);
-      try (ZipInputStream zipIn = new ZipInputStream(in)) {
-        ZipEntry entry = zipIn.getNextEntry();
-        while (entry != null) {
-          String filePath = folderPath + File.separator + entry.getName();
-          if (!entry.isDirectory()) {
-            Utils.extractFile(zipIn, filePath);
-            if (filePath.contains("notesExport_")) {
-              notesFilePath = filePath;
-            }
-            files.add(filePath);
-          } else {
-            File dir = new File(filePath);
-            dir.mkdirs();
-          }
-          zipIn.closeEntry();
-          entry = zipIn.getNextEntry();
+    if (importEnabled) {
+      try {
+        String groupId = "/spaces/" + spaceName;
+        Space space = spaceService.getSpaceByGroupId(groupId);
+        if (space == null) {
+          space = createSpace(spaceName, spaceDisplayName, spaceDescription, superUserIdentity);
         }
-      }
-      long exportTime = 0;
-      if (StringUtils.isNotEmpty(notesFilePath)) {
-        ObjectMapper mapper = new ObjectMapper();
-        File notesFile = new File(notesFilePath);
-        ImportList notes = mapper.readValue(notesFile, new TypeReference<ImportList>() {
-        });
-        try {
-          exportTime = notes.getExportDate();
-        } catch (Exception e) {
-          exportTime = 0;
-        }
-      }
-
-      SettingValue<?> settingsValue = settingService.get(NOTES_IMPORT_CONTEXT, NOTES_IMPORT_SCOPE, spaceName);
-      String settingsValueString =
-                                 settingsValue == null || settingsValue.getValue() == null ? null
-                                                                                           : settingsValue.getValue().toString();
-      if (exportTime == 0 || settingsValue == null || exportTime != Long.valueOf(settingsValueString)) {
-        log.info(" Start import notes for space {}", spaceName);
         if (space != null) {
-          Wiki wiki = wikiService.getWikiByTypeAndOwner(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
-          if (wiki == null) {
-            wiki = wikiService.createWiki(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
+          String folderPath = System.getProperty(TEMP_DIRECTORY_PATH);
+          List<String> files = new ArrayList<>();
+          File destDir = new File(folderPath);
+          if (!destDir.exists()) {
+            destDir.mkdir();
           }
-          if (wiki != null) {
-            noteService.importNotes(files, wiki.getWikiHome(), importConflictMode, superUserIdentity);
-            settingService.set(NOTES_IMPORT_CONTEXT,
-                               NOTES_IMPORT_SCOPE,
-                               spaceName,
-                               SettingValue.create(String.valueOf(exportTime)));
+          String notesFilePath = "";
+          InputStream in = getClass().getResourceAsStream(zipPath);
+          try (ZipInputStream zipIn = new ZipInputStream(in)) {
+            ZipEntry entry = zipIn.getNextEntry();
+            while (entry != null) {
+              String filePath = folderPath + File.separator + entry.getName();
+              if (!entry.isDirectory()) {
+                Utils.extractFile(zipIn, filePath);
+                if (filePath.contains("notesExport_")) {
+                  notesFilePath = filePath;
+                }
+                files.add(filePath);
+              } else {
+                File dir = new File(filePath);
+                dir.mkdirs();
+              }
+              zipIn.closeEntry();
+              entry = zipIn.getNextEntry();
+            }
           }
-        }
-        log.info(" End import notes for space {}", spaceName);
-      } else {
-        log.info("No notes to import for space {}", spaceName);
+          long exportTime = 0;
+          if (StringUtils.isNotEmpty(notesFilePath)) {
+            ObjectMapper mapper = new ObjectMapper();
+            File notesFile = new File(notesFilePath);
+            ImportList notes = mapper.readValue(notesFile, new TypeReference<ImportList>() {
+            });
+            try {
+              exportTime = notes.getExportDate();
+            } catch (Exception e) {
+              exportTime = 0;
+            }
+          }
+          SettingValue<?> settingsValue = settingService.get(NOTES_IMPORT_CONTEXT, NOTES_IMPORT_SCOPE, spaceName);
+          String settingsValueString =
+                  settingsValue == null || settingsValue.getValue() == null ? null
+                          : settingsValue.getValue().toString();
+          if (exportTime == 0 || settingsValue == null || exportTime != Long.valueOf(settingsValueString)) {
+            log.info(" Start import notes for space {}", spaceName);
+            if (space != null) {
+              Wiki wiki = wikiService.getWikiByTypeAndOwner(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
+              if (wiki == null) {
+                wiki = wikiService.createWiki(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
+              }
+              if (wiki != null) {
+                noteService.importNotes(files, wiki.getWikiHome(), importConflictMode, superUserIdentity);
+                settingService.set(NOTES_IMPORT_CONTEXT,
+                        NOTES_IMPORT_SCOPE,
+                        spaceName,
+                        SettingValue.create(String.valueOf(exportTime)));
+              }
+            }
+            log.info(" End import notes for space {}", spaceName);
+          } else {
+            log.info("No notes to import for space {}", spaceName);
+          }
       }
     } catch (Exception e) {
       log.info(" Error when trying to import notes for space {}", spaceName, e);
+    }
     }
 
   }
@@ -269,18 +285,24 @@ public class NotesAutoImportService implements Startable {
   private Space createSpace(String prettyName,
                             String displayName,
                             String description,
-                            Identity superUserIdentity) {
+                            Identity superUserIdentity) throws Exception {
     Space space = new Space();
     space.setDisplayName(displayName);
     space.setDescription(description);
     space.setPrettyName(prettyName);
     space.setVisibility(Space.HIDDEN);
     space.setRegistration(Space.CLOSED);
-    try {
-      return spaceService.createSpace(space, superUserIdentity.getUserId());
-    } catch (Exception e) {
+    Optional<SpaceTemplate> communitySpaceTemplate = spaceTemplateService.getSpaceTemplates().stream().filter(template -> template.getLayout().equals("community")).findFirst();
+    if (communitySpaceTemplate.isPresent()) {
+      space.setTemplateId(communitySpaceTemplate.get().getId());
+    } else {
+      log.warn("KB Spaces not created since space templated not yet initialized");
       return null;
     }
+    space = spaceService.createSpace(space, superUserIdentity.getUserId());
+    spaceLayoutService.createSpaceSite(space);
+    return space;
+
   }
 
 }
