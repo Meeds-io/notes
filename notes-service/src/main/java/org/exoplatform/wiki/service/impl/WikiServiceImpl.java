@@ -30,7 +30,7 @@ import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceFilter;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.webui.application.WebuiRequestContext;
+import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.*;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
@@ -241,7 +241,7 @@ public class WikiServiceImpl implements WikiService {
     if (WikiType.USER.equals(wiki.getType())) {
       String currentUser = org.exoplatform.wiki.utils.Utils.getCurrentUser();
       if (wiki.getOwner().equals(currentUser)) {
-        WebuiRequestContext context = WebuiRequestContext.getCurrentInstance();
+        RequestContext context = RequestContext.getCurrentInstance();
         ResourceBundle res = context.getApplicationResourceBundle();
         return res.getString("UISpaceSwitcher.title.my-space");
       }
