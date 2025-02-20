@@ -924,4 +924,11 @@ public interface NoteService {
    * @return {@link List} of {@link DraftPage}
    */
   List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome);
+
+  /**
+   * Mark note as viewed by user
+   *
+   * @param note target note
+   */
+  void markNoteAsViewed(Page note, Identity userIdentity);
 }
