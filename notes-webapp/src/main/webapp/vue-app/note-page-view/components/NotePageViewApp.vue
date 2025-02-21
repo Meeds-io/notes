@@ -110,7 +110,7 @@ export default {
       this.$root.$updateApplicationVisibility(this.canView);
     },
     pageId() {
-      if (this.pageId) {
+      if (this.pageId && Number.isNaN(Number(this.pageId))) {
         this.viewNoteStatistics();
       }
     }
