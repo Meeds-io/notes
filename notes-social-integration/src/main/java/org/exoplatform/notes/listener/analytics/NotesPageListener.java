@@ -163,7 +163,7 @@ public class NotesPageListener extends PageWikiListener {
       }
       statisticData.addParameter("contentId", page.getId());
       statisticData.addParameter("contentTitle", title);
-      if (operation.equals(NOTE_VIEW_CONTENT_OPERATION)) {
+      if (operation.equals(NOTE_VIEW_CONTENT_OPERATION) || operation.equals(WIKI_UPDATE_PAGE_OPERATION)) {
         statisticData.addParameter("contentLanguage", page.getLang());
       }
       statisticData.addParameter("contentCreator", page.getAuthor());
