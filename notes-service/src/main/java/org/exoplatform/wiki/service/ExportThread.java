@@ -19,17 +19,14 @@
 package org.exoplatform.wiki.service;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +45,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 import org.exoplatform.wiki.utils.Utils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -80,6 +75,10 @@ import io.meeds.notes.model.NotePageProperties;
   private static final String            IMAGE_URL_REPLACEMENT_PREFIX = "//-";
 
   private static final String            IMAGE_URL_REPLACEMENT_SUFFIX = "-//";
+
+   private static final String           CONTENT_LINK_TAG             = "content-link";
+
+   private static final String           CONTENT_LINK_TAG_REPLACEMENT = "--content--link-to-insert";
 
   private static final String            EXPORT_ZIP_EXTENSION         = ".zip";
 
@@ -238,6 +237,7 @@ import io.meeds.notes.model.NotePageProperties;
             noteToExport.setProperties(note.getProperties());
             noteToExport.setContent(processImagesForExport(note));
             noteToExport.setContent(processNotesLinkForExport(noteToExport));
+            noteToExport.setContent(processInsertedNotes(noteToExport.getContent()));
             LinkedList<String> ancestors = getNoteAncestorsIds(noteToExport.getId());
             noteToExport.setAncestors(ancestors);
             if (ancestors.size() > maxAncestors) {
@@ -380,7 +380,25 @@ import io.meeds.notes.model.NotePageProperties;
     }
   }
 
-  private List<NoteToExport> getBottomNotesToExport(List<NoteToExport> allNotesToExport, int level) {
+   private String processInsertedNotes(String content) throws WikiException {
+     Pattern pattern = Pattern.compile("(<)" + CONTENT_LINK_TAG + "([^>]*?>/notes:)(\\d+)(</)" + CONTENT_LINK_TAG + "(>)");
+     Matcher matcher = pattern.matcher(content);
+     StringBuilder result = new StringBuilder();
+     while (matcher.find()) {
+       String id = matcher.group(3);
+       Page note = noteService.getNoteById(id);
+       String noteName = "noteNotFound";
+       if (note != null) {
+         noteName = matcher.group(1) + CONTENT_LINK_TAG_REPLACEMENT + matcher.group(2)
+                 + note.getName() + matcher.group(4) + CONTENT_LINK_TAG_REPLACEMENT + matcher.group(5);
+       }
+       matcher.appendReplacement(result, Matcher.quoteReplacement(noteName));
+     }
+     matcher.appendTail(result);
+     return result.toString();
+   }
+
+   private List<NoteToExport> getBottomNotesToExport(List<NoteToExport> allNotesToExport, int level) {
     return allNotesToExport.stream().filter(export -> export.getAncestors().size() == level).collect(Collectors.toList());
   }
 
