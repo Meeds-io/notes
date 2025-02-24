@@ -27,6 +27,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.portal.mop.SiteKey;
+import org.exoplatform.portal.mop.service.NavigationService;
 import org.picocontainer.Startable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -94,6 +96,9 @@ public class NotesAutoImportService implements Startable {
   private final NoteService    noteService;
 
   private final SpaceService   spaceService;
+
+  private final NavigationService navigationService;
+
   private final SpaceTemplateService spaceTemplateService;
 
   private final SpaceLayoutService spaceLayoutService;
@@ -128,6 +133,7 @@ public class NotesAutoImportService implements Startable {
                                 SpaceService spaceService,
                                 SpaceTemplateService spaceTemplateService,
                                 SpaceLayoutService spaceLayoutService,
+                                NavigationService navigationService,
                                 UserACL userACL) {
     this.initParams = initParams;
     this.settingService = settingService;
@@ -136,6 +142,7 @@ public class NotesAutoImportService implements Startable {
     this.spaceService = spaceService;
     this.spaceTemplateService = spaceTemplateService;
     this.spaceLayoutService = spaceLayoutService;
+    this.navigationService = navigationService;
     this.userACL = userACL;
     if (initParams != null) {
       if (initParams.getValueParam(IMPORT_ENABLED_PARAM) != null) {
@@ -300,9 +307,10 @@ public class NotesAutoImportService implements Startable {
       return null;
     }
     space = spaceService.createSpace(space, superUserIdentity.getUserId());
-    spaceLayoutService.createSpaceSite(space);
+    if(navigationService.loadNode(SiteKey.group(space.getGroupId()))==null){
+      spaceLayoutService.createSpaceSite(space);
+    }
     return space;
-
   }
 
 }
