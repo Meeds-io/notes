@@ -42,6 +42,7 @@ import org.exoplatform.commons.api.notification.service.template.TemplateContext
 import org.exoplatform.commons.notification.template.DigestTemplate;
 import org.exoplatform.commons.notification.template.TemplateUtils;
 import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.TimeConvertUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -50,7 +51,6 @@ import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.notification.LinkProviderUtils;
-import org.exoplatform.webui.utils.TimeConvertUtils;
 
 @TemplateConfigs(templates = {
     @TemplateConfig(pluginId = MentionInNoteNotificationPlugin.ID, template = "war:/notification/templates/mail/MentionInNoteNotificationPlugin.gtmpl") })

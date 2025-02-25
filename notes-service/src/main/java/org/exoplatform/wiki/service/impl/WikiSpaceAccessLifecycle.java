@@ -18,33 +18,30 @@
  */
 package org.exoplatform.wiki.service.impl;
 
+import java.io.IOException;
+
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.application.RequestNavigationData;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
-import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.web.application.Application;
 import org.exoplatform.web.application.ApplicationLifecycle;
-import org.exoplatform.web.application.RequestFailure;
-import org.exoplatform.webui.application.WebuiRequestContext;
+import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.utils.Utils;
 
-public class WikiSpaceAccessLifecycle extends BaseComponentPlugin implements ApplicationLifecycle<WebuiRequestContext> {
+public class WikiSpaceAccessLifecycle extends BaseComponentPlugin implements ApplicationLifecycle<RequestContext> {
   private static final String WIKI_PORTLET_NAME = "wiki";
   
   private static final Log      LOG               = ExoLogger.getLogger(WikiSpaceAccessLifecycle.class.toString());
-  
-  public void onInit(Application app) {
-  }
 
-  public void onStartRequest(final Application app, final WebuiRequestContext context) throws Exception {
+  public void onStartRequest(final Application app, final RequestContext context) throws Exception {
     PortalRequestContext pcontext = (PortalRequestContext) context;
     String requestPath = pcontext.getControllerContext().getParameter(RequestNavigationData.REQUEST_PATH);
     String siteName = pcontext.getSiteName();
@@ -85,18 +82,8 @@ public class WikiSpaceAccessLifecycle extends BaseComponentPlugin implements App
       LOG.warn(String.format("Can not process url for request: site name = [%s], request path = [%s]", siteName, requestPath), ex);
     }
   }
-  
-  private static void redirect(String url) throws Exception {
-    PortalRequestContext portalRequestContext = Util.getPortalRequestContext();
-    portalRequestContext.sendRedirect(url);
-  }
-  
-  public void onFailRequest(Application app, WebuiRequestContext context, RequestFailure failureType) {
-  }
 
-  public void onEndRequest(Application app, WebuiRequestContext context) throws Exception {
-  }
-
-  public void onDestroy(Application app) {
+  private static void redirect(String url) throws IOException {
+    PortalRequestContext.getCurrentInstance().sendRedirect(url);
   }
 }
