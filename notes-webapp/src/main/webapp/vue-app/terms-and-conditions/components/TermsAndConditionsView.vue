@@ -19,7 +19,7 @@
 
 -->
 <template>
-  <v-app v-if="pageContent" class="application-body">
+  <v-app v-if="initialized" class="application-body">
     <v-card flat>
       <v-sheet height="12" class="primary no-border-bottom" />
       <div class="px-4">
@@ -38,7 +38,10 @@
           class="note-summary text-break text-sub-title mt-4 mb-0">
           {{ noteSummary }}
         </p>
-        <v-card-text class="px-0" v-sanitized-html="pageContentDisplay" />
+        <v-card-text
+          v-if="pageContentDisplay"
+          v-sanitized-html="pageContentDisplay"
+          class="px-0" />
       </div>
       <v-card-actions class="px-4 align-end">
         <div v-if="!isMobile" :style="brandingLogoDisplay">
@@ -87,6 +90,7 @@ export default {
       page: null,
       lang: eXo.env.portal.language,
       loading: false,
+      initialized: false,
       isPreviewMode: false,
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
     };
@@ -143,10 +147,12 @@ export default {
     }
   },
   methods: {
-    retrieveTerms() {
-      return this.$termsAndConditionsService.getTermsAndConditions(this.lang).then(page => {
-        this.page = page;
-      });
+    async retrieveTerms() {
+      try {
+        this.page = await this.$termsAndConditionsService.getTermsAndConditions(this.lang);
+      } finally {
+        this.initialized = true;
+      }
     },
     accept() {
       this.loading = true;
