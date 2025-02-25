@@ -341,10 +341,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     if (broadcast) {
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
-    }
-    Matcher mentionMatcher = Utils.MENTION_PATTERN.matcher(createdPage.getContent());
-    if (mentionMatcher.find()) {
-      Utils.sendMentionInNoteNotification(createdPage, null, createdPage.getAuthor());
+      Matcher mentionMatcher = Utils.MENTION_PATTERN.matcher(createdPage.getContent());
+      if (mentionMatcher.find()) {
+        Utils.sendMentionInNoteNotification(createdPage, null, createdPage.getAuthor());
+      }
     }
     return createdPage;
   }
@@ -411,16 +411,15 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       updatedPage.setMetadatas(metadata);
       note.setAuthor(userIdentity.getUserId());
     }
-
-    Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
-    if (mentionsMatcher.find()) {
-      Utils.sendMentionInNoteNotification(note,
-                                          existingNote,
-                                          userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
-    }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     if (broadcast) {
       postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
+      Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
+      if (mentionsMatcher.find()) {
+        Utils.sendMentionInNoteNotification(note,
+                                            existingNote,
+                                            userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
+      }
     }
     updatedPage.setLang(note.getLang());
     return updatedPage;
