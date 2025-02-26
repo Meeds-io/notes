@@ -108,11 +108,6 @@ export default {
     },
     canView() {
       this.$root.$updateApplicationVisibility(this.canView);
-    },
-    pageId() {
-      if (this.pageId && Number.isNaN(Number(this.pageId))) {
-        this.viewNoteStatistics();
-      }
     }
   },
   created() {
@@ -155,10 +150,7 @@ export default {
     },
     switchToEdit() {
       this.previewMode = false;
-    },
-    viewNoteStatistics() {
-      this.$notesService.markNoteAsViewed(this.$root.pageId, this.$root?.language);
-    },
+    }
   },
 };
 </script>

@@ -1448,13 +1448,13 @@ public class NotesRestService implements ResourceContainer {
   }
   
   @POST
-  @Path("/note/view/{noteId}/{lang}")
+  @Path("/note/view/{noteId}")
   @Operation(summary = "mark a note as viewed", method = "POST", description = "This marks a note as viewed.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
       @ApiResponse(responseCode = "401", description = "User not authorized to get the note"),
       @ApiResponse(responseCode = "500", description = "Internal server error") })
   public Response markNoteAsViewed(@Parameter(description = "News id") @PathParam("noteId") String noteId,
-                                   @Parameter(description = "News target lang") @PathParam("lang") String lang) {
+                                   @Parameter(description = "News target lang") @QueryParam("lang") String lang) {
     
     if (noteId == null) {
       return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
