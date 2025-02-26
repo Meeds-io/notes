@@ -445,7 +445,7 @@ export function searchNotes(keyword, wikiOwner, limit) {
 }
 
 export function markNoteAsViewed(noteId, lang){
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/view/${noteId}/${lang}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/view/${noteId}?lang=${lang}`, {
     credentials: 'include',
     method: 'POST',
   }).then((resp) => {

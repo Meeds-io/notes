@@ -31,7 +31,6 @@ import io.meeds.analytics.utils.AnalyticsUtils;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
-import org.exoplatform.portal.pom.data.PageKey;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
@@ -148,23 +147,17 @@ public class NotesPageListener extends PageWikiListener {
                                        String wikiOwner,
                                        String modifierUsername,
                                        String operation) {
-    long userIdentityId = getUserIdentityId(modifierUsername);
-    StatisticData statisticData = new StatisticData();
-    statisticData.setModule("contents");
-    statisticData.setSubModule("contents");
-    statisticData.setOperation(operation);
-    statisticData.setUserId(userIdentityId);
-    
-    if (page != null) {
-      CMSSetting cmsSetting = getCmsService().getSetting("notePage", page.getName());
-      String title = page.getTitle();
-      if (cmsSetting != null) {
-        title = cmsSetting.getPageReference();
-      }
+    if (page != null && getCmsService().getSetting("notePage", page.getName()) == null) {
+      long userIdentityId = getUserIdentityId(modifierUsername);
+      StatisticData statisticData = new StatisticData();
+      statisticData.setModule("contents");
+      statisticData.setSubModule("contents");
+      statisticData.setOperation(operation);
+      statisticData.setUserId(userIdentityId);
       statisticData.addParameter("contentId", page.getId());
-      statisticData.addParameter("contentTitle", title);
+      statisticData.addParameter("contentTitle", page.getTitle());
       if (operation.equals(NOTE_VIEW_CONTENT_OPERATION) || operation.equals(WIKI_UPDATE_PAGE_OPERATION)) {
-        statisticData.addParameter("contentLanguage", page.getLang());
+        statisticData.addParameter("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
       }
       statisticData.addParameter("contentCreator", page.getAuthor());
       String lastModifier = page.getAuthor();
@@ -173,7 +166,7 @@ public class NotesPageListener extends PageWikiListener {
         lastModifier = pageVersion.getAuthor();
       }
       statisticData.addParameter("contentLastModifier", lastModifier);
-      statisticData.addParameter("contentType", cmsSetting != null ? "SNV" : "Note");
+      statisticData.addParameter("contentType", "Note");
       statisticData.addParameter("contentUpdatedDate", page.getUpdatedDate());
       statisticData.addParameter("contentCreationDate", page.getCreatedDate());
 
