@@ -93,37 +93,37 @@ public class NotesAutoImportService implements Startable {
 
   private final InitParams     initParams;
 
-  private final NoteService    noteService;
+  private static NoteService    noteService;
 
-  private final SpaceService   spaceService;
+  private static SpaceService   spaceService;
 
-  private final NavigationService navigationService;
+  private static NavigationService navigationService;
 
-  private final SpaceTemplateService spaceTemplateService;
+  private static SpaceTemplateService spaceTemplateService;
 
-  private final SpaceLayoutService spaceLayoutService;
+  private static SpaceLayoutService spaceLayoutService;
 
-  private final WikiService    wikiService;
+  private static WikiService    wikiService;
 
-  private final SettingService settingService;
+  private static SettingService settingService;
 
-  private final UserACL        userACL;
+  private static UserACL        userACL;
 
-  private String               enKnowledgeBaseSpaceName                   = "exo_knowledge_base_en";
+  private static  String               enKnowledgeBaseSpaceName                   = "exo_knowledge_base_en";
 
-  private String               frKnowledgeBaseSpaceName                   = "exo_knowledge_base_fr";
+  private static  String               frKnowledgeBaseSpaceName                   = "exo_knowledge_base_fr";
 
-  private String               enKnowledgeBaseSpaceDispalyName            = "eXo knowledge base";
+  private static  String               enKnowledgeBaseSpaceDispalyName            = "eXo knowledge base";
 
-  private String               frKnowledgeBaseSpaceDispalyName            = "Base de connaissance eXo";
+  private static  String               frKnowledgeBaseSpaceDispalyName            = "Base de connaissance eXo";
 
-  private String               enKnowledgeBaseSpaceDescription            = "eXo knowledge base space";
+  private static  String               enKnowledgeBaseSpaceDescription            = "eXo knowledge base space";
 
-  private String               frKnowledgeBaseSpaceDescription            = "Espace pour la base de connaissance eXo";
+  private static  String               frKnowledgeBaseSpaceDescription            = "Espace pour la base de connaissance eXo";
 
-  private boolean              importEnabled                              = false;
+  private static  boolean              importEnabled                              = false;
 
-  private String               importConflictMode                         = "replaceAll";
+  private static  String               importConflictMode                         = "replaceAll";
 
 
   public NotesAutoImportService(InitParams initParams,
@@ -146,28 +146,28 @@ public class NotesAutoImportService implements Startable {
     this.userACL = userACL;
     if (initParams != null) {
       if (initParams.getValueParam(IMPORT_ENABLED_PARAM) != null) {
-        this.importEnabled = initParams.getValueParam(IMPORT_ENABLED_PARAM).getValue().equals("true");
+        importEnabled = initParams.getValueParam(IMPORT_ENABLED_PARAM).getValue().equals("true");
       }
       if (initParams.getValueParam(IMPORT_CONFLICT_MODE_PARAM) != null) {
-        this.importConflictMode = initParams.getValueParam(IMPORT_CONFLICT_MODE_PARAM).getValue();
+        importConflictMode = initParams.getValueParam(IMPORT_CONFLICT_MODE_PARAM).getValue();
       }
       if (initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_PARAM) != null) {
-        this.enKnowledgeBaseSpaceName = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_PARAM).getValue();
+        enKnowledgeBaseSpaceName = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_PARAM).getValue();
       }
       if (initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_DISPLAY_PARAM) != null) {
-        this.enKnowledgeBaseSpaceDispalyName = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_DISPLAY_PARAM).getValue();
+        enKnowledgeBaseSpaceDispalyName = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_NAME_DISPLAY_PARAM).getValue();
       }
       if (initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM) != null) {
-        this.enKnowledgeBaseSpaceDescription = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM).getValue();
+        enKnowledgeBaseSpaceDescription = initParams.getValueParam(EN_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM).getValue();
       }
       if (initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_NAME_PARAM) != null) {
-        this.frKnowledgeBaseSpaceName = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_NAME_PARAM).getValue();
+        frKnowledgeBaseSpaceName = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_NAME_PARAM).getValue();
       }
       if (initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DISPLAY_NAME_PARAM) != null) {
-        this.frKnowledgeBaseSpaceDispalyName = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DISPLAY_NAME_PARAM).getValue();
+        frKnowledgeBaseSpaceDispalyName = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DISPLAY_NAME_PARAM).getValue();
       }
       if (initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM) != null) {
-        this.frKnowledgeBaseSpaceDescription = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM).getValue();
+        frKnowledgeBaseSpaceDescription = initParams.getValueParam(FR_KNOWLEDGE_BASE_SPACE_DESCRIPTION_PARAM).getValue();
       }
     }
 
@@ -183,22 +183,21 @@ public class NotesAutoImportService implements Startable {
 
   }
 
-  synchronized public void createKnowledgeBase() {
+  public static void createKnowledgeBase() {
     RequestLifeCycle.begin(PortalContainer.getInstance());
     try {
-
       List<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
       membershipEntries.add(new MembershipEntry(userACL.getAdminGroups(), "*"));
       Identity superUserIdentity = new Identity(userACL.getSuperUser(), membershipEntries);
-      importNotes(enKnowledgeBaseSpaceName,
-              enKnowledgeBaseSpaceDispalyName,
-              enKnowledgeBaseSpaceDescription,
-              EN_EXPORT_ZIP_LOCATION,
-              superUserIdentity);
       importNotes(frKnowledgeBaseSpaceName,
               frKnowledgeBaseSpaceDispalyName,
               frKnowledgeBaseSpaceDescription,
               FR_EXPORT_ZIP_LOCATION,
+              superUserIdentity);
+      importNotes(enKnowledgeBaseSpaceName,
+              enKnowledgeBaseSpaceDispalyName,
+              enKnowledgeBaseSpaceDescription,
+              EN_EXPORT_ZIP_LOCATION,
               superUserIdentity);
     } catch (Exception e) {
       log.error(" Error occured when trying to import notes for spaces {} and {}", enKnowledgeBaseSpaceName, frKnowledgeBaseSpaceName, e);
@@ -207,11 +206,11 @@ public class NotesAutoImportService implements Startable {
     }
   }
 
-  private void importNotes(String spaceName,
-                           String spaceDisplayName,
-                           String spaceDescription,
-                           String zipPath,
-                           Identity superUserIdentity) {
+  private static void importNotes(String spaceName,
+                                  String spaceDisplayName,
+                                  String spaceDescription,
+                                  String zipPath,
+                                  Identity superUserIdentity) {
     if (importEnabled) {
       try {
         String groupId = "/spaces/" + spaceName;
@@ -227,7 +226,7 @@ public class NotesAutoImportService implements Startable {
             destDir.mkdir();
           }
           String notesFilePath = "";
-          InputStream in = getClass().getResourceAsStream(zipPath);
+          InputStream in = NotesAutoImportService.class.getResourceAsStream(zipPath);
           try (ZipInputStream zipIn = new ZipInputStream(in)) {
             ZipEntry entry = zipIn.getNextEntry();
             while (entry != null) {
@@ -264,7 +263,6 @@ public class NotesAutoImportService implements Startable {
                           : settingsValue.getValue().toString();
           if (exportTime == 0 || settingsValue == null || exportTime != Long.valueOf(settingsValueString)) {
             log.info(" Start import notes for space {}", spaceName);
-            if (space != null) {
               Wiki wiki = wikiService.getWikiByTypeAndOwner(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
               if (wiki == null) {
                 wiki = wikiService.createWiki(WikiType.GROUP.toString().toLowerCase(), space.getGroupId());
@@ -276,7 +274,6 @@ public class NotesAutoImportService implements Startable {
                         spaceName,
                         SettingValue.create(String.valueOf(exportTime)));
               }
-            }
             log.info(" End import notes for space {}", spaceName);
           } else {
             log.info("No notes to import for space {}", spaceName);
@@ -289,10 +286,10 @@ public class NotesAutoImportService implements Startable {
 
   }
 
-  private Space createSpace(String prettyName,
-                            String displayName,
-                            String description,
-                            Identity superUserIdentity) throws Exception {
+  private static Space createSpace(String prettyName,
+                                   String displayName,
+                                   String description,
+                                   Identity superUserIdentity) throws Exception {
     Space space = new Space();
     space.setDisplayName(displayName);
     space.setDescription(description);
