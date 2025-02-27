@@ -13,9 +13,9 @@
             no-gutters
             class="mb-5">
             <v-col
-              xl="11"
+              xl="10"
               lg="10"
-              md="10"
+              md="9"
               sm="8"
               cols="6">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
@@ -47,9 +47,9 @@
               </div>
             </v-col>
             <v-col
-              xl="1"
+              xl="2"
               lg="2"
-              md="2"
+              md="3"
               sm="4"
               cols="6">
               <div
