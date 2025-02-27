@@ -79,7 +79,7 @@ export default {
   },
   computed: {
     isDesktop() {
-      return this.$vuetify.breakpoint.width > 960;
+      return this.$vuetify.breakpoint.width >= 960;
     },
   },
   watch: {
@@ -133,11 +133,11 @@ export default {
           title: note.title,
           class: isLast ? 'd-flex text-truncate mx-2' : 'd-flex notes-tree-item min-width-content',
           classLink: isLast ? 'caption text-color text-truncate breadCrumb-link' : 'caption text-sub-title path-clickable breadCrumb-link',
-          isIcon: isFirst && noteBreadcrumbLength !== 1  || isSecondLast,
+          isIcon: isFirst && noteBreadcrumbLength !== 1  || !isLast,
           isEllipsis,
           isBreadcrumbItem,
         };
-        if (isEllipsis && this.noteEllipsisList.length === 0) {
+        if (noteBreadcrumbLength > 4 && !isFirst && !isSecondLast && !isLast) {
           this.noteEllipsisList.push(breadcrumbItem);
         }
         this.noteBreadcrumbList.push(breadcrumbItem);
