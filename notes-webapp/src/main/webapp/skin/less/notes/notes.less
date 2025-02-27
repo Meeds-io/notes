@@ -398,11 +398,20 @@
   .notes-tree-items {
     max-width: 100% !important;
     width: 100% !important;
-
-    .notes-tree-item {
+    
+    .min-width-content {
+      min-width: max-content;
+    }
+    
+    .min-width-title {
+      min-width: 7%;
+    }
+    
+    .notes-tree-item {           
       .path-clickable {
         max-width: 97% !important;
-
+        white-space: nowrap;
+        
         &:hover {
           color: @primaryColor !important;
         }
