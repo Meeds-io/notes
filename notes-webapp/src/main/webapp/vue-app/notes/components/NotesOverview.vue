@@ -15,7 +15,7 @@
             <v-col
               xl="11"
               lg="10"
-              md="10"
+              md="9"
               sm="8"
               cols="6">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
@@ -49,7 +49,7 @@
             <v-col
               xl="1"
               lg="2"
-              md="2"
+              md="3"
               sm="4"
               cols="6">
               <div

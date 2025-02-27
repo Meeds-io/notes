@@ -1,120 +1,67 @@
 <template>
-  <div class="note-breadcrumb-wrapper">
-    <div
-      v-if="noteBreadcrumb && noteBreadcrumb.length <= 4"
-      class="notes-tree-items flex-nowrap d-flex">
-      <div
-        v-for="(note, index) in noteBreadcrumb"
-        :key="index"
-        :class="noteBreadcrumb && noteBreadcrumb.length === 1 && 'single-path-element' || ''"
-        class="notes-tree-item d-flex flex-nowrap  text-truncate flex-0-1">
-        <v-tooltip max-width="300" bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              height="20px"
-              :min-width="index && 30 || 45"
-              class="pa-0 d-block flex-shrink-1 flex-grow-0"
-              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
-              text
-              v-bind="attrs"
-              v-on="on"
-              @click="openNote(note)">
-              <span
-                class="caption text-truncate breadCrumb-link"
-                :class="index < noteBreadcrumb.length-1 && 'path-clickable text-sub-title' || 'text-color not-clickable'">
-                {{ note.title }}
-              </span>
-            </v-btn>
-          </template>
-          <span class="caption">{{ note.title }}</span>
-        </v-tooltip>
-        <v-icon
-          v-if="index < noteBreadcrumb.length-1"
-          class="flex-grow-1 icon-default-color flex-shrink-0 mx-2"
-          size="18">
-          fas fa-chevron-right
-        </v-icon>
-      </div>
-    </div>
-    <div v-else class="notes-tree-items notes-long-path d-flex align-center">
-      <div class="notes-tree-item long-path-first-item d-flex text-truncate">
-        <v-tooltip max-width="300" bottom>
-          <template #activator="{ on, attrs }">
-            <a
-              class="caption text-sub-title text-truncate path-clickable breadCrumb-link"
-              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
-              v-bind="attrs"
-              v-on="on"
-              @click="openNote(noteBreadcrumb[0])">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</a>
-          </template>
-          <span class="caption">{{ noteBreadcrumb && noteBreadcrumb.length && noteBreadcrumb[0].title }}</span>
-        </v-tooltip>
-        <v-icon
-          class="flex-grow-1 icon-default-color flex-shrink-0 mx-2"
-          size="18">
-          fas fa-chevron-right
-        </v-icon>
-      </div>
-      <div class="notes-tree-item long-path-second-item d-flex">
-        <v-tooltip bottom>
-          <template #activator="{ on, attrs }">
-            <v-icon
-              v-bind="attrs"
-              v-on="on"
-              class="me-2 text-sub-title"
-              size="18">
-              fas fa-ellipsis-h
-            </v-icon>
-          </template>
-          <p
-            v-for="(note, index) in noteBreadcrumb"
-            :key="index"
-            class="mb-0">
-            <span
-              v-if="index > 0 && index < noteBreadcrumb.length-2"
-              class="caption">
+  <div 
+    v-if="isDesktop"
+    class="note-breadcrumb-wrapper">
+    <div class="notes-tree-items d-flex align-center">
+      <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
+        <div 
+          v-if="breadcrumbItem.isBreadcrumbItem"
+          :key=index
+          :class="breadcrumbItem.class">
+          <v-tooltip max-width="300" bottom>
+            <template #activator="{ on, attrs }">
+              <a
+                :id="breadcrumbItem.id"
+                :ref="breadcrumbItem.id"
+                :class="breadcrumbItem.classLink"
+                v-bind="attrs"
+                v-on="on"
+                @click="openNote(noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}</a>
+            </template>
+            <span class="caption">{{ breadcrumbItem.title }}</span>
+          </v-tooltip>
+          <v-icon
+            v-if="breadcrumbItem.isIcon"
+            class="flex-grow-1 icon-default-color flex-shrink-0"
+            :class="index === 0 && noteEllipsisList.length > 0 ? 'ms-2' : 'mx-2'"
+            size="18">
+            fas fa-chevron-right
+          </v-icon>
+        </div>
+        <div
+          v-if="breadcrumbItem.isEllipsis && noteEllipsisList.length > 0"
+          :key="index"
+          class="notes-tree-item min-width-content long-path-second-item d-flex">
+          <v-tooltip :key="tooltipKey" bottom>
+            <template #activator="{ on, attrs }">
               <v-icon
+                v-show="noteEllipsisList.length > 0"
+                v-bind="attrs"
+                v-on="on"
+                class="text-sub-title"
                 size="18"
-                class="tooltip-chevron me-2">
-                fas fa-chevron-right
+                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
+                fas fa-ellipsis-h
               </v-icon>
-              {{ note.title }}
-            </span>
-          </p>
-        </v-tooltip>
-        <v-icon class="clickable" size="18">fas fa-chevron-right</v-icon>
-      </div>
-      <div class="ms-2 notes-tree-item long-path-third-item d-flex text-truncate">
-        <v-tooltip max-width="300" bottom>
-          <template #activator="{ on, attrs }">
-            <a
-              class="caption text-sub-title text-truncate path-clickable breadCrumb-link"
-              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
-              v-bind="attrs"
-              v-on="on"
-              @click="openNote(noteBreadcrumb[noteBreadcrumb.length-2])">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</a>
-          </template>
-          <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-2].title }}</span>
-        </v-tooltip>
-        <v-icon
-          class="flex-grow-1 icon-default-color flex-shrink-0 mx-2"
-          size="18">
-          fas fa-chevron-right
-        </v-icon>
-      </div>
-      <div class="notes-tree-item d-flex text-truncate">
-        <v-tooltip max-width="300" bottom>
-          <template #activator="{ on, attrs }">
-            <a
-              class="caption text-color text-truncate breadCrumb-link"
-              :class="noteBreadcrumb[noteBreadcrumb.length-1].id === actualNoteId && 'clickable' || ''"
-              v-bind="attrs"
-              v-on="on"
-              @click="openNote(noteBreadcrumb[noteBreadcrumb.length-1])">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</a>
-          </template>
-          <span class="caption">{{ noteBreadcrumb[noteBreadcrumb.length-1].title }}</span>
-        </v-tooltip>
-      </div>
+            </template>
+            <p
+              v-for="(noteEllipsisItem) in noteEllipsisList"
+              :key="noteEllipsisItem.index"
+              class="mb-0">
+              <span
+                class="caption">
+                <v-icon
+                  size="18"
+                  class="tooltip-chevron">
+                  fas fa-chevron-right
+                </v-icon>
+                {{ noteEllipsisItem.title }}
+              </span>
+            </p>
+          </v-tooltip>
+          <v-icon class="clickable me-2" size="18">fas fa-chevron-right</v-icon>
+        </div>
+    </template>
     </div>
   </div>
 </template>
@@ -130,13 +77,162 @@ export default {
       default: ''
     },
   },
+  computed: {
+    isDesktop() {
+      return this.$vuetify.breakpoint.width > 960;
+    },
+  },
+  watch: {
+    noteBreadcrumb() {
+      this.initNoteBreadcrumb();
+      this.$forceUpdate();
+      this.isMounted = true;
+    },
+    isMounted() {
+      if (this.isMounted) {
+        document.fonts.ready.then(() => {
+          this.$nextTick(() => {
+            if (this.noteEllipsisList.length === 0 || this.noteBreadcrumb.length > 4) {
+              this.isLastNoteTruncated();
+              this.countRecursive = 0;
+            }
+          });
+        });
+        this.isMounted = false;
+      }
+    },
+  },
+  data: () => ({
+    noteBreadcrumbList: [],
+    noteEllipsisList: [],
+    isMounted: false,
+    tooltipKey: 0,
+    countRecursive: 0,
+  }),
   methods: {
     openNote(note) {
       if (note.noteId !== this.actualNoteId ) {
+        this.noteBreadcrumb = [];
         this.$emit('open-note',note.id);
         document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
       }
-    }
+    },
+    initNoteBreadcrumb() {
+      const noteBreadcrumbLength = this.noteBreadcrumb.length;
+      this.noteBreadcrumbList = [];
+      this.noteEllipsisList = [];
+      this.noteBreadcrumb.forEach((note, index) => {
+        const isFirst = index === 0;
+        const isLast = index === noteBreadcrumbLength - 1;
+        const isSecondLast = index === noteBreadcrumbLength - 2;
+        const isEllipsis = noteBreadcrumbLength > 4 && this.noteEllipsisList.length === 0 && !isFirst;
+        const isBreadcrumbItem = isFirst || isLast || isSecondLast || noteBreadcrumbLength <= 4;
+        const breadcrumbItem = {
+          id: isLast ? 'lastBreadcrumbItem' : null,
+          index,
+          title: note.title,
+          class: isLast ? 'd-flex text-truncate mx-2' : 'd-flex notes-tree-item min-width-content',
+          classLink: isLast ? 'caption text-color text-truncate breadCrumb-link' : 'caption text-sub-title path-clickable breadCrumb-link',
+          isIcon: isFirst && noteBreadcrumbLength !== 1  || isSecondLast,
+          isEllipsis,
+          isBreadcrumbItem,
+        };
+        if (isEllipsis && this.noteEllipsisList.length === 0) {
+          this.noteEllipsisList.push(breadcrumbItem);
+        }
+        this.noteBreadcrumbList.push(breadcrumbItem);
+      });
+    },
+    getTextWidth(text, font) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      context.font = font;
+      return context.measureText(text).width;
+    },
+    isLastNoteTruncated() {
+      document.fonts.ready.then(() => {
+        this.$nextTick(() => {
+          const lastNoteElement = document.getElementById('lastBreadcrumbItem');
+          const noteBreadcrumbListLength = this.noteBreadcrumbList.length;
+          if (this.countRecursive === 2){
+            this.noteBreadcrumbList[noteBreadcrumbListLength - 1].class = 'd-flex text-truncate min-width-title';
+            return;
+          }
+          if (!lastNoteElement) {
+            return;
+          }
+          const elementWidth = lastNoteElement.clientWidth;
+          const text = this.getTruncatedText(lastNoteElement);
+          const font = window.getComputedStyle(lastNoteElement).font;
+          const textWidth = this.getTextWidth(lastNoteElement.innerText, font);
+          if (textWidth > elementWidth && text.length <= 10) {
+            if (this.noteBreadcrumb.length < 5 && this.countRecursive === 0) {
+              this.getNoteBreadcrumbList();
+            } else if (this.countRecursive === 0) {
+              const beforeLastIndex = noteBreadcrumbListLength - 2;
+              const beforeLastElement = this.noteBreadcrumbList[beforeLastIndex];
+              beforeLastElement.isBreadcrumbItem = false;
+              beforeLastElement.isIcon = false;
+              beforeLastElement.isEllipsis = this.noteEllipsisList.length === 0 ? true : false;
+              this.noteEllipsisList.push(beforeLastElement);
+              this.noteBreadcrumbList = this.noteBreadcrumbList.map((item, index) => {
+                return index === beforeLastIndex ? beforeLastElement : item;
+              });
+            } else if (this.countRecursive === 1) {
+              this.noteBreadcrumbList[0].class = 'd-flex notes-tree-item text-truncate';
+              this.noteBreadcrumbList[0].classLink = 'caption text-sub-title text-truncate path-clickable breadCrumb-link';
+            }
+            this.isLastNoteTruncated();
+            this.countRecursive += 1;
+          } else {
+            this.noteBreadcrumbList[noteBreadcrumbListLength - 1].class = 'd-flex text-truncate min-width-title';
+          }
+        });
+      });
+    },
+    getTruncatedText(element) {
+      const text = element.innerText;
+      const style = window.getComputedStyle(element);
+      const font = `${style.fontSize} ${style.fontFamily}`;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      context.font = font;
+      let truncatedText = '';
+      const visibleWidth = element.clientWidth;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const charWidth = context.measureText(truncatedText + char).width;
+        if (charWidth > visibleWidth) {
+          break;
+        }
+        truncatedText += char;
+      }
+      return truncatedText;
+    },
+    getNoteBreadcrumbList() {
+      this.noteBreadcrumbList = [];
+      this.noteEllipsisList = [];
+      const noteBreadcrumbLength = this.noteBreadcrumb.length;
+      this.noteBreadcrumb.forEach((note, index) => {
+        const isFirst = index === 0;
+        const isLast = index === noteBreadcrumbLength - 1;
+        const breadcrumbItem = {
+          id: isLast ? 'lastBreadcrumbItem' : null,
+          index,
+          title: note.title,
+          class: isLast ? 'd-flex text-truncate' : 'd-flex notes-tree-item min-width-content',
+          classLink: isLast ? 'caption text-color text-truncate breadCrumb-link' : 'caption text-sub-title path-clickable breadCrumb-link',
+          isIcon: isFirst,
+          isEllipsis: !isFirst && !isLast && this.noteEllipsisList.length === 0,
+          isBreadcrumbItem: isFirst || isLast,
+        };
+        if (!isFirst && !isLast) {
+          this.noteEllipsisList.push(breadcrumbItem);
+        }
+        this.noteBreadcrumbList.push(breadcrumbItem);
+      });
+      this.tooltipKey += 1;
+    },
   }
 };
 </script>
