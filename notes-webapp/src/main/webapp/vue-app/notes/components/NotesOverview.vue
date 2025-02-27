@@ -13,7 +13,7 @@
             no-gutters
             class="mb-5">
             <v-col
-              xl="11"
+              xl="10"
               lg="10"
               md="9"
               sm="8"
@@ -47,7 +47,7 @@
               </div>
             </v-col>
             <v-col
-              xl="1"
+              xl="2"
               lg="2"
               md="3"
               sm="4"
