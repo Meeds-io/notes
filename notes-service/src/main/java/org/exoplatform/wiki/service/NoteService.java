@@ -488,6 +488,17 @@ public interface NoteService {
   List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException;
 
   /**
+   * Creates a version of a note. This method only tag the current note data as a
+   * new version, it does not update the note data
+   *
+   * @param note The note
+   * @param userName the author name
+   * @param broadcast broadcast version update event
+   * @throws WikiException if an error occured
+   */
+  void createVersionOfNote(Page note, String userName, boolean broadcast) throws WikiException;
+
+  /**
    * Creates a version of a note. This method only tag the current note data as
    * a new version, it does not update the note data
    * 
@@ -835,7 +846,17 @@ public interface NoteService {
    *
    * @param noteId Id of the note.
    * @param lang language.
-   * @throws WikiException if an error occured
+   * @param broadcast: broadcast delete event or not
+   * @throws WikiException if an error occurred
+   */
+  void deleteVersionsByNoteIdAndLang(Long noteId, String lang, boolean broadcast) throws Exception;
+
+  /**
+   * Deletes a list of versions of note by language.
+   *
+   * @param noteId Id of the note.
+   * @param lang language.
+   * @throws WikiException if an error occurred
    */
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception;
 

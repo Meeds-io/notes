@@ -638,13 +638,13 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
                                                                            null,
                                                                            Long.parseLong(identity.getId()));
     assertNotNull(featuredImage);
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en", true);
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
     assertEquals(note.getTitle(), "testPage1");
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertNotNull(note);
     assertEquals(note.getTitle(), "frenchTitle");
-    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr");
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr", true);
     assertNull(fileService.getFile(featuredImage.getId()));
     note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "fr");
     assertEquals(note.getTitle(), "testPage1");
@@ -745,11 +745,15 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
   
   private Page createTestNoteWithVersionLang(String name, String lang, Identity user) throws Exception {
     identityManager.getOrCreateUserIdentity("root");
-    Space space = new Space();
-    space.setDisplayName("test");
-    space.setRegistration(Space.OPEN);
-    space.setVisibility(Space.PUBLIC);
-    space = spaceService.createSpace(space, "root");
+    Space space = spaceService.getSpaceByGroupId("/spaces/test");
+    if (space == null) {
+      space = new Space();
+      space.setDisplayName("test");
+      space.setPrettyName("test");
+      space.setRegistration(Space.OPEN);
+      space.setVisibility(Space.PUBLIC);
+      space = spaceService.createSpace(space, "root");
+    }
     Wiki portalWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, space.getGroupId());
     Page note = noteService.createNote(portalWiki, "Home", new Page(name, name), user);
     note.setLang(lang);

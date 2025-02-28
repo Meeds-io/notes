@@ -22,6 +22,7 @@ package org.exoplatform.wiki.service.listener;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.service.PageUpdateType;
 
 /**
@@ -42,7 +43,7 @@ public abstract class PageWikiListener extends BaseComponentPlugin {
     // Nothing
   }
 
-  public void postDeletePageVersion(String pageVersionId) {
+  public void postDeletePageVersion(PageVersion pageVersion) {
     // Nothing
   }
 
