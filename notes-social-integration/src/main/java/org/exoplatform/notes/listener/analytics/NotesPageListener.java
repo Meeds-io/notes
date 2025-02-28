@@ -112,6 +112,16 @@ public class NotesPageListener extends PageWikiListener {
     // Nothing
   }
 
+  @Override
+  public void postDeletePageVersion(PageVersion pageVersion) {
+    computeWikiPageStatistics(pageVersion, pageVersion.getWikiType(), pageVersion.getWikiOwner(), WIKI_DELETE_PAGE_OPERATION);
+  }
+
+  @Override
+  public void postUpdatePageVersion(String pageVersionId) {
+    processPageVersionUpdate(pageVersionId, WIKI_UPDATE_PAGE_OPERATION);
+  }
+
   private void computeWikiPageStatistics(Page page,
                                          String wikiType,
                                          String wikiOwner,
@@ -154,9 +164,13 @@ public class NotesPageListener extends PageWikiListener {
       statisticData.setSubModule("contents");
       statisticData.setOperation(operation);
       statisticData.setUserId(userIdentityId);
-      statisticData.addParameter("contentId", page.getId());
+      String contentId = page.getId();
+      if (page instanceof PageVersion) {
+        contentId = page.getParent().getId();
+      }
+      statisticData.addParameter("contentId", contentId);
       statisticData.addParameter("contentTitle", page.getTitle());
-      if (operation.equals(NOTE_VIEW_CONTENT_OPERATION) || operation.equals(WIKI_UPDATE_PAGE_OPERATION)) {
+      if (!operation.equals(WIKI_ADD_PAGE_OPERATION)) {
         statisticData.addParameter("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
       }
       statisticData.addParameter("contentCreator", page.getAuthor());
@@ -189,6 +203,21 @@ public class NotesPageListener extends PageWikiListener {
     return Long.parseLong(userIdentity.getId());
   }
 
+  private void processPageVersionUpdate(String pageVersionId, String operation) {
+    if (pageVersionId == null || pageVersionId.isEmpty()) {
+      return;
+    }
+
+    String[] data = pageVersionId.split("-");
+    Long versionId = Long.parseLong(data[0]);
+    String lang = (data.length > 1) ? data[1] : null;
+
+    PageVersion pageVersion = getNoteService().getPublishedVersionByPageIdAndLang(versionId, lang);
+    if (pageVersion != null) {
+      computeWikiPageStatistics(pageVersion, pageVersion.getWikiType(), pageVersion.getWikiOwner(), operation);
+    }
+  }
+  
   private SpaceService getSpaceService() {
     if (spaceService == null) {
       spaceService = this.container.getComponentInstanceOfType(SpaceService.class);
