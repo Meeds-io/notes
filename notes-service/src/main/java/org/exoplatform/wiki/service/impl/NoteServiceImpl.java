@@ -413,7 +413,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     if (broadcast) {
-      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), updatedPage, type);
+      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), new Page(updatedPage), type);
       Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
       if (mentionsMatcher.find()) {
         Utils.sendMentionInNoteNotification(note,
@@ -1046,7 +1046,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    * {@inheritDoc}
    */
   @Override
-  public void createVersionOfNote(Page note, String userName) throws WikiException {
+  public void createVersionOfNote(Page note, String userName, boolean broadcast) throws WikiException {
     DraftPage draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(note.getId()), note.getLang());
     PageVersion previousPageVersion = getPublishedVersionByPageIdAndLang(Long.parseLong(note.getId()), note.getLang());
     PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
@@ -1065,8 +1065,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       } catch (Exception e) {
         log.error("Error while saving note version language metadata", e);
       }
-      String versionLangId = note.getId() + "-" + note.getLang();
-      postUpdatePageVersionLanguage(versionLangId);
+      if (broadcast) {
+        String versionLangId = note.getId() + "-" + note.getLang();
+        postUpdatePageVersionLanguage(versionLangId);
+      }
     } else {
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
@@ -1077,7 +1079,17 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
     }
-    broadcastPageVersionCreationEvent(pageVersionId, draftPage != null ? draftPage.getId() : null, previousPageVersion != null ? previousPageVersion.getId() : null);
+    broadcastPageVersionCreationEvent(pageVersionId,
+                                      draftPage != null ? draftPage.getId() : null,
+                                      previousPageVersion != null ? previousPageVersion.getId() : null);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void createVersionOfNote(Page note, String userName) throws WikiException {
+    createVersionOfNote(note, userName, false);
   }
 
   /**
@@ -1094,7 +1106,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                            NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                            NOTE_METADATA_PAGE_OBJECT_TYPE,
                            userName);
-    createVersionOfNote(note, userName);
+    createVersionOfNote(note, userName, true);
     invalidateCache(note);
   }
 
@@ -1560,24 +1572,35 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang)  {
     return getLatestDraftPageByTargetPageAndLang(targetPageId, lang);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void deleteVersionsByNoteIdAndLang(Long noteId, String lang, boolean broadcast) throws Exception {
+    Page note = getNoteById(String.valueOf(noteId));
+    if (note != null) {
+      deleteNoteMetadataProperties(note, lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
+    }
+    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(noteId, lang);
+    dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
+    List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
+    for (DraftPage draftPage : drafts) {
+      if (StringUtils.equals(draftPage.getLang(), lang)) {
+        removeDraftById(draftPage.getId());
+      }
+    }
+    if (broadcast) {
+      postDeletePageVersionLanguage(pageVersion);
+    }
+  }
   
   /**
    * {@inheritDoc}
    */
   @Override
   public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception {
-    Page note = getNoteById(String.valueOf(noteId));
-    if (note != null) {
-      deleteNoteMetadataProperties(note, lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
-    }
-    dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
-    List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
-    for (DraftPage draftPage : drafts) {
-      if (StringUtils.equals(draftPage.getLang(),lang)) {
-        removeDraftById(draftPage.getId());
-      }
-    }
-    postDeletePageVersionLanguage(noteId + "-" + lang);
+    deleteVersionsByNoteIdAndLang(noteId, lang, false);
   }
   
   /**
@@ -1827,10 +1850,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
   }
 
-  public void postDeletePageVersionLanguage(String versionPageId) {
+  public void postDeletePageVersionLanguage(PageVersion pageVersion) {
     List<PageWikiListener> listeners = wikiService.getPageListeners();
     for (PageWikiListener l : listeners) {
-      l.postDeletePageVersion(versionPageId);
+      l.postDeletePageVersion(pageVersion);
     }
   }
   
@@ -2068,7 +2091,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                 || !Objects.equals(note_2.getProperties(), note.getProperties())) {
               note_2.setTitle(note.getTitle());
               note_2 = updateNote(note_2, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
-              createVersionOfNote(note_2, userIdentity.getUserId());
+              createVersionOfNote(note_2, userIdentity.getUserId(), true);
               targetNote = note_2;
             }
           }
@@ -2081,7 +2104,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
         if (!note.getContent().equals(note_1.getContent()) || !Objects.equals(note_1.getProperties(), note.getProperties())) {
           note_1.setContent(note.getContent());
           note_1 = updateNote(note_1, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
-          createVersionOfNote(note_1, userIdentity.getUserId());
+          createVersionOfNote(note_1, userIdentity.getUserId(), true);
           targetNote = note_1;
         }
       }
@@ -2238,7 +2261,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
         if (!content.equals(note_.getContent())) {
           note_.setContent(content);
           updateNote(note_);
-          createVersionOfNote(note_, userIdentity.getUserId());
+          createVersionOfNote(note_, userIdentity.getUserId(), true);
         }
       }
     }
