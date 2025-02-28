@@ -373,8 +373,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      Identity identity = ConversationState.getCurrent().getIdentity();
-      noteService.deleteVersionsByNoteIdAndLang(noteId, identity.getUserId(), lang);
+      noteService.deleteVersionsByNoteIdAndLang(noteId, lang, true);
       return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
       log.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
@@ -689,7 +688,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
@@ -698,11 +697,11 @@ public class NotesRestService implements ResourceContainer {
         }
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -769,7 +768,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -806,7 +805,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -821,7 +820,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setLang(note.getLang());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -830,7 +829,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);
       } else if (note.isExtensionDataUpdated()) {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
