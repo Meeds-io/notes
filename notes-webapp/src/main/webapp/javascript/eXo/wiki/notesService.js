@@ -54,7 +54,7 @@ export function getLatestDraftOfPage(noteId, lang) {
   });
 }
 
-export function getNoteById(noteId,lang,source,type,owner,withChildren) {
+export function getNoteById(noteId, lang, source, type, owner, withChildren) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
     url=`${url}${getSeparator(url)}source=${source}`;
