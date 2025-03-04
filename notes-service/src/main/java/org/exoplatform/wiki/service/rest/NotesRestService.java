@@ -38,14 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -290,13 +283,14 @@ public class NotesRestService implements ResourceContainer {
                               @Parameter(description = "source")
                               @QueryParam("source") String source,
                               @Parameter(description = "note content language")
-                              @QueryParam("lang") String lang) {
+                              @QueryParam("lang") String lang,
+                              @QueryParam("includeDeleted") @DefaultValue("false") boolean includeDeleted) {
     try {
       EnvironmentContext env = EnvironmentContext.getCurrent();
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, source, lang);
-      if (note == null || note.isDeleted()) {
+      if (note == null || (note.isDeleted() && !includeDeleted)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       if (StringUtils.isNotEmpty(noteBookType) && !note.getWikiType().equals(noteBookType)) {
