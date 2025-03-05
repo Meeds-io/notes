@@ -87,7 +87,7 @@
       }
 
       editor.on('contentDom', function () {
-        const iframeWin = window.document.getElementsByTagName('iframe')[0].contentWindow;
+        const iframeWin = window.document.querySelector('iframe.cke_wysiwyg_frame.cke_reset').contentWindow;
         iframeWin.addEventListener('drop',function(event){
           if (event.dataTransfer.getData('cke/widget-id')){
             const sourceWidget = editor.widgets.instances[event.dataTransfer.getData('cke/widget-id')];
