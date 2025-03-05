@@ -323,7 +323,7 @@
         canPublish: canPublish,
         canSchedule: canScheduleNotePublication
       }"
-      :edit-mode="false"
+      :edit-mode="published"
       @publish="publishNote" />
   </v-app>
 </template>
