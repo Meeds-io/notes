@@ -82,13 +82,13 @@
       :class="{'d-flex': !showStartDate && expanded}"
       class="width-fit-content mt-5">
       <div
-        :class="{'d-flex': !publish || expanded}"
+        :class="{'d-flex': (!publish && !isActivityPosted) || expanded}"
         class="justify-start">
         <div
-          :class="{'mb-2': !expanded && publish}"
+          :class="{'mb-2': !expanded && (publish || isActivityPosted)}"
           class="my-auto me-4">
           <span
-            v-if="!publish">
+            v-if="!publish && !isActivityPosted">
             {{ $t('notes.publication.schedule.from.label') }}
           </span>
           <span
@@ -112,7 +112,7 @@
         <div
           class="d-flex">
           <v-icon
-            v-if="!isUntilScheduleType || expanded || !publish"
+            v-if="!isUntilScheduleType || expanded"
             color="primary"
             size="24">
             fas fa-calendar-check
@@ -320,10 +320,10 @@ export default {
       return this.endDate && this.formatDate(this.endDate) || '';
     },
     showEndDate() {
-      return ['between', 'until'].includes(this.selectedScheduleType?.value) && this.publish;
+      return ['between', 'until'].includes(this.selectedScheduleType?.value) && (this.publish || this.isActivityPosted);
     },
     showStartDate() {
-      return (this.selectedScheduleType?.value !== 'until' && this.publish) || !this.publish;
+      return (this.selectedScheduleType?.value !== 'until' && (this.publish || this.isActivityPosted)) || (!this.publish && !this.isActivityPosted);
     },
     isUntilScheduleType() {
       return this.selectedScheduleType?.value === 'until';
