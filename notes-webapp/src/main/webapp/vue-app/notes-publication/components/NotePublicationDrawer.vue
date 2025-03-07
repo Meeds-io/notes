@@ -154,6 +154,7 @@
                           v-if="scheduleAllowed"
                           :expanded="expanded"
                           :publish="publicationSettings?.publish"
+                          :is-activity-posted="publicationSettings.post"
                           :is-publishing="isPublishing"
                           :edit-mode="editMode"
                           :from-external-page="noteObject?.fromExternalPage"
@@ -246,7 +247,7 @@ export default {
       return this.canPublish && this.allowedTargets?.length;
     },
     scheduleAllowed() {
-      return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || !!this.noteObject?.schedulePostDate));
+      return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || this.publicationSettings.post || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
       return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
