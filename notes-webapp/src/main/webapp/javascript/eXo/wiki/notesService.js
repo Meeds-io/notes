@@ -430,9 +430,9 @@ export function removeNoteFeaturedImage(noteId, isDraft, lang) {
   });
 }
 
-export function searchNotes(keyword, limit) {
+export function searchNotes(keyword, wikiOwner, limit) {
   document.dispatchEvent(new CustomEvent('displayTopBarLoading'));
-  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/contextsearch?keyword=${keyword}&isNotesTreeFilter=true&limit=${limit}`, {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/contextsearch?keyword=${keyword}&wikiOwner=${wikiOwner}&isNotesTreeFilter=true&limit=${limit}`, {
     method: 'GET',
     credentials: 'include',
   }).then(resp => {

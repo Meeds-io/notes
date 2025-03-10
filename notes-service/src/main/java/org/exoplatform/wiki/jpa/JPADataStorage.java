@@ -146,6 +146,7 @@ public class JPADataStorage implements DataStorage {
 
     List<SearchResult> searchResults = searchService.searchWiki(getSearchedText(wikiSearchData),
                                                                 wikiSearchData.getUserId(),
+                                                                wikiSearchData.getWikiOwner(),
                                                                 wikiSearchData.getTagNames(),
                                                                 wikiSearchData.isFavorites(),
                                                                 wikiSearchData.isNotesTreeFilter(),
