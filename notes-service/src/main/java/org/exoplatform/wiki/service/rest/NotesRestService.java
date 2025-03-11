@@ -1282,6 +1282,8 @@ public class NotesRestService implements ResourceContainer {
       data.setNotesTreeFilter(isNotesTreeFilter);
       data.setFavorites(favorites);
       data.setTagNames(tagNames);
+      data.setWikiOwner(wikiOwner);
+      data.setWikiType(wikiType);
       List<SearchResult> results = noteService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {

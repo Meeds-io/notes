@@ -988,7 +988,7 @@ export default {
         if (this.isDraftFilter) {
           this.items = this.filterItemsDraft.filter(item => item.name.includes(this.search));
         } else { 
-          this.$notesService.searchNotes(this.search, this.limit).then(data => {
+          this.$notesService.searchNotes(this.search, `/${this.note.wikiOwner}`, this.limit).then(data => {
             this.items = data?.jsonList.length ? this.toListNotes(data?.jsonList) : [];         
             this.showTree = !!this.items.length;
           });

@@ -135,12 +135,12 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, List<String> tagNames, boolean isFavorites, boolean isNotesTreeFilter, int offset, int limit) {
-      return filteredWikiSearch(searchedText, userId, tagNames, isFavorites, isNotesTreeFilter, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites, boolean isNotesTreeFilter, int offset, int limit) {
+      return filteredWikiSearch(searchedText, userId, wikiOwner, tagNames, isFavorites, isNotesTreeFilter, offset, limit);
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, List<String> tagNames, boolean isFavorites,boolean isNotesTreeFilter , int offset, int limit) {
-    Set<String> ids = getUserSpaceIds(userId);
+  protected List<SearchResult> filteredWikiSearch(String query, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites,boolean isNotesTreeFilter , int offset, int limit) {
+    Set<String> ids = getUserSpaceIds(userId, wikiOwner);
     String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, isNotesTreeFilter,offset, limit);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
@@ -335,7 +335,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   }
 
-  protected Set<String> getUserSpaceIds(String userId) {
+  protected Set<String> getUserSpaceIds(String userId, String wikiOwner) {
     if (StringUtils.isEmpty(userId)) {
       throw new IllegalStateException("No Identity found: userId is empty");
     }  else {
@@ -351,7 +351,12 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       for (Space space : spaceList) {
         if (space != null) {
-          permissions.add(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName()).getId());
+          if (wikiOwner == null || space.getGroupId().equals(wikiOwner)) {
+            permissions.add(identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName()).getId());
+            if (wikiOwner != null) {
+              break;  
+            }
+          }
         }
       }
       Identity userIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
