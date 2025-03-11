@@ -374,7 +374,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       throw new EntityNotFoundException("Note to update not found");
     }
     Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    if (userIdentity != null && !Utils.canManageNotes(userIdentity.getUserId(), space, existingNote)) {
+    if (userIdentity != null && (!Utils.canManageNotes(userIdentity.getUserId(), space, existingNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId()))) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
@@ -556,7 +556,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
       if (moveNote != null) {
         Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
-        if (!Utils.canManageNotes(userIdentity.getUserId(), space, moveNote)) {
+        if (!Utils.canManageNotes(userIdentity.getUserId(), space, moveNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId())) {
           throw new IllegalAccessException("User does not have edit the note.");
         }
       }
