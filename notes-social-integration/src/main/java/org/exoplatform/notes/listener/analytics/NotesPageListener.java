@@ -20,6 +20,7 @@ package org.exoplatform.notes.listener.analytics;
 
 import static io.meeds.analytics.utils.AnalyticsUtils.addSpaceStatistics;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.meeds.social.cms.model.CMSSetting;
@@ -174,10 +175,10 @@ public class NotesPageListener extends PageWikiListener {
         statisticData.addParameter("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
       }
       statisticData.addParameter("contentCreator", page.getAuthor());
-      String lastModifier = page.getAuthor();
-      PageVersion pageVersion = getNoteService().getPublishedVersionByPageIdAndLang(Long.valueOf(page.getId()), page.getLang());
-      if (pageVersion != null) {
-        lastModifier = pageVersion.getAuthor();
+      String lastModifier = page.getLastUpdater();
+      if (lastModifier == null) {
+        PageVersion pageVersion = getNoteService().getPublishedVersionByPageIdAndLang(Long.valueOf(page.getId()), page.getLang());
+        lastModifier = Objects.requireNonNullElse(pageVersion, page).getAuthor();
       }
       statisticData.addParameter("contentLastModifier", lastModifier);
       statisticData.addParameter("contentType", "Note");
