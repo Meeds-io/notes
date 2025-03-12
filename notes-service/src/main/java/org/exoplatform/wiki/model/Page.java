@@ -104,6 +104,8 @@ public class Page{
 
   private String                          lang;
 
+  private String                          lastUpdater;
+
   private NotePageProperties              properties;
 
   private String                          attachmentObjectType;
@@ -151,6 +153,7 @@ public class Page{
     this.isMinorEdit = other.isMinorEdit;
     this.isDraftPage = other.isDraftPage;
     this.toBePublished = other.toBePublished;
+    this.lastUpdater = other.lastUpdater;
 
     // Shallow copy
     this.breadcrumb = other.breadcrumb != null ? new ArrayList<>(other.breadcrumb) : null;

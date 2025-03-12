@@ -410,6 +410,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
       updatedPage.setMetadatas(metadata);
       note.setAuthor(userIdentity.getUserId());
+      updatedPage.setLastUpdater(userIdentity.getUserId());
     }
     Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
     if (broadcast) {
