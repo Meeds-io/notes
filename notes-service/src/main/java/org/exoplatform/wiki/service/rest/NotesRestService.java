@@ -1287,11 +1287,17 @@ public class NotesRestService implements ResourceContainer {
       List<SearchResult> results = noteService.search(data).getAll();
       List<TitleSearchResult> titleSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
-        Page page = noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
-                                                        searchResult.getWikiOwner(),
-                                                        searchResult.getPageName(),
-                                                        searchResult.getLang(),
-                                                        currentIdentity);
+        Page page = null;
+        try {
+          page = noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
+                                                     searchResult.getWikiOwner(),
+                                                     searchResult.getPageName(),
+                                                     searchResult.getLang(),
+                                                     currentIdentity);
+        } catch (Exception e) {
+          log.error("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
+              + searchResult.getPageName(), e);
+        }
         if (page != null) {
           page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
@@ -1339,14 +1345,12 @@ public class NotesRestService implements ResourceContainer {
             titleSearchResult.setMetadatas(page.getMetadatas());
             titleSearchResults.add(titleSearchResult);
           }
-        } else {
-          log.warn("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
-                  + searchResult.getPageName());
         }
       }
       return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception e) {
-      return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+      log.error("Error when search notes", e);
+      return Response.serverError().build();
     }
   }
 
