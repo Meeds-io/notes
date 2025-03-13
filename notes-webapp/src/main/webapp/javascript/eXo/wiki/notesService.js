@@ -54,7 +54,7 @@ export function getLatestDraftOfPage(noteId, lang) {
   });
 }
 
-export function getNoteById(noteId,lang,source,type,owner,withChildren) {
+export function getNoteById(noteId, lang, source, type, owner, withChildren) {
   let url = `${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/${noteId}`;
   if (source){
     url=`${url}${getSeparator(url)}source=${source}`;
@@ -442,4 +442,17 @@ export function searchNotes(keyword, wikiOwner, limit) {
       return resp.json();
     }
   }).finally(() => document.dispatchEvent(new CustomEvent('hideTopBarLoading')));
+}
+
+export function markNoteAsViewed(noteId, lang){
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/note/view/${noteId}?lang=${lang}`, {
+    credentials: 'include',
+    method: 'POST',
+  }).then((resp) => {
+    if (resp && resp.ok) {
+      return resp.text();
+    } else {
+      throw new Error('Error while marking note as viewed');
+    }
+  });
 }

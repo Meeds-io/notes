@@ -38,14 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -290,13 +283,14 @@ public class NotesRestService implements ResourceContainer {
                               @Parameter(description = "source")
                               @QueryParam("source") String source,
                               @Parameter(description = "note content language")
-                              @QueryParam("lang") String lang) {
+                              @QueryParam("lang") String lang,
+                              @QueryParam("includeDeleted") @DefaultValue("false") boolean includeDeleted) {
     try {
       EnvironmentContext env = EnvironmentContext.getCurrent();
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, source, lang);
-      if (note == null || note.isDeleted()) {
+      if (note == null || (note.isDeleted() && !includeDeleted)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       if (StringUtils.isNotEmpty(noteBookType) && !note.getWikiType().equals(noteBookType)) {
@@ -373,8 +367,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      Identity identity = ConversationState.getCurrent().getIdentity();
-      noteService.deleteVersionsByNoteIdAndLang(noteId, identity.getUserId(), lang);
+      noteService.deleteVersionsByNoteIdAndLang(noteId, lang, true);
       return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
       log.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
@@ -689,7 +682,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setName(newNoteName);
         }
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       } else if (!note_.getTitle().equals(note.getTitle())) {
         String newNoteName = TitleResolver.getId(note.getTitle(), false);
         if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
@@ -698,11 +691,11 @@ public class NotesRestService implements ResourceContainer {
         }
         note_.setTitle(note.getTitle());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       } else if (!note_.getContent().equals(note.getContent())) {
         note_.setContent(note.getContent());
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
       }
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
@@ -769,7 +762,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -806,7 +799,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -821,7 +814,7 @@ public class NotesRestService implements ResourceContainer {
           note_.setLang(note.getLang());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -830,7 +823,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.PUBLISH, identity);
       } else if (note.isExtensionDataUpdated()) {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, identity);
-        noteService.createVersionOfNote(note_, identity.getUserId());
+        noteService.createVersionOfNote(note_, identity.getUserId(), true);
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
@@ -1444,6 +1437,32 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception e) {
       log.error("An error occurred while getting featured image illustration", e);
       return Response.serverError().build();
+    }
+  }
+  
+  @POST
+  @Path("/note/view/{noteId}")
+  @Operation(summary = "mark a note as viewed", method = "POST", description = "This marks a note as viewed.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "401", description = "User not authorized to get the note"),
+      @ApiResponse(responseCode = "500", description = "Internal server error") })
+  public Response markNoteAsViewed(@Parameter(description = "News id") @PathParam("noteId") String noteId,
+                                   @Parameter(description = "News target lang") @QueryParam("lang") String lang) {
+    
+    if (noteId == null) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
+    }
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      Page note = noteService.getNoteByIdAndLang(Long.parseLong(noteId), identity, null, lang);
+      noteService.markNoteAsViewed(note, identity);
+      return Response.ok().build();
+    } catch (IllegalAccessException e) {
+      log.warn("User is not authorized to view note", e);
+      return Response.status(Response.Status.UNAUTHORIZED).build();
+    } catch (Exception e) {
+      log.error("An error occurred while marking a note as read", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
   }
 

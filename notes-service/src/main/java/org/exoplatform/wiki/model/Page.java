@@ -18,13 +18,12 @@
  */
 package org.exoplatform.wiki.model;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import io.meeds.notes.model.NotePageProperties;
+import lombok.AllArgsConstructor;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.wiki.service.BreadcrumbData;
 
@@ -33,8 +32,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Page {
+public class Page{
 
   private String                          id;
 
@@ -104,6 +104,8 @@ public class Page {
 
   private String                          lang;
 
+  private String                          lastUpdater;
+
   private NotePageProperties              properties;
 
   private String                          attachmentObjectType;
@@ -126,4 +128,57 @@ public class Page {
     return attachmentObjectType != null ? attachmentObjectType : "wikiPage";
   }
 
+  public Page(Page other) {
+    this.id = other.id;
+    this.name = other.name;
+    this.owner = other.owner;
+    this.author = other.author;
+    this.authorFullName = other.authorFullName;
+    this.createdDate = other.createdDate;
+    this.updatedDate = other.updatedDate;
+    this.content = other.content;
+    this.syntax = other.syntax;
+    this.title = other.title;
+    this.comment = other.comment;
+
+    this.permissions = other.permissions != null ? new ArrayList<>(other.permissions) : null;
+    this.url = other.url;
+    this.activityId = other.activityId;
+    this.wikiId = other.wikiId;
+    this.wikiType = other.wikiType;
+    this.wikiOwner = other.wikiOwner;
+    this.parentPageName = other.parentPageName;
+    this.parentPageId = other.parentPageId;
+    this.appName = other.appName;
+    this.isMinorEdit = other.isMinorEdit;
+    this.isDraftPage = other.isDraftPage;
+    this.toBePublished = other.toBePublished;
+    this.lastUpdater = other.lastUpdater;
+
+    // Shallow copy
+    this.breadcrumb = other.breadcrumb != null ? new ArrayList<>(other.breadcrumb) : null;
+
+    this.canManage = other.canManage;
+    this.canView = other.canView;
+    this.canImport = other.canImport;
+
+    // Shallow copy
+    this.children = other.children != null ? new ArrayList<>(other.children) : null;
+
+    this.hasChild = other.hasChild;
+    this.latestVersionId = other.latestVersionId;
+    this.isDeleted = other.isDeleted;
+
+    // Shallow copy
+    this.parent = other.parent;
+
+    // Shallow copy
+    this.metadatas = other.metadatas != null ? new HashMap<>(other.metadatas) : null;
+
+    this.lang = other.lang;
+
+    // Shallow copy
+    this.properties = other.properties;
+    this.attachmentObjectType = other.attachmentObjectType;
+  }
 }

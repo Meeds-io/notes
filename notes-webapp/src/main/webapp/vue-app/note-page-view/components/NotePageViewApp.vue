@@ -93,6 +93,9 @@ export default {
     editorLoading() {
       return this.edit && !this.editorReady;
     },
+    pageId() {
+      return this.$root.pageId;
+    }
   },
   watch: {
     edit() {
@@ -147,7 +150,7 @@ export default {
     },
     switchToEdit() {
       this.previewMode = false;
-    },
+    }
   },
 };
 </script>

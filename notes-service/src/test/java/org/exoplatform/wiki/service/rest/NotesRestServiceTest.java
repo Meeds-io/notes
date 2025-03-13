@@ -233,18 +233,18 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     breadcrumb.add(new BreadcrumbData("1", "test", "note", "user"));
     page.setDeleted(true);
     when(noteService.getNoteByIdAndLang(1L, identity, "source", null)).thenReturn(null);
-    Response response = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
     when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(page);
-    Response response1 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response1 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response1.getStatus());
     page.setDeleted(false);
     page.setWikiType("type");
-    Response response2 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response2 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response2.getStatus());
     page.setWikiType("note");
     page.setWikiOwner("owner");
-    Response response3 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response3 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response3.getStatus());
 
     page.setWikiOwner("user");
@@ -254,15 +254,15 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     when(noteService.getBreadCrumb("note", "user", "1", false)).thenReturn(breadcrumb);
     when(noteService.updateNote(page)).thenReturn(page);
-    Response response4 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response4 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.OK.getStatusCode(), response4.getStatus());
 
     doThrow(new IllegalAccessException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
-    Response response5 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response5 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response5.getStatus());
 
     doThrow(new IllegalStateException("Fake Exception")).when(noteService).getNoteByIdAndLang(1L, identity, "source", "en");
-    Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source", "en");
+    Response response6 = notesRestService.getNoteById("1", "note", "user", true, "source", "en", false);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
   

@@ -21,6 +21,7 @@ package org.exoplatform.wiki.jpa.search;
 import org.exoplatform.commons.search.index.IndexingService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 
@@ -72,7 +73,8 @@ public class PageIndexingListener extends PageWikiListener {
   }
 
   @Override
-  public void postDeletePageVersion(String pageVersionId) {
+  public void postDeletePageVersion(PageVersion pageVersion) {
+    String pageVersionId = pageVersion.getParent().getId() + "-" + pageVersion.getLang();
     indexingService.unindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageVersionId);
   }
 }

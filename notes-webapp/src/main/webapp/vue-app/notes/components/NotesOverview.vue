@@ -442,7 +442,7 @@ export default {
           }
         }
       }
-    },
+    }
   },
   computed: {
     extensionParams() {
@@ -630,7 +630,7 @@ export default {
         this.noteId = noteName;
         this.getNoteByName(noteName,'tree',true);
       } else {
-        this.getDraftNote(noteName,true);
+        this.getDraftNote(noteName);
       }
     });
     this.$root.$on('confirmDeleteNote', () => {
@@ -764,7 +764,7 @@ export default {
     handleChangePages() {
       if (this.noteId) {
         if (this.isDraft) {
-          this.getDraftNote(this.noteId, true);
+          this.getDraftNote(this.noteId);
         } else {
           this.getNoteById(this.noteId,'',true);
         }
@@ -927,7 +927,7 @@ export default {
         this.initialized = true;
       });
     },
-    getDraftNote(noteId, viewNote) {
+    getDraftNote(noteId) {
       return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
         this.note = {};
         this.note = data || {};
@@ -935,9 +935,6 @@ export default {
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.updateURL();
-        if (viewNote){
-          this.viewNoteStatistics(this.note);
-        }
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
@@ -1154,30 +1151,17 @@ export default {
         }
         this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
-        this.viewNoteStatistics(this.note);
+        this.viewNoteStatistics();
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
       });
     },
-    viewNoteStatistics(note) {
-      document.dispatchEvent(new CustomEvent('exo-statistic-message', {
-        detail: {
-          module: 'contents',
-          subModule: 'contents',
-          userId: eXo.env.portal.userIdentityId,
-          userName: eXo.env.portal.userName,
-          operation: 'viewContent',
-          parameters: {
-            contentId: note.id,
-            contentTitle: note.title,
-            contentType: 'Note',
-            contentLanguage: note.lang?note.lang:this.$t('notes.label.translation.originalVersion'),
-            spaceId: eXo.env.portal.spaceId,
-          },
-          timestamp: Date.now()
-        }
-      }));
+    viewNoteStatistics() {
+      if (this.isDraft) {
+        return;
+      }
+      this.$notesService.markNoteAsViewed(this.note.id || this.noteId, this.selectedTranslation?.value);
     },
     refreshTreeView() {
       if (this.initialized) {
