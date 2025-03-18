@@ -1808,7 +1808,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (metadataItem != null && metadataItem.getProperties() != null) {
       properties = metadataItem.getProperties();
     }
-    properties.put(SUMMARY_PROP, notePageProperties.getSummary());
+    properties.put(SUMMARY_PROP, notePageProperties.getSummary() != null ? notePageProperties.getSummary() : "");
     properties.put(HIDE_AUTHOR_PROP, String.valueOf(notePageProperties.isHideAuthor()));
     properties.put(HIDE_REACTION_PROP, String.valueOf(notePageProperties.isHideReaction()));
     if (featuredImageId != null) {
