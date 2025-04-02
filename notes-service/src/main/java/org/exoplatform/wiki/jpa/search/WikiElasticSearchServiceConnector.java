@@ -87,7 +87,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   public static final String         WILDCARD_QUERY            = """
           {
             "wildcard": {
-              "name": "*@term@*"
+              "title": "*@term@*"
             }
           }
           """;
