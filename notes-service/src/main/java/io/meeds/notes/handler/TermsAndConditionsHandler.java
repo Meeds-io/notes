@@ -21,30 +21,46 @@ package io.meeds.notes.handler;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.meeds.notes.service.TermsAndConditionsService;
-import jakarta.servlet.*;
+import jakarta.annotation.PostConstruct;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.web.ControllerContext;
 import org.exoplatform.web.WebAppController;
 import org.exoplatform.web.WebRequestHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TermsAndConditionsHandler extends WebRequestHandler {
 
-  public static final String        PAGE_URI = "terms-and-conditions";
+  public static final String              PAGE_URI     = "terms-and-conditions";
 
-  private UserPortalConfigService   userPortalConfigService;
+  private final UserPortalConfigService   userPortalConfigService;
 
-  private TermsAndConditionsService termsAndConditionsService;
+  private final TermsAndConditionsService termsAndConditionsService;
 
-  @Override
-  public void onInit(WebAppController controller, ServletConfig sConfig) throws Exception {
-    super.onInit(controller, sConfig);
+  private final WebAppController          webAppController;
 
-    PortalContainer container = PortalContainer.getInstance();
-    this.userPortalConfigService = container.getComponentInstanceOfType(UserPortalConfigService.class);
-    this.termsAndConditionsService = container.getComponentInstanceOfType(TermsAndConditionsService.class);
+  @Value("#{'${io.meeds.termsAndConditions.excludedUris:}'.split(',')}")
+  private List<String>                    excludedUris = new ArrayList<>();
+
+  @Autowired
+  public TermsAndConditionsHandler(UserPortalConfigService userPortalConfigService,
+                                   TermsAndConditionsService termsAndConditionsService,
+                                   WebAppController webAppController) {
+    this.userPortalConfigService = userPortalConfigService;
+    this.termsAndConditionsService = termsAndConditionsService;
+    this.webAppController = webAppController;
+  }
+
+  @PostConstruct
+  public void init() {
+    webAppController.register(this);
   }
 
   @Override
@@ -61,47 +77,62 @@ public class TermsAndConditionsHandler extends WebRequestHandler {
   public boolean execute(ControllerContext controllerContext) throws Exception {
     String username = controllerContext.getRequest().getRemoteUser();
     String requestURI = controllerContext.getRequest().getRequestURI();
-    if (username == null || termsAndConditionsService == null || userPortalConfigService == null) {
+
+    if (username == null || isExcludedUri(requestURI)) {
       return false;
     }
+
     String language = controllerContext.getRequest().getLocale().getLanguage();
     boolean hasAcceptedTerms = termsAndConditionsService.isTermsAcceptedForUser(username, language);
 
-    if (hasAcceptedTerms && requestURI.contains(PAGE_URI) && controllerContext.getRequest().getQueryString() == null) {
-      controllerContext.getResponse()
-                       .sendRedirect(String.format("%s/%s/settings#terms-and-conditions",
-                                                   controllerContext.getRequest().getContextPath(),
-                                                   userPortalConfigService.getMetaPortal()));
+    if (hasAcceptedTerms && isTermsPage(requestURI) && controllerContext.getRequest().getQueryString() == null) {
+      redirectToUserSettings(controllerContext);
       return true;
     }
+
     if (!hasAcceptedTerms && !isTermsPage(requestURI)) {
-      String queryString = controllerContext.getRequest().getQueryString();
-
-      if (queryString != null) {
-        requestURI += "?" + queryString;
-      }
-      String initURI = "/" + PortalContainer.getCurrentPortalContainerName() + "/";
-
-      if (initURI.equals(requestURI)) {
-        controllerContext.getResponse()
-                         .sendRedirect(String.format("%s/%s/settings#terms-and-conditions?redirect=%s",
-                                                     controllerContext.getRequest().getContextPath(),
-                                                     userPortalConfigService.getMetaPortal(),
-                                                     userPortalConfigService.getDefaultPath(username)));
-      } else {
-        String encodedPreviousPage = URLEncoder.encode(requestURI, StandardCharsets.UTF_8);
-        controllerContext.getResponse()
-                         .sendRedirect(String.format("%s/%s/terms-and-conditions?redirect=%s",
-                                                     controllerContext.getRequest().getContextPath(),
-                                                     userPortalConfigService.getMetaPortal(),
-                                                     encodedPreviousPage));
-      }
+      redirectToTermsPage(controllerContext, requestURI, username);
       return true;
     }
+
     return false;
   }
 
-  private boolean isTermsPage(String requestURI) {
-    return requestURI.contains(PAGE_URI);
+  private void redirectToUserSettings(ControllerContext ctx) throws Exception {
+    String target = String.format("%s/%s/settings#terms-and-conditions",
+                                  ctx.getRequest().getContextPath(),
+                                  userPortalConfigService.getMetaPortal());
+    ctx.getResponse().sendRedirect(target);
+  }
+
+  private void redirectToTermsPage(ControllerContext ctx, String requestURI, String username) throws Exception {
+    String queryString = ctx.getRequest().getQueryString();
+    if (queryString != null) {
+      requestURI += "?" + queryString;
+    }
+
+    String basePortalPath = "/" + PortalContainer.getCurrentPortalContainerName() + "/";
+    String contextPath = ctx.getRequest().getContextPath();
+    String metaPortal = userPortalConfigService.getMetaPortal();
+
+    String redirectUrl = requestURI.equals(basePortalPath)
+                                                           ? String.format("%s/%s/settings#terms-and-conditions?redirect=%s",
+                                                                           contextPath,
+                                                                           metaPortal,
+                                                                           userPortalConfigService.getDefaultPath(username))
+                                                           : String.format("%s/%s/terms-and-conditions?redirect=%s",
+                                                                           contextPath,
+                                                                           metaPortal,
+                                                                           URLEncoder.encode(requestURI, StandardCharsets.UTF_8));
+
+    ctx.getResponse().sendRedirect(redirectUrl);
+  }
+
+  private boolean isTermsPage(String uri) {
+    return uri.contains(PAGE_URI);
+  }
+
+  private boolean isExcludedUri(String uri) {
+    return excludedUris.stream().anyMatch(uri::contains);
   }
 }
