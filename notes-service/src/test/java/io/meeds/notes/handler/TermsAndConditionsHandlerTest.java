@@ -19,116 +19,112 @@
 package io.meeds.notes.handler;
 
 import io.meeds.notes.service.TermsAndConditionsService;
-import jakarta.servlet.ServletConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.web.ControllerContext;
 import org.exoplatform.web.WebAppController;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(classes = { TermsAndConditionsHandler.class, })
+@ExtendWith(MockitoExtension.class)
 class TermsAndConditionsHandlerTest {
 
   @Mock
-  private WebAppController          webAppController;
-
-  @Mock
-  private ServletConfig             servletConfig;
-
-  @MockBean
-  ControllerContext                 controllerContext;
-
-  @MockBean
-  private HttpServletRequest        httpRequest;
-
-  @MockBean
-  private HttpServletResponse       httpResponse;
-
-  @MockBean
   private TermsAndConditionsService termsService;
 
-  @MockBean
-  private UserPortalConfigService   portalConfigService;
+  @Mock
+  private UserPortalConfigService portalConfigService;
 
-  @MockBean
-  private PortalContainer           container;
+  @Mock
+  private WebAppController webAppController;
 
-  @Autowired
+  @Mock
+  private ControllerContext controllerContext;
+
+  @Mock
+  private HttpServletRequest httpRequest;
+
+  @Mock
+  private HttpServletResponse httpResponse;
+
+  @InjectMocks
   private TermsAndConditionsHandler handler;
 
   @Test
   void testUserHasAcceptedTermsAndRequestIsForTermsPage() throws Exception {
-    when(container.getComponentInstanceOfType(TermsAndConditionsService.class)).thenReturn(termsService);
-    when(container.getComponentInstanceOfType(UserPortalConfigService.class)).thenReturn(portalConfigService);
     when(controllerContext.getRequest()).thenReturn(httpRequest);
     when(controllerContext.getResponse()).thenReturn(httpResponse);
-    when(httpRequest.getContextPath()).thenReturn("/portal");
     when(httpRequest.getRemoteUser()).thenReturn("testUser");
     when(httpRequest.getRequestURI()).thenReturn("/portal/terms-and-conditions");
     when(httpRequest.getQueryString()).thenReturn(null);
     when(httpRequest.getLocale()).thenReturn(Locale.ENGLISH);
     when(termsService.isTermsAcceptedForUser("testUser", "en")).thenReturn(true);
     when(portalConfigService.getMetaPortal()).thenReturn("classic");
+    when(httpRequest.getContextPath()).thenReturn("/portal");
 
-    try (MockedStatic<PortalContainer> mockedStatic = mockStatic(PortalContainer.class)) {
-      mockedStatic.when(PortalContainer::getInstance).thenReturn(container);
-      handler.onInit(webAppController, servletConfig);
-      boolean executed = handler.execute(controllerContext);
+    boolean executed = handler.execute(controllerContext);
 
-      verify(httpResponse).sendRedirect("/portal/classic/settings#terms-and-conditions");
-      assertTrue(executed);
-    }
+    verify(httpResponse).sendRedirect("/portal/classic/settings#terms-and-conditions");
+    assertTrue(executed);
   }
 
   @Test
   void testUserHasNotAcceptedTerms() throws Exception {
-    when(container.getComponentInstanceOfType(TermsAndConditionsService.class)).thenReturn(termsService);
-    when(container.getComponentInstanceOfType(UserPortalConfigService.class)).thenReturn(portalConfigService);
     when(controllerContext.getRequest()).thenReturn(httpRequest);
     when(controllerContext.getResponse()).thenReturn(httpResponse);
-    when(httpRequest.getContextPath()).thenReturn("/portal");
     when(httpRequest.getRemoteUser()).thenReturn("testUser");
     when(httpRequest.getRequestURI()).thenReturn("/portal/home");
     when(httpRequest.getLocale()).thenReturn(Locale.ENGLISH);
-    when(termsService.isTermsAcceptedForUser("testUser", null)).thenReturn(false);
+    when(httpRequest.getContextPath()).thenReturn("/portal");
+    when(httpRequest.getQueryString()).thenReturn(null);
+    when(termsService.isTermsAcceptedForUser("testUser", "en")).thenReturn(false);
     when(portalConfigService.getMetaPortal()).thenReturn("classic");
 
-    try (MockedStatic<PortalContainer> mockedStatic = mockStatic(PortalContainer.class)) {
-      mockedStatic.when(PortalContainer::getInstance).thenReturn(container);
-      handler.onInit(webAppController, servletConfig);
-      boolean executed = handler.execute(controllerContext);
+    boolean executed = handler.execute(controllerContext);
 
-      String encodedPreviousPage = URLEncoder.encode("/portal/home", StandardCharsets.UTF_8);
-      verify(httpResponse).sendRedirect("/portal/classic/terms-and-conditions?redirect=" + encodedPreviousPage);
-      assertTrue(executed);
-    }
+    String expectedRedirect = "/portal/classic/terms-and-conditions?redirect=" +
+            URLEncoder.encode("/portal/home", StandardCharsets.UTF_8);
+    verify(httpResponse).sendRedirect(expectedRedirect);
+    assertTrue(executed);
   }
 
   @Test
   void testAnonymousUser() throws Exception {
     when(controllerContext.getRequest()).thenReturn(httpRequest);
-    when(controllerContext.getResponse()).thenReturn(httpResponse);
     when(httpRequest.getRemoteUser()).thenReturn(null);
 
-    handler.onInit(webAppController, servletConfig);
     boolean executed = handler.execute(controllerContext);
 
     verify(httpResponse, never()).sendRedirect(anyString());
-    assertFalse(executed);
+    Assertions.assertFalse(executed);
+  }
+
+  @Test
+  void testExcludedUris() throws Exception {
+    when(controllerContext.getRequest()).thenReturn(httpRequest);
+    when(httpRequest.getRequestURI()).thenReturn("/api/public/endpoint");
+
+    Field excludedUrisField = TermsAndConditionsHandler.class.getDeclaredField("excludedUris");
+    excludedUrisField.setAccessible(true);
+    excludedUrisField.set(handler, List.of("/api/public"));
+
+    boolean executed = handler.execute(controllerContext);
+
+    verify(httpResponse, never()).sendRedirect(anyString());
+    Assertions.assertFalse(executed);
   }
 }
