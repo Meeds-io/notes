@@ -60,6 +60,7 @@ public class TermsAndConditionsHandler extends WebRequestHandler {
 
   @PostConstruct
   public void init() {
+    excludedUris.removeIf(String::isBlank);
     webAppController.register(this);
   }
 
