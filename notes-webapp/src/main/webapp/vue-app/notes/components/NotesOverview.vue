@@ -382,7 +382,7 @@ export default {
       exportId: 0,
       popStateChange: false,
       iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
-      selectedTranslation: {value: eXo.env.portal.language},
+      selectedTranslation: { value: null, text: this.$t('notes.label.translation.originalVersion') },
       translations: [],
       languages: [],
       slectedLanguage: null,
@@ -873,15 +873,13 @@ export default {
       clearInterval(this.intervalId);
     },
     getNoteById(noteId, source, viewNote) {
-      return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, this.noteBookType, this.noteBookOwner).then(data => {
+      return this.$notesService.getNoteById(noteId,this.targetLang, source, this.noteBookType, this.noteBookOwner).then(data => {
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
         this.currentNoteBreadcrumb = this.note.breadcrumb;
         this.getNoteLanguages(noteId);
-        if (!this.note.lang || this.note.lang === ''){
-          this.updateSelectedTranslation(this.originalVersion);
-        }
+        this.selectedTranslation = this.note.lang ? { value: this.targetLang } : this.originalVersion;
         this.updateURL();
         if (viewNote){
           this.viewNoteStatistics(this.note);
@@ -1023,9 +1021,9 @@ export default {
     getNoteVersionByNoteId(noteId) {
       this.noteVersionsArray = [];
       this.noteVersions = [];
-      return this.$notesService.getNoteVersionsByNoteId(noteId,this.selectedTranslation.value).then(data => {
+      return this.$notesService.getNoteVersionsByNoteId(noteId, this.selectedTranslation?.value).then(data => {
         this.noteVersions = data && data.reverse() || [];
-        if (this.noteVersions.length>0){
+        if (this.noteVersions.length) {
           this.displayVersion(this.noteVersions[0]);
           this.$root.$emit('version-restored', this.noteVersions[0]);
         }
