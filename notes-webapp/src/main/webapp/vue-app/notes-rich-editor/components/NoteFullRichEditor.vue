@@ -248,7 +248,9 @@ export default {
     instanceReady() {
       if (this.instanceReady) {
         this.$emit('editor-ready', this.editor);
-        this.bindNavigationRemoveListener();
+        setTimeout(() => {
+          this.bindNavigationRemoveListener();
+        }, 1000);
       }
     }
   },
@@ -509,20 +511,7 @@ export default {
             self.waitUserTyping(self);
             self.noteObject.content = evt.editor.getData();
             self.autoSave();
-            const removeTreeviewBtn =  evt.editor.document.getById( 'remove-treeview' );
-            if (removeTreeviewBtn) {
-              evt.editor.editable().attachListener(removeTreeviewBtn, 'click', function() {
-                const treeviewParentWrapper = evt.editor.document.getById( 'note-children-container' );
-                if ( treeviewParentWrapper) {
-                  const newLine = treeviewParentWrapper.getNext();
-                  treeviewParentWrapper.remove();
-                  if ( newLine.$.innerText.trim().length === 0) {
-                    newLine.remove();
-                  }
-                  self.noteObject.content = evt.editor.getData();
-                }
-              });
-            }
+            self.bindNavigationRemoveListener();
           },
           doubleclick: function(evt) {
             const element = evt.data.element;
@@ -623,17 +612,35 @@ export default {
     },
     bindNavigationRemoveListener() {
       const removeTreeviewBtn = this.editor.document.getById('remove-treeview');
-      if (removeTreeviewBtn) {
-        const self = this;
-        this.editor.editable().attachListener(removeTreeviewBtn, 'click', function () {
-          const treeviewParentWrapper = self.editor.document.getById('note-children-container');
-          if (treeviewParentWrapper) {
-            treeviewParentWrapper.remove();
-            self.noteObject.content = self.editor.getData();
-          }
-          self.setFocus();
-        });
+      if (!removeTreeviewBtn) {
+        return;
       }
+      this.editor.editable().attachListener(removeTreeviewBtn, 'click', () => {
+        const treeviewParentWrapper = this.editor.document.getById('note-children-container');
+        if (treeviewParentWrapper) {
+          treeviewParentWrapper.remove();
+        }
+        const newContent = this.editor.getData().trim();
+        const isEmpty = !newContent || /^(<p>(&nbsp;|\s|<br\s*\/?>)*<\/p>)?$/.test(newContent);
+        if (isEmpty) {
+          this.editor.setData('<p><br>&nbsp;</p>', {
+            callback: () => {
+              this.editor.setReadOnly(false);
+              const editable = this.editor.editable();
+              const range = this.editor.createRange();
+              const firstElement = editable.getChildren().getItem(0);
+              range.moveToPosition(firstElement, CKEDITOR.POSITION_BEFORE_START);
+              this.editor.getSelection().selectRanges([range]);
+              this.noteObject.content = this.editor.getData();
+              this.setFocus();
+              this.editor.fire('contentDom', { type: 'contentChanged' });
+            }
+          });
+        } else {
+          this.noteObject.content = newContent;
+          this.setFocus();
+        }
+      });
     }
   }
 };
