@@ -54,9 +54,6 @@
             <field name="i18nBundle">
               <string>locale.portlet.wiki.WikiPortlet</string>
             </field>
-            <field name="cssModule">
-              <string>wiki/WikiPortlet</string>
-            </field>
             <field name="uiComponent">
               <string>wiki-search-card</string>
             </field>
