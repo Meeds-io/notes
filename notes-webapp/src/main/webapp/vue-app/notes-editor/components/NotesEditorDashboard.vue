@@ -631,9 +631,7 @@ export default {
             this.savingDraft = false;
           }, this.autoSaveDelay/2);
         } else {
-          if (!this.isDefaultContent(this.note.content)) {
-            this.persistDraftNote(draftNote,update);
-          }
+          this.persistDraftNote(draftNote, update);
         }
       } else if (!this.newTranslation) {
         // delete draft
@@ -779,24 +777,6 @@ export default {
     enableClickOnce() {
       this.postingNote = false;
       this.postKey++;
-    },
-    isDefaultContent(noteContent) {
-      const div = document.createElement('div');
-      div.innerHTML = noteContent;
-      if ( div.childElementCount === 2) {
-        const childrenWrapper = this.editor.window.$.document.getElementById('note-children-container');
-        if ( childrenWrapper ) {
-          if (childrenWrapper.nextElementSibling.innerText.trim().length === 0) {
-            return true;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
     },
     getNoteLanguages() {
       const noteId = !this.note.draftPage ? this.note.id : this.note.targetPageId;
