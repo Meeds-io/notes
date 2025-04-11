@@ -758,6 +758,9 @@ public class Utils {
   }
 
   public static void sendMentionInNoteNotification(Page note, Page originalNote, String currentUser) {
+    if (note.getAuthor() == null) {
+      return;
+    }
     SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
     IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
     Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
