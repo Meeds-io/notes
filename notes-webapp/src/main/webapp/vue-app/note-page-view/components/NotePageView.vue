@@ -39,6 +39,7 @@ export default {
       const pageContent = this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
       const sanitizedContent = DOMPurify.sanitize(pageContent, {
         ADD_TAGS: ['iframe'],
+        ADD_ATTR: ['target'],
         tagNameCheck: () => true,
         attributeNameCheck: () => true,
       });
