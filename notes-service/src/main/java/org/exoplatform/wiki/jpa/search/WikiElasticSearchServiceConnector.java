@@ -197,9 +197,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     } else {
     List<String> termsQuery = Arrays.stream(termQuery.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
       word = word.trim();
-      if (word.length() > 5) {
-        word = word + "~1";
-      }
+      word = word + "*";
       return word;
     }).toList();
       return SEARCH_QUERY_TERM.replace("@term@", StringUtils.join(termsQuery, " "));
@@ -241,7 +239,11 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
   private String removeSpecialCharacters(String string) {
     string = Normalizer.normalize(string, Normalizer.Form.NFD);
-    string = string.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "").replace("'", " ");
+    string = string.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+    string = string.replace("''", "'");
+    if (!string.contains("\"\\")) {
+      string = string.replace("\\-", "\\\"\\\\-\\\"");
+    }
     return string;
   }
 
