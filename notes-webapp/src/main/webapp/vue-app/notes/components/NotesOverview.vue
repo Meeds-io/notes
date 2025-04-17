@@ -380,7 +380,6 @@ export default {
       childNodes: [],
       exportStatus: '',
       exportId: 0,
-      popStateChange: false,
       iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
       selectedTranslation: { value: null, text: this.$t('notes.label.translation.originalVersion') },
       translations: [],
@@ -653,11 +652,7 @@ export default {
     this.$root.$on('import-notes', (uploadId,overrideMode) => {
       this.importNotes(uploadId,overrideMode);
     });
-    window.addEventListener('popstate', () => {
-      this.currentPath = window.location.pathname;
-      this.popStateChange = true;
-      this.handleChangePages();
-    });
+    window.addEventListener('popstate', this.handlePopstate);
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('update-note-summary', this.updateNoteSummary);
@@ -686,6 +681,11 @@ export default {
     $(document).on('click', () => {
       this.translationsMenu = false;
     });
+  },
+  beforeDestroy() {
+    window.removeEventListener('popstate', this.handlePopstate);
+    document.removeEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
+    document.removeEventListener('note-published', this.handleNotePublished);
   },
   methods: {
     publishNote(publicationSettings, note) {
@@ -764,6 +764,13 @@ export default {
     },
     loadMoreVersions() {
       this.versionsPageSize += this.versionsPageSize;
+    },
+    handlePopstate(event) {
+      this.currentPath = window.location.pathname;
+      if (event?.state?.translation) {
+        this.updateSelectedTranslation(event?.state?.translation);
+      }
+      this.handleChangePages();
     },
     handleChangePages() {
       if (this.noteId) {
@@ -1117,10 +1124,7 @@ export default {
         translation = `?translation=${this.selectedTranslation.value}`;
       }
       notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}${urlHash}`;
-      if (!this.popStateChange) {
-        window.history.replaceState(window.history.state, window.document.title, notesConstants.PORTAL_BASE_URL);
-      }
-      this.popStateChange = false;
+      window.history.pushState({'translation': this.selectedTranslation}, window.document.title, notesConstants.PORTAL_BASE_URL);
     },
     getNoteLanguages(noteId){
       this.translations = [];
