@@ -345,7 +345,23 @@ export default {
           this.newDraft = !this.draftNote;
         }
         this.initDone = true;
+        this.attachRemoveMentionClickHandler();
       }
+    },
+    attachRemoveMentionClickHandler() {
+      const container = this.editor.document?.$;
+      container.querySelectorAll('.atwho-inserted').forEach((el) => {
+        const removeBtn = el.querySelector('.remove');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            const parent = this.closest('[data-atwho-at-query]');
+            if (parent) {
+              parent.remove();
+            }
+          });
+        }
+      });
     },
     updateNoteData(noteObject) {
       this.translationSwitch = this.note?.lang !== noteObject?.lang;
