@@ -342,19 +342,7 @@ export default {
     },
     setEditorData(content) {
       if (content) {
-        const tempdiv = $('<div class=\'temp\'/>').html(content);
-        tempdiv.find('a[href*="/profile"]')
-          .each(function() {
-            $(this).replaceWith(function() {
-              return $('<span/>', {
-                class: 'atwho-inserted',
-                html: `<span class="exo-mention">${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
-              }).attr('data-atwho-at-query',`@${  $(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1)}`)
-                .attr('data-atwho-at-value',$(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1))
-                .attr('contenteditable','false');
-            });
-          });
-        content = `${tempdiv.html()}&nbsp;`;
+        content = this.replaceWithSuggesterClass(content);
       }
       if (this.editor) {
         this.editor.setData(content);
@@ -480,14 +468,6 @@ export default {
         on: {
           instanceReady: function (evt) {
             self.editor = evt.editor;
-            $(self.editor.document.$)
-              .find('.atwho-inserted')
-              .each(function() {
-                $(this).on('click', '.remove', function() {
-                  $(this).closest('[data-atwho-at-query]').remove();
-                });
-              });
-
             const treeviewParentWrapper =  self.editor.window.$.document.getElementById('note-children-container');
             if ( treeviewParentWrapper ) {
               treeviewParentWrapper.contentEditable = 'false';
@@ -637,7 +617,46 @@ export default {
           this.setFocus();
         }
       });
-    }
+    },
+    replaceWithSuggesterClass(message) {
+      const tempdiv = $('<div class=\'temp\'/>').html(message || '');
+      tempdiv.find('a[href*="/profile"]')
+        .each(function() {
+          $(this).replaceWith(function() {
+            return $('<span/>', {
+              class: 'atwho-inserted',
+              html: `<span class="exo-mention" contenteditable="false">${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
+            }).attr('data-atwho-at-query', '@')
+              .attr('data-atwho-at-value', $(this).attr('href').substring($(this).attr('href').lastIndexOf('/')+1))
+              .attr('contenteditable', 'false');
+          });
+        });
+      tempdiv.find('a.group-role-mention')
+        .each(function() {
+          const role = $(this).data('role');
+          const identityId = $(this).data('identity-id');
+          let icon;
+          if (role === 'member') {
+            icon = 'fa-users';
+          } else if (role === 'manager') {
+            icon = 'fa-user-cog';
+          } else if (role === 'redactor') {
+            icon = 'fa-user-edit';
+          } else if (role === 'publisher') {
+            icon = 'fa-paper-plane';
+          }
+
+          $(this).replaceWith(function() {
+            return $('<span/>', {
+              class: 'atwho-inserted',
+              html: `<span class="exo-mention"><i aria-hidden="true" class="v-icon fa ${icon}" style="font-size: 16px;"></i>${$(this).text()}<a data-cke-survive href="#" class="remove"><i data-cke-survive class="uiIconClose uiIconLightGray"></i></a></span>`
+            }).attr('data-atwho-at-query', '@')
+              .attr('data-atwho-at-value',`${role}:${identityId}`)
+              .attr('contenteditable','false');
+          });
+        });
+      return tempdiv.html();
+    },
   }
 };
 </script>
