@@ -29,6 +29,7 @@ import org.exoplatform.portal.pom.spi.portlet.Preference;
 
 import io.meeds.layout.model.PortletInstancePreference;
 import io.meeds.layout.plugin.PortletInstancePreferencePlugin;
+import io.meeds.layout.model.PortletInstanceContext;
 import io.meeds.notes.model.NotePageData;
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.util.JsonUtils;
@@ -51,7 +52,7 @@ public class NoteSingleViewRenderPlugin implements PortletInstancePreferencePlug
   }
 
   @Override
-  public List<PortletInstancePreference> generatePreferences(Application application, Portlet preferences) {
+  public List<PortletInstancePreference> generatePreferences(Application application, Portlet preferences, PortletInstanceContext portletInstanceContext) {
     String settingName = getCmsSettingName(preferences);
     if (StringUtils.isBlank(settingName)) {
       if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null) {
