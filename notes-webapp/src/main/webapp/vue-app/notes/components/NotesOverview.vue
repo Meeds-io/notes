@@ -692,6 +692,11 @@ export default {
     document.removeEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
     document.removeEventListener('note-published', this.handleNotePublished);
   },
+  beforeDestroy() {
+    window.removeEventListener('popstate', this.handlePopstate);
+    document.removeEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
+    document.removeEventListener('note-published', this.handleNotePublished);
+  },
   methods: {
     publishNote(publicationSettings, note) {
       const scheduleSettings = publicationSettings?.scheduleSettings;
