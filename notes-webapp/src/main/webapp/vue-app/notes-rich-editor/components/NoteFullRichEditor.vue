@@ -624,7 +624,7 @@ export default {
     },
     replaceWithSuggesterClass(message) {
       const tempdiv = $('<div class=\'temp\'/>').html(message || '');
-      tempdiv.find('a[href*="/profile"]')
+      tempdiv.find('a[href*="/profile"].user-suggester')
         .each(function() {
           $(this).replaceWith(function() {
             return $('<span/>', {
