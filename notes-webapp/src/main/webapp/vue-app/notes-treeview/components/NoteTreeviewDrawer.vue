@@ -761,7 +761,8 @@ export default {
       this.close();
     },
     openNote(event, note) {
-      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && note.noteId !== this.note.id;
+      const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
+      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && (noteIdParam ?? this.note.id) !== note.noteId;
       if (canOpenNote) {
         //reinitialize filter
         this.filter = this.filterOptions[0];
