@@ -119,6 +119,8 @@ public class JsonNodeData {
       if (this.isDraftPage) {
         this.targetPageId = ((DraftPage) page).getTargetPageId();
       }
+    } else if (treeNode.getNodeType().equals(TreeNodeType.WIKIHOME)) {
+      this.url = ((WikiHomeTreeNode) treeNode).getWikiHome().getUrl();
     }
   }
 
