@@ -598,6 +598,9 @@ export default {
     },
     currentSpaceDisplayName() {
       return this.settings?.spaceDisplayName || this.spaceDisplayName;
+    },
+    isEditMode() {
+      return this.settings?.isEditMode ?? false;
     }
   },
   watch: {
@@ -762,7 +765,9 @@ export default {
     },
     openNote(event, note) {
       const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
-      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && (noteIdParam ?? this.note.id) !== note.noteId;
+      const isEditDifferentNote = this.isEditMode && noteIdParam !== note.noteId;
+      const isNotCurrentNote = this.note.id !== note.noteId;
+      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && isEditDifferentNote || isNotCurrentNote;
       if (canOpenNote) {
         //reinitialize filter
         this.filter = this.filterOptions[0];
