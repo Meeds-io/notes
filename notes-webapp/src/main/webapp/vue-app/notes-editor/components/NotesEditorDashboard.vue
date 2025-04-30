@@ -53,6 +53,7 @@
       @editor-closed="editorClosed" />
     <note-treeview-drawer
       ref="noteTreeview"
+      :settings="{isEditMode: true}"
       @closed="closePluginsDrawer()" />
     <div
       v-for="(extension, i) in noteEditorExtensions"
