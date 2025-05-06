@@ -1150,6 +1150,8 @@ export default {
           this.note.title = note.title;
           this.note.latestVersionId = note.latestVersionId;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
+          this.note.properties = note?.properties;
+          this.noteSummary = note?.properties?.summary;
         }
         this.updateURL();
         this.getNoteVersionByNoteId(this.note.id);
