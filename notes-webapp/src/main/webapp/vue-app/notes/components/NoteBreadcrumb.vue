@@ -6,7 +6,7 @@
       <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
         <div 
           v-if="breadcrumbItem.isBreadcrumbItem"
-          :key=index
+          :key="index"
           :class="breadcrumbItem.class">
           <v-tooltip max-width="300" bottom>
             <template #activator="{ on, attrs }">
@@ -61,7 +61,7 @@
           </v-tooltip>
           <v-icon class="clickable me-2" size="18">fas fa-chevron-right</v-icon>
         </div>
-    </template>
+      </template>
     </div>
   </div>
 </template>
