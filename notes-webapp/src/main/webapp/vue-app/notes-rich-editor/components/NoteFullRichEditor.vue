@@ -78,9 +78,6 @@
       name="NotesRichEditor"
       type="notes-editor-extensions"
       :params="extensionParams" />
-    <note-custom-plugins
-      ref="noteCustomPlugins"
-      :instance="editor" />
     <note-editor-metadata-drawer
       ref="editorMetadataDrawer"
       :has-featured-image="hasFeaturedImage"
@@ -299,7 +296,6 @@ export default {
     this.$root.$on('update-note-summary', this.updateTranslatedNoteSummary);
     this.$root.$on('close-featured-image-byOverlay', this.closeFeaturedImageDrawerByOverlay);
 
-    document.addEventListener('note-custom-plugins', this.openCustomPluginsDrawer);
     document.addEventListener('notes-editor-upload-progress', () => this.contentImageUploadProgress = true);
     document.addEventListener('notes-editor-upload-done', () => this.contentImageUploadProgress = false);
     document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
@@ -498,12 +494,6 @@ export default {
           }
         }
       });
-    },
-    openCustomPluginsDrawer() {
-      this.$refs.noteCustomPlugins.open();
-    },
-    closePluginsDrawer() {
-      this.$refs.noteCustomPlugins.close();
     },
     setToolBarEffect() {
       const elementNewTop = document.getElementById('notesTop');
