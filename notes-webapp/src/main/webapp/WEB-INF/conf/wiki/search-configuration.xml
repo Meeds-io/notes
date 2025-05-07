@@ -57,6 +57,9 @@
             <field name="uiComponent">
               <string>wiki-search-card</string>
             </field>
+            <field name="icon">
+              <string>fas fa-clipboard</string>
+            </field>
             <field name="favoritesEnabled">
               <boolean>true</boolean>
             </field>
