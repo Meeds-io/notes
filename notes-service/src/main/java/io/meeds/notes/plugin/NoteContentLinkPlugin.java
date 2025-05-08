@@ -18,7 +18,6 @@
  */
 package io.meeds.notes.plugin;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -28,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.service.NoteService;
@@ -46,11 +44,11 @@ import lombok.SneakyThrows;
 @Component
 public class NoteContentLinkPlugin implements ContentLinkPlugin {
 
-  private static final String               OBJECT_TYPE = NotePermanentLinkPlugin.OBJECT_TYPE;
+  public static final String                OBJECT_TYPE = NotePermanentLinkPlugin.OBJECT_TYPE;
 
   private static final String               TITLE_KEY   = "contentLink.note";
 
-  private static final String               ICON        = "fa-clipboard";
+  private static final String               ICON        = "fa fa-clipboard";
 
   private static final String               COMMAND     = "note";
 
@@ -92,7 +90,7 @@ public class NoteContentLinkPlugin implements ContentLinkPlugin {
   @Override
   @SneakyThrows
   public String getContentTitle(String objectId, Locale locale) {
-    Page note = noteService.getNoteByIdAndLang(Long.parseLong(objectId), locale.toLanguageTag());
+    Page note = noteService.getNoteByIdAndLang(Long.parseLong(objectId), locale == null ? null : locale.toLanguageTag());
     if (note == null) {
       note = noteService.getNoteById(objectId);
     }
@@ -113,7 +111,7 @@ public class NoteContentLinkPlugin implements ContentLinkPlugin {
           page = pageWithLang;
         }
       }
-      return new ContentLinkSearchResult(OBJECT_TYPE, String.valueOf(searchResult.getId()), page.getTitle());
+      return new ContentLinkSearchResult(OBJECT_TYPE, String.valueOf(searchResult.getId()), page.getTitle(), EXTENSION.getIcon());
     }
   }
 

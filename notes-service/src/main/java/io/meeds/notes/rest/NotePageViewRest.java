@@ -36,6 +36,8 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.LocaleUtils;
+
 import com.google.javascript.jscomp.jarjar.com.google.common.base.Objects;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
@@ -43,10 +45,13 @@ import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.wiki.model.Page;
 
 import io.meeds.notes.service.NotePageViewService;
+import io.meeds.social.html.model.HtmlTransformerContext;
+import io.meeds.social.html.model.HtmlUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -55,8 +60,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/notes/view/")
-@Tag(name = "/notes/view/",
-    description = "Managing notes pages in for Note Page View Application")
+@Tag(name = "/notes/view/", description = "Managing notes pages in for Note Page View Application")
 public class NotePageViewRest implements ResourceContainer {
 
   private static final CacheControl CACHE_CONTROL    = new CacheControl();
@@ -79,28 +83,20 @@ public class NotePageViewRest implements ResourceContainer {
   @GET
   @Path("{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Retrieves a note page switch Application setting name",
-      description = "Retrieves a note page switch Application setting name",
-      method = "GET")
+  @Operation(summary = "Retrieves a note page switch Application setting name", description = "Retrieves a note page switch Application setting name", method = "GET")
   @ApiResponses(value = {
-    @ApiResponse(responseCode = "200",
-        description = "Request fulfilled"),
-    @ApiResponse(responseCode = "304",
-        description = "Not modified"),
-    @ApiResponse(responseCode = "401",
-        description = "Unauthorized"),
-    @ApiResponse(responseCode = "404",
-        description = "Resource not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "304", description = "Not modified"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "404", description = "Resource not found"),
   })
   public Response getNotePage(
                               @Context
                               Request request,
-                              @Parameter(description = "Application setting name",
-                                  required = true)
+                              @Parameter(description = "Application setting name", required = true)
                               @PathParam("name")
                               String name,
-                              @Parameter(description = "User language",
-                                  required = false)
+                              @Parameter(description = "User language", required = false)
                               @QueryParam("lang")
                               String lang) {
     try {
@@ -108,7 +104,9 @@ public class NotePageViewRest implements ResourceContainer {
       if (note == null) {
         return Response.status(Status.NOT_FOUND).build();
       }
-      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
+      String content = note.getContent();
+      content = transformContent(content, lang);
+      note.setContent(content);
       Date updatedDate = note.getUpdatedDate();
       EntityTag eTag = new EntityTag(String.valueOf(Objects.hashCode(name, lang, String.valueOf(updatedDate.getTime()))));
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
@@ -132,28 +130,21 @@ public class NotePageViewRest implements ResourceContainer {
   @Path("{name}")
   @RolesAllowed("users")
   @Produces(MediaType.APPLICATION_FORM_URLENCODED)
-  @Operation(summary = "Saves a note page content to the associated application setting",
-      description = "Saves a note page content to the associated application setting",
-      method = "PUT")
+  @Operation(summary = "Saves a note page content to the associated application setting", description = "Saves a note page content to the associated application setting", method = "PUT")
   @ApiResponses(value = {
-    @ApiResponse(responseCode = "200",
-        description = "Request fulfilled"),
-    @ApiResponse(responseCode = "401",
-        description = "Unauthorized"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
   })
   public Response saveNotePage(
                                @Context
                                Request request,
-                               @Parameter(description = "Application setting name",
-                                   required = true)
+                               @Parameter(description = "Application setting name", required = true)
                                @PathParam("name")
                                String name,
-                               @Parameter(description = "Note Content",
-                                   required = true)
+                               @Parameter(description = "Note Content", required = true)
                                @FormParam("content")
                                String content,
-                               @Parameter(description = "User language",
-                                   required = false)
+                               @Parameter(description = "User language", required = false)
                                @FormParam("lang")
                                String lang) {
     try {
@@ -167,4 +158,15 @@ public class NotePageViewRest implements ResourceContainer {
     }
   }
 
+  private String transformContent(String content, String lang) {
+    try {
+      content = HtmlUtils.transform(content,
+                                    new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
+                                                               LocaleUtils.toLocale(lang)));
+      return HTMLSanitizer.sanitize(content);
+    } catch (Exception e) {
+      LOG.warn("Error sanitizing terms and conditions content", e);
+      return content;
+    }
+  }
 }

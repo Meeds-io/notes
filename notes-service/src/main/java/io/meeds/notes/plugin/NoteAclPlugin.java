@@ -36,11 +36,13 @@ import lombok.SneakyThrows;
 @Component
 public class NoteAclPlugin implements AclPlugin {
 
-  @Autowired
-  private PortalContainer container;
+  public static final String OBJECT_TYPE = NotePermanentLinkPlugin.OBJECT_TYPE;
 
   @Autowired
-  private NoteService     noteService;
+  private PortalContainer    container;
+
+  @Autowired
+  private NoteService        noteService;
 
   @PostConstruct
   public void init() {
@@ -49,7 +51,7 @@ public class NoteAclPlugin implements AclPlugin {
 
   @Override
   public String getObjectType() {
-    return NotePermanentLinkPlugin.OBJECT_TYPE;
+    return OBJECT_TYPE;
   }
 
   @Override
