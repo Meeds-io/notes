@@ -13,37 +13,39 @@ import org.exoplatform.social.metadata.model.MetadataItem;
 
 @Data
 public class SearchResult {
-  private static Log log = ExoLogger.getLogger(SearchResult.class);
+  private static Log                        log = ExoLogger.getLogger(SearchResult.class);
 
-  protected String wikiType;
+  protected Long                            id;
 
-  protected String wikiOwner;
+  protected String                          wikiType;
 
-  protected Identity wikiOwnerIdentity;
+  protected String                          wikiOwner;
 
-  protected Identity poster;
+  protected Identity                        wikiOwnerIdentity;
 
-  protected String pageName;
+  protected Identity                        poster;
 
-  protected String attachmentName;
+  protected String                          pageName;
 
-  protected String excerpt;
+  protected String                          attachmentName;
 
-  protected String title;
+  protected String                          excerpt;
 
-  protected SearchResultType type;
+  protected String                          title;
 
-  protected String url;
+  protected SearchResultType                type;
 
-  protected long score;
+  protected String                          url;
 
-  protected Calendar updatedDate;
+  protected long                            score;
 
-  protected Calendar createdDate;
+  protected Calendar                        updatedDate;
+
+  protected Calendar                        createdDate;
 
   protected Map<String, List<MetadataItem>> metadata;
 
-  protected String lang;
+  protected String                          lang;
 
   public SearchResult() {
   }

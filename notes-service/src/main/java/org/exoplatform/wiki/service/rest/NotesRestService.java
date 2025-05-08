@@ -38,7 +38,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -48,6 +56,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.gatein.api.EntityNotFoundException;
@@ -108,6 +117,9 @@ import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.PageEntity;
+import io.meeds.social.html.model.HtmlTransformerContext;
+import io.meeds.social.html.utils.HtmlUtils;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -242,7 +254,8 @@ public class NotesRestService implements ResourceContainer {
           noteService.updateNote(note);
         }
       }
-      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
+      content = sanitizeAndSubstituteMentions(note.getContent(), lang);
+      note.setContent(content);
       note.setBreadcrumb(noteService.getBreadCrumb(noteBookType,
                                                    noteBookOwner,
                                                    note.getName(),
@@ -535,6 +548,7 @@ public class NotesRestService implements ResourceContainer {
                                                 note.getParentPageName(),
                                                 io.meeds.notes.rest.utils.EntityBuilder.toPage(note),
                                                 identity);
+      createdNote.setContent(sanitizeAndSubstituteMentions(createdNote.getContent(), note.getLang()));
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", note.getName(), e);
@@ -621,7 +635,7 @@ public class NotesRestService implements ResourceContainer {
                                                                                  System.currentTimeMillis(),
                                                                                  RestUtils.getCurrentUserIdentityId());
       }
-
+      savedDraftPage.setContent(sanitizeAndSubstituteMentions(savedDraftPage.getContent(), draftNoteToSave.getLang()));
       return Response.ok(savedDraftPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception ex) {
       log.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
@@ -697,6 +711,7 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_, identity.getUserId(), true);
       }
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have view permissions on the note {}", noteId, e);
@@ -833,6 +848,7 @@ public class NotesRestService implements ResourceContainer {
         // url in front side, we compute it here
         note_.setUrl(Utils.getPageUrl(io.meeds.notes.rest.utils.EntityBuilder.toPage(note)));
       }
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have edit permissions on the note {}", noteId, e);
@@ -873,6 +889,7 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       noteService.restoreVersionOfNote(noteVersion, note, currentUser);
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       log.error("User does not have permissions to restore the note {} version", note.getId(), e);
@@ -1507,9 +1524,10 @@ public class NotesRestService implements ResourceContainer {
     return wikiOwner;
   }
 
-  private String sanitizeAndSubstituteMentions(String content, String local) {
+  private String sanitizeAndSubstituteMentions(String content, String lang) {
     try {
-      Locale locale = local == null ? null : Locale.forLanguageTag(local);
+      Locale locale = lang == null ? null : LocaleUtils.toLocale(lang);
+      content = HtmlUtils.transform(content, new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(), LocaleUtils.toLocale(lang)));
       String sanitizedBody = HTMLSanitizer.sanitize(content);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);

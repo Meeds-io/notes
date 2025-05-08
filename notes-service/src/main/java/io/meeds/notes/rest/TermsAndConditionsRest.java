@@ -19,30 +19,43 @@
 package io.meeds.notes.rest;
 
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import java.util.Optional;
 
-import io.meeds.notes.model.TermsAndConditionPage;
-import io.meeds.notes.service.TermsAndConditionsService;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.lang3.LocaleUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.RestUtils;
+
+import io.meeds.notes.model.TermsAndConditionPage;
+import io.meeds.notes.service.TermsAndConditionsService;
+import io.meeds.social.html.model.HtmlTransformerContext;
+import io.meeds.social.html.utils.HtmlUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("terms")
@@ -70,7 +83,7 @@ public class TermsAndConditionsRest {
     if (termsAndConditionPage == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
-    termsAndConditionPage.setContent(sanitizeContent(termsAndConditionPage.getContent()));
+    termsAndConditionPage.setContent(transformContent(termsAndConditionPage.getContent(), lang));
     String eTagValue = String.valueOf(termsAndConditionPage.hashCode());
     String requestETag = request.getHeader(HttpHeaders.IF_NONE_MATCH);
     if (requestETag != null && requestETag.equals(eTagValue)) {
@@ -164,12 +177,15 @@ public class TermsAndConditionsRest {
     return termsAndConditionsService.isTermsAcceptedForUser(request.getRemoteUser(), lang);
   }
 
-  private String sanitizeContent(String content) {
+  private String transformContent(String content, String lang) {
     try {
+      content = HtmlUtils.transform(content,
+                                    new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
+                                                               LocaleUtils.toLocale(lang)));
       return HTMLSanitizer.sanitize(content);
     } catch (Exception e) {
-      LOG.warn("Error sanitizing terms and conditions content");
+      LOG.warn("Error sanitizing terms and conditions content", e);
+      return content;
     }
-    return "";
   }
 }

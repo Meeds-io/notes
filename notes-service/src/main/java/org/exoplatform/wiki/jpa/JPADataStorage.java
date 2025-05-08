@@ -166,18 +166,6 @@ public class JPADataStorage implements DataStorage {
     return searchText;
   }
 
-  private SearchResult toSearchResult(io.meeds.notes.legacy.api.search.data.SearchResult input) {
-    SearchResult output = new SearchResult();
-    output.setTitle(input.getTitle());
-    Calendar cal = Calendar.getInstance();
-    cal.setTimeInMillis(input.getDate());
-    output.setCreatedDate(cal);
-    output.setExcerpt(input.getExcerpt());
-    output.setPageName(input.getTitle());
-    output.setUrl(input.getUrl());
-    return output;
-  }
-  
   @Override
   public Wiki getWikiByTypeAndOwner(String wikiType, String wikiOwner) throws WikiException {
     return convertWikiEntityToWiki(wikiDAO.getWikiByTypeAndOwner(wikiType, wikiOwner));
