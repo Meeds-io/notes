@@ -20,6 +20,9 @@
 
 package org.exoplatform.wiki.service.impl;
 
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_NAME;
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,9 +40,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,8 +50,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.social.attachment.AttachmentService;
-import org.exoplatform.social.attachment.model.UploadedAttachmentDetail;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -69,6 +70,8 @@ import org.exoplatform.services.resources.LocaleConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
+import org.exoplatform.social.attachment.AttachmentService;
+import org.exoplatform.social.attachment.model.UploadedAttachmentDetail;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -100,10 +103,10 @@ import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
+import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
@@ -114,14 +117,10 @@ import io.meeds.notes.plugin.NoteContentLinkPlugin;
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.html.model.HtmlProcessorContext;
-import io.meeds.social.html.model.HtmlTransformerContext;
-import io.meeds.social.html.model.HtmlUtils;
+import io.meeds.social.html.utils.HtmlUtils;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
-
-import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_NAME;
-import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
 
  public class NoteServiceImpl implements NoteService {
@@ -740,7 +739,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       page.setCanView(true);
       page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
       page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      transformPageContent(page, page.getLang(), userIdentity);
     }
     return page;
   }
@@ -774,7 +772,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
           postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
         }
       }
-      transformPageContent(page, page.getLang(), userIdentity);
     }
     return page;
   }
@@ -1598,7 +1595,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (note != null) {
       deleteNoteMetadataProperties(note, lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
     }
-    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(noteId, lang);
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
     List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
     for (DraftPage draftPage : drafts) {
@@ -2611,17 +2607,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (!eventData.isEmpty()) {
       eventData.put("pageVersionId", pageVersionId);
       Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
-    }
-  }
-
-  private void transformPageContent(Page page, String lang) {
-    transformPageContent(page, lang, null);
-  }
-
-  private void transformPageContent(Page page, String lang, Identity identity) {
-    if (page != null) {
-      String content = HtmlUtils.transform(page.getContent(), new HtmlTransformerContext(identity, getLocale(lang)));
-      page.setContent(content);
     }
   }
 

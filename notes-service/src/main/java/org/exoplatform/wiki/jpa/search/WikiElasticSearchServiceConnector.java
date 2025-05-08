@@ -302,7 +302,9 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
       // Create the wiki search result
       SearchResult wikiSearchResult = new SearchResult();
-      wikiSearchResult.setId(Long.parseLong(id));
+      if (StringUtils.isNumeric(id)) {
+        wikiSearchResult.setId(Long.parseLong(id));
+      }
       wikiSearchResult.setLang(lang);
       wikiSearchResult.setWikiType(wikiType);
       wikiSearchResult.setWikiOwner(wikiOwner);

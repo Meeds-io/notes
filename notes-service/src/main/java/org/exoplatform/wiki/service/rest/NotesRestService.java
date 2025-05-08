@@ -38,7 +38,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -110,7 +118,7 @@ import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.social.html.model.HtmlTransformerContext;
-import io.meeds.social.html.model.HtmlUtils;
+import io.meeds.social.html.utils.HtmlUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

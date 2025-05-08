@@ -51,7 +51,7 @@ import org.exoplatform.wiki.model.Page;
 
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.html.model.HtmlTransformerContext;
-import io.meeds.social.html.model.HtmlUtils;
+import io.meeds.social.html.utils.HtmlUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
