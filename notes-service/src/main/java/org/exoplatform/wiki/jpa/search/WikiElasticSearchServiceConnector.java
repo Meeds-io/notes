@@ -275,6 +275,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       String wikiType = (String) hitSource.get("wikiType");
       String wikiOwner = (String) hitSource.get("wikiOwner");
       String owner = (String) hitSource.get("owner");
+      String id = (String) hitSource.get("id");
 
       Calendar createdDate = Calendar.getInstance();
       createdDate.setTimeInMillis(Long.parseLong((String) hitSource.get("createdDate")));
@@ -301,6 +302,9 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
       // Create the wiki search result
       SearchResult wikiSearchResult = new SearchResult();
+      if (StringUtils.isNumeric(id)) {
+        wikiSearchResult.setId(Long.parseLong(id));
+      }
       wikiSearchResult.setLang(lang);
       wikiSearchResult.setWikiType(wikiType);
       wikiSearchResult.setWikiOwner(wikiOwner);
