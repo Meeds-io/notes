@@ -26,7 +26,7 @@ import java.util.Map;
 
 @Data
 @NoArgsConstructor
-public class TitleSearchResult {
+public class NoteSearchResult {
   private String                          title;
 
   private String                          id;
@@ -39,7 +39,7 @@ public class TitleSearchResult {
 
   private String                          excerpt;
 
-  private long                            createdDate;
+  private long                            updateDate;
 
   private SearchResultType                type;
 
@@ -50,5 +50,9 @@ public class TitleSearchResult {
   private String                          lang;
 
   private String                          pageName;
+
+  private String                          summary;
+
+  private String                          content;
 
 }
