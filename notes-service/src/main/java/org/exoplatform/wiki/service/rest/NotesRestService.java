@@ -93,7 +93,7 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
-import org.exoplatform.wiki.service.search.TitleSearchResult;
+import org.exoplatform.wiki.service.search.NoteSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.PageTreeNode;
@@ -116,7 +116,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
-@Path("/notes")
+import static org.exoplatform.wiki.service.impl.NoteServiceImpl.SUMMARY_PROP;
+
+ @Path("/notes")
 @Tag(name = "/notes", description = "Managing notes")
 @RolesAllowed("users")
 
@@ -1278,7 +1280,7 @@ public class NotesRestService implements ResourceContainer {
       data.setWikiOwner(wikiOwner);
       data.setWikiType(wikiType);
       List<SearchResult> results = noteService.search(data).getAll();
-      List<TitleSearchResult> titleSearchResults = new ArrayList<>();
+      List<NoteSearchResult> noteSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
         Page page = null;
         try {
@@ -1296,16 +1298,16 @@ public class NotesRestService implements ResourceContainer {
           if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
             Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
                             page);
-            TitleSearchResult titleSearchResult = new TitleSearchResult();
-            titleSearchResult.setTitle(attachment.getName());
-            titleSearchResult.setId(page.getId());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setActivityId(page.getActivityId());
-            titleSearchResult.setType(searchResult.getType());
-            titleSearchResult.setUrl(attachment.getDownloadURL());
-            titleSearchResult.setMetadatas(page.getMetadatas());
-            titleSearchResult.setLang(searchResult.getLang());
-            titleSearchResults.add(titleSearchResult);
+            NoteSearchResult noteSearchResult = new NoteSearchResult();
+            noteSearchResult.setTitle(attachment.getName());
+            noteSearchResult.setId(page.getId());
+            noteSearchResult.setPageName(page.getName());
+            noteSearchResult.setActivityId(page.getActivityId());
+            noteSearchResult.setType(searchResult.getType());
+            noteSearchResult.setUrl(attachment.getDownloadURL());
+            noteSearchResult.setMetadatas(page.getMetadatas());
+            noteSearchResult.setLang(searchResult.getLang());
+            noteSearchResults.add(noteSearchResult);
           } else if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
             PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
             org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
@@ -1320,27 +1322,32 @@ public class NotesRestService implements ResourceContainer {
                             uriInfo.getPath(),
                             "all")
                             : null;
-            TitleSearchResult titleSearchResult = new TitleSearchResult();
-            titleSearchResult.setTitle(searchResult.getTitle());
-            titleSearchResult.setId(page.getId());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setActivityId(page.getActivityId());
+            NoteSearchResult noteSearchResult = new NoteSearchResult();
+            noteSearchResult.setTitle(searchResult.getTitle());
+            noteSearchResult.setId(page.getId());
+            noteSearchResult.setPageName(page.getName());
+            noteSearchResult.setPageName(page.getName());
+            noteSearchResult.setActivityId(page.getActivityId());
             if (posterIdentity != null) {
-              titleSearchResult.setPoster(posterIdentity);
+              noteSearchResult.setPoster(posterIdentity);
             }
-            titleSearchResult.setWikiOwner(wikiOwnerIdentity);
-            titleSearchResult.setExcerpt(searchResult.getExcerpt());
-            titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
-            titleSearchResult.setType(searchResult.getType());
-            titleSearchResult.setUrl(page.getUrl());
-            titleSearchResult.setLang(searchResult.getLang());
-            titleSearchResult.setMetadatas(page.getMetadatas());
-            titleSearchResults.add(titleSearchResult);
+            noteSearchResult.setWikiOwner(wikiOwnerIdentity);
+            noteSearchResult.setExcerpt(searchResult.getExcerpt());
+            noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
+            noteSearchResult.setType(searchResult.getType());
+            noteSearchResult.setUrl(page.getUrl());
+            noteSearchResult.setLang(searchResult.getLang());
+            noteSearchResult.setMetadatas(page.getMetadatas());
+            noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
+            String summary = pageVersion != null
+                && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
+                                                       : page.getProperties() != null ? page.getProperties().getSummary() : null;
+            noteSearchResult.setSummary(summary);
+            noteSearchResults.add(noteSearchResult);
           }
         }
       }
-      return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      return Response.ok(new BeanToJsons(noteSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception e) {
       log.error("Error when search notes", e);
       return Response.serverError().build();
