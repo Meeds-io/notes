@@ -26,9 +26,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
@@ -62,6 +62,9 @@ public class NoteContentLinkPlugin implements ContentLinkPlugin {
 
   @Autowired
   private NoteService                       noteService;
+
+  @Autowired
+  private UserACL                           userAcl;
 
   @PostConstruct
   public void init() {
@@ -101,10 +104,12 @@ public class NoteContentLinkPlugin implements ContentLinkPlugin {
   private ContentLinkSearchResult toContentLink(SearchResult searchResult,
                                                 Identity identity,
                                                 Locale locale) {
-    Page page = noteService.getNoteByIdAndLang(searchResult.getId(), searchResult.getLang());
-    if (page == null || !noteService.hasPermissionOnPage(page, PermissionType.VIEWPAGE, identity)) {
+    if (!userAcl.hasAccessPermission(OBJECT_TYPE,
+                                     String.valueOf(searchResult.getId()),
+                                     identity)) {
       return null;
     } else {
+      Page page = noteService.getNoteByIdAndLang(searchResult.getId(), searchResult.getLang());
       if (!StringUtils.equals(locale.toLanguageTag(), searchResult.getLang())) {
         Page pageWithLang = noteService.getNoteByIdAndLang(searchResult.getId(), locale.toLanguageTag());
         if (pageWithLang != null) {

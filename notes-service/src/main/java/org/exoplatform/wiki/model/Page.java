@@ -58,8 +58,6 @@ public class Page{
 
   private String                          comment;
 
-  private List<PermissionEntry>           permissions;
-
   private String                          url;
 
   private String                          activityId;
@@ -141,7 +139,6 @@ public class Page{
     this.title = other.title;
     this.comment = other.comment;
 
-    this.permissions = other.permissions != null ? new ArrayList<>(other.permissions) : null;
     this.url = other.url;
     this.activityId = other.activityId;
     this.wikiId = other.wikiId;

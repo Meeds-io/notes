@@ -17,21 +17,26 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.exoplatform.wiki.jpa;
+package org.exoplatform.wiki.storage;
 
-import io.meeds.notes.model.NoteFeaturedImage;
-import io.meeds.notes.model.NoteMetadataObject;
-import io.meeds.notes.model.NotePageProperties;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -44,22 +49,32 @@ import org.exoplatform.social.metadata.model.MetadataType;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
-import org.exoplatform.wiki.jpa.entity.*;
-import org.exoplatform.wiki.model.*;
-import org.exoplatform.wiki.service.IDType;
+import org.exoplatform.wiki.jpa.entity.AttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
+import org.exoplatform.wiki.jpa.entity.PageAttachmentEntity;
+import org.exoplatform.wiki.jpa.entity.PageEntity;
+import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
+import org.exoplatform.wiki.jpa.entity.WikiEntity;
+import org.exoplatform.wiki.model.Attachment;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiPreferences;
+import org.exoplatform.wiki.model.WikiPreferencesSyntax;
 import org.exoplatform.wiki.service.impl.NoteServiceImpl;
 import org.exoplatform.wiki.utils.Utils;
 
-import java.io.ByteArrayInputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NoteMetadataObject;
+import io.meeds.notes.model.NotePageProperties;
 
 /**
  * Utility class to convert JPA entity objects
  */
 public class EntityConverter {
-
-  private static final Log          LOG                        = ExoLogger.getLogger(EntityConverter.class);
 
   private static SpaceService       spaceService;
 
@@ -84,9 +99,6 @@ public class EntityConverter {
       if (wikiHomePageEntity != null) {
         wiki.setWikiHome(convertPageEntityToPage(wikiHomePageEntity));
       }
-      wiki.setPermissions(convertPermissionEntitiesToPermissionEntries(wikiEntity.getPermissions(),
-              Arrays.asList(PermissionType.ADMINPAGE, PermissionType.ADMINSPACE)));
-      // wiki.setDefaultPermissionsInited();
       WikiPreferences wikiPreferences = new WikiPreferences();
       WikiPreferencesSyntax wikiPreferencesSyntax = new WikiPreferencesSyntax();
       wikiPreferencesSyntax.setDefaultSyntax(wikiEntity.getSyntax());
@@ -104,7 +116,6 @@ public class EntityConverter {
       wikiEntity.setType(wiki.getType());
       wikiEntity.setOwner(wiki.getOwner());
       wikiEntity.setWikiHome(convertPageToPageEntity(wiki.getWikiHome(), wikiDAO));
-      wikiEntity.setPermissions(convertPermissionEntriesToPermissionEntities(wiki.getPermissions()));
       WikiPreferences wikiPreferences = wiki.getPreferences();
       if(wikiPreferences != null) {
         WikiPreferencesSyntax wikiPreferencesSyntax = wikiPreferences.getWikiPreferencesSyntax();
@@ -142,8 +153,6 @@ public class EntityConverter {
       page.setUpdatedDate(pageEntity.getUpdatedDate());
       page.setMinorEdit(pageEntity.isMinorEdit());
       page.setComment(pageEntity.getComment());
-      page.setPermissions(convertPermissionEntitiesToPermissionEntries(pageEntity.getPermissions(),
-              Arrays.asList(PermissionType.VIEWPAGE, PermissionType.EDITPAGE)));
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
       page.setUrl(Utils.getPageUrl(page));
@@ -178,56 +187,6 @@ public class EntityConverter {
 
   }
 
-  public static List<PermissionEntry> convertPermissionEntitiesToPermissionEntries(List<PermissionEntity> permissionEntities,
-                                                                                   List<PermissionType> filteredPermissionTypes) {
-    List<PermissionEntry> permissionEntries = new ArrayList<>();
-    if(permissionEntities != null) {
-      // we fill a map to prevent duplicated entries
-      Map<String, PermissionEntry> permissionEntriesMap = new HashMap<>();
-      for(PermissionEntity permissionEntity : permissionEntities) {
-        // only permission types relevant for pages are used
-        if(filteredPermissionTypes.contains(permissionEntity.getPermissionType())) {
-          Permission newPermission = new Permission(permissionEntity.getPermissionType(), true);
-          if (permissionEntriesMap.get(permissionEntity.getIdentity()) != null) {
-            PermissionEntry permissionEntry = permissionEntriesMap.get(permissionEntity.getIdentity());
-            Permission[] permissions = permissionEntry.getPermissions();
-            // add the new permission only if it does not exist yet
-            if (!ArrayUtils.contains(permissions, newPermission)) {
-              permissionEntry.setPermissions((Permission[]) ArrayUtils.add(permissions,
-                      newPermission));
-              permissionEntriesMap.put(permissionEntity.getIdentity(), permissionEntry);
-            }
-          } else {
-            permissionEntriesMap.put(permissionEntity.getIdentity(), new PermissionEntry(
-                    permissionEntity.getIdentity(),
-                    null,
-                    IDType.valueOf(permissionEntity.getIdentityType()),
-                    new Permission[]{newPermission}));
-          }
-        }
-      }
-      permissionEntries = new ArrayList(permissionEntriesMap.values());
-
-      // fill missing Permission (all PermissionEntry must have all Permission Types with isAllowed to true or false)
-      for(PermissionEntry permissionEntry : permissionEntries) {
-        for(PermissionType permissionType : filteredPermissionTypes) {
-          boolean permissionTypeFound = false;
-          for(Permission permission : permissionEntry.getPermissions()) {
-            if(permission.getPermissionType().equals(permissionType)) {
-              permissionTypeFound = true;
-              break;
-            }
-          }
-          if(!permissionTypeFound) {
-            Permission newPermission = new Permission(permissionType, false);
-            permissionEntry.setPermissions((Permission[])ArrayUtils.add(permissionEntry.getPermissions(), newPermission));
-          }
-        }
-      }
-    }
-    return permissionEntries;
-  }
-
   public static PageEntity convertPageToPageEntity(Page page, WikiDAO wikiDAO) {
     PageEntity pageEntity = null;
     if (page != null) {
@@ -249,32 +208,12 @@ public class EntityConverter {
       pageEntity.setMinorEdit(page.isMinorEdit());
       pageEntity.setComment(page.getComment());
       pageEntity.setUrl(page.getUrl());
-      pageEntity.setPermissions(convertPermissionEntriesToPermissionEntities(page.getPermissions()));
       pageEntity.setActivityId(page.getActivityId());
     }
     return pageEntity;
   }
 
-  public static List<PermissionEntity> convertPermissionEntriesToPermissionEntities(List<PermissionEntry> permissionEntries) {
-    List<PermissionEntity> permissionEntities = null;
-    if(permissionEntries != null) {
-      permissionEntities = new ArrayList<>();
-      for (PermissionEntry permissionEntry : permissionEntries) {
-        for (Permission permission : permissionEntry.getPermissions()) {
-          if (permission.isAllowed()) {
-            permissionEntities.add(new PermissionEntity(
-                    permissionEntry.getId(),
-                    permissionEntry.getIdType().toString(),
-                    permission.getPermissionType()
-            ));
-          }
-        }
-      }
-    }
-    return permissionEntities;
-  }
-
-  public static Attachment convertAttachmentEntityToAttachment(FileService fileService, AttachmentEntity attachmentEntity, boolean loadContent) throws WikiException {
+  public static Attachment convertAttachmentEntityToAttachment(FileService fileService, AttachmentEntity attachmentEntity, boolean loadContent) { // NOSONAR
     Attachment attachment = null;
     FileItem fileItem = null;
     if (attachmentEntity != null) {
@@ -342,7 +281,7 @@ public class EntityConverter {
         fileItem = new FileItem(null,
                                 attachment.getName(),
                                 attachment.getMimeType(),
-                                JPADataStorage.WIKI_FILES_NAMESPACE_NAME,
+                                NoteDataStorage.WIKI_FILES_NAMESPACE_NAME,
                                 size,
                                 updatedDate,
                                 attachment.getCreator(),
@@ -388,7 +327,7 @@ public class EntityConverter {
         fileItem = new FileItem(null,
                                 attachment.getName(),
                                 attachment.getMimeType(),
-                                JPADataStorage.WIKI_FILES_NAMESPACE_NAME,
+                                NoteDataStorage.WIKI_FILES_NAMESPACE_NAME,
                                 size,
                                 updatedDate,
                                 attachment.getCreator(),
@@ -534,17 +473,6 @@ public class EntityConverter {
       pageHistory.setLang(pageVersionEntity.getLang());
     }
     return pageHistory;
-  }
-
-  public static PermissionEntry convertPermissionEntityToPermissionEntry(PermissionEntity permissionEntity) {
-    PermissionEntry permissionEntry = null;
-    if (permissionEntity != null) {
-      permissionEntry = new PermissionEntry();
-      permissionEntry.setId(permissionEntity.getIdentity());
-      permissionEntry.setIdType(IDType.valueOf(permissionEntity.getIdentityType().toUpperCase()));
-      permissionEntry.setPermissions(new Permission[] { new Permission(permissionEntity.getPermissionType(), true) });
-    }
-    return permissionEntry;
   }
 
   public static List<PageHistory> toPageHistoryVersions(List<PageVersionEntity> pageVersionEntities) {

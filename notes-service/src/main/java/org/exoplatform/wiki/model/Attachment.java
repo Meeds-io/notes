@@ -70,11 +70,6 @@ public class Attachment {
    */
   private String                mimeType;
 
-  /**
-   * Permissions on the attachment
-   */
-  private List<PermissionEntry> permissions;
-
   public String getName() {
     return name;
   }
@@ -155,11 +150,4 @@ public class Attachment {
     this.mimeType = mimeType;
   }
 
-  public List<PermissionEntry> getPermissions() {
-    return permissions;
-  }
-
-  public void setPermissions(List<PermissionEntry> permissions) {
-    this.permissions = permissions;
-  }
 }
