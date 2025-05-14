@@ -357,7 +357,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page10)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, page12)).thenReturn(true);
     utilsStatic.when(() -> Utils.isDescendantPage(homePage, draftPage)).thenReturn(true);
-    utilsStatic.when(() -> Utils.canManageNotes(anyString(), any(Space.class), any(Page.class))).thenReturn(true);
     when(spaceService.getSpaceByGroupId(anyString())).thenReturn(mock(Space.class));
     Response response = notesRestService.getNoteTreeData("all","drafts", "group/spaces/test/home");
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());

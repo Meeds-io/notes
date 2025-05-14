@@ -18,27 +18,22 @@
  */
 package org.exoplatform.wiki.service.plugin;
 
-import org.exoplatform.social.core.space.model.Space;
-import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.utils.Utils;
-import org.junit.After;
-import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.wiki.model.DraftPage;
+import org.exoplatform.wiki.service.NoteService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WikiDraftPageAttachmentPluginTest {
@@ -49,18 +44,11 @@ public class WikiDraftPageAttachmentPluginTest {
   @Mock
   private SpaceService                                                spaceService;
 
-  private static final MockedStatic<org.exoplatform.wiki.utils.Utils> UTILS = mockStatic(org.exoplatform.wiki.utils.Utils.class);
-
   private WikiDraftPageAttachmentPlugin                               plugin;
 
   @Before
   public void setUp() {
     plugin = new WikiDraftPageAttachmentPlugin(noteService, spaceService);
-  }
-
-  @AfterClass
-  public static void afterRunBare() {
-    UTILS.close();
   }
 
   @Test
@@ -94,13 +82,11 @@ public class WikiDraftPageAttachmentPluginTest {
 
   @Test
   public void getSpaceId() throws Exception {
-
-    UTILS.when(Utils::getCurrentUser).thenReturn("user123");
     DraftPage draftPage = mock(DraftPage.class);
-    when(draftPage.getWikiOwner()).thenReturn("spaces/test");
+    when(draftPage.getWikiOwner()).thenReturn("/spaces/test");
     Space space = mock(Space.class);
     when(space.getId()).thenReturn("1");
-    when(noteService.getDraftNoteById("draft123", "user123")).thenReturn(draftPage);
+    when(noteService.getDraftNoteById("draft123")).thenReturn(draftPage);
     when(spaceService.getSpaceByGroupId(draftPage.getWikiOwner())).thenReturn(space);
     assertEquals(1L, plugin.getSpaceId("draft123"));
   }
