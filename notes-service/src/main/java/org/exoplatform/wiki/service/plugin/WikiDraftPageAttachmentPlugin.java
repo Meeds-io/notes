@@ -24,7 +24,6 @@ import org.exoplatform.social.attachment.AttachmentPlugin;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.service.NoteService;
-import org.exoplatform.wiki.utils.Utils;
 
 public class WikiDraftPageAttachmentPlugin extends AttachmentPlugin {
 
@@ -72,9 +71,8 @@ public class WikiDraftPageAttachmentPlugin extends AttachmentPlugin {
   @Override
   public long getSpaceId(String draftId) throws ObjectNotFoundException {
     try {
-      String username = Utils.getCurrentUser();
-      DraftPage draftPage = noteService.getDraftNoteById(draftId, username);
-      return Long.parseLong(spaceService.getSpaceByGroupId(draftPage.getWikiOwner()).getId());
+      DraftPage draftPage = noteService.getDraftNoteById(draftId);
+      return draftPage == null ? 0l : Long.parseLong(spaceService.getSpaceByGroupId(draftPage.getWikiOwner()).getId());
     } catch (Exception exception) {
       return 0;
     }

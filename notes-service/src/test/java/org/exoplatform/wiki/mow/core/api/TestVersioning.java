@@ -67,7 +67,7 @@ public class TestVersioning extends BaseTest {
     noteService.createVersionOfNote(page,"");
 
     page.setContent("testCreateVersionHistoryTree-ver2.0");
-    noteService.updateNote(page);
+    page = noteService.updateNote(page);
     noteService.createVersionOfNote(page,"");
 
     List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
@@ -75,8 +75,8 @@ public class TestVersioning extends BaseTest {
     assertEquals(2, versions.size());
 
     // restore to previous version (testCreateVersionHistoryTree-ver1.0)
-    noteService.restoreVersionOfNote(String.valueOf(versions.get(0).getVersionNumber()), page,"");
-    page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), page.getName());
+    noteService.restoreVersionOfNote(String.valueOf(versions.get(0).getVersionNumber()), page, "");
+    page = noteService.getNoteById(page.getId());
     assertEquals("testCreateVersionHistoryTree-ver1.0", page.getContent());
 
     page.setContent("testCreateVersionHistoryTree-ver3.0");

@@ -24,7 +24,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.Group;
 import org.exoplatform.services.organization.GroupEventListener;
-import org.exoplatform.wiki.jpa.EntityConverter;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.TemplateDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
@@ -34,6 +33,7 @@ import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.jpa.search.WikiPageIndexingServiceConnector;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.storage.EntityConverter;
 
 import java.util.List;
 
