@@ -44,8 +44,6 @@ public class Wiki {
    */
   private Page                  wikiHome;
 
-  private List<PermissionEntry> permissions;
-
   private WikiPreferences       preferences;
 
   private boolean               defaultPermissionsInited;
@@ -88,14 +86,6 @@ public class Wiki {
 
   public void setWikiHome(Page wikiHome) {
     this.wikiHome = wikiHome;
-  }
-
-  public List<PermissionEntry> getPermissions() {
-    return permissions;
-  }
-
-  public void setPermissions(List<PermissionEntry> permissions) {
-    this.permissions = permissions;
   }
 
   public WikiPreferences getPreferences() {

@@ -16,17 +16,12 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import java.util.List;
-
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
@@ -40,11 +35,9 @@ import jakarta.persistence.Table;
  */
 @Entity(name = "WikiWikiEntity")
 @Table(name = "WIKI_WIKIS")
-@NamedQueries({
-        @NamedQuery(name = "wiki.getAllIds", query = "SELECT w.id FROM WikiWikiEntity w ORDER BY w.id"),
-        @NamedQuery(name = "wiki.getWikisByType", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type"),
-        @NamedQuery(name = "wiki.getWikiByTypeAndOwner", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type AND w.owner = :owner")
-})
+@NamedQuery(name = "wiki.getAllIds", query = "SELECT w.id FROM WikiWikiEntity w ORDER BY w.id")
+@NamedQuery(name = "wiki.getWikisByType", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type")
+@NamedQuery(name = "wiki.getWikiByTypeAndOwner", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type AND w.owner = :owner")
 public class WikiEntity {
   @Id
   @Column(name = "WIKI_ID")
@@ -64,13 +57,6 @@ public class WikiEntity {
   @OneToOne
   @JoinColumn(name = "WIKI_HOME")
   private PageEntity wikiHome;
-
-  @ElementCollection
-  @CollectionTable(
-          name = "WIKI_WIKI_PERMISSIONS",
-          joinColumns=@JoinColumn(name = "WIKI_ID")
-  )
-  private List<PermissionEntity> permissions;
 
   @Column(name = "SYNTAX")
   private String syntax;
@@ -115,15 +101,6 @@ public class WikiEntity {
 
   public WikiEntity setWikiHome(PageEntity wikiHome) {
     this.wikiHome = wikiHome;
-    return this;
-  }
-
-  public List<PermissionEntity> getPermissions() {
-    return permissions;
-  }
-
-  public WikiEntity setPermissions(List<PermissionEntity> permissions) {
-    this.permissions = permissions;
     return this;
   }
 
