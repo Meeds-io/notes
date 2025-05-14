@@ -75,8 +75,7 @@ public class PageTreeNode extends TreeNode {
       Page childPage = childPageIterator.next();
       if (noteService.hasPermissionOnPage(childPage, PermissionType.VIEWPAGE, ConversationState.getCurrent().getIdentity())
               ||  (currentPage != null && Utils.isDescendantPage(currentPage, childPage))) {
-        Space space = spaceService.getSpaceByGroupId(childPage.getWikiOwner());
-        if (!childPage.isDraftPage() || Utils.canManageNotes(userId, space, childPage)) {
+        if (!childPage.isDraftPage() || noteService.canEditNote(childPage, userId)) {
           PageTreeNode child = new PageTreeNode(childPage);
           this.children.add(child);
         }

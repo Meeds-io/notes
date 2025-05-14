@@ -20,7 +20,6 @@
 
 package org.exoplatform.wiki.jpa.dao;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,9 +27,7 @@ import org.junit.Test;
 
 import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
-import org.exoplatform.wiki.jpa.entity.PermissionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
-import org.exoplatform.wiki.model.PermissionType;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com
@@ -80,14 +77,6 @@ public class PageDAOTest extends BaseWikiJPAIntegrationTest {
 
     PageEntity page = new PageEntity();
     page.setWiki(wiki);
-
-    PermissionEntity per = new PermissionEntity();
-    per.setIdentity("user");
-    per.setIdentityType("User");
-    per.setPermissionType(PermissionType.EDITPAGE);
-    List<PermissionEntity> permissions = new ArrayList<PermissionEntity>();
-    permissions.add(per);
-    page.setPermissions(permissions);
 
     page.setAuthor("author");
     page.setContent("content");

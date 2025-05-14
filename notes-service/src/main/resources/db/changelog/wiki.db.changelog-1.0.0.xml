@@ -301,46 +301,6 @@
     </modifySql>
   </changeSet>
 
-  <changeSet author="wiki" id="1.0.0-13">
-    <createTable tableName="WIKI_WIKI_PERMISSIONS">
-      <column name="WIKI_ID" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-14">
-    <createTable tableName="WIKI_PAGE_PERMISSIONS">
-      <column name="PAGE_ID" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
   <changeSet author="wiki" id="1.0.0-15">
     <createTable tableName="WIKI_PAGES_RELATED_PAGES">
       <column name="PAGE_ID" type="BIGINT">
@@ -411,22 +371,6 @@
   <changeSet author="wiki" id="1.0.0-23">
     <addForeignKeyConstraint baseColumnNames="PAGE_ID" baseTableName="WIKI_PAGE_VERSIONS"
                              constraintName="FK_WIKI_PAGE_VERSIONS_PAGES_01" deferrable="false"
-                             initiallyDeferred="false"
-                             onDelete="NO ACTION" onUpdate="NO ACTION"
-                             referencedColumnNames="PAGE_ID" referencedTableName="WIKI_PAGES"/>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-25">
-    <addForeignKeyConstraint baseColumnNames="WIKI_ID" baseTableName="WIKI_WIKI_PERMISSIONS"
-                             constraintName="FK_WIKI_WIKIS_PERM_WIKIS_01" deferrable="false"
-                             initiallyDeferred="false"
-                             onDelete="NO ACTION" onUpdate="NO ACTION"
-                             referencedColumnNames="WIKI_ID" referencedTableName="WIKI_WIKIS"/>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-26">
-    <addForeignKeyConstraint baseColumnNames="PAGE_ID" baseTableName="WIKI_PAGE_PERMISSIONS"
-                             constraintName="FK_WIKI_PAGES_PERM_PAGES_01" deferrable="false"
                              initiallyDeferred="false"
                              onDelete="NO ACTION" onUpdate="NO ACTION"
                              referencedColumnNames="PAGE_ID" referencedTableName="WIKI_PAGES"/>
@@ -553,14 +497,6 @@
 
   <changeSet id="1.0.0-45" author="wiki">
     <addNotNullConstraint tableName="WIKI_DRAFT_ATTACHMENTS" columnName="ATTACHMENT_FILE_ID" columnDataType="BIGINT"/>
-  </changeSet>
-
-  <!--Fix issue SOC-5440-->
-  <changeSet id="1.0.0-46" author="wiki">
-    <renameColumn tableName="WIKI_PAGE_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
-    <renameColumn tableName="WIKI_WIKI_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
   </changeSet>
 
   <!--Fix issue WIKI-1263-->
@@ -740,6 +676,20 @@
       ALTER TABLE WIKI_PAGE_VERSIONS MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
       ALTER TABLE WIKI_TEMPLATES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     </sql>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-01">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_WIKI_PERMISSIONS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_WIKI_PERMISSIONS"/>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-02">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_PAGE_PERMISSIONS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_PAGE_PERMISSIONS"/>
   </changeSet>
 
 </databaseChangeLog>
