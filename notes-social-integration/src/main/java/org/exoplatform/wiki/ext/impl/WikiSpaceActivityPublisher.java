@@ -192,50 +192,6 @@ public class WikiSpaceActivityPublisher extends PageWikiListener {
     return result.toString();
   }
 
-  private boolean isPublic(Page page) {
-    List<PermissionEntry> permissions = page.getPermissions();
-    // the page is public when it has permission: [any read]
-    boolean isPublic = false;
-    if (permissions != null) {
-      for (PermissionEntry permissionEntry : permissions) {
-        if (permissionEntry.getId().equals(IdentityConstants.ANY)) {
-          for (Permission permission : permissionEntry.getPermissions()) {
-            if (PermissionType.VIEWPAGE.equals(permission.getPermissionType())) {
-              isPublic = true;
-              break;
-            }
-          }
-        }
-      }
-    }
-    return isPublic;
-  }
-
-  /**
-   * Check If a page can be read by all users of a space
-   *
-   * @param page  Page
-   * @param space Space
-   * @return true : can, false : not can;
-   * @throws Exception
-   */
-  private boolean isPublicInSpace(Page page, Space space){
-    List<PermissionEntry> pagePermissions = page.getPermissions();
-    String groupMemberShip = MembershipEntry.ANY_TYPE + ":" + space.getGroupId();
-    boolean isPublic = false;
-    if (pagePermissions != null) {
-      for (PermissionEntry permissionEntry : pagePermissions) {
-        IDType permissionIDType = permissionEntry.getIdType();
-        String permissionId = permissionEntry.getId();
-        if ((permissionIDType.equals(IDType.MEMBERSHIP) && permissionId.equals(groupMemberShip)) || (permissionIDType.equals(IDType.GROUP) && permissionId.equals(space.getGroupId()))) {
-          isPublic = true;
-          break;
-        }
-      }
-    }
-    return isPublic;
-  }
-
   protected void saveActivity(String wikiType,
                               String wikiOwner,
                               String pageId,

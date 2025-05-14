@@ -17,13 +17,19 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package org.exoplatform.wiki.jpa;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.services.security.Authenticator;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
 
@@ -70,4 +76,14 @@ public abstract class BaseTest extends AbstractKernelTest {
     }
     return wiki;
   }
+
+  protected void removeWikiPages(NoteService noteService, String type, String owner) throws WikiException {
+    List<Page> notes = noteService.getNotesOfWiki(type, owner);
+    notes.forEach(n -> {
+      if (StringUtils.isNotBlank(n.getParentPageId())) {
+        noteService.deleteNote(n.getId());
+      }
+    });
+  }
+
 }

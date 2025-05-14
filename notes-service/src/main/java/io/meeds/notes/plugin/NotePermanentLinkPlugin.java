@@ -23,11 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
 
@@ -49,6 +49,9 @@ public class NotePermanentLinkPlugin implements PermanentLinkPlugin {
   private NoteService          noteService;
 
   @Autowired
+  private UserACL              userAcl;
+
+  @Autowired
   private SpaceService         spaceService;
 
   @Autowired
@@ -67,11 +70,9 @@ public class NotePermanentLinkPlugin implements PermanentLinkPlugin {
   @Override
   @SneakyThrows
   public boolean canAccess(PermanentLinkObject object, Identity identity) throws ObjectNotFoundException {
-    Page note = noteService.getNoteById(object.getObjectId());
-    if (note == null) {
-      throw new ObjectNotFoundException(String.format("Note with id %s not found", object.getObjectId()));
-    }
-    return noteService.hasPermissionOnPage(note, PermissionType.VIEWPAGE, identity);
+    return userAcl.hasAccessPermission(OBJECT_TYPE,
+                                       object.getObjectId(),
+                                       identity);
   }
 
   @Override

@@ -26,26 +26,29 @@ import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiService;
 
+import lombok.SneakyThrows;
 
 public class TestPageContent extends BaseTest {
 
   private WikiService wikiService;
+
   private NoteService noteService;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     wikiService = getContainer().getComponentInstanceOfType(WikiService.class);
     noteService = getContainer().getComponentInstanceOfType(NoteService.class);
   }
 
-  public void testGetPageContent() throws Exception {
+  @SneakyThrows
+  public void testGetPageContent() {
     Wiki wiki = getOrCreateWiki(wikiService, WikiType.PORTAL.toString(), "classic");
     Page page = new Page("AddPageContent-001", "AddPageContent-001");
     page.setSyntax("xhtml/1.0");
     page.setContent("This is a content of page");
-    noteService.createNote(wiki, wiki.getWikiHome(), page);
+    page = noteService.createNote(wiki, wiki.getWikiHome(), page);
 
-    page = wikiService.getPageOfWikiByName(wiki.getType(), wiki.getOwner(), "AddPageContent-001");
     assertNotNull(page);
     assertEquals("xhtml/1.0", page.getSyntax());
     assertEquals("This is a content of page", page.getContent());
