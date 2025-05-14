@@ -165,7 +165,8 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     assertEquals(304, response.getStatus());
 
     registerAdministratorUser(USERNAME);
-    saveNotePage(pageNoteName, pageContent, null);
+    response = saveNotePage(pageNoteName, pageContent, null);
+    assertEquals(204, response.getStatus());
 
     registerInternalUser(USERNAME);
     response = getNotePageWithETag(pageNoteName, null, eTagValue);

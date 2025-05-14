@@ -432,8 +432,7 @@ public class Utils {
         // Object is a Home page
         Wiki wiki = wikiService.getWikiByTypeAndOwner(wikiType, wikiOwner);
         if(wiki != null) {
-          Page wikiHome = wiki.getWikiHome();
-          return wikiHome;
+          return wiki.getWikiHome();
         } else {
           return null;
         }
@@ -530,18 +529,6 @@ public class Utils {
     } catch (Exception e) {
       throw new WikiException("Cannot get email of user " + userName, e);
     }
-  }
-  
-  public static HashMap<String, IDType> getACLForAdmins() {
-    HashMap<String, IDType> permissionMap = new HashMap<String, IDType>();
-    UserACL userACL = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(UserACL.class);
-    permissionMap.put(userACL.getSuperUser(), IDType.USER);
-    for (String group : userACL.getPortalCreatorGroups()) {
-      if (!StringUtils.isEmpty(group)) {
-        permissionMap.put(group, IDType.MEMBERSHIP);
-      }
-    }
-    return permissionMap;
   }
 
   private static String insertStyle(String rawHTML) {
@@ -692,7 +679,7 @@ public class Utils {
     }
   }
   
-  public static boolean canManageNotes(String authenticatedUser, Space space, Page page) throws WikiException {
+  public static boolean canManageNotes(String authenticatedUser, Space space, Page page) {
     SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
     CMSService cmsService = CommonsUtils.getService(CMSService.class);
     if (space != null) {
