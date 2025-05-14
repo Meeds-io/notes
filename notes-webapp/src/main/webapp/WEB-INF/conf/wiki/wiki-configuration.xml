@@ -30,8 +30,7 @@
   </component>
 
   <component>
-    <key>org.exoplatform.wiki.service.DataStorage</key>
-    <type>org.exoplatform.wiki.jpa.JPADataStorage</type>
+    <type>org.exoplatform.wiki.storage.NoteDataStorage</type>
   </component>
 
   <component>

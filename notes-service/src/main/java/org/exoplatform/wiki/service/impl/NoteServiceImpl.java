@@ -1,22 +1,22 @@
- /**
- * This file is part of the Meeds project (https://meeds.io/).
- *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+/**
+* This file is part of the Meeds project (https://meeds.io/).
+*
+* Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 
 package org.exoplatform.wiki.service.impl;
 
@@ -61,6 +61,9 @@ import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
+import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.cache.CacheService;
 import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.listener.ListenerService;
@@ -92,12 +95,12 @@ import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
 import org.exoplatform.wiki.rendering.cache.MarkupData;
 import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.DataStorage;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
@@ -107,6 +110,7 @@ import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.exoplatform.wiki.storage.NoteDataStorage;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
@@ -122,8 +126,7 @@ import io.meeds.social.html.utils.HtmlUtils;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
-
- public class NoteServiceImpl implements NoteService {
+public class NoteServiceImpl implements NoteService {
 
   public static final String                              CACHE_NAME                             = "wiki.PageRenderingCache";
 
@@ -132,7 +135,7 @@ import lombok.SneakyThrows;
   private static final String                             UNTITLED_PREFIX                        = "Untitled_";
 
   private static final String                             TEMP_DIRECTORY_PATH                    = "java.io.tmpdir";
-  
+
   private static final String                             FEATURED_IMAGE_FOLDER                  = "featuredImages";
 
   private static final String                             FILE_NAME_SPACE                        = "wiki";
@@ -177,7 +180,7 @@ import lombok.SneakyThrows;
 
   private final WikiService                               wikiService;
 
-  private final DataStorage                               dataStorage;
+  private final NoteDataStorage                               dataStorage;
 
   @Getter
   private final ExoCache<Integer, MarkupData>             renderingCache;
@@ -194,20 +197,24 @@ import lombok.SneakyThrows;
   private final CMSService                                cmsService;
 
   private final ListenerService                           listenerService;
-  
+
   private final FileService                               fileService;
 
   private final UploadService                             uploadService;
-  
+
   private final MetadataService                           metadataService;
-  
+
   private final ImageThumbnailService                     imageThumbnailService;
 
-  private final AttachmentService                          attachmentService;
+  private final AttachmentService                         attachmentService;
 
   private final LocaleConfigService                       localeConfigService;
 
-  public NoteServiceImpl(DataStorage dataStorage,
+  private final LayoutService                             layoutService;
+
+  private final UserACL                                   userAcl;
+
+  public NoteServiceImpl(NoteDataStorage dataStorage, // NOSONAR
                          CacheService cacheService,
                          WikiService wikiService,
                          IdentityManager identityManager,
@@ -219,7 +226,11 @@ import lombok.SneakyThrows;
                          UploadService uploadService,
                          MetadataService metadataService,
                          ImageThumbnailService imageThumbnailService,
-                         AttachmentService attachmentService) {
+                         AttachmentService attachmentService,
+                         LayoutService layoutService,
+                         UserACL userAcl) {
+    this.userAcl = userAcl;
+    this.layoutService = layoutService;
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
@@ -235,6 +246,7 @@ import lombok.SneakyThrows;
     this.imageThumbnailService = imageThumbnailService;
     this.attachmentService = attachmentService;
   }
+
   /**
    * {@inheritDoc}
    */
@@ -245,6 +257,12 @@ import lombok.SneakyThrows;
                          Identity userIdentity,
                          boolean importMode,
                          boolean broadcast) throws WikiException, IllegalAccessException {
+    if (userIdentity == null
+        || !wikiService.canManageWiki(noteBook.getType(), noteBook.getOwner(), userIdentity.getUserId())) {
+      throw new IllegalAccessException(String.format("Authorization error while addin new note in wiki %s:%s",
+                                                     noteBook.getType(),
+                                                     noteBook.getOwner()));
+    }
     if (importMode) {
       String pageName = TitleResolver.getId(note.getName(), false);
       if (pageName == null) {
@@ -253,8 +271,8 @@ import lombok.SneakyThrows;
       note.setName(pageName);
     }
     if (isExisting(noteBook.getType(), noteBook.getOwner(), note.getName())) {
-      throw new WikiException("Page " + noteBook.getType() + ":" + noteBook.getOwner() + ":" + note.getName()
-          + " already exists, cannot create it.");
+      throw new WikiException("Page " + noteBook.getType() + ":" + noteBook.getOwner() + ":" + note.getName() +
+          " already exists, cannot create it.");
     }
 
     Page parentPage = getNoteOfNoteBookByName(noteBook.getType(), noteBook.getOwner(), parentNoteName);
@@ -278,7 +296,6 @@ import lombok.SneakyThrows;
       }
       if (createdPage != null) {
         createdPage.setProperties(properties);
-        Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
         if (StringUtils.isNotEmpty(createdPage.getContent())) {
           createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
           createdPage = processImagesOnNoteCreation(createdPage,
@@ -286,20 +303,19 @@ import lombok.SneakyThrows;
                                                     Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                 .getId()));
         }
-        createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
-        createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
-        createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
-
-        dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
-        PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()),
-                                                                                 createdPage.getLang());
-        createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
-        if (pageVersion != null && draftPageId != null) {
-          Map<String, String> eventData = new HashMap<>();
-          eventData.put("draftPageId", draftPageId);
-          eventData.put("pageVersionId", pageVersion.getId());
-          Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
-        }
+        createdPage.setCanManage(canEditNote(note, note.getAuthor()));
+        createdPage.setCanImport(canEditNote(note, note.getAuthor()));
+        createdPage.setCanView(canViewNote(note, note.getAuthor()));
+      }
+      dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
+      PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()),
+                                                                               createdPage.getLang());
+      createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
+      if (pageVersion != null && draftPageId != null) {
+        Map<String, String> eventData = new HashMap<>();
+        eventData.put("draftPageId", draftPageId);
+        eventData.put("pageVersionId", pageVersion.getId());
+        Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
       }
       return createdPage;
     } else {
@@ -366,8 +382,8 @@ import lombok.SneakyThrows;
    */
   @SneakyThrows
   @Override
-  public Page updateNote(Page note) throws WikiException {
-    return updateNote(note, null);
+  public Page updateNote(Page note, PageUpdateType type) throws WikiException {
+    return saveNote(note, type, null, true);
   }
 
   /**
@@ -386,82 +402,36 @@ import lombok.SneakyThrows;
     Page existingNote = getNoteById(note.getId());
     if (existingNote == null) {
       throw new EntityNotFoundException("Note to update not found");
-    }
-    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    if (userIdentity != null && (!Utils.canManageNotes(userIdentity.getUserId(), space, existingNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId()))) {
+    } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
         || PageUpdateType.EDIT_PAGE_PROPERTIES.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
-    note.setContent(updateNoteContentImages(note));
-    Page updatedPage = dataStorage.updatePage(note);
-    NotePageProperties properties = note.getProperties();
-    if (userIdentity != null && properties != null) {
-      try {
-        properties.setNoteId(Long.parseLong(updatedPage.getId()));
-        properties.setDraft(false);
-        properties = saveNoteMetadata(note.getProperties(),
-                                      note.getLang(),
-                                      Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
-        updatedPage.setProperties(properties);
-      } catch (Exception e) {
-        log.error("Error while updating note metadata properties", e);
-      }
-    }
-    invalidateCache(note);
-
-    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
-    updatedPage.setToBePublished(note.isToBePublished());
-    updatedPage.setCanManage(note.isCanManage());
-    updatedPage.setCanImport(note.isCanImport());
-    updatedPage.setCanView(note.isCanView());
-    updatedPage.setAppName(note.getAppName());
-    if (userIdentity != null) {
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
-      updatedPage.setMetadatas(metadata);
-      note.setAuthor(userIdentity.getUserId());
-      updatedPage.setLastUpdater(userIdentity.getUserId());
-    }
-    Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
-    processPageContent(updatedPage, note.getLang());
-    if (broadcast) {
-      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), new Page(updatedPage), type);
-      Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
-      if (mentionsMatcher.find()) {
-        Utils.sendMentionInNoteNotification(note,
-                                            existingNote,
-                                            userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
-      }
-    }
-    updatedPage.setLang(note.getLang());
-    return updatedPage;
+    return saveNote(note, type, userIdentity, broadcast);
   }
-  /**
-   * {@inheritDoc}
-   */
-  @SneakyThrows
+
   @Override
-  public Page updateNote(Page note, PageUpdateType type) throws WikiException {
-    return updateNote(note, type, null);
+  public Page updateNote(Page note) {
+    return saveNote(note, null, null, false);
+  }
+
+  @Override
+  public void deleteNote(String noteId) {
+    dataStorage.deletePage(noteId);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public boolean deleteNote(String noteType, String noteOwner, String noteName) throws WikiException {
+  public boolean deleteNote(String wikiType, String wikiOwner, String noteName) {
     if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
-    try {
-      dataStorage.deletePage(noteType, noteOwner, noteName);
-    } catch (WikiException e) {
-      log.error("Can't delete note '" + noteName + "' ", e);
-      return false;
-    }
+    dataStorage.deletePage(wikiType, wikiOwner, noteName);
     return true;
   }
 
@@ -469,53 +439,44 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public boolean deleteNote(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
+  public boolean deleteNote(String wikiType, String wikiOwner, String noteName, Identity userIdentity) throws WikiException,
                                                                                                        IllegalAccessException,
                                                                                                        EntityNotFoundException {
     if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
-    try {
-      Page note = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
-      if (note == null) {
-        log.error("Can't delete note '" + noteName + "'. This note does not exist.");
-        throw new EntityNotFoundException("Note to delete not found");
-      }
-      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-      if (!Utils.canManageNotes(userIdentity.getUserId(), space, note)) {
-        log.error("Can't delete note '" + noteName + "'. does not have edit permission on it.");
-        throw new IllegalAccessException("User does not have edit permissions on the note.");
-      }
+    Page note = getNoteOfNoteBookByName(wikiType, wikiOwner, noteName);
+    if (note == null) {
+      log.error("Can't delete note '" + noteName + "'. This note does not exist.");
+      throw new EntityNotFoundException("Note to delete not found");
+    } else if (userIdentity == null || !canEditNote(note, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have edit permissions on the note.");
+    }
+    invalidateCachesOfPageTree(note);
+    invalidateAttachmentCache(note);
 
-      invalidateCachesOfPageTree(note);
-      invalidateAttachmentCache(note);
-
-      // Store all children to launch post deletion listeners
-      List<Page> allChrildrenPages = new ArrayList<>();
-      Queue<Page> queue = new LinkedList<>();
-      queue.add(note);
-      Page tempPage;
-      while (!queue.isEmpty()) {
-        tempPage = queue.poll();
-        List<Page> childrenPages = getChildrenNoteOf(tempPage, false, false);
-        for (Page childPage : childrenPages) {
-          queue.add(childPage);
-          allChrildrenPages.add(childPage);
-        }
+    // Store all children to launch post deletion listeners
+    List<Page> allChrildrenPages = new ArrayList<>();
+    Queue<Page> queue = new LinkedList<>();
+    queue.add(note);
+    Page tempPage;
+    while (!queue.isEmpty()) {
+      tempPage = queue.poll();
+      List<Page> childrenPages = getChildrenNoteOf(tempPage, false, false);
+      for (Page childPage : childrenPages) {
+        queue.add(childPage);
+        allChrildrenPages.add(childPage);
       }
+    }
 
-      deleteNote(noteType, noteOwner, noteName);
-      postDeletePage(noteType, noteOwner, noteName, note);
-      Utils.broadcast(listenerService, NOTE_DELETED, userIdentity, note);
-      processPageContent(note.getId(), "", null);
-      // Post delete activity for all children pages
-      for (Page childNote : allChrildrenPages) {
-        postDeletePage(childNote.getWikiType(), childNote.getWikiOwner(), childNote.getName(), childNote);
-      }
-    } catch (WikiException e) {
-      log.error("Can't delete note '" + noteName + "' ", e);
-      return false;
+    deleteNote(wikiType, wikiOwner, noteName);
+    postDeletePage(wikiType, wikiOwner, noteName, note);
+    Utils.broadcast(listenerService, NOTE_DELETED, userIdentity, note);
+    processPageContent(note.getId(), "", null);
+    // Post delete activity for all children pages
+    for (Page childNote : allChrildrenPages) {
+      postDeletePage(childNote.getWikiType(), childNote.getWikiOwner(), childNote.getName(), childNote);
     }
     return true;
   }
@@ -567,17 +528,11 @@ import lombok.SneakyThrows;
       Page moveNote = getNoteOfNoteBookByName(currentLocationParams.getType(),
                                               currentLocationParams.getOwner(),
                                               currentLocationParams.getPageName());
-
       if (moveNote == null) {
         throw new EntityNotFoundException("Note to move not found");
+      } else if (userIdentity == null || !canEditNote(moveNote, userIdentity.getUserId())) {
+        throw new IllegalAccessException("User does not have edit the note.");
       }
-      if (moveNote != null) {
-        Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
-        if (!Utils.canManageNotes(userIdentity.getUserId(), space, moveNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId())) {
-          throw new IllegalAccessException("User does not have edit the note.");
-        }
-      }
-
       moveNote(currentLocationParams, newLocationParams);
 
       Page note = new Page(currentLocationParams.getPageName());
@@ -639,10 +594,10 @@ import lombok.SneakyThrows;
    */
   @Override
   public Page getNoteOfNoteBookByName(String noteType,
-                                             String noteOwner,
-                                             String noteName,
-                                             String lang,
-                                             Identity userIdentity) throws WikiException, IllegalAccessException {
+                                      String noteOwner,
+                                      String noteName,
+                                      String lang,
+                                      Identity userIdentity) throws WikiException, IllegalAccessException {
     Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName, userIdentity);
     if (lang != null) {
       page.setMetadatas(retrieveMetadataItems(page.getId() + "-" + lang, userIdentity.getUserId()));
@@ -658,23 +613,17 @@ import lombok.SneakyThrows;
                                       String noteOwner,
                                       String noteName,
                                       Identity userIdentity) throws IllegalAccessException, WikiException {
-    Page page = null;
-    page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
+    Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
     if (page == null) {
       throw new EntityNotFoundException("page not found");
+    } else if (!canViewNote(page, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
-      }
-      page.setCanView(true);
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
-      page.setMetadatas(metadata);
-    }
-
+    page.setCanView(true);
+    page.setCanManage(canEditNote(page, userIdentity.getUserId()));
+    page.setCanImport(wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), userIdentity.getUserId()));
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
+    page.setMetadatas(metadata);
     return page;
   }
 
@@ -682,11 +631,10 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public Page getNoteById(String id) throws WikiException {
-    if (id == null) {
+  public Page getNoteById(String id) {
+    if (StringUtils.isBlank(id)) {
       return null;
     }
-
     return dataStorage.getPageById(id);
   }
 
@@ -694,13 +642,21 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException {
-    if (id == null) {
+  public DraftPage getDraftNoteById(String id, String userId) throws IllegalAccessException {
+    if (StringUtils.isBlank(id)) {
       return null;
     }
-    DraftPage draftPage = dataStorage.getDraftPageById(id);
+    DraftPage draftPage = getDraftNoteById(id);
     computeDraftProps(draftPage, userId);
     return draftPage;
+  }
+
+  @Override
+  public DraftPage getDraftNoteById(String id) {
+    if (StringUtils.isBlank(id)) {
+      return null;
+    }
+    return dataStorage.getDraftPageById(id);
   }
 
   /**
@@ -711,10 +667,9 @@ import lombok.SneakyThrows;
     if (targetPage == null) {
       return null;
     }
-
     return dataStorage.getLatestDraftOfPage(targetPage);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -728,21 +683,70 @@ import lombok.SneakyThrows;
    */
   @Override
   public Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException {
-    if (id == null) {
+    Page page = getNoteById(id);
+    if (page == null) {
       return null;
+    } else if (!canViewNote(page, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    Page page = null;
-    page = getNoteById(id);
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
-      }
-      page.setCanView(true);
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-    }
+    page.setCanView(true);
+    page.setCanManage(canEditNote(page, userIdentity.getUserId()));
+    page.setCanImport(canEditNote(page, userIdentity.getUserId()));
     return page;
+  }
+
+  @Override
+  public boolean canViewNote(Page page, String username) {
+    if (page == null) {
+      return false;
+    }
+    String wikiOwner = page.getWikiOwner();
+    String wikiType = page.getWikiType();
+    String pageOwner = page.getOwner();
+
+    if (page.isDraftPage()) {
+      return canEditNote(page, username);
+    } else if (TC_NOTE_TYPE.equals(wikiType) && TC_NOTE_NAME.equals(page.getName())) {
+      return true;
+    } else if ((StringUtils.equals(pageOwner, IdentityConstants.SYSTEM) || StringUtils.isBlank(pageOwner))
+               && cmsService.hasAccessPermission(Utils.getIdentity(username),
+                                                 NotePageViewService.CMS_CONTENT_TYPE,
+                                                 page.getName())) {
+      return true;
+    } else if (StringUtils.equalsIgnoreCase(WikiType.PORTAL.name(), wikiType)) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(wikiOwner);
+      return userAcl.hasAccessPermission(portalConfig, userAcl.getUserIdentity(username));
+    } else if (StringUtils.isBlank(wikiType) || StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+      Space space = getSpaceByWiki(wikiType, wikiOwner);
+      return space == null ? userAcl.hasPermission(userAcl.getUserIdentity(username),
+                                                   String.format("%s:%s",
+                                                                 userAcl.getAdminMSType(),
+                                                                 wikiOwner)) :
+                           spaceService.canViewSpace(space, username);
+    } else {
+      return spaceService.isSuperManager(username) || StringUtils.equals(pageOwner, username);
+    }
+  }
+
+  @Override
+  public boolean canEditNote(Page page, String username) {
+    if (page == null) {
+      return false;
+    } else if (wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username)) {
+      return true;
+    } else if (page.isDraftPage()) {
+      return page.getParent() == null && StringUtils.equals(username, page.getAuthor());
+    } else if ((StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner()))
+               && cmsService.hasEditPermission(Utils.getIdentity(username),
+                                               NotePageViewService.CMS_CONTENT_TYPE,
+                                               page.getName())) {
+      return true;
+    } else if (StringUtils.equalsIgnoreCase(WikiType.PORTAL.name(), page.getWikiType())) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(page.getWikiOwner());
+      return userAcl.hasEditPermission(portalConfig, userAcl.getUserIdentity(username));
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -750,29 +754,26 @@ import lombok.SneakyThrows;
    */
   @Override
   public Page getNoteById(String id, Identity userIdentity, String source) throws IllegalAccessException, WikiException {
-    if (id == null) {
+    Page page = getNoteById(id);
+    String username = userIdentity == null ? null : userIdentity.getUserId();
+    if (page == null) {
       return null;
+    } else if (!canViewNote(page, username)) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    Page page;
-    page = getNoteById(id);
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
+    page.setCanView(true);
+    page.setUrl(Utils.getPageUrl(page));
+    boolean canManageNotes = wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), userIdentity.getUserId());
+    page.setCanManage(canManageNotes || canEditNote(page, username));
+    page.setCanImport(canManageNotes);
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
+    page.setMetadatas(metadata);
+    if (StringUtils.isNotBlank(source)) {
+      if (source.equals("tree")) {
+        postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
       }
-      page.setCanView(true);
-      page.setUrl(Utils.getPageUrl(page));
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
-      page.setMetadatas(metadata);
-      if (StringUtils.isNotBlank(source)) {
-        if (source.equals("tree")) {
-          postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-        }
-        if (source.equals("breadCrumb")) {
-          postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-        }
+      if (source.equals("breadCrumb")) {
+        postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
       }
     }
     return page;
@@ -1184,7 +1185,7 @@ import lombok.SneakyThrows;
     } else {
       newDraftPage.setTargetPageRevision(revision);
     }
-    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, username);
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
       if (properties != null) {
@@ -1226,7 +1227,8 @@ import lombok.SneakyThrows;
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
 
-    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+    org.exoplatform.social.core.identity.model.Identity userIdentity = identityManager.getIdentity(userIdentityId);
+    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, userIdentity.getRemoteId());
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
       properties = saveNoteMetadata(properties, newDraftPage.getLang(), userIdentityId);
@@ -1288,7 +1290,8 @@ import lombok.SneakyThrows;
     }
     newDraftPage.setProperties(properties);
     //
-    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()), newDraftPage.getLang());
+    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()),
+                                                                 newDraftPage.getLang());
     if (pageVersion != null) {
       Map<String, String> eventData = new HashMap<>();
       eventData.put("pageVersionId", pageVersion.getId());
@@ -1321,7 +1324,9 @@ import lombok.SneakyThrows;
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
-    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
+    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, identity.getRemoteId());
     NotePageProperties properties = draftPage.getProperties();
     try {
       if (properties != null) {
@@ -1337,18 +1342,17 @@ import lombok.SneakyThrows;
     return newDraftPage;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
-  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
+  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, String username) {
     if (StringUtils.equals(IdentityConstants.SYSTEM, page.getOwner())) {
       return false;
+    } else {
+      return switch (permissionType) {
+      case VIEWPAGE, VIEW_ATTACHMENT -> canViewNote(page, username);
+      case EDITPAGE, ADMINPAGE -> canEditNote(page, username);
+      default -> wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username);
+      };
     }
-    else if (page.isDraftPage()) {
-      return true;
-    }
-    return dataStorage.hasPermissionOnPage(page, permissionType, user);
   }
 
   /**
@@ -1374,7 +1378,11 @@ import lombok.SneakyThrows;
       renderedContent = note.getContent();
       renderingCache.put(key.hashCode(), new MarkupData(renderedContent));
     } catch (Exception e) {
-      log.error(String.format("Failed to get rendered content of note [%s:%s:%s]", note.getWikiType(), note.getWikiOwner(), note.getName()), e);
+      log.error(String.format("Failed to get rendered content of note [%s:%s:%s]",
+                              note.getWikiType(),
+                              note.getWikiOwner(),
+                              note.getName()),
+                e);
     }
     return renderedContent;
   }
@@ -1398,7 +1406,7 @@ import lombok.SneakyThrows;
     String notesFilePath = "";
     for (String file : files) {
       if (file.contains("notesExport_")) {
-          notesFilePath = file;
+        notesFilePath = file;
       }
       if (file.contains("/" + FEATURED_IMAGE_FOLDER + "/")) {
         String fileName = file.substring(file.lastIndexOf("/") + 1);
@@ -1426,11 +1434,11 @@ import lombok.SneakyThrows;
       }
       for (Page note : notes.getNotes()) {
         importNote(note,
-                parent,
-                featuredImages,
-                wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
-                conflict,
-                userIdentity);
+                   parent,
+                   featuredImages,
+                   wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
+                   conflict,
+                   userIdentity);
       }
       for (Page note : notes.getNotes()) {
         replaceIncludedPages(note, wiki, userIdentity);
@@ -1448,8 +1456,9 @@ import lombok.SneakyThrows;
     try {
       PageList<SearchResult> result = dataStorage.search(data);
 
-      if ((data.getTitle() != null) && (data.getWikiType() != null) && (data.getWikiOwner() != null)
-              && (result.getPageSize() > 0)) {
+      if ((data.getTitle() != null) && (data.getWikiType() != null)
+          && (data.getWikiOwner() != null)
+          && (result.getPageSize() > 0)) {
         Page homePage = wikiService.getWikiByTypeAndOwner(data.getWikiType(), data.getWikiOwner()).getWikiHome();
         if (data.getTitle().equals("") || homePage != null && homePage.getTitle().contains(data.getTitle())) {
           Calendar wikiHomeCreateDate = Calendar.getInstance();
@@ -1459,14 +1468,14 @@ import lombok.SneakyThrows;
           wikiHomeUpdateDate.setTime(homePage.getUpdatedDate());
 
           SearchResult wikiHomeResult = new SearchResult(data.getWikiType(),
-                  data.getWikiOwner(),
-                  homePage.getName(),
-                  null,
-                  null,
-                  homePage.getTitle(),
-                  SearchResultType.PAGE,
-                  wikiHomeUpdateDate,
-                  wikiHomeCreateDate);
+                                                         data.getWikiOwner(),
+                                                         homePage.getName(),
+                                                         null,
+                                                         null,
+                                                         homePage.getTitle(),
+                                                         SearchResultType.PAGE,
+                                                         wikiHomeUpdateDate,
+                                                         wikiHomeCreateDate);
           List<SearchResult> tempSearchResult = result.getAll();
           tempSearchResult.add(wikiHomeResult);
           result = new ObjectPageList<>(tempSearchResult, result.getPageSize());
@@ -1498,7 +1507,7 @@ import lombok.SneakyThrows;
       }
     }
     if (page != null && publishedVersion == null && lang != null) {
-      //no version with lang, set the latest version id without lang
+      // no version with lang, set the latest version id without lang
       publishedVersion = dataStorage.getPublishedVersionByPageIdAndLang(pageId, null);
       page.setLatestVersionId(publishedVersion == null ? null : publishedVersion.getId());
     }
@@ -1549,7 +1558,7 @@ import lombok.SneakyThrows;
    */
   @Override
   public List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException {
-    return getPageAvailableTranslationLanguages(pageId, withDrafts);  
+    return getPageAvailableTranslationLanguages(pageId, withDrafts);
   }
 
   /**
@@ -1559,7 +1568,7 @@ import lombok.SneakyThrows;
   public List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException {
     List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
     if (lang == null && pageHistories.isEmpty()) {
-      PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
+      PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
                              pageVersion,
@@ -1585,7 +1594,7 @@ import lombok.SneakyThrows;
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang)  {
+  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
     return getLatestDraftPageByTargetPageAndLang(targetPageId, lang);
   }
 
@@ -1695,8 +1704,8 @@ import lombok.SneakyThrows;
     if (noteId == null) {
       throw new IllegalArgumentException("note id is mandatory");
     }
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
     Page note;
-    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(String.valueOf(userIdentityId));
     if (isDraft) {
       note = getDraftNoteById(String.valueOf(noteId), identity.getRemoteId());
     } else {
@@ -1708,12 +1717,12 @@ import lombok.SneakyThrows;
 
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                            NOTE_METADATA_PAGE_OBJECT_TYPE);
     if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
       String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
       long noteFeaturedImageId = featuredImageIdProp != null
-          && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
+                                 && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
       FileItem fileItem = fileService.getFile(noteFeaturedImageId);
       if (fileItem != null && fileItem.getFileInfo() != null) {
         FileInfo fileInfo = fileItem.getFileInfo();
@@ -1745,9 +1754,11 @@ import lombok.SneakyThrows;
     Page note;
     if (isDraft) {
       DraftPage draftPage = getDraftNoteById(String.valueOf(noteId),
-                                             identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+                                             identityManager.getIdentity(userIdentityId).getRemoteId());
       if (draftPage != null && (draftPage.getTargetPageId() == null
-          || isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang)))) {
+                                || isOriginalFeaturedImage(draftPage,
+                                                           getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()),
+                                                                              lang)))) {
         removeFeaturedImageFile = false;
       }
       note = draftPage;
@@ -1762,8 +1773,8 @@ import lombok.SneakyThrows;
     }
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                            NOTE_METADATA_PAGE_OBJECT_TYPE);
     if (metadataItem != null) {
       Map<String, String> properties = metadataItem.getProperties();
       properties.remove(FEATURED_IMAGE_ID);
@@ -1789,7 +1800,7 @@ import lombok.SneakyThrows;
     NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
     if (notePageProperties.isDraft()) {
       note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
-                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+                              identityManager.getIdentity(userIdentityId).getRemoteId());
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
     }
@@ -1942,16 +1953,16 @@ import lombok.SneakyThrows;
 
   @Override
   public void markNoteAsViewed(Page note, Identity userIdentity) {
-      List<PageWikiListener> listeners = wikiService.getPageListeners();
-      for (PageWikiListener l : listeners) {
-          try {
-              l.markNoteAsViewed(note, userIdentity.getUserId());
-          } catch (Exception e) {
-              if (log.isWarnEnabled()) {
-                  log.warn(String.format("Executing listener [%s] on [%s] failed", l, note.getName()), e);
-              }
-          }
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
+      try {
+        l.markNoteAsViewed(note, userIdentity.getUserId());
+      } catch (Exception e) {
+        if (log.isWarnEnabled()) {
+          log.warn(String.format("Executing listener [%s] on [%s] failed", l, note.getName()), e);
+        }
       }
+    }
   }
 
   protected void invalidateCache(Page page) {
@@ -2043,10 +2054,10 @@ import lombok.SneakyThrows;
         String featuredImageId = properties.get(FEATURED_IMAGE_ID);
         if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
           removeNoteFeaturedImage(Long.parseLong(note.getId()),
-                  Long.parseLong(featuredImageId),
-                  lang,
-                  true,
-                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+                                  Long.parseLong(featuredImageId),
+                                  lang,
+                                  true,
+                                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
         } else if (note.isDraftPage()) {
           // When delete a draft of non-existing page
           // check if its featured image was linked to a saved page
@@ -2136,31 +2147,31 @@ import lombok.SneakyThrows;
   }
 
   private List<Page> getAllNotes(Page note) throws WikiException {
-    List<Page> listOfNotes = new ArrayList<Page>();
+    List<Page> listOfNotes = new ArrayList<>();
     addAllNodes(note, listOfNotes);
     return listOfNotes;
   }
 
   private void cleanUp(File file) throws IOException {
-    if(Files.exists(file.toPath())){
+    if (Files.exists(file.toPath())) {
       Files.delete(file.toPath());
     }
   }
 
-  private void computeDraftProps(DraftPage draftPage, String userId) throws WikiException, IllegalAccessException {
-    if (draftPage != null) {
-      Space space = spaceService.getSpaceByGroupId(draftPage.getWikiOwner());
-      if (!canViewNotes(userId, space, draftPage)) {
-        throw new IllegalAccessException("User does not have the right view the note.");
-      }
-      draftPage.setCanView(true);
-      draftPage.setCanManage(Utils.canManageNotes(userId, space, draftPage));
-      draftPage.setCanImport(canImportNotes(userId, space, draftPage));
-      String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
-              .getProfile()
-              .getFullName();
-      draftPage.setAuthorFullName(authorFullName);
+  private void computeDraftProps(DraftPage draftPage, String username) throws WikiException, IllegalAccessException {
+    if (draftPage == null) {
+      return;
+    } else if (!canViewNote(draftPage, username)) {
+      throw new IllegalAccessException("User does not have the right view the note.");
     }
+    draftPage.setCanView(true);
+    boolean canManageNotes = wikiService.canManageWiki(draftPage.getWikiType(), draftPage.getWikiOwner(), username);
+    draftPage.setCanManage(canManageNotes || canEditNote(draftPage, username));
+    draftPage.setCanImport(canManageNotes);
+    String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
+                                           .getProfile()
+                                           .getFullName();
+    draftPage.setAuthorFullName(authorFullName);
   }
 
   private void checkToRemoveDomainInUrl(Page note) {
@@ -2178,31 +2189,6 @@ import lombok.SneakyThrows;
           log.warn("Malformed url " + url, ex);
         }
       }
-    }
-  }
-
-  private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null) {
-      return (spaceService.canRedactOnSpace(space, authenticatedUser));
-    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
-      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
-    } else {
-      return StringUtils.equals(page.getOwner(), authenticatedUser);
-    }
-  }
-
-  private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null) {
-      return !page.isDraftPage() ? spaceService.canViewSpace(space, authenticatedUser)
-                                 : Utils.canManageNotes(authenticatedUser, space, page);
-    } else if (TC_NOTE_TYPE.equals(page.getWikiType()) && TC_NOTE_NAME.equals(page.getName())) {
-      return true;
-    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
-      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser),
-                                            NotePageViewService.CMS_CONTENT_TYPE,
-                                            page.getName());
-    } else {
-      return spaceService.isSuperManager(space, authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
   }
 
@@ -2238,7 +2224,7 @@ import lombok.SneakyThrows;
   }
 
   private String getNoteTitleWithTraduction(Page note, Identity userIdentity, String source, String lang) throws WikiException,
-                                                                                                  IllegalAccessException {
+                                                                                                          IllegalAccessException {
     if (userIdentity == null || StringUtils.isEmpty(lang)) {
       return note.getTitle();
     }
@@ -2308,7 +2294,7 @@ import lombok.SneakyThrows;
     Map<String, List<MetadataItem>> metadata = new HashMap<>();
     metadataItems.stream()
                  .filter(metadataItem -> metadataItem.getMetadata().getAudienceId() == 0
-                     || metadataItem.getMetadata().getAudienceId() == currentUserId)
+                                         || metadataItem.getMetadata().getAudienceId() == currentUserId)
                  .forEach(metadataItem -> {
                    String type = metadataItem.getMetadata().getType().getName();
                    metadata.computeIfAbsent(type, k -> new ArrayList<>());
@@ -2333,6 +2319,53 @@ import lombok.SneakyThrows;
                           .orElse(null);
   }
 
+  private Page saveNote(Page note, PageUpdateType type, Identity userIdentity, boolean broadcast) {
+    Page existingNote = getNoteById(note.getId());
+    note.setContent(updateNoteContentImages(note, userIdentity));
+    Page updatedPage = dataStorage.updatePage(note);
+    NotePageProperties properties = note.getProperties();
+    String updater = userIdentity == null ? null : userIdentity.getUserId();
+    if (properties != null && updater != null) {
+      try {
+        properties.setNoteId(Long.parseLong(updatedPage.getId()));
+        properties.setDraft(false);
+        properties = saveNoteMetadata(properties,
+                                      note.getLang(),
+                                      Long.valueOf(identityManager.getOrCreateUserIdentity(updater).getId()));
+        updatedPage.setProperties(properties);
+      } catch (Exception e) {
+        log.error("Error while updating note metadata properties", e);
+      }
+    }
+    invalidateCache(note);
+
+    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
+    updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setCanManage(note.isCanManage());
+    updatedPage.setCanImport(note.isCanImport());
+    updatedPage.setCanView(note.isCanView());
+    updatedPage.setAppName(note.getAppName());
+    if (userIdentity != null) {
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), updater);
+      updatedPage.setMetadatas(metadata);
+      note.setAuthor(updater);
+      updatedPage.setLastUpdater(updater);
+    }
+    Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
+    processPageContent(updatedPage, note.getLang());
+    if (broadcast) {
+      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), new Page(updatedPage), type);
+      Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
+      if (mentionsMatcher.find()) {
+        Utils.sendMentionInNoteNotification(note,
+                                            existingNote,
+                                            updater == null ? existingNote.getAuthor() : updater);
+      }
+    }
+    updatedPage.setLang(note.getLang());
+    return updatedPage;
+  }
+
   private void copyNotePageProperties(Page oldNote,
                                       Page note,
                                       String oldLang,
@@ -2343,7 +2376,7 @@ import lombok.SneakyThrows;
     if (note == null || oldNote == null) {
       return;
     }
-      if (username != null) {
+    if (username != null) {
       org.exoplatform.social.core.identity.model.Identity identity =
                                                                    identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
                                                                                                        username);
@@ -2379,7 +2412,7 @@ import lombok.SneakyThrows;
     NoteFeaturedImage draftFeaturedImage = draftPage.getProperties().getFeaturedImage();
     NoteFeaturedImage targetFeaturedImage = targetPage.getProperties().getFeaturedImage();
     return draftFeaturedImage != null && targetFeaturedImage != null
-        && targetFeaturedImage.getId().equals(draftFeaturedImage.getId());
+           && targetFeaturedImage.getId().equals(draftFeaturedImage.getId());
   }
 
   private File extractNoteFeaturedImageFileToImport(Page note, Map<String, String> featuredImages) {
@@ -2435,7 +2468,9 @@ import lombok.SneakyThrows;
                                                  long userIdentityId) throws WikiException {
     String newDraftContent = saveUploadedContentImages(draftPage.getContent(),
                                                        draftPage.getAttachmentObjectType(),
-                                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() : draftPage.getId(),
+                                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ?
+                                                                                                           draftPage.getTargetPageId() :
+                                                                                                           draftPage.getId(),
                                                        userIdentityId);
     if (!newDraftContent.equals(draftPage.getContent())) {
       draftPage.setContent(newDraftContent);
@@ -2448,8 +2483,8 @@ import lombok.SneakyThrows;
     try {
       return saveUploadedContentImages(draftPage.getContent(),
                                        draftPage.getAttachmentObjectType(),
-                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
-                                                                                           : draftPage.getId(),
+                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() :
+                                                                                           draftPage.getId(),
                                        userIdentityId);
     } catch (Exception exception) {
       return draftPage.getContent();
@@ -2513,20 +2548,20 @@ import lombok.SneakyThrows;
     return content;
   }
 
-  private String updateNoteContentImages(Page note) {
+  private String updateNoteContentImages(Page note, Identity userIdentity) {
     String processedContent = note.getContent();
-    if (note.getContent().contains("cke_upload_id=")) {
+    if (userIdentity != null && note.getContent().contains("cke_upload_id=")) {
       processedContent = saveUploadedContentImages(note.getContent(),
                                                    note.getAttachmentObjectType(),
                                                    note.getId(),
-                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                  .getId()));
     }
 
-    if (IMAGES_IMPORT_PATTERN.matcher(processedContent).find()) {
+    if (userIdentity != null && IMAGES_IMPORT_PATTERN.matcher(processedContent).find()) {
       // process imported images
       processedContent = processImportedNoteImages(note,
-                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                  .getId()));
     }
     return processedContent;
@@ -2631,6 +2666,15 @@ import lombok.SneakyThrows;
                                                id,
                                                null,
                                                getLocale(lang)));
+  }
+
+  private Space getSpaceByWiki(String wikiType, String wikiOwner) {
+    if (StringUtils.isBlank(wikiType)
+        || StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+      return spaceService.getSpaceByGroupId(wikiOwner);
+    } else {
+      return null;
+    }
   }
 
   private Locale getLocale(String lang) {

@@ -118,7 +118,7 @@ public class NotePageViewRest implements ResourceContainer {
       builder.cacheControl(CACHE_CONTROL);
       return builder.build();
     } catch (IllegalAccessException e) {
-      LOG.warn("Error accessing note page {} for user {}", name, RestUtils.getCurrentUser(), e);
+      LOG.debug("Error accessing note page {} for user {}", name, RestUtils.getCurrentUser(), e);
       return Response.status(Status.UNAUTHORIZED).build();
     } catch (Exception e) {
       LOG.warn("Error retrieving page content {} for user {}", name, RestUtils.getCurrentUser(), e);
@@ -151,7 +151,7 @@ public class NotePageViewRest implements ResourceContainer {
       notePageViewService.saveNotePage(name, content, lang, RestUtils.getCurrentUserAclIdentity());
       return Response.noContent().build();
     } catch (IllegalAccessException e) {
-      LOG.warn("Error saving note page content '{}' by user '{}'", name, RestUtils.getCurrentUser(), e);
+      LOG.debug("Error saving note page content '{}' by user '{}'", name, RestUtils.getCurrentUser(), e);
       return Response.status(Status.UNAUTHORIZED).build();
     } catch (ObjectNotFoundException e) {
       return Response.status(Status.NOT_FOUND).build();

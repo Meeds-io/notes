@@ -125,11 +125,16 @@ public interface NoteService {
    *
    * @param noteType It can be Portal, Group, or User.
    * @param noteOwner The NoteBook owner.
-   * @param noteId Id of the note.
+   * @param noteName Id of the note.
    * @return "True" if deleting the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    */
-  boolean deleteNote(String noteType, String noteOwner, String noteId) throws WikiException;
+  boolean deleteNote(String noteType, String noteOwner, String noteName) throws WikiException;
+
+  /**
+   * @param noteId Page technical identifier
+   */
+  void deleteNote(String noteId);
 
   /**
    * Deletes a note.
@@ -252,7 +257,7 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   Page getNoteById(String id) throws WikiException;
-
+  
   /**
    * Gets a draft note based on its unique id.
    *
@@ -262,6 +267,14 @@ public interface NoteService {
    * @throws WikiException if an error occured
    */
   DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException;
+
+  /**
+   * Gets a draft note based on its unique id.
+   *
+   * @param id Unique id of the draft note.
+   * @return The note.
+   */
+  DraftPage getDraftNoteById(String id);
 
   /**
    * Returns latest draft of given page.
@@ -751,17 +764,28 @@ public interface NoteService {
    * @throws WikiException if an error occured if an error occured
    */
   Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException;
+  
+  /**
+   * Checks if the given user has the permission on a page
+   * 
+   * @param page the wiki page object
+   * @param permissionType permission Type
+   * @param identity User {@link Identity}
+   * @return true if user has permissions
+   */
+  default boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity identity) {
+    return hasPermissionOnPage(page, permissionType, identity == null ? null : identity.getUserId());
+  }
 
   /**
    * Checks if the given user has the permission on a page
    * 
-   * @param user the userName
    * @param page the wiki page object
    * @param permissionType permission Type
+   * @param username User login
    * @return true if user has permissions
-   * @throws WikiException if an error occured
    */
-  boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException;
+  boolean hasPermissionOnPage(Page page, PermissionType permissionType, String username);
 
   /**
    * Retrieves note page by its id and content lang
@@ -951,4 +975,37 @@ public interface NoteService {
    * @param note target note
    */
   void markNoteAsViewed(Page note, Identity userIdentity);
+
+  /**
+   * @param pageId
+   * @param username
+   * @return
+   */
+  default boolean canEditNote(String pageId, String username) {
+    return canEditNote(getNoteById(pageId), username);
+  }
+
+  /**
+   * @param page
+   * @param username
+   * @return
+   */
+  boolean canEditNote(Page page, String username);
+
+  /**
+   * @param pageId
+   * @param username
+   * @return
+   */
+  default boolean canViewNote(String pageId, String username) {
+    return canViewNote(getNoteById(pageId), username);
+  }
+
+  /**
+   * @param page
+   * @param username
+   * @return
+   */
+  boolean canViewNote(Page page, String username);
+
 }

@@ -7,6 +7,5 @@ org.exoplatform.wiki.jpa.entity.PageVersionEntity
 org.exoplatform.wiki.jpa.entity.PageAttachmentEntity
 org.exoplatform.wiki.jpa.entity.BasePageEntity
 org.exoplatform.wiki.jpa.entity.TemplateEntity
-org.exoplatform.wiki.jpa.entity.PermissionEntity
 org.exoplatform.wiki.jpa.entity.DraftPageEntity
 org.exoplatform.wiki.jpa.entity.EmotionIconEntity
