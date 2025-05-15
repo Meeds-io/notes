@@ -208,9 +208,9 @@
     </component-plugin>
   </external-component-plugins>
 
-  <external-component-plugins profiles="gamification">
+  <external-component-plugins>
     <target-component>io.meeds.gamification.service.EventRegistry</target-component>
-    <component-plugin>
+    <component-plugin profiles="gamification">
       <name>AddWikiPage</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
@@ -231,7 +231,7 @@
         </object-param>
       </init-params>
     </component-plugin>
-    <component-plugin>
+    <component-plugin profiles="gamification">
       <name>UpdateWikiPage</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
@@ -252,7 +252,7 @@
         </object-param>
       </init-params>
     </component-plugin>
-    <component-plugin>
+    <component-plugin profiles="gamification">
       <name>AcceptConditions</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
@@ -275,18 +275,18 @@
     </component-plugin>
   </external-component-plugins>
 
-  <external-component-plugins profiles="analytics">
+  <external-component-plugins>
     <target-component>org.exoplatform.wiki.service.WikiService</target-component>
-    <component-plugin>
+    <component-plugin profiles="analytics">
       <name>NotesPageListener</name>
       <set-method>addComponentPlugin</set-method>
       <type>org.exoplatform.notes.listener.analytics.NotesPageListener</type>
     </component-plugin>
   </external-component-plugins>
 
-  <external-component-plugins profiles="gamification">
+  <external-component-plugins>
     <target-component>io.meeds.gamification.service.EventService</target-component>
-    <component-plugin>
+    <component-plugin profiles="gamification">
       <name>note</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.notes.plugin.NoteEventPlugin</type>

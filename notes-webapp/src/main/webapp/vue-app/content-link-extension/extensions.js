@@ -19,16 +19,19 @@
  *
  */
 
-extensionRegistry.registerExtension('ContentLink', 'InsertContent', {
-  id: 'notes',
-  title: 'contentLink.note',
-  icon: 'fa-clipboard',
-  command: 'note',
-  search: async (keyword, limit) => {
-    const result = fetch(`/portal/rest/notes/contextsearch?limit=${limit || 10}&keyword=${keyword}`, {
-      method: 'GET',
-      credentials: 'include',
-    }).then(resp => resp?.ok && resp.json());
-    return result;
+extensionRegistry.registerExtension('ContentLink', 'InsertContentExtension', {
+  id: 'noteNavigation',
+  objectType: 'noteNavigation',
+  titleKey: 'contentLink.noteNavigation',
+  icon: 'fa-sitemap',
+  command: 'navigation',
+  drawer: false,
+  isValid: editor => editor?.name === 'notesContent',
+  insert: (editor, range) => {
+    if (range) {
+      range.startOffset--;
+      range.deleteContents();
+    }
+    editor.execCommand('ToC');
   },
 });
