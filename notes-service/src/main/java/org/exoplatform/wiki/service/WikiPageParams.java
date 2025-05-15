@@ -5,39 +5,23 @@ import java.util.Map;
 
 public class WikiPageParams {
 
-  public static final String  WIKI_HOME  = "Home";
+  public static final String    WIKI_HOME  = "Home";
 
-  private String              type;
+  private String                type;
 
-  private String              owner;
+  private String                owner;
 
-  private String              pageName;
+  private String                pageName;
 
-  private String              attachmentName;
+  private Map<String, String[]> parameters = new HashMap<>();
 
-  private Map<String, String[]> parameters = new HashMap<String, String[]>();
-
-  public WikiPageParams() {    
+  public WikiPageParams() {
   }
 
   public WikiPageParams(String type, String owner, String pageName) {
     this.type = type;
     this.owner = owner;
     this.pageName = pageName;
-  }
-
-  /**
-   * @param type the wiki Type It can be Portal, Group, or User.
-   * @param owner the wiki owner
-   * @param pageName the wiki page name
-   * @param attachmentName the attachemeny name
-   */
-  public WikiPageParams(String type, String owner, String pageName, String attachmentName) {
-    super();
-    this.type = type;
-    this.owner = owner;
-    this.pageName = pageName;
-    this.attachmentName = attachmentName;
   }
 
   public void setType(String type) {
@@ -64,14 +48,6 @@ public class WikiPageParams {
     return pageName;
   }
 
-  public String getAttachmentName() {
-    return attachmentName;
-  }
-
-  public void setAttachmentName(String attachmentName) {
-    this.attachmentName = attachmentName;
-  }
-
   public void setParameter(String key, String[] values) {
     parameters.put(key, values);
   }
@@ -96,7 +72,6 @@ public class WikiPageParams {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((attachmentName == null) ? 0 : attachmentName.hashCode());
     result = prime * result + ((owner == null) ? 0 : owner.hashCode());
     result = prime * result + ((pageName == null) ? 0 : pageName.hashCode());
     result = prime * result + ((parameters == null) ? 0 : parameters.hashCode());
@@ -116,11 +91,6 @@ public class WikiPageParams {
     if (getClass() != obj.getClass())
       return false;
     WikiPageParams other = (WikiPageParams) obj;
-    if (attachmentName == null) {
-      if (other.attachmentName != null)
-        return false;
-    } else if (!attachmentName.equals(other.attachmentName))
-      return false;
     if (owner == null) {
       if (other.owner != null)
         return false;

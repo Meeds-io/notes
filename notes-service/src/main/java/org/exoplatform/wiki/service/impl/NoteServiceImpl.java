@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,8 +63,6 @@ import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.service.LayoutService;
-import org.exoplatform.services.cache.CacheService;
-import org.exoplatform.services.cache.ExoCache;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -96,9 +93,6 @@ import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
-import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
-import org.exoplatform.wiki.rendering.cache.MarkupData;
-import org.exoplatform.wiki.rendering.cache.MarkupKey;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.BreadcrumbData;
 import org.exoplatform.wiki.service.NoteService;
@@ -123,14 +117,13 @@ import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.html.model.HtmlProcessorContext;
 import io.meeds.social.html.utils.HtmlUtils;
 
-import lombok.Getter;
 import lombok.SneakyThrows;
 
 public class NoteServiceImpl implements NoteService {
 
-  public static final String                              CACHE_NAME                             = "wiki.PageRenderingCache";
+  private static final String                             DRAFT_PAGE_ID_PROP_NAME                = "draftPageId";
 
-  public static final String                              ATT_CACHE_NAME                         = "wiki.PageAttachmentCache";
+  private static final String                             PAGE_VERSION_ID_PROP_NAME              = "pageVersionId";
 
   private static final String                             UNTITLED_PREFIX                        = "Untitled_";
 
@@ -180,15 +173,7 @@ public class NoteServiceImpl implements NoteService {
 
   private final WikiService                               wikiService;
 
-  private final NoteDataStorage                               dataStorage;
-
-  @Getter
-  private final ExoCache<Integer, MarkupData>             renderingCache;
-
-  private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
-
-  @Getter
-  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                           = new ConcurrentHashMap<>();
+  private final NoteDataStorage                           dataStorage;
 
   private final IdentityManager                           identityManager;
 
@@ -215,7 +200,6 @@ public class NoteServiceImpl implements NoteService {
   private final UserACL                                   userAcl;
 
   public NoteServiceImpl(NoteDataStorage dataStorage, // NOSONAR
-                         CacheService cacheService,
                          WikiService wikiService,
                          IdentityManager identityManager,
                          SpaceService spaceService,
@@ -235,8 +219,6 @@ public class NoteServiceImpl implements NoteService {
     this.wikiService = wikiService;
     this.identityManager = identityManager;
     this.localeConfigService = localeConfigService;
-    this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
-    this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
     this.spaceService = spaceService;
     this.listenerService = listenerService;
     this.cmsService = cmsService;
@@ -294,27 +276,25 @@ public class NoteServiceImpl implements NoteService {
       } catch (Exception e) {
         log.error("Failed to save note metadata", e);
       }
-      if (createdPage != null) {
-        createdPage.setProperties(properties);
-        if (StringUtils.isNotEmpty(createdPage.getContent())) {
-          createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
-          createdPage = processImagesOnNoteCreation(createdPage,
-                                                    draftPageId,
-                                                    Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
-                                                                                .getId()));
-        }
-        createdPage.setCanManage(canEditNote(note, note.getAuthor()));
-        createdPage.setCanImport(canEditNote(note, note.getAuthor()));
-        createdPage.setCanView(canViewNote(note, note.getAuthor()));
+      createdPage.setProperties(properties);
+      if (StringUtils.isNotEmpty(createdPage.getContent())) {
+        createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
+        createdPage = processImagesOnNoteCreation(createdPage,
+                                                  draftPageId,
+                                                  Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
+                                                                              .getId()));
       }
+      createdPage.setCanManage(canEditNote(note, note.getAuthor()));
+      createdPage.setCanImport(canEditNote(note, note.getAuthor()));
+      createdPage.setCanView(canViewNote(note, note.getAuthor()));
       dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
       PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()),
                                                                                createdPage.getLang());
       createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
       if (pageVersion != null && draftPageId != null) {
         Map<String, String> eventData = new HashMap<>();
-        eventData.put("draftPageId", draftPageId);
-        eventData.put("pageVersionId", pageVersion.getId());
+        eventData.put(DRAFT_PAGE_ID_PROP_NAME, draftPageId);
+        eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersion.getId());
         Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
       }
       return createdPage;
@@ -360,10 +340,6 @@ public class NoteServiceImpl implements NoteService {
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
     createdPage.setLang(note.getLang());
-    if (parentPage != null) {
-      invalidateCache(parentPage);
-    }
-    invalidateCache(note);
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
     processPageContent(createdPage, note.getLang());
@@ -453,8 +429,6 @@ public class NoteServiceImpl implements NoteService {
     } else if (userIdentity == null || !canEditNote(note, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit permissions on the note.");
     }
-    invalidateCachesOfPageTree(note);
-    invalidateAttachmentCache(note);
 
     // Store all children to launch post deletion listeners
     List<Page> allChrildrenPages = new ArrayList<>();
@@ -504,8 +478,6 @@ public class NoteServiceImpl implements NoteService {
     Page page = new Page(noteName);
     page.setWikiType(noteType);
     page.setWikiOwner(noteOwner);
-    invalidateCache(page);
-
     return true;
   }
 
@@ -538,8 +510,6 @@ public class NoteServiceImpl implements NoteService {
       Page note = new Page(currentLocationParams.getPageName());
       note.setWikiType(currentLocationParams.getType());
       note.setWikiOwner(currentLocationParams.getOwner());
-      invalidateCache(note);
-      invalidateAttachmentCache(note);
 
       postUpdatePage(newLocationParams.getType(),
                      newLocationParams.getOwner(),
@@ -763,11 +733,13 @@ public class NoteServiceImpl implements NoteService {
     }
     page.setCanView(true);
     page.setUrl(Utils.getPageUrl(page));
-    boolean canManageNotes = wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), userIdentity.getUserId());
+    boolean canManageNotes = wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username);
     page.setCanManage(canManageNotes || canEditNote(page, username));
     page.setCanImport(canManageNotes);
-    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
-    page.setMetadatas(metadata);
+    if (username != null) {
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, username);
+      page.setMetadatas(metadata);
+    }
     if (StringUtils.isNotBlank(source)) {
       if (source.equals("tree")) {
         postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
@@ -980,7 +952,6 @@ public class NoteServiceImpl implements NoteService {
     List<DraftPage> draftPages = dataStorage.getDraftsOfPage(Long.valueOf(page.getId()));
     for (DraftPage draftPage : draftPages) {
       if (draftPage != null) {
-        dataStorage.deleteAttachmentsOfDraftPage(draftPage);
         try {
           deleteNoteMetadataProperties(draftPage, draftPage.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
         } catch (Exception e) {
@@ -1033,29 +1004,8 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
-  public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
-    List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
-    if (versionsHistory == null || versionsHistory.isEmpty()) {
-      PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
-      pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-      copyNotePageProperties(note,
-                             pageVersion,
-                             note.getLang(),
-                             null,
-                             NOTE_METADATA_PAGE_OBJECT_TYPE,
-                             NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                             userName);
-      versionsHistory = dataStorage.getHistoryOfPage(note);
-    }
-    for (PageHistory version : versionsHistory) {
-      if (version.getAuthor() != null) {
-        org.exoplatform.social.core.identity.model.Identity authorIdentity =
-                                                                           identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                                                                               version.getAuthor());
-        version.setAuthorFullName(authorIdentity.getProfile().getFullName());
-      }
-    }
-    return versionsHistory;
+  public List<PageHistory> getVersionsHistoryOfNote(Page note) {
+    return dataStorage.getHistoryOfPage(note);
   }
 
   /**
@@ -1124,7 +1074,6 @@ public class NoteServiceImpl implements NoteService {
                            NOTE_METADATA_PAGE_OBJECT_TYPE,
                            userName);
     createVersionOfNote(note, userName, true);
-    invalidateCache(note);
   }
 
   /**
@@ -1176,7 +1125,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
     if (StringUtils.isEmpty(revision)) {
-      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage, username);
+      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage);
       if (versions != null && !versions.isEmpty()) {
         newDraftPage.setTargetPageRevision(String.valueOf(versions.get(0).getVersionNumber()));
       } else {
@@ -1265,7 +1214,7 @@ public class NoteServiceImpl implements NoteService {
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
     if (StringUtils.isEmpty(revision)) {
-      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage, username);
+      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage);
       if (versions != null && !versions.isEmpty()) {
         newDraftPage.setTargetPageRevision(String.valueOf(versions.get(0).getVersionNumber()));
       } else {
@@ -1296,7 +1245,7 @@ public class NoteServiceImpl implements NoteService {
                                                                  newDraftPage.getLang());
     if (pageVersion != null) {
       Map<String, String> eventData = new HashMap<>();
-      eventData.put("pageVersionId", pageVersion.getId());
+      eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersion.getId());
       eventData.put("draftForExistingPageId", newDraftPage.getId());
       Utils.broadcast(listenerService, "note.draft.for.exist.page.created", this, eventData);
     }
@@ -1348,7 +1297,7 @@ public class NoteServiceImpl implements NoteService {
       return false;
     } else {
       return switch (permissionType) {
-      case VIEWPAGE, VIEW_ATTACHMENT -> canViewNote(page, username);
+      case VIEWPAGE -> canViewNote(page, username);
       case EDITPAGE, ADMINPAGE -> canEditNote(page, username);
       default -> wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username);
       };
@@ -1361,30 +1310,6 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException {
     return dataStorage.getPageOfWikiByName(wikiType, wikiOwner, pageId);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String getNoteRenderedContent(Page note) {
-    String renderedContent = StringUtils.EMPTY;
-    try {
-      MarkupKey key = new MarkupKey(new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName()), false);
-      MarkupData cachedData = renderingCache.get(key.hashCode());
-      if (cachedData != null) {
-        return cachedData.build();
-      }
-      renderedContent = note.getContent();
-      renderingCache.put(key.hashCode(), new MarkupData(renderedContent));
-    } catch (Exception e) {
-      log.error(String.format("Failed to get rendered content of note [%s:%s:%s]",
-                              note.getWikiType(),
-                              note.getWikiOwner(),
-                              note.getName()),
-                e);
-    }
-    return renderedContent;
   }
 
   /**
@@ -1470,7 +1395,6 @@ public class NoteServiceImpl implements NoteService {
           SearchResult wikiHomeResult = new SearchResult(data.getWikiType(),
                                                          data.getWikiOwner(),
                                                          homePage.getName(),
-                                                         null,
                                                          null,
                                                          homePage.getTitle(),
                                                          SearchResultType.PAGE,
@@ -1960,85 +1884,6 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  protected void invalidateCache(Page page) {
-    WikiPageParams params = new WikiPageParams(page.getWikiType(), page.getWikiOwner(), page.getName());
-    List<WikiPageParams> linkedPages = pageLinksMap.get(params);
-    if (linkedPages == null) {
-      linkedPages = new ArrayList<>();
-    } else {
-      linkedPages = new ArrayList<>(linkedPages);
-    }
-    linkedPages.add(params);
-
-    for (WikiPageParams wikiPageParams : linkedPages) {
-      try {
-        MarkupKey key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
-      } catch (Exception e) {
-        log.warn(String.format("Failed to invalidate cache of page [%s:%s:%s]",
-                               wikiPageParams.getType(),
-                               wikiPageParams.getOwner(),
-                               wikiPageParams.getPageName()));
-      }
-    }
-  }
-
-  protected void invalidateCachesOfPageTree(Page note) throws WikiException {
-    Queue<Page> queue = new LinkedList<>();
-    queue.add(note);
-    while (!queue.isEmpty()) {
-      Page currentPage = queue.poll();
-      invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenNoteOf(currentPage, false, false);
-      for (Page child : childrenPages) {
-        queue.add(child);
-      }
-    }
-  }
-
-  protected void invalidateAttachmentCache(Page note) {
-    WikiPageParams wikiPageParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
-
-    List<WikiPageParams> linkedPages = pageLinksMap.get(wikiPageParams);
-    if (linkedPages == null) {
-      linkedPages = new ArrayList<>();
-    } else {
-      linkedPages = new ArrayList<>(linkedPages);
-    }
-    linkedPages.add(wikiPageParams);
-
-    for (WikiPageParams linkedWikiPageParams : linkedPages) {
-      try {
-        MarkupKey key = new MarkupKey(linkedWikiPageParams, false);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(linkedWikiPageParams, false);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-      } catch (Exception e) {
-        log.warn(String.format("Failed to invalidate cache of note [%s:%s:%s]",
-                               linkedWikiPageParams.getType(),
-                               linkedWikiPageParams.getOwner(),
-                               linkedWikiPageParams.getPageName()));
-      }
-    }
-  }
-
   /******* Private methods *******/
 
   private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
@@ -2332,7 +2177,6 @@ public class NoteServiceImpl implements NoteService {
         log.error("Error while updating note metadata properties", e);
       }
     }
-    invalidateCache(note);
 
     updatedPage.setUrl(Utils.getPageUrl(updatedPage));
     updatedPage.setToBePublished(note.isToBePublished());
@@ -2637,12 +2481,12 @@ public class NoteServiceImpl implements NoteService {
   private void broadcastPageVersionCreationEvent(String pageVersionId, String draftPageId, String previousPageVersionId) {
     Map<String, String> eventData = new HashMap<>();
     if (draftPageId != null) {
-      eventData.put("draftPageId", draftPageId);
+      eventData.put(DRAFT_PAGE_ID_PROP_NAME, draftPageId);
     } else if (previousPageVersionId != null) {
       eventData.put("previousPageVersionId", previousPageVersionId);
     }
     if (!eventData.isEmpty()) {
-      eventData.put("pageVersionId", pageVersionId);
+      eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersionId);
       Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
   }

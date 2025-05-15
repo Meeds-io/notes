@@ -86,7 +86,6 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -1310,20 +1309,7 @@ public class NotesRestService implements ResourceContainer {
         }
         if (page != null) {
           page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
-          if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
-            Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
-                            page);
-            TitleSearchResult titleSearchResult = new TitleSearchResult();
-            titleSearchResult.setTitle(attachment.getName());
-            titleSearchResult.setId(page.getId());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setActivityId(page.getActivityId());
-            titleSearchResult.setType(searchResult.getType());
-            titleSearchResult.setUrl(attachment.getDownloadURL());
-            titleSearchResult.setMetadatas(page.getMetadatas());
-            titleSearchResult.setLang(searchResult.getLang());
-            titleSearchResults.add(titleSearchResult);
-          } else if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
+          if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
             PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
             org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
             if (pageVersion != null) {
