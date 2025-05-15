@@ -28,7 +28,7 @@ CKEDITOR.editorConfig = function (config) {
     'EmbedSemantic',
     'CodeSnippet',
     'attachFile',
-    'InsertContent'
+    'InsertContentLink'
   ];
   if (webPageNote) {
     blocksToolbarGroup.splice(blocksToolbarGroup.indexOf('tagSuggester'), 1);
@@ -73,7 +73,7 @@ CKEDITOR.editorConfig = function (config) {
   if (!webPageNote) {
     mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push('attachFile');
   }
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,emoji,link,font,justify,widget${!webPageNote && ',suggester,tagSuggester' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,image2,insertImage,insertContent,vuetifyStyle`;
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,emoji,link,font,justify,widget${!webPageNote && ',suggester,tagSuggester' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,image2,insertImage,insertContentLink,vuetifyStyle`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
