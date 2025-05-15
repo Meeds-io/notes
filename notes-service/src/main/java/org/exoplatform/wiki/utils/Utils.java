@@ -62,7 +62,6 @@ import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.application.PortalRequestContext;
-import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.webui.util.Util;
@@ -88,12 +87,10 @@ import org.exoplatform.web.application.RequestContext;
 import org.exoplatform.web.url.navigation.NavigationResource;
 import org.exoplatform.web.url.navigation.NodeURL;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
-import org.exoplatform.wiki.service.IDType;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.WikiContext;
 import org.exoplatform.wiki.service.WikiPageParams;
@@ -486,7 +483,7 @@ public class Utils {
     
     // Get differences
     String currentVersionContent = page.getContent() != null ? new String(page.getContent()) : StringUtils.EMPTY;
-    List<PageHistory> versions = wikiService.getVersionsHistoryOfNote(page,"");
+    List<PageHistory> versions = wikiService.getVersionsHistoryOfNote(page);
     String previousVersionContent = StringUtils.EMPTY;
     if(versions != null && !versions.isEmpty()) {
       PageHistory previousVersion = versions.get(0);
@@ -557,26 +554,6 @@ public class Utils {
     PageList<SearchResult> results = noteService.search(data);
     return results.getAll().size();
 
-  }
-  
-  public static String getAttachmentCssClass(Attachment attachment, String append) throws Exception {
-    Class<?> dmsMimeTypeResolverClass = Class.forName("org.exoplatform.services.cms.mimetype.DMSMimeTypeResolver");
-    Object dmsMimeTypeResolverObject =
-        dmsMimeTypeResolverClass.getDeclaredMethod("getInstance", null).invoke(null, null);
-    Object mimeType = dmsMimeTypeResolverClass
-      .getMethod("getMimeType", new Class[] { String.class})
-      .invoke(dmsMimeTypeResolverObject, new Object[]{new String(attachment.getFullTitle().toLowerCase())});
-
-    StringBuilder cssClass = new StringBuilder();
-    cssClass.append(append);
-    cssClass.append("FileDefault");
-    cssClass.append(" ");
-    cssClass.append(append);
-    cssClass.append("nt_file");
-    cssClass.append(" ");
-    cssClass.append(append);
-    cssClass.append(((String)mimeType).replaceAll("/|\\.", ""));
-    return cssClass.toString();
   }
 
   /**

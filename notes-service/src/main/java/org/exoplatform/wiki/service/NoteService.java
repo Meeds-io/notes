@@ -483,11 +483,9 @@ public interface NoteService {
    * Gets all the Histories of the given note
    *
    * @param note The note
-   * @param userName the author name
    * @return All the histories of the note
-   * @throws WikiException if an error occured
    */
-  List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException;
+  List<PageHistory> getVersionsHistoryOfNote(Page note);
 
   /**
    * Retrieves the history version of given note by language
@@ -702,14 +700,6 @@ public interface NoteService {
    * @throws WikiException
    */
   NoteToExport getParentNoteOf(NoteToExport note) throws WikiException;
-
-  /**
-   * Return the content of the note to be rendred
-   *
-   * @param note The Note
-   * @return Content to be rendred
-   */
-  String getNoteRenderedContent(Page note);
 
   /**
    * Import Notes from a zip file location

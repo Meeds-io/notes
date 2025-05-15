@@ -23,12 +23,8 @@ import java.util.List;
 
 import org.exoplatform.container.component.ComponentPlugin;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
-import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
-import org.exoplatform.wiki.service.impl.SpaceBean;
-import org.exoplatform.wiki.service.listener.AttachmentWikiListener;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 
 /**
@@ -56,73 +52,6 @@ public interface WikiService {
   public String getDefaultWikiSyntaxId();
 
   /**
-   * Gets attachments of the given page, without loading their content
-   * @param page The wiki page
-   * @return The attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public List<Attachment> getAttachmentsOfPage(Page page) throws WikiException;
-
-  /**
-   * Gets attachments of the given page,
-   * and allow to load their attachment content by setting loadContent to true
-   * @param page The wiki page
-   * @param loadContent treue if need to load the attachement content
-   * @return The attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public default List<Attachment> getAttachmentsOfPage(Page page, boolean loadContent) throws WikiException {
-    return getAttachmentsOfPage(page);
-  }
-
-  /**
-   * Get the number of attachment of the given page
-   * @param page The wiki page
-   * @return The number of attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public int getNbOfAttachmentsOfPage(Page page) throws WikiException;
-
-  /**
-   * Get a attachment of a the given page by name, without loading its content
-   *
-   * @param attachmentName The name of the attachment
-   * @param page The wiki page
-   * @return Attachment
-   * @throws WikiException if an error occured if an error occured
-   */
-  public Attachment getAttachmentOfPageByName(String attachmentName, Page page) throws WikiException;
-
-  /**
-   * Get a attachment of a the given page by name,
-   * and allow to load the attachment content by setting loadContent to true
-   *
-   * @param attachmentName The name of the attachment
-   * @param page           The wiki page
-   * @param loadContent    true to load the attachment content
-   * @return attachement
-   * @throws WikiException if an error occured if an error occured
-   */
-  public default Attachment getAttachmentOfPageByName(String attachmentName, Page page, boolean loadContent) throws WikiException {
-    return getAttachmentOfPageByName(attachmentName, page);
-  }
-
-  /**
-   * Add the given attachment to the given page
-   * @param attachment The attachment to add
-   * @param page The wiki page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public void addAttachmentToPage(Attachment attachment, Page page) throws WikiException;
-
-  /**
-   * Deletes the given attachment of the given page
-   * @param attachmentId Id of the attachment
-   * @param page The wiki page
-   * @throws WikiException if an error occured
-   */
-  public void deleteAttachmentOfPage(String attachmentId, Page page) throws WikiException;
-  /**
    * Registers a component plugin into the Wiki service.
    * @param plugin The component plugin to be registered.
    */
@@ -133,13 +62,6 @@ public interface WikiService {
    * @return The list of listeners.
    */
   public List<PageWikiListener> getPageListeners();
-
-  /**
-   * Gets attachment listeners that are registered into the Wiki service.
-   * @return The list of attachment listeners.
-   */
-  public List<AttachmentWikiListener> getAttachmentListeners();
-
 
   /**
    * Gets a user Wiki. If it does not exist, the new one will be created.

@@ -32,10 +32,6 @@
         <value>${wiki.editPage.livingTime:1800000}</value>
         <!-- 30m * 60s * 1000ms -->
       </value-param>
-      <value-param>
-        <name>attachment.upload.limit</name>
-        <value>10</value>
-      </value-param>
       <properties-param>
         <name>preferences</name>
         <property name="defaultSyntax" value="xhtml/1.0"/>

@@ -36,7 +36,7 @@ public class TemplateSearchResult extends SearchResult {
                               Calendar updatedDate,
                               Calendar createdDate,
                               String description) {
-    super(wikiType, wikiOwner, null, null, null, title, type, updatedDate, createdDate);
+    super(wikiType, wikiOwner, null, null, title, type, updatedDate, createdDate);
     this.description = description;
     this.name = name;
   }
