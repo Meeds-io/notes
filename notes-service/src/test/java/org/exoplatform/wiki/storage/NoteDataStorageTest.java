@@ -19,15 +19,9 @@
 */
 package org.exoplatform.wiki.storage;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -57,8 +51,13 @@ import org.exoplatform.wiki.utils.NoteConstants;
  */
 public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
-  protected NoteDataStorage storage;
+  private static final String WIKI_OWNER       = "wiki1";
 
+  private static final String WIKI_TYPE_PORTAL = "portal";
+
+  protected NoteDataStorage   storage;
+
+  @Override
   public void setUp() throws Exception {
     super.setUp();
 
@@ -70,18 +69,18 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testCreateWiki() throws Exception {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
 
     // When
     storage.createWiki(wiki);
-    Wiki createdWiki = storage.getWikiByTypeAndOwner("portal", "wiki1");
+    Wiki createdWiki = storage.getWikiByTypeAndOwner(WIKI_TYPE_PORTAL, WIKI_OWNER);
     Page wikiHomePage = createdWiki.getWikiHome();
 
     // Then
     assertNotNull(createdWiki);
-    assertEquals("portal", createdWiki.getType());
-    assertEquals("wiki1", createdWiki.getOwner());
+    assertEquals(WIKI_TYPE_PORTAL, createdWiki.getType());
+    assertEquals(WIKI_OWNER, createdWiki.getOwner());
     assertNotNull(wikiHomePage);
     assertEquals(NoteConstants.NOTE_HOME_NAME, wikiHomePage.getName());
     assertEquals(NoteConstants.NOTE_HOME_TITLE, wikiHomePage.getTitle());
@@ -94,8 +93,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testParentPageOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page parentPage = new Page();
@@ -115,13 +114,13 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createPage(wiki, wiki.getWikiHome(), parentPage);
     storage.createPage(wiki, parentPage, page);
-    Page pageOfWikiByName = storage.getPageOfWikiByName("portal", "wiki1", "page1");
+    Page pageOfWikiByName = storage.getPageOfWikiByName(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1");
 
     // Then
     assertEquals(3, pageDAO.findAll().size());
     assertNotNull(pageOfWikiByName);
-    assertEquals("portal", pageOfWikiByName.getWikiType());
-    assertEquals("wiki1", pageOfWikiByName.getWikiOwner());
+    assertEquals(WIKI_TYPE_PORTAL, pageOfWikiByName.getWikiType());
+    assertEquals(WIKI_OWNER, pageOfWikiByName.getWikiOwner());
     assertEquals("page1", pageOfWikiByName.getName());
     assertEquals("Page 1", pageOfWikiByName.getTitle());
   }
@@ -130,7 +129,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetAllWikiPages() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
+    wiki.setType(WIKI_TYPE_PORTAL);
     wiki.setOwner("wikiTest4");
     wiki = storage.createWiki(wiki);
 
@@ -162,8 +161,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testChildrenPagesOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page parentPage = new Page();
@@ -203,8 +202,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testDeletePage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page1 = new Page();
@@ -238,8 +237,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testDeletePageTree() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page1 = new Page();
@@ -270,11 +269,11 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testMovePage() throws WikiException {
     // Given
     Wiki wiki1 = new Wiki();
-    wiki1.setType("portal");
-    wiki1.setOwner("wiki1");
+    wiki1.setType(WIKI_TYPE_PORTAL);
+    wiki1.setOwner(WIKI_OWNER);
     wiki1 = storage.createWiki(wiki1);
     Wiki wiki2 = new Wiki();
-    wiki2.setType("portal");
+    wiki2.setType(WIKI_TYPE_PORTAL);
     wiki2.setOwner("wiki2");
     wiki2 = storage.createWiki(wiki2);
 
@@ -316,8 +315,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testUpdatePage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page1 = new Page();
@@ -345,8 +344,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testRenamePage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page1 = new Page();
@@ -373,8 +372,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testRelatedPagesOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -407,9 +406,11 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
     Page createdPage1 = storage.createPage(wiki, wiki.getWikiHome(), page1);
+    assertNotNull(createdPage1);
     Page createdPage2 = storage.createPage(wiki, wiki.getWikiHome(), page2);
-    storage.addRelatedPage(createdPage, page1);
-    storage.addRelatedPage(createdPage, page2);
+    assertNotNull(createdPage2);
+    storage.addRelatedPage(createdPage, createdPage1);
+    storage.addRelatedPage(createdPage, createdPage2);
 
     // Then
     assertEquals(4, pageDAO.findAll().size());
@@ -422,8 +423,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testRemoveRelatedPagesOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -455,8 +456,11 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
     // When
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+    assertNotNull(createdPage);
     Page createdPage1 = storage.createPage(wiki, wiki.getWikiHome(), page1);
+    assertNotNull(createdPage1);
     Page createdPage2 = storage.createPage(wiki, wiki.getWikiHome(), page2);
+    assertNotNull(createdPage2);
     storage.addRelatedPage(createdPage, page1);
     storage.addRelatedPage(createdPage, page2);
     List<Page> relatedPagesBeforeDeletion = storage.getRelatedPagesOfPage(page);
@@ -474,8 +478,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetDraftsOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -529,8 +533,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetLatestDraftOfPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -584,8 +588,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testDraftPageByNameAndTargetPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -625,7 +629,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user1");
-    DraftPage fetchedDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    DraftPage fetchedDraftPage = storage.getDraft(new WikiPageParams(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1"));
 
     // Then
     assertNotNull(fetchedDraftPage);
@@ -636,8 +640,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetExistingOrNewDraftPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -650,9 +654,10 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     page.setTitle("Page 1");
     page.setContent("Content Page 1");
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page);
+    assertNotNull(createdPage);
 
     // When
-    Page page1 = storage.getExsitedOrNewDraftPageById("portal", "wiki1", "page1", "user1");
+    Page page1 = storage.getExsitedOrNewDraftPageById(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1", "user1");
 
     // Then
     assertNotNull(page1);
@@ -666,8 +671,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testDeleteDraftPageByNameAndTargetPage() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -708,7 +713,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.createDraftPageForUser(draftPage1, "user1");
     storage.createDraftPageForUser(draftPage2, "user2");
     storage.deleteDraftOfPage(createdPage);
-    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1"));
 
     // Then
     assertNull(initialDraftPage);
@@ -718,8 +723,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testDeleteDraftPageByName() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -762,14 +767,14 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.deleteDraftByName("DraftPage1");
 
     // Then
-    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    DraftPage initialDraftPage = storage.getDraft(new WikiPageParams(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1"));
     assertNotNull(initialDraftPage);
 
     // When
     storage.deleteDraftByName("DraftPage2");
 
     // Then
-    initialDraftPage = storage.getDraft(new WikiPageParams("portal", "wiki1", "page1"));
+    initialDraftPage = storage.getDraft(new WikiPageParams(WIKI_TYPE_PORTAL, WIKI_OWNER, "page1"));
     assertNull(initialDraftPage);
   }
 
@@ -777,8 +782,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testPageVersions() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -811,8 +816,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testPageVersionsHistory() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -845,8 +850,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testRestorePageVersions() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -881,8 +886,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testPageNames() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -906,11 +911,11 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testPageMoves() throws WikiException {
     // Given
     Wiki wiki1 = new Wiki();
-    wiki1.setType("portal");
-    wiki1.setOwner("wiki1");
+    wiki1.setType(WIKI_TYPE_PORTAL);
+    wiki1.setOwner(WIKI_OWNER);
     wiki1 = storage.createWiki(wiki1);
     Wiki wiki2 = new Wiki();
-    wiki2.setType("portal");
+    wiki2.setType(WIKI_TYPE_PORTAL);
     wiki2.setOwner("wiki2");
     wiki2 = storage.createWiki(wiki2);
 
@@ -932,11 +937,11 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
     // Then
     assertNotNull(relatedPage1);
-    assertEquals("portal", relatedPage1.getWikiType());
+    assertEquals(WIKI_TYPE_PORTAL, relatedPage1.getWikiType());
     assertEquals("wiki2", relatedPage1.getWikiOwner());
     assertEquals("page2", relatedPage1.getName());
     assertNotNull(relatedPage2);
-    assertEquals("portal", relatedPage2.getWikiType());
+    assertEquals(WIKI_TYPE_PORTAL, relatedPage2.getWikiType());
     assertEquals("wiki2", relatedPage2.getWikiOwner());
     assertEquals("page2", relatedPage2.getName());
     assertNull(relatedPage3);
@@ -946,8 +951,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetWatchers() throws WikiException {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page1 = new Page();
@@ -959,13 +964,13 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
     // When
     Page createdPage = storage.createPage(wiki, wiki.getWikiHome(), page1);
-    List<String> initialWatchers = storage.getWatchersOfPage(page1);
+    List<String> initialWatchers = storage.getWatchersOfPage(createdPage);
     storage.addWatcherToPage("user1", page1);
-    List<String> step1Watchers = storage.getWatchersOfPage(page1);
+    List<String> step1Watchers = storage.getWatchersOfPage(createdPage);
     storage.addWatcherToPage("user2", page1);
-    List<String> step2Watchers = storage.getWatchersOfPage(page1);
+    List<String> step2Watchers = storage.getWatchersOfPage(createdPage);
     storage.deleteWatcherOfPage("user1", page1);
-    List<String> step3Watchers = storage.getWatchersOfPage(page1);
+    List<String> step3Watchers = storage.getWatchersOfPage(createdPage);
 
     // Then
     assertNotNull(initialWatchers);
@@ -983,7 +988,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
   public void testDeleteOrphanDraftPagesByParentPage() throws Exception {
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
+    wiki.setType(WIKI_TYPE_PORTAL);
     wiki.setOwner("root");
     wiki = storage.createWiki(wiki);
     PageEntity homePage = pageDAO.find(Long.valueOf(wiki.getWikiHome().getId()));
@@ -1004,8 +1009,8 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   public void testGetVersionById() throws Exception {
     // Given
     Wiki wiki = new Wiki();
-    wiki.setType("portal");
-    wiki.setOwner("wiki1");
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
     wiki = storage.createWiki(wiki);
 
     Page page = new Page();
@@ -1021,10 +1026,6 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     PageVersion pageVersion = storage.addPageVersion(createdPage, identity.getId());
     assertNotNull(storage.getPageVersionById(Long.parseLong(pageVersion.getId())));
-  }
-
-  protected void startSessionAs(String user) {
-    startSessionAs(user, new HashSet<MembershipEntry>());
   }
 
   protected void startSessionAs(String user, Collection<MembershipEntry> memberships) {

@@ -19,11 +19,7 @@
 
 package org.exoplatform.wiki.storage;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +29,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import org.exoplatform.commons.file.model.FileInfo;
-import org.exoplatform.commons.file.model.FileItem;
-import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
@@ -46,17 +39,12 @@ import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataType;
-import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
-import org.exoplatform.wiki.jpa.entity.AttachmentEntity;
-import org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
-import org.exoplatform.wiki.jpa.entity.PageAttachmentEntity;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -87,6 +75,10 @@ public class EntityConverter {
                                                                                  0);
 
   private static final List<String> ORIGINAL_SHARED_PROPERTIES = List.of("hideReaction", "hideAuthor");
+
+  private EntityConverter() {
+    // Utils class
+  }
 
   public static Wiki convertWikiEntityToWiki(WikiEntity wikiEntity) {
     Wiki wiki = null;
@@ -213,149 +205,6 @@ public class EntityConverter {
     return pageEntity;
   }
 
-  public static Attachment convertAttachmentEntityToAttachment(FileService fileService, AttachmentEntity attachmentEntity, boolean loadContent) { // NOSONAR
-    Attachment attachment = null;
-    FileItem fileItem = null;
-    if (attachmentEntity != null) {
-      attachment = new Attachment();
-      attachment.setFullTitle(attachmentEntity.getFullTitle());
-      if (attachmentEntity.getCreatedDate() != null) {
-        Calendar createdDate = Calendar.getInstance();
-        createdDate.setTime(attachmentEntity.getCreatedDate());
-        attachment.setCreatedDate(createdDate);
-      }
-      try {
-        if (loadContent) {
-          fileItem = fileService.getFile(attachmentEntity.getAttachmentFileID());
-        } else {
-          FileInfo fileInfo = fileService.getFileInfo(attachmentEntity.getAttachmentFileID());
-          fileItem = new FileItem(fileInfo, null);
-        }
-      } catch (Exception e) {
-        throw new WikiException("Cannot get attachment file ID "+ attachmentEntity.getAttachmentFileID() + " from storage", e.getCause());
-      }
-      if (fileItem != null) {
-        attachment.setName(fileItem.getFileInfo().getName());
-        String fullTitle = attachment.getFullTitle();
-        if (fullTitle != null && !StringUtils.isEmpty(fullTitle)) {
-          int index = fullTitle.lastIndexOf(".");
-          if (index != -1) {
-            attachment.setTitle(fullTitle.substring(0, index));
-          } else {
-            attachment.setTitle(fullTitle);
-          }
-        }
-        
-        attachment.setContent(fileItem.getAsByte());
-        attachment.setMimeType(fileItem.getFileInfo().getMimetype());
-        attachment.setWeightInBytes(fileItem.getFileInfo().getSize());
-        attachment.setCreator(fileItem.getFileInfo().getUpdater());
-        if (fileItem.getFileInfo().getUpdatedDate() != null) {
-          Calendar updatedDate = Calendar.getInstance();
-          updatedDate.setTime(fileItem.getFileInfo().getUpdatedDate());
-          attachment.setUpdatedDate(updatedDate);
-        }
-      }
-    }
-
-    return attachment;
-  }
-
-  public static PageAttachmentEntity convertAttachmentToPageAttachmentEntity(FileService fileService, Attachment attachment) throws WikiException {
-    PageAttachmentEntity attachmentEntity = null;
-    FileItem fileItem = null;
-
-    if (attachment != null) {
-      try {
-        Date updatedDate;
-        if(attachment.getUpdatedDate() != null){
-          updatedDate = attachment.getUpdatedDate().getTime();
-        }
-        else{
-          updatedDate = GregorianCalendar.getInstance().getTime();
-        }
-        long size = 0;
-        if(attachment.getContent() != null){
-          size = attachment.getContent().length;
-        }
-        fileItem = new FileItem(null,
-                                attachment.getName(),
-                                attachment.getMimeType(),
-                                NoteDataStorage.WIKI_FILES_NAMESPACE_NAME,
-                                size,
-                                updatedDate,
-                                attachment.getCreator(),
-                                false,
-                                new ByteArrayInputStream(attachment.getContent()));
-
-        fileItem = fileService.writeFile(fileItem);
-      } catch (Exception ex) {
-        throw new WikiException("Cannot persist page attachment file NAME "+  attachment.getName() + " on file storage", ex.getCause());
-      }
-      attachmentEntity = new PageAttachmentEntity();
-      attachmentEntity.setAttachmentFileID(fileItem.getFileInfo().getId());
-      if(attachment.getFullTitle() == null){
-        attachmentEntity.setFullTitle(attachment.getName());
-      }
-      else{
-        attachmentEntity.setFullTitle(attachment.getFullTitle());
-      }
-      if (attachment.getCreatedDate() != null) {
-        attachmentEntity.setCreatedDate(attachment.getCreatedDate().getTime());
-      }
-    }
-    return attachmentEntity;
-  }
-
-  public static DraftPageAttachmentEntity convertAttachmentToDraftPageAttachmentEntity(FileService fileService,
-                                                                                       Attachment attachment) throws WikiException {
-    DraftPageAttachmentEntity attachmentEntity = null;
-    FileItem fileItem = null;
-    if (attachment != null) {
-      try {
-        Date updatedDate;
-        if(attachment.getUpdatedDate() != null){
-          updatedDate = attachment.getUpdatedDate().getTime();
-        }
-        else{
-          updatedDate = GregorianCalendar.getInstance().getTime();
-        }
-        int size =0;
-        if(attachment.getContent() != null){
-          size = attachment.getContent().length;
-        }
-        fileItem = new FileItem(null,
-                                attachment.getName(),
-                                attachment.getMimeType(),
-                                NoteDataStorage.WIKI_FILES_NAMESPACE_NAME,
-                                size,
-                                updatedDate,
-                                attachment.getCreator(),
-                                false,
-                                new ByteArrayInputStream(attachment.getContent()));
-
-        fileItem = fileService.writeFile(fileItem);
-      } catch (Exception ex) {
-        throw new WikiException("Cannot persist draft attachment file NAME "+  attachment.getName() + " on file storage", ex.getCause());
-      }
-      if (attachment.getUpdatedDate() == null) {
-        attachment.setUpdatedDate(GregorianCalendar.getInstance());
-      }
-      attachmentEntity = new DraftPageAttachmentEntity();
-      attachmentEntity.setAttachmentFileID(fileItem.getFileInfo().getId());
-      if(attachment.getFullTitle() == null){
-        attachmentEntity.setFullTitle(attachment.getName());
-      }
-      else{
-        attachmentEntity.setFullTitle(attachment.getFullTitle());
-      }
-      if (attachment.getCreatedDate() != null) {
-        attachmentEntity.setCreatedDate(attachment.getCreatedDate().getTime());
-      }
-    }
-    return attachmentEntity;
-  }
-
   public static List<DraftPage> convertDraftPageEntitiesToDraftPages(List<DraftPageEntity> draftPageEntities) {
     if (CollectionUtils.isEmpty(draftPageEntities)) {
       return new ArrayList<>();
@@ -471,21 +320,23 @@ public class EntityConverter {
       pageHistory.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
       pageHistory.setLang(pageVersionEntity.getLang());
+      if (StringUtils.isNotBlank(pageHistory.getAuthor())) {
+        Identity identity = ExoContainerContext.getService(IdentityManager.class)
+            .getOrCreateUserIdentity(pageHistory.getAuthor());
+        if (identity != null
+            && identity.getProfile() != null
+            && identity.getProfile().getFullName() != null) {
+          pageHistory.setAuthorFullName(identity.getProfile().getFullName());
+        }
+      }
     }
     return pageHistory;
   }
 
   public static List<PageHistory> toPageHistoryVersions(List<PageVersionEntity> pageVersionEntities) {
-    IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
-    
-    return pageVersionEntities.stream().map(EntityConverter::convertPageVersionEntityToPageHistory)
-                                       .peek(pageHistory -> {
-                                         Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                                                        pageHistory.getAuthor());
-                                         if (identity != null && identity.getProfile() != null
-                                                             && identity.getProfile().getFullName() != null) {
-                                            pageHistory.setAuthorFullName(identity.getProfile().getFullName());
-                                         }}).toList();
+    return pageVersionEntities.stream()
+                              .map(EntityConverter::convertPageVersionEntityToPageHistory)
+                              .toList();
   }
 
   public static List<DraftPage> toDraftPages(List<DraftPageEntity> draftPageEntities) {

@@ -71,7 +71,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   public static final String         SEARCH_QUERY_TERM            = """
       ,"must":{
         "query_string":{
-          "fields": ["name","title","content","comment","attachment.content"],
+          "fields": ["name","title","content","comment"],
           "default_operator": "AND",
           "query": "@term@"
         }
@@ -284,7 +284,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
 
       SearchResultType type = SearchResultType.PAGE;
       String pageName = (String) hitSource.get("name");
-      String attachmentName = null;
 
       // Get the excerpt
       JSONObject hitHighlight = (JSONObject) ((JSONObject) jsonHit).get("highlight");
@@ -309,7 +308,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       wikiSearchResult.setWikiType(wikiType);
       wikiSearchResult.setWikiOwner(wikiOwner);
       wikiSearchResult.setPageName(pageName);
-      wikiSearchResult.setAttachmentName(attachmentName);
 
       // replace HTML tag for indexing page
       String content = Utils.html2text(excerpt.toString());

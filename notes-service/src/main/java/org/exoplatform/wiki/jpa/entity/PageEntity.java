@@ -65,10 +65,6 @@ public class PageEntity extends BasePageEntity {
   @EqualsAndHashCode.Exclude
   private List<PageVersionEntity> versions;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "page")
-  @EqualsAndHashCode.Exclude
-  private List<PageAttachmentEntity> attachments;
-
   @ManyToMany
   @JoinTable(name = "WIKI_PAGES_RELATED_PAGES",
       joinColumns = {@JoinColumn(name = "PAGE_ID")},

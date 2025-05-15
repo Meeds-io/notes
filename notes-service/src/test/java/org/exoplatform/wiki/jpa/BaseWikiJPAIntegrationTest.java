@@ -22,10 +22,8 @@ package org.exoplatform.wiki.jpa;
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.wiki.jpa.dao.DraftPageAttachmentDAO;
 import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
 import org.exoplatform.wiki.jpa.dao.EmotionIconDAO;
-import org.exoplatform.wiki.jpa.dao.PageAttachmentDAO;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.PageMoveDAO;
 import org.exoplatform.wiki.jpa.dao.PageVersionDAO;
@@ -39,8 +37,6 @@ import org.exoplatform.wiki.jpa.dao.WikiDAO;
 public abstract class BaseWikiJPAIntegrationTest extends BaseTest {
   protected WikiDAO        wikiDAO;
   protected PageDAO        pageDAO;
-  protected PageAttachmentDAO  pageAttachmentDAO;
-  protected DraftPageAttachmentDAO  draftPageAttachmentDAO;
   protected DraftPageDAO   draftPageDAO;
   protected PageVersionDAO pageVersionDAO;
   protected PageMoveDAO    pageMoveDAO;
@@ -61,8 +57,6 @@ public abstract class BaseWikiJPAIntegrationTest extends BaseTest {
     // Init DAO
     wikiDAO = PortalContainer.getInstance().getComponentInstanceOfType(WikiDAO.class);
     pageDAO = PortalContainer.getInstance().getComponentInstanceOfType(PageDAO.class);
-    pageAttachmentDAO = PortalContainer.getInstance().getComponentInstanceOfType(PageAttachmentDAO.class);
-    draftPageAttachmentDAO = PortalContainer.getInstance().getComponentInstanceOfType(DraftPageAttachmentDAO.class);
     draftPageDAO = PortalContainer.getInstance().getComponentInstanceOfType(DraftPageDAO.class);
     pageVersionDAO = PortalContainer.getInstance().getComponentInstanceOfType(PageVersionDAO.class);
     pageMoveDAO = PortalContainer.getInstance().getComponentInstanceOfType(PageMoveDAO.class);
@@ -84,9 +78,7 @@ public abstract class BaseWikiJPAIntegrationTest extends BaseTest {
     templateDAO.deleteAll();
     pageMoveDAO.deleteAll();
     pageVersionDAO.deleteAll();
-    draftPageAttachmentDAO.deleteAll();
     draftPageDAO.deleteAll();
-    pageAttachmentDAO.deleteAll();
     pageDAO.deleteAll();
     wikiDAO.deleteAll();
   }
