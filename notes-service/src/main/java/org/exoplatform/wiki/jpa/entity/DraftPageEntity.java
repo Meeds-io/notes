@@ -19,9 +19,6 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,9 +26,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
@@ -43,16 +38,15 @@ import jakarta.persistence.Table;
  */
 @Entity(name = "WikiDraftPageEntity")
 @Table(name = "WIKI_DRAFT_PAGES")
-@NamedQueries({
-        @NamedQuery(name = "wikiDraftPage.findDraftPages", query = "SELECT d FROM WikiDraftPageEntity d ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPageByName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.name = :draftPageName ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId"),
-        @NamedQuery(name = "wikiDraftPage.findDraftPagesByParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId"),
-        @NamedQuery(name = "wikiDraftPage.countDraftPagesByParentPage", query = "SELECT count(*) FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId"),
-        @NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId AND " +
-                                                                                                  "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC"),
-        @NamedQuery(name = "wikiDraftPage.deleteOrphanDraftPagesByParentPage", query = "DELETE FROM WikiDraftPageEntity d WHERE d.targetPage IS NULL AND d.parentPage.id=:id")})
+@NamedQuery(name = "wikiDraftPage.findDraftPages", query = "SELECT d FROM WikiDraftPageEntity d ORDER BY d.updatedDate DESC")
+@NamedQuery(name = "wikiDraftPage.findDraftPageByName", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.name = :draftPageName ORDER BY d.updatedDate DESC")
+@NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId ORDER BY d.updatedDate DESC")
+@NamedQuery(name = "wikiDraftPage.findDraftPageByTargetPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId")
+@NamedQuery(name = "wikiDraftPage.findDraftPagesByParentPage", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId")
+@NamedQuery(name = "wikiDraftPage.countDraftPagesByParentPage", query = "SELECT count(*) FROM WikiDraftPageEntity d WHERE d.parentPage.id = :parentPageId")
+@NamedQuery(name = "wikiDraftPage.findLatestDraftPageByTargetPageAndLang", query = "SELECT d FROM WikiDraftPageEntity d WHERE d.targetPage.id = :targetPageId AND " +
+                                                                                          "((:lang IS NULL AND d.lang IS NULL) OR (:lang IS NOT NULL AND d.lang = :lang)) ORDER BY d.updatedDate DESC")
+@NamedQuery(name = "wikiDraftPage.deleteOrphanDraftPagesByParentPage", query = "DELETE FROM WikiDraftPageEntity d WHERE d.targetPage IS NULL AND d.parentPage.id=:id")
 public class DraftPageEntity extends BasePageEntity {
 
   @Id
@@ -74,9 +68,6 @@ public class DraftPageEntity extends BasePageEntity {
 
   @Column(name = "NEW_PAGE")
   private boolean newPage;
-
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "draftPage")
-  private List<DraftPageAttachmentEntity> attachments;
 
   @Column(name = "LANG")
   private String lang;
@@ -119,14 +110,6 @@ public class DraftPageEntity extends BasePageEntity {
 
   public void setId(long id) {
     this.id = id;
-  }
-
-  public List<DraftPageAttachmentEntity> getAttachments() {
-    return attachments;
-  }
-
-  public void setAttachments(List<DraftPageAttachmentEntity> attachments) {
-    this.attachments = attachments;
   }
 
   public String getLang() {
