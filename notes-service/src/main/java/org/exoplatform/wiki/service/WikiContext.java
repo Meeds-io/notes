@@ -126,7 +126,6 @@ public class WikiContext extends WikiPageParams implements Cloneable, Serializab
   @Override
   public WikiContext clone() {
     WikiContext obj = new WikiContext();
-    obj.setAttachmentName(this.getAttachmentName());
     obj.setOwner(this.getOwner());
     obj.setPageName(this.getPageName());
     obj.setPageTitle(this.getPageTitle());

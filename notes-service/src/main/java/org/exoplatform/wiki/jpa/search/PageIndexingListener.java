@@ -58,16 +58,6 @@ public class PageIndexingListener extends PageWikiListener {
   }
 
   @Override
-  public void postgetPagefromTree(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
-  }
-
-  @Override
-  public void postgetPagefromBreadCrumb(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
-
-  }
-
-  @Override
   public void postUpdatePageVersion(String pageVersionId) {
     indexingService.reindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageVersionId);
   }

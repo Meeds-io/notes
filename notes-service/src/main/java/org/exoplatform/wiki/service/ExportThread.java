@@ -67,7 +67,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.ExportList;
 import org.exoplatform.wiki.model.NoteToExport;
 import org.exoplatform.wiki.model.Page;
@@ -524,14 +523,6 @@ import io.meeds.notes.model.NotePageProperties;
       String checkContent = content;
       String urlToReplace = content.split(restUploadUrl)[1].split("\"")[0];
       urlToReplace = restUploadUrl + urlToReplace;
-      String attachmentId = StringUtils.substringAfterLast(urlToReplace, "/");
-      Attachment attachment = wikiService.getAttachmentOfPageByName(attachmentId, note, true);
-      if (attachment != null && attachment.getContent() != null) {
-        InputStream bis = new ByteArrayInputStream(attachment.getContent());
-        File tempFile = new File(System.getProperty(TEMP_DIRECTORY_PATH) + File.separator + attachmentId);
-        Files.copy(bis, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        urlToReplaces.put(urlToReplace, IMAGE_URL_REPLACEMENT_PREFIX + tempFile.getName() + IMAGE_URL_REPLACEMENT_SUFFIX);
-      }
       content = content.replace(urlToReplace, "");
       if (content.equals(checkContent)) {
         break;

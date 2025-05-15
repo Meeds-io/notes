@@ -27,8 +27,6 @@ public class SearchResult {
 
   protected String                          pageName;
 
-  protected String                          attachmentName;
-
   protected String                          excerpt;
 
   protected String                          title;
@@ -53,7 +51,6 @@ public class SearchResult {
   public SearchResult(String wikiType,
                       String wikiOwner,
                       String pageName,
-                      String attachmentName,
                       String excerpt,
                       String title,
                       SearchResultType type,
@@ -62,7 +59,6 @@ public class SearchResult {
     this.wikiType = wikiType;
     this.wikiOwner = wikiOwner;
     this.pageName = pageName;
-    this.attachmentName = attachmentName;
     this.excerpt = excerpt;
     this.title = title;
     this.type = type;
@@ -74,7 +70,6 @@ public class SearchResult {
                       Identity poster,
                       Identity wikiOwnerIdentity,
                       String pageName,
-                      String attachmentName,
                       String excerpt,
                       String title,
                       SearchResultType type,
@@ -84,7 +79,6 @@ public class SearchResult {
     this.poster = poster;
     this.wikiOwnerIdentity = wikiOwnerIdentity;
     this.pageName = pageName;
-    this.attachmentName = attachmentName;
     this.excerpt = excerpt;
     this.title = title;
     this.type = type;

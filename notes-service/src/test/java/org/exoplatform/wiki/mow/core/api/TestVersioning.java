@@ -49,7 +49,7 @@ public class TestVersioning extends BaseTest {
 
     page = noteService.getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), "testGetVersionHistory-001");
     assertNotNull(page);
-    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page);
     assertNotNull(versions);
 // FIXME Failing Test coming from JPA Impl bug comparing to JCR Impl
 //    assertEquals(2, versions.size());
@@ -70,7 +70,7 @@ public class TestVersioning extends BaseTest {
     page = noteService.updateNote(page);
     noteService.createVersionOfNote(page,"");
 
-    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page,"");
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page);
     assertNotNull(versions);
     assertEquals(2, versions.size());
 
@@ -84,7 +84,7 @@ public class TestVersioning extends BaseTest {
     noteService.updateNote(page);
     noteService.createVersionOfNote(page,"");
 
-    versions = noteService.getVersionsHistoryOfNote(page,"");
+    versions = noteService.getVersionsHistoryOfNote(page);
     assertNotNull(versions);
     assertEquals(4, versions.size());
 

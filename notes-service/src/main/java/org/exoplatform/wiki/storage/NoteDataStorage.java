@@ -19,60 +19,43 @@
 */
 package org.exoplatform.wiki.storage;
 
-import static org.exoplatform.wiki.storage.EntityConverter.convertAttachmentEntityToAttachment;
-import static org.exoplatform.wiki.storage.EntityConverter.convertAttachmentToDraftPageAttachmentEntity;
-import static org.exoplatform.wiki.storage.EntityConverter.convertAttachmentToPageAttachmentEntity;
 import static org.exoplatform.wiki.storage.EntityConverter.convertDraftPageEntitiesToDraftPages;
 import static org.exoplatform.wiki.storage.EntityConverter.convertDraftPageEntityToDraftPage;
 import static org.exoplatform.wiki.storage.EntityConverter.convertDraftPageToDraftPageEntity;
 import static org.exoplatform.wiki.storage.EntityConverter.convertPageEntityToPage;
 import static org.exoplatform.wiki.storage.EntityConverter.convertPageToPageEntity;
-import static org.exoplatform.wiki.storage.EntityConverter.convertPageVersionEntityToPageHistory;
 import static org.exoplatform.wiki.storage.EntityConverter.convertPageVersionEntityToPageVersion;
 import static org.exoplatform.wiki.storage.EntityConverter.convertWikiEntityToWiki;
 import static org.exoplatform.wiki.storage.EntityConverter.convertWikiToWikiEntity;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.container.xml.ValuesParam;
-import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.jpa.dao.DraftPageAttachmentDAO;
 import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
-import org.exoplatform.wiki.jpa.dao.PageAttachmentDAO;
 import org.exoplatform.wiki.jpa.dao.PageDAO;
 import org.exoplatform.wiki.jpa.dao.PageMoveDAO;
 import org.exoplatform.wiki.jpa.dao.PageVersionDAO;
 import org.exoplatform.wiki.jpa.dao.TemplateDAO;
 import org.exoplatform.wiki.jpa.dao.WikiDAO;
-import org.exoplatform.wiki.jpa.entity.AttachmentEntity;
-import org.exoplatform.wiki.jpa.entity.DraftPageAttachmentEntity;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
-import org.exoplatform.wiki.jpa.entity.PageAttachmentEntity;
 import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PageMoveEntity;
 import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
 import org.exoplatform.wiki.jpa.entity.TemplateEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -99,10 +82,6 @@ public class NoteDataStorage {
 
   private PageDAO                pageDAO;
 
-  private PageAttachmentDAO      pageAttachmentDAO;
-
-  private DraftPageAttachmentDAO draftPageAttachmentDAO;
-
   private DraftPageDAO           draftPageDAO;
 
   private PageVersionDAO         pageVersionDAO;
@@ -111,30 +90,18 @@ public class NoteDataStorage {
 
   private TemplateDAO            templateDAO;
 
-  private FileService            fileService;
-
-  private UserACL                userACL;
-
-  public NoteDataStorage(WikiDAO wikiDAO,
-                     PageDAO pageDAO,
-                     PageAttachmentDAO pageAttachmentDAO,
-                     DraftPageAttachmentDAO draftPageAttachmentDAO,
-                     DraftPageDAO draftPageDAO,
-                     PageVersionDAO pageVersionDAO,
-                     PageMoveDAO pageMoveDAO,
-                     TemplateDAO templateDAO,
-                     FileService fileService,
-                     UserACL userACL) {
+  public NoteDataStorage(WikiDAO wikiDAO, // NOSONAR
+                         PageDAO pageDAO,
+                         DraftPageDAO draftPageDAO,
+                         PageVersionDAO pageVersionDAO,
+                         PageMoveDAO pageMoveDAO,
+                         TemplateDAO templateDAO) {
     this.wikiDAO = wikiDAO;
     this.pageDAO = pageDAO;
-    this.pageAttachmentDAO = pageAttachmentDAO;
-    this.draftPageAttachmentDAO = draftPageAttachmentDAO;
     this.draftPageDAO = draftPageDAO;
     this.pageVersionDAO = pageVersionDAO;
     this.pageMoveDAO = pageMoveDAO;
     this.templateDAO = templateDAO;
-    this.fileService = fileService;
-    this.userACL = userACL;
   }
 
   public PageList<SearchResult> search(WikiSearchData wikiSearchData) {
@@ -172,11 +139,10 @@ public class NoteDataStorage {
   }
 
   public List<Wiki> getWikisByType(String wikiType) throws WikiException {
-    List<Wiki> wikis = new ArrayList();
-    for (WikiEntity wikiEntity : wikiDAO.getWikisByType(wikiType)) {
-      wikis.add(convertWikiEntityToWiki(wikiEntity));
-    }
-    return wikis;
+    return wikiDAO.getWikisByType(wikiType)
+                  .stream()
+                  .map(EntityConverter::convertWikiEntityToWiki)
+                  .toList();
   }
 
   @ExoTransactional
@@ -222,7 +188,7 @@ public class NoteDataStorage {
     pageEntity.setWiki(wikiEntity);
     pageEntity.setParentPage(parentPageEntity);
 
-    Date now = GregorianCalendar.getInstance().getTime();
+    Date now = Calendar.getInstance().getTime();
     if (pageEntity.getCreatedDate() == null) {
       pageEntity.setCreatedDate(now);
     }
@@ -359,25 +325,16 @@ public class NoteDataStorage {
     draftPageDAO.deleteDraftPagesByTargetPage(Long.parseLong(page.getId()));
   }
 
-  public void deleteAttachmentsOfDraftPage(DraftPage draftPage) {
-    deleteAttachmentsOfDraftPage(convertDraftPageToDraftPageEntity(draftPage, pageDAO));
-  }
-
   public void deleteDraftOfPage(Page page, String lang) throws WikiException {
     List<DraftPageEntity> draftPages = draftPageDAO.findDraftPagesByTargetPage(Long.parseLong(page.getId()));
     for (DraftPageEntity draftPage : draftPages) {
       if (draftPage != null && StringUtils.equals(draftPage.getLang(), lang)) {
-        deleteAttachmentsOfDraftPage(draftPage);
         draftPageDAO.delete(draftPage);
       }
     }
   }
 
   public void deleteDraftByName(String draftPageName) throws WikiException {
-    DraftPageEntity draftPage = draftPageDAO.findDraftPageByName(draftPageName);
-    if (draftPage != null) {
-      deleteAttachmentsOfDraftPage(draftPage);
-    }
     draftPageDAO.deleteDraftPagesByName(draftPageName);
   }
 
@@ -590,7 +547,7 @@ public class NoteDataStorage {
     DraftPage draftPage = convertDraftPageEntityToDraftPage(draftPageEntity);
 
     if (draftPage == null) {
-      Date now = GregorianCalendar.getInstance().getTime();
+      Date now = Calendar.getInstance().getTime();
       // create draft page for non existing draft page
       draftPage = new DraftPage();
       draftPage.setWikiType(PortalConfig.USER_TYPE);
@@ -715,265 +672,38 @@ public class NoteDataStorage {
     return searchResults;
   }
 
-  public List<Attachment> getAttachmentsOfPage(Page page) throws WikiException {
-    return getAttachmentsOfPage(page, false);
-  }
-
-  public List<Attachment> getAttachmentsOfPage(Page page, boolean loadContent) throws WikiException {
-    List<AttachmentEntity> attachmentsEntities;
-    String wikiType;
-    String wikiOwner;
-    String pageName;
-    if (page.isDraftPage()) {
-      DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
-      if (draftPageEntity == null) {
-        throw new WikiException("Cannot get attachments of draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
-            page.getName() + " because draft page does not exist.");
-      }
-      attachmentsEntities = new ArrayList<>();
-      List<DraftPageAttachmentEntity> draftPageAttachmentEntities = draftPageEntity.getAttachments();
-      if (draftPageAttachmentEntities != null)
-        attachmentsEntities.addAll(draftPageAttachmentEntities);
-      if (draftPageEntity.isNewPage()) {
-        wikiType = WIKI_TYPE_DRAFT;
-        wikiOwner = draftPageEntity.getAuthor();
-        pageName = draftPageEntity.getName();
-      } else {
-        PageEntity targetPage = draftPageEntity.getTargetPage();
-        WikiEntity wiki = targetPage.getWiki();
-        wikiType = wiki.getType();
-        wikiOwner = wiki.getOwner();
-        pageName = targetPage.getName();
-      }
-    } else {
-      PageEntity pageEntity = fetchPageEntity(page);
-      if (pageEntity == null) {
-        throw new WikiException("Cannot get attachments of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
-            page.getName() + " because page does not exist.");
-      }
-      attachmentsEntities = new ArrayList<>();
-      List<PageAttachmentEntity> pageAttachmentEntities = pageEntity.getAttachments();
-      if (pageAttachmentEntities != null)
-        attachmentsEntities.addAll(pageAttachmentEntities);
-      WikiEntity wikiEntity = pageEntity.getWiki();
-      wikiType = wikiEntity.getType();
-      wikiOwner = wikiEntity.getOwner();
-      pageName = pageEntity.getName();
-    }
-
-    List<Attachment> attachments = new ArrayList<>();
-    if (attachmentsEntities != null) {
-      for (AttachmentEntity attachmentEntity : attachmentsEntities) {
-        Attachment attachment = convertAttachmentEntityToAttachment(fileService, attachmentEntity, loadContent);
-        // set title and full title if not there
-        if (attachment.getTitle() == null || StringUtils.isEmpty(attachment.getTitle())) {
-          int index = attachment.getName().lastIndexOf(".");
-          if (index != -1) {
-            attachment.setTitle(attachment.getName().substring(0, index));
-          } else {
-            attachment.setTitle(attachment.getName());
-          }
-        }
-        if (attachment.getFullTitle() == null || StringUtils.isEmpty(attachment.getFullTitle())) {
-          attachment.setFullTitle(attachment.getName());
-        }
-        // build download url
-        attachment.setDownloadURL(getDownloadURL(wikiType, wikiOwner, pageName, attachment));
-        attachments.add(attachment);
-      }
-    }
-
-    return attachments;
-  }
-
-  @ExoTransactional
-  public void addAttachmentToPage(Attachment attachment, Page page) throws WikiException {
-
-    if (page.isDraftPage()) {
-
-      DraftPageAttachmentEntity attachmentEntity = convertAttachmentToDraftPageAttachmentEntity(fileService, attachment);
-      Date now = GregorianCalendar.getInstance().getTime();
-      if (attachmentEntity.getCreatedDate() == null) {
-        attachmentEntity.setCreatedDate(now);
-      }
-
-      DraftPageEntity draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
-
-      if (draftPageEntity == null) {
-        throw new WikiException("Cannot add an attachment to draft page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
-            page.getName() + " because draft page does not exist.");
-      }
-
-      attachmentEntity.setDraftPage(draftPageEntity);
-
-      // attachment must be saved here because of Hibernate bug HHH-6776
-      draftPageAttachmentDAO.create(attachmentEntity);
-
-      List<DraftPageAttachmentEntity> attachmentsEntities = draftPageEntity.getAttachments();
-      if (attachmentsEntities == null) {
-        attachmentsEntities = new ArrayList<>();
-      }
-      DraftPageAttachmentEntity draftPageAttachmentEntity = attachmentEntity;
-      draftPageAttachmentEntity.setDraftPage(draftPageEntity);
-      attachmentsEntities.add(draftPageAttachmentEntity);
-      draftPageEntity.setAttachments(attachmentsEntities);
-      draftPageDAO.update(draftPageEntity);
-    } else {
-
-      PageAttachmentEntity attachmentEntity = convertAttachmentToPageAttachmentEntity(fileService, attachment);
-      Date now = GregorianCalendar.getInstance().getTime();
-      if (attachmentEntity.getCreatedDate() == null) {
-        attachmentEntity.setCreatedDate(now);
-      }
-
-      PageEntity pageEntity = fetchPageEntity(page);
-
-      if (pageEntity == null) {
-        throw new WikiException("Cannot add an attachment to page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
-            page.getName() + " because page does not exist.");
-      }
-      attachmentEntity.setPage(pageEntity);
-
-      // attachment must be saved here because of Hibernate bug HHH-6776
-      pageAttachmentDAO.create(attachmentEntity);
-
-      List<PageAttachmentEntity> attachmentsEntities = pageEntity.getAttachments();
-      if (attachmentsEntities == null) {
-        attachmentsEntities = new ArrayList<>();
-      }
-
-      PageAttachmentEntity pageAttachmentEntity = attachmentEntity;
-      pageAttachmentEntity.setPage(pageEntity);
-      attachmentsEntities.add(pageAttachmentEntity);
-      pageEntity.setAttachments(attachmentsEntities);
-      pageDAO.update(pageEntity);
-    }
-  }
-
-  @ExoTransactional
-  public void deleteAttachmentOfPage(String attachmentName, Page page) throws WikiException {
-    PageEntity pageEntity = fetchPageEntity(page);
-    DraftPageEntity draftPageEntity = null;
-    if (pageEntity == null) {
-      draftPageEntity = draftPageDAO.findDraftPageByName(page.getName());
-    }
-
-    if (pageEntity == null && draftPageEntity == null) {
-      throw new WikiException("Cannot delete an attachment of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
-          page.getName() + " because page does not exist.");
-    }
-
-    boolean attachmentFound = false;
-    if (pageEntity == null && draftPageEntity != null) {
-      attachmentFound = deleteDraftPageAttachementEntity(attachmentName, draftPageEntity, attachmentFound);
-    } else {
-      attachmentFound = deletePageAttachementEntity(attachmentName, pageEntity, attachmentFound);
-    }
-
-    if (!attachmentFound) {
-      throw new WikiException("Cannot delete the attachment " + attachmentName + " of page " + page.getWikiType() + ":" +
-          page.getWikiOwner() + ":" + page.getName() + " because attachment does not exist.");
-    }
-  }
-
-  private boolean deletePageAttachementEntity(String attachmentName, PageEntity pageEntity, boolean attachmentFound) {
-    List<PageAttachmentEntity> attachmentsEntities = pageEntity.getAttachments();
-    if (attachmentsEntities != null) {
-      for (int i = 0; i < attachmentsEntities.size(); i++) {
-        AttachmentEntity attachmentEntity = attachmentsEntities.get(i);
-        String name = null;
-        if (attachmentEntity.getAttachmentFileID() != null) {
-          name = fileService.getFileInfo(attachmentEntity.getAttachmentFileID()).getName();
-        }
-        if (name != null && name.equals(attachmentName)) {
-          attachmentFound = true;
-          attachmentsEntities.remove(i);
-
-          fileService.deleteFile(attachmentEntity.getAttachmentFileID());
-          pageAttachmentDAO.delete((PageAttachmentEntity) attachmentEntity);
-
-          pageEntity.setAttachments(attachmentsEntities);
-          pageDAO.update(pageEntity);
-          break;
-        }
-      }
-    }
-    return attachmentFound;
-  }
-
-  private boolean deleteDraftPageAttachementEntity(String attachmentName,
-                                                   DraftPageEntity draftPageEntity,
-                                                   boolean attachmentFound) {
-    List<DraftPageAttachmentEntity> draftAttachmentsEntities = draftPageEntity.getAttachments();
-    if (draftAttachmentsEntities != null) {
-      for (int i = 0; i < draftAttachmentsEntities.size(); i++) {
-        AttachmentEntity attachmentEntity = draftAttachmentsEntities.get(i);
-        String name = null;
-        if (attachmentEntity.getAttachmentFileID() != null) {
-          name = fileService.getFileInfo(attachmentEntity.getAttachmentFileID()).getName();
-        }
-        if (name != null && name.equals(attachmentName)) {
-          attachmentFound = true;
-          draftAttachmentsEntities.remove(i);
-
-          fileService.deleteFile(attachmentEntity.getAttachmentFileID());
-          draftPageAttachmentDAO.delete((DraftPageAttachmentEntity) attachmentEntity);
-
-          draftPageEntity.setAttachments(draftAttachmentsEntities);
-          draftPageDAO.update(draftPageEntity);
-          break;
-        }
-      }
-    }
-    return attachmentFound;
-  }
-
-  @Deprecated
-  public Page getHelpSyntaxPage(String syntaxId,
-                                boolean fullContent,
-                                List<ValuesParam> syntaxHelpParams,
-                                ConfigurationManager configurationManager) throws WikiException {
-    return null;
-  }
-
   public List<PageVersion> getVersionsOfPage(Page page) throws WikiException {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
       throw new WikiException("Cannot get versions of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
           page.getName() + " because page does not exist.");
     }
-
-    List<PageVersion> pageVersions = new ArrayList<>();
     List<PageVersionEntity> pageVersionEntities = pageEntity.getVersions();
     if (pageVersionEntities != null) {
-      for (PageVersionEntity pageVersionEntity : pageVersionEntities) {
-        pageVersions.add(convertPageVersionEntityToPageVersion(pageVersionEntity));
-      }
+      return pageVersionEntities.stream()
+                                .map(EntityConverter::convertPageVersionEntityToPageVersion)
+                                .sorted(new VersionNameComparatorDesc())
+                                .toList();
+    } else {
+      return Collections.emptyList();
     }
-
-    Collections.sort(pageVersions, new VersionNameComparatorDesc());
-
-    return pageVersions;
   }
 
   public List<PageHistory> getHistoryOfPage(Page page) throws WikiException {
     PageEntity pageEntity = fetchPageEntity(page);
-
     if (pageEntity == null) {
       throw new WikiException("Cannot get versions of page " + page.getWikiType() + ":" + page.getWikiOwner() + ":" +
           page.getName() + " because page does not exist.");
     }
 
-    List<PageHistory> pageVersionsHistory = new ArrayList<>();
     List<PageVersionEntity> pageVersionEntities = pageEntity.getVersions();
     if (pageVersionEntities != null) {
-      for (PageVersionEntity pageVersionEntity : pageVersionEntities) {
-        PageHistory pageHistory = convertPageVersionEntityToPageHistory(pageVersionEntity);
-        pageVersionsHistory.add(pageHistory);
-      }
+      return pageVersionEntities.stream()
+                                .map(EntityConverter::convertPageVersionEntityToPageHistory)
+                                .toList();
+    } else {
+      return Collections.emptyList();
     }
-    return pageVersionsHistory;
   }
 
   @ExoTransactional
@@ -1157,21 +887,6 @@ public class NoteDataStorage {
     }
   }
 
-  @ExoTransactional
-  public void deleteAttachmentsOfDraftPage(DraftPageEntity page) {
-    List<DraftPageAttachmentEntity> attachmentsEntities = page.getAttachments();
-    if (attachmentsEntities != null) {
-      for (int i = 0; i < attachmentsEntities.size(); i++) {
-        AttachmentEntity attachmentEntity = attachmentsEntities.get(i);
-        attachmentsEntities.remove(i);
-        fileService.deleteFile(attachmentEntity.getAttachmentFileID());
-        draftPageAttachmentDAO.delete((DraftPageAttachmentEntity) attachmentEntity);
-      }
-      page.setAttachments(attachmentsEntities);
-      draftPageDAO.update(page);
-    }
-  }
-
   public PageEntity fetchPageEntity(Page page) {
     PageEntity pageEntity;
     Long pageId = null;
@@ -1188,29 +903,6 @@ public class NoteDataStorage {
       pageEntity = pageDAO.getPageOfWikiByName(page.getWikiType(), page.getWikiOwner(), page.getName());
     }
     return pageEntity;
-  }
-
-  private String getDownloadURL(String wikiType, String wikiOwner, String pageName, Attachment attachment) {
-    StringBuilder sb = new StringBuilder();
-
-    sb.append(Utils.getDefaultRestBaseURI())
-      .append("/wiki/attachments/")
-      .append(wikiType)
-      .append("/")
-      .append(Utils.SPACE)
-      .append("/")
-      .append(wikiOwner)
-      .append("/")
-      .append(Utils.PAGE)
-      .append("/")
-      .append(pageName);
-    try {
-      sb.append("/").append(URLEncoder.encode(attachment.getName(), "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      sb.append("/").append(attachment.getName());
-    }
-
-    return sb.toString();
   }
 
   public List<PageHistory> getPageHistoryVersionsByPageIdAndLang(Long pageId, String lang) {
