@@ -567,4 +567,15 @@
     </depends>
   </module>
 
+  <module>
+    <name>notesContentLinkExtension</name>
+    <load-group>contentLinkGRP</load-group>
+    <script>
+      <path>/javascript/notesContentLinkExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
