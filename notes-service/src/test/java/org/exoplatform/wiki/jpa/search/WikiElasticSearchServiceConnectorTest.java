@@ -108,7 +108,7 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     properties.setProperty("searchType", "wiki-es");
     properties.setProperty("displayName", "wiki-es");
     properties.setProperty("index", "wiki");
-    properties.setProperty("type", "wiki,wiki-page,wiki-attachment");
+    properties.setProperty("type", "wiki,wiki-page");
     properties.setProperty("titleField", "title");
     properties.setProperty("searchFields", "name,title,content,comment,file");
     initParams.put("constructor.params", properties);
