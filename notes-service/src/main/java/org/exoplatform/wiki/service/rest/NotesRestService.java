@@ -38,7 +38,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -48,6 +56,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.gatein.api.EntityNotFoundException;
@@ -77,7 +86,6 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -92,7 +100,6 @@ import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.TitleSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
@@ -108,6 +115,9 @@ import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.PageEntity;
+import io.meeds.social.html.model.HtmlTransformerContext;
+import io.meeds.social.html.utils.HtmlUtils;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -119,12 +129,11 @@ import jakarta.servlet.http.HttpServletRequest;
 @Path("/notes")
 @Tag(name = "/notes", description = "Managing notes")
 @RolesAllowed("users")
-
 public class NotesRestService implements ResourceContainer {
 
   private static final String         NOTE_NAME_EXISTS = "Note name already exists";
 
-  private static final Log            log              = ExoLogger.getLogger(NotesRestService.class);
+  private static final Log            LOG              = ExoLogger.getLogger(NotesRestService.class);
 
   private final NoteService           noteService;
 
@@ -242,7 +251,8 @@ public class NotesRestService implements ResourceContainer {
           noteService.updateNote(note);
         }
       }
-      note.setContent(HTMLSanitizer.sanitize(note.getContent()));
+      content = sanitizeAndSubstituteMentions(note.getContent(), lang);
+      note.setContent(content);
       note.setBreadcrumb(noteService.getBreadCrumb(noteBookType,
                                                    noteBookOwner,
                                                    note.getName(),
@@ -251,10 +261,10 @@ public class NotesRestService implements ResourceContainer {
                                                    false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
+      LOG.debug("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
-      log.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
+      LOG.error("Can't get note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -315,10 +325,10 @@ public class NotesRestService implements ResourceContainer {
                                                    false));
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", noteId, e);
+      LOG.debug("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
-      log.error("Can't get note {}", noteId, e);
+      LOG.error("Can't get note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -346,7 +356,7 @@ public class NotesRestService implements ResourceContainer {
                                                                                 Boolean.TRUE.equals(withDrafts));
       return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
-     log.error("Error while getting available translation languages of the page with id : {}", noteId, e);
+     LOG.error("Error while getting available translation languages of the page with id : {}", noteId, e);
      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
   }
@@ -370,7 +380,7 @@ public class NotesRestService implements ResourceContainer {
       noteService.deleteVersionsByNoteIdAndLang(noteId, lang, true);
       return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
     } catch (Exception e) {
-      log.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
+      LOG.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
   }
@@ -411,10 +421,10 @@ public class NotesRestService implements ResourceContainer {
 
       return Response.ok(draftNote).build();
     } catch (IllegalAccessException e) {
-      log.warn("User '{}' is not autorized to get draft note {}", currentUserId, noteId, e);
+      LOG.debug("User '{}' is not autorized to get draft note {}", currentUserId, noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
     } catch (Exception e) {
-      log.error("Can't get draft note {}", noteId, e);
+      LOG.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     } 
   }
@@ -445,7 +455,7 @@ public class NotesRestService implements ResourceContainer {
       }
       return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
     } catch (Exception e) {
-      log.error("Can't get draft note {}", noteId, e);
+      LOG.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -474,10 +484,10 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(pageHistories)
                      .build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", noteId, e);
+      LOG.debug("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
-      log.error("Can't get versions list of note {}", noteId, e);
+      LOG.error("Can't get versions list of note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -496,7 +506,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
     if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
+      LOG.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     String noteBookType = note.getWikiType();
@@ -535,12 +545,13 @@ public class NotesRestService implements ResourceContainer {
                                                 note.getParentPageName(),
                                                 io.meeds.notes.rest.utils.EntityBuilder.toPage(note),
                                                 identity);
+      createdNote.setContent(sanitizeAndSubstituteMentions(createdNote.getContent(), note.getLang()));
       return Response.ok(createdNote, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", note.getName(), e);
+      LOG.debug("User does not have view permissions on the note {}", note.getName(), e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform save noteBook note {}:{}:{}", noteBookType, noteBookOwner, note.getId(), ex);
+      LOG.warn("Failed to perform save noteBook note {}:{}:{}", noteBookType, noteBookOwner, note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -557,8 +568,8 @@ public class NotesRestService implements ResourceContainer {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
-    if (NumberUtils.isNumber(draftNoteToSave.getTitle())) {
-      log.warn("Draft Note's title should not be number");
+    if (NumberUtils.isDigits(draftNoteToSave.getTitle())) {
+      LOG.warn("Draft Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Draft Note's title should not be number}").build();
     }
     String noteBookType = draftNoteToSave.getWikiType();
@@ -621,10 +632,10 @@ public class NotesRestService implements ResourceContainer {
                                                                                  System.currentTimeMillis(),
                                                                                  RestUtils.getCurrentUserIdentityId());
       }
-
+      savedDraftPage.setContent(sanitizeAndSubstituteMentions(savedDraftPage.getContent(), draftNoteToSave.getLang()));
       return Response.ok(savedDraftPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
+      LOG.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -651,7 +662,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
     if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
+      LOG.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
@@ -697,12 +708,13 @@ public class NotesRestService implements ResourceContainer {
         note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_CONTENT, identity);
         noteService.createVersionOfNote(note_, identity.getUserId(), true);
       }
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", noteId, e);
+      LOG.debug("User does not have view permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
+      LOG.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -721,7 +733,7 @@ public class NotesRestService implements ResourceContainer {
     }
 
     if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
+      LOG.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
@@ -833,12 +845,13 @@ public class NotesRestService implements ResourceContainer {
         // url in front side, we compute it here
         note_.setUrl(Utils.getPageUrl(io.meeds.notes.rest.utils.EntityBuilder.toPage(note)));
       }
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have edit permissions on the note {}", noteId, e);
+      LOG.debug("User does not have edit permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
+      LOG.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -859,7 +872,7 @@ public class NotesRestService implements ResourceContainer {
     }
 
     if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
+      LOG.warn("Note's title should not be number");
       return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
@@ -873,12 +886,13 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       noteService.restoreVersionOfNote(noteVersion, note, currentUser);
+      note_.setContent(sanitizeAndSubstituteMentions(note_.getContent(), note.getLang()));
       return Response.ok(note_, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have permissions to restore the note {} version", note.getId(), e);
+      LOG.debug("User does not have permissions to restore the note {} version", note.getId(), e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.error("Failed to perform restore note version {}", noteVersion, ex);
+      LOG.error("Failed to perform restore note version {}", noteVersion, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -913,10 +927,10 @@ public class NotesRestService implements ResourceContainer {
       noteService.deleteNote(noteBookType, noteBookOwner, noteId, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have delete permissions on the note {}", noteId, e);
+      LOG.debug("User does not have delete permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform Delete of noteBook note {}:{}:{}", noteBookType, noteBookOwner, noteId, ex);
+      LOG.warn("Failed to perform Delete of noteBook note {}:{}:{}", noteBookType, noteBookOwner, noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -947,10 +961,10 @@ public class NotesRestService implements ResourceContainer {
       noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), noteName, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have delete permissions on the note {}", noteId, e);
+      LOG.debug("User does not have delete permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
+      LOG.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -975,7 +989,7 @@ public class NotesRestService implements ResourceContainer {
       noteService.removeDraftById(draftNote.getId());
       return Response.ok().build();
     } catch (Exception ex) {
-      log.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
+      LOG.warn("Failed to perform Delete of noteBook note {}", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1013,10 +1027,10 @@ public class NotesRestService implements ResourceContainer {
         return Response.notModified().build();
       }
     } catch (IllegalAccessException e) {
-      log.error("User does not have move permissions on the note {}", noteId, e);
+      LOG.debug("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
+      LOG.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1045,7 +1059,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok().build();
 
     } catch (Exception ex) {
-      log.warn("Failed to export notes ", ex);
+      LOG.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1068,7 +1082,7 @@ public class NotesRestService implements ResourceContainer {
                      .header("Content-Disposition", "attachment; filename=\"notesExport_" + new Date().getTime() + ".zip\"")
                      .build();
     } catch (Exception ex) {
-      log.warn("Failed to export notes ", ex);
+      LOG.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1089,7 +1103,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       return Response.ok(notesExportService.getStatus(exportId)).build();
     } catch (Exception ex) {
-      log.warn("Failed to export notes ", ex);
+      LOG.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1110,7 +1124,7 @@ public class NotesRestService implements ResourceContainer {
       notesExportService.cancelExportNotes(exportId);
       return Response.ok().build();
     } catch (Exception ex) {
-      log.warn("Failed to export notes ", ex);
+      LOG.warn("Failed to export notes ", ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1150,10 +1164,10 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
     } catch (IllegalAccessException e) {
-      log.error("User does not have move permissions on the note {}", noteId, e);
+      LOG.debug("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception ex) {
-      log.warn("Failed to import note {} ", noteId, ex);
+      LOG.warn("Failed to import note {} ", noteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
     }
   }
@@ -1187,7 +1201,7 @@ public class NotesRestService implements ResourceContainer {
       Page note =
                 noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), noteParam.getPageName(), identity);
       if (note == null) {
-        log.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
+        LOG.warn("User [{}] can not get noteBook path [{}]. Home is used instead",
                  ConversationState.getCurrent().getIdentity().getUserId(),
                  path);
         note = noteService.getNoteOfNoteBookByName(noteParam.getType(), noteParam.getOwner(), NoteConstants.NOTE_HOME_NAME);
@@ -1234,10 +1248,10 @@ public class NotesRestService implements ResourceContainer {
       BeanToJsons<JsonNodeData> toJsons = new BeanToJsons<>(responseData, treeNodeData);
       return Response.ok(toJsons, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      log.error("User does not have view permissions on the note {}", path, e);
+      LOG.debug("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
-      log.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
+      LOG.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
     }
   }
@@ -1288,25 +1302,12 @@ public class NotesRestService implements ResourceContainer {
                                                      searchResult.getLang(),
                                                      currentIdentity);
         } catch (Exception e) {
-          log.error("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
+          LOG.error("Cannot get page of search result " + searchResult.getWikiType() + ":" + searchResult.getWikiOwner() + ":"
               + searchResult.getPageName(), e);
         }
         if (page != null) {
           page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
-          if (SearchResultType.ATTACHMENT.equals(searchResult.getType())) {
-            Attachment attachment = noteBookService.getAttachmentOfPageByName(searchResult.getAttachmentName(),
-                            page);
-            TitleSearchResult titleSearchResult = new TitleSearchResult();
-            titleSearchResult.setTitle(attachment.getName());
-            titleSearchResult.setId(page.getId());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setActivityId(page.getActivityId());
-            titleSearchResult.setType(searchResult.getType());
-            titleSearchResult.setUrl(attachment.getDownloadURL());
-            titleSearchResult.setMetadatas(page.getMetadatas());
-            titleSearchResult.setLang(searchResult.getLang());
-            titleSearchResults.add(titleSearchResult);
-          } else if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
+          if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
             PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
             org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
             if (pageVersion != null) {
@@ -1342,7 +1343,7 @@ public class NotesRestService implements ResourceContainer {
       }
       return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception e) {
-      log.error("Error when search notes", e);
+      LOG.error("Error when search notes", e);
       return Response.serverError().build();
     }
   }
@@ -1432,10 +1433,9 @@ public class NotesRestService implements ResourceContainer {
       }
       return builder.build();
     } catch (ObjectNotFoundException e) {
-      log.warn("target note not found", e);
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (Exception e) {
-      log.error("An error occurred while getting featured image illustration", e);
+      LOG.error("An error occurred while getting featured image illustration", e);
       return Response.serverError().build();
     }
   }
@@ -1458,10 +1458,10 @@ public class NotesRestService implements ResourceContainer {
       noteService.markNoteAsViewed(note, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
-      log.warn("User is not authorized to view note", e);
+      LOG.debug("User is not authorized to view note", e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
     } catch (Exception e) {
-      log.error("An error occurred while marking a note as read", e);
+      LOG.error("An error occurred while marking a note as read", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
   }
@@ -1507,9 +1507,10 @@ public class NotesRestService implements ResourceContainer {
     return wikiOwner;
   }
 
-  private String sanitizeAndSubstituteMentions(String content, String local) {
+  private String sanitizeAndSubstituteMentions(String content, String lang) {
     try {
-      Locale locale = local == null ? null : Locale.forLanguageTag(local);
+      Locale locale = lang == null ? null : LocaleUtils.toLocale(lang);
+      content = HtmlUtils.transform(content, new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(), LocaleUtils.toLocale(lang)));
       String sanitizedBody = HTMLSanitizer.sanitize(content);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);
@@ -1536,7 +1537,7 @@ public class NotesRestService implements ResourceContainer {
                                                                 identity);
           context.put(TreeNode.SELECTED_PAGE, parentNote);
         } catch (EntityNotFoundException e) {
-          log.warn("Cannot find the note {}", noteParam.getPageName());
+          LOG.warn("Cannot find the note {}", noteParam.getPageName());
         }
         List<JsonNodeData> children = getJsonDescendants(noteParam, context, identity, locale);
         child.setChildren(children);
@@ -1594,7 +1595,7 @@ public class NotesRestService implements ResourceContainer {
           rootNode.addChildren(drafts);
         }
       } catch (Exception e) {
-        log.error("Error while building draft tree descendants", e);
+        LOG.error("Error while building draft tree descendants", e);
       }
     });
   }

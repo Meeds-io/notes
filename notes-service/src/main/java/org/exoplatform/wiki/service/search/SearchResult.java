@@ -13,37 +13,37 @@ import org.exoplatform.social.metadata.model.MetadataItem;
 
 @Data
 public class SearchResult {
-  private static Log log = ExoLogger.getLogger(SearchResult.class);
+  private static Log                        log = ExoLogger.getLogger(SearchResult.class);
 
-  protected String wikiType;
+  protected Long                            id;
 
-  protected String wikiOwner;
+  protected String                          wikiType;
 
-  protected Identity wikiOwnerIdentity;
+  protected String                          wikiOwner;
 
-  protected Identity poster;
+  protected Identity                        wikiOwnerIdentity;
 
-  protected String pageName;
+  protected Identity                        poster;
 
-  protected String attachmentName;
+  protected String                          pageName;
 
-  protected String excerpt;
+  protected String                          excerpt;
 
-  protected String title;
+  protected String                          title;
 
-  protected SearchResultType type;
+  protected SearchResultType                type;
 
-  protected String url;
+  protected String                          url;
 
-  protected long score;
+  protected long                            score;
 
-  protected Calendar updatedDate;
+  protected Calendar                        updatedDate;
 
-  protected Calendar createdDate;
+  protected Calendar                        createdDate;
 
   protected Map<String, List<MetadataItem>> metadata;
 
-  protected String lang;
+  protected String                          lang;
 
   public SearchResult() {
   }
@@ -51,7 +51,6 @@ public class SearchResult {
   public SearchResult(String wikiType,
                       String wikiOwner,
                       String pageName,
-                      String attachmentName,
                       String excerpt,
                       String title,
                       SearchResultType type,
@@ -60,7 +59,6 @@ public class SearchResult {
     this.wikiType = wikiType;
     this.wikiOwner = wikiOwner;
     this.pageName = pageName;
-    this.attachmentName = attachmentName;
     this.excerpt = excerpt;
     this.title = title;
     this.type = type;
@@ -72,7 +70,6 @@ public class SearchResult {
                       Identity poster,
                       Identity wikiOwnerIdentity,
                       String pageName,
-                      String attachmentName,
                       String excerpt,
                       String title,
                       SearchResultType type,
@@ -82,7 +79,6 @@ public class SearchResult {
     this.poster = poster;
     this.wikiOwnerIdentity = wikiOwnerIdentity;
     this.pageName = pageName;
-    this.attachmentName = attachmentName;
     this.excerpt = excerpt;
     this.title = title;
     this.type = type;

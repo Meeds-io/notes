@@ -19,25 +19,15 @@
 
 package org.exoplatform.wiki.service;
 
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-
-import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
-import org.exoplatform.portal.mop.service.LayoutService;
-import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PermissionEntry;
 import org.exoplatform.wiki.model.Wiki;
 
-@SuppressWarnings("deprecation")
 public class TestWikiService extends BaseTest {
 
   private WikiService wService;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     wService = getContainer().getComponentInstanceOfType(WikiService.class);
@@ -48,30 +38,12 @@ public class TestWikiService extends BaseTest {
     assertNotNull(wService);
   }
 
-  public void testCreateWiki() throws WikiException {
+  public void testCreateWiki() {
     Wiki wiki = wService.getWikiByTypeAndOwner(PortalConfig.PORTAL_TYPE, "wiki1");
     assertNull(wiki);
     getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, "wiki1");
     wiki = wService.getWikiByTypeAndOwner(PortalConfig.PORTAL_TYPE, "wiki1");
     assertNotNull(wiki);
-
   }
 
-  public void testCreateWikiPermissions() throws Exception {
-    UserPortalConfigService portalConfigService = getContainer().getComponentInstanceOfType(UserPortalConfigService.class);
-    String defaultPortal = portalConfigService.getMetaPortal();
-    Wiki siteWiki = getOrCreateWiki(wService, PortalConfig.PORTAL_TYPE, defaultPortal);
-    assertNotNull(siteWiki);
-    assertTrue(siteWiki.getPermissions()
-                       .stream()
-                       .noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
-    Page wikiHome = siteWiki.getWikiHome();
-    assertNotNull(wikiHome);
-    LayoutService layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
-    PortalConfig portalConfig = layoutService.getPortalConfig(defaultPortal);
-    assertNotNull(portalConfig);
-    List<PermissionEntry> permissions = wikiHome.getPermissions();
-    assertNotNull(permissions);
-    assertTrue(permissions.stream().noneMatch(permission -> StringUtils.equals(permission.getId(), IdentityConstants.ANY)));
-  }
 }

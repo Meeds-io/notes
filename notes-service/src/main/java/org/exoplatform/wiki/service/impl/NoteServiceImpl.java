@@ -1,24 +1,27 @@
- /**
- * This file is part of the Meeds project (https://meeds.io/).
- *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+/**
+* This file is part of the Meeds project (https://meeds.io/).
+*
+* Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 
 package org.exoplatform.wiki.service.impl;
+
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_NAME;
+import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,18 +38,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.social.attachment.AttachmentService;
-import org.exoplatform.social.attachment.model.UploadedAttachmentDetail;
 import org.gatein.api.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -58,14 +60,18 @@ import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
-import org.exoplatform.services.cache.CacheService;
-import org.exoplatform.services.cache.ExoCache;
+import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.services.resources.LocaleConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
+import org.exoplatform.social.attachment.AttachmentService;
+import org.exoplatform.social.attachment.model.UploadedAttachmentDetail;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
@@ -86,46 +92,43 @@ import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.rendering.cache.AttachmentCountData;
-import org.exoplatform.wiki.rendering.cache.MarkupData;
-import org.exoplatform.wiki.rendering.cache.MarkupKey;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.BreadcrumbData;
-import org.exoplatform.wiki.service.DataStorage;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
+import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.SearchResultType;
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.exoplatform.wiki.service.plugin.WikiDraftPageAttachmentPlugin;
+import org.exoplatform.wiki.storage.NoteDataStorage;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.plugin.NoteContentLinkPlugin;
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
-import lombok.Getter;
+import io.meeds.social.html.model.HtmlProcessorContext;
+import io.meeds.social.html.utils.HtmlUtils;
+
 import lombok.SneakyThrows;
 
-import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_NAME;
-import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
+public class NoteServiceImpl implements NoteService {
 
+  private static final String                             DRAFT_PAGE_ID_PROP_NAME                = "draftPageId";
 
- public class NoteServiceImpl implements NoteService {
-
-  public static final String                              CACHE_NAME                             = "wiki.PageRenderingCache";
-
-  public static final String                              ATT_CACHE_NAME                         = "wiki.PageAttachmentCache";
+  private static final String                             PAGE_VERSION_ID_PROP_NAME              = "pageVersionId";
 
   private static final String                             UNTITLED_PREFIX                        = "Untitled_";
 
   private static final String                             TEMP_DIRECTORY_PATH                    = "java.io.tmpdir";
-  
+
   private static final String                             FEATURED_IMAGE_FOLDER                  = "featuredImages";
 
   private static final String                             FILE_NAME_SPACE                        = "wiki";
@@ -170,15 +173,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
   private final WikiService                               wikiService;
 
-  private final DataStorage                               dataStorage;
-
-  @Getter
-  private final ExoCache<Integer, MarkupData>             renderingCache;
-
-  private final ExoCache<Integer, AttachmentCountData>    attachmentCountCache;
-
-  @Getter
-  private final Map<WikiPageParams, List<WikiPageParams>> pageLinksMap                           = new ConcurrentHashMap<>();
+  private final NoteDataStorage                           dataStorage;
 
   private final IdentityManager                           identityManager;
 
@@ -187,34 +182,43 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   private final CMSService                                cmsService;
 
   private final ListenerService                           listenerService;
-  
+
   private final FileService                               fileService;
 
   private final UploadService                             uploadService;
-  
+
   private final MetadataService                           metadataService;
-  
+
   private final ImageThumbnailService                     imageThumbnailService;
 
-  private final AttachmentService                          attachmentService;
+  private final AttachmentService                         attachmentService;
 
-  public NoteServiceImpl(DataStorage dataStorage,
-                         CacheService cacheService,
+  private final LocaleConfigService                       localeConfigService;
+
+  private final LayoutService                             layoutService;
+
+  private final UserACL                                   userAcl;
+
+  public NoteServiceImpl(NoteDataStorage dataStorage, // NOSONAR
                          WikiService wikiService,
                          IdentityManager identityManager,
                          SpaceService spaceService,
                          CMSService cmsService,
                          ListenerService listenerService,
+                         LocaleConfigService localeConfigService,
                          FileService fileService,
                          UploadService uploadService,
                          MetadataService metadataService,
                          ImageThumbnailService imageThumbnailService,
-                         AttachmentService attachmentService) {
+                         AttachmentService attachmentService,
+                         LayoutService layoutService,
+                         UserACL userAcl) {
+    this.userAcl = userAcl;
+    this.layoutService = layoutService;
     this.dataStorage = dataStorage;
     this.wikiService = wikiService;
     this.identityManager = identityManager;
-    this.renderingCache = cacheService.getCacheInstance(CACHE_NAME);
-    this.attachmentCountCache = cacheService.getCacheInstance(ATT_CACHE_NAME);
+    this.localeConfigService = localeConfigService;
     this.spaceService = spaceService;
     this.listenerService = listenerService;
     this.cmsService = cmsService;
@@ -224,6 +228,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     this.imageThumbnailService = imageThumbnailService;
     this.attachmentService = attachmentService;
   }
+
   /**
    * {@inheritDoc}
    */
@@ -234,6 +239,12 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                          Identity userIdentity,
                          boolean importMode,
                          boolean broadcast) throws WikiException, IllegalAccessException {
+    if (userIdentity == null
+        || !wikiService.canManageWiki(noteBook.getType(), noteBook.getOwner(), userIdentity.getUserId())) {
+      throw new IllegalAccessException(String.format("Authorization error while addin new note in wiki %s:%s",
+                                                     noteBook.getType(),
+                                                     noteBook.getOwner()));
+    }
     if (importMode) {
       String pageName = TitleResolver.getId(note.getName(), false);
       if (pageName == null) {
@@ -242,8 +253,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       note.setName(pageName);
     }
     if (isExisting(noteBook.getType(), noteBook.getOwner(), note.getName())) {
-      throw new WikiException("Page " + noteBook.getType() + ":" + noteBook.getOwner() + ":" + note.getName()
-          + " already exists, cannot create it.");
+      throw new WikiException("Page " + noteBook.getType() + ":" + noteBook.getOwner() + ":" + note.getName() +
+          " already exists, cannot create it.");
     }
 
     Page parentPage = getNoteOfNoteBookByName(noteBook.getType(), noteBook.getOwner(), parentNoteName);
@@ -265,27 +276,25 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       } catch (Exception e) {
         log.error("Failed to save note metadata", e);
       }
-      if (createdPage != null) {
-        createdPage.setProperties(properties);
-        Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-        if (StringUtils.isNotEmpty(createdPage.getContent())) {
-          createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
-          createdPage = processImagesOnNoteCreation(createdPage,
-                                                    draftPageId,
-                                                    Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
-                                                                                .getId()));
-        }
-        createdPage.setCanManage(Utils.canManageNotes(note.getAuthor(), space, note));
-        createdPage.setCanImport(canImportNotes(note.getAuthor(), space, note));
-        createdPage.setCanView(canViewNotes(note.getAuthor(), space, note));
+      createdPage.setProperties(properties);
+      if (StringUtils.isNotEmpty(createdPage.getContent())) {
+        createdPage.setAttachmentObjectType(note.getAttachmentObjectType());
+        createdPage = processImagesOnNoteCreation(createdPage,
+                                                  draftPageId,
+                                                  Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
+                                                                              .getId()));
       }
+      createdPage.setCanManage(canEditNote(note, note.getAuthor()));
+      createdPage.setCanImport(canEditNote(note, note.getAuthor()));
+      createdPage.setCanView(canViewNote(note, note.getAuthor()));
       dataStorage.addPageVersion(createdPage, userIdentity.getUserId());
-      PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()), createdPage.getLang());
+      PageVersion pageVersion = dataStorage.getPublishedVersionByPageIdAndLang(Long.valueOf(createdPage.getId()),
+                                                                               createdPage.getLang());
       createdPage.setLatestVersionId(pageVersion != null ? pageVersion.getId() : null);
       if (pageVersion != null && draftPageId != null) {
         Map<String, String> eventData = new HashMap<>();
-        eventData.put("draftPageId", draftPageId);
-        eventData.put("pageVersionId", pageVersion.getId());
+        eventData.put(DRAFT_PAGE_ID_PROP_NAME, draftPageId);
+        eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersion.getId());
         Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
       }
       return createdPage;
@@ -331,12 +340,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     createdPage.setAppName(note.getAppName());
     createdPage.setUrl(Utils.getPageUrl(createdPage));
     createdPage.setLang(note.getLang());
-    if (parentPage != null) {
-      invalidateCache(parentPage);
-    }
-    invalidateCache(note);
 
     Utils.broadcast(listenerService, "note.posted", note.getAuthor(), createdPage);
+    processPageContent(createdPage, note.getLang());
     if (broadcast) {
       postAddPage(noteBook.getType(), noteBook.getOwner(), note.getName(), createdPage);
       Matcher mentionMatcher = Utils.MENTION_PATTERN.matcher(createdPage.getContent());
@@ -352,8 +358,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    */
   @SneakyThrows
   @Override
-  public Page updateNote(Page note) throws WikiException {
-    return updateNote(note, null);
+  public Page updateNote(Page note, PageUpdateType type) throws WikiException {
+    return saveNote(note, type, null, true);
   }
 
   /**
@@ -372,81 +378,36 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Page existingNote = getNoteById(note.getId());
     if (existingNote == null) {
       throw new EntityNotFoundException("Note to update not found");
-    }
-    Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-    if (userIdentity != null && (!Utils.canManageNotes(userIdentity.getUserId(), space, existingNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId()))) {
+    } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
         || PageUpdateType.EDIT_PAGE_PROPERTIES.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }
-    note.setContent(updateNoteContentImages(note));
-    Page updatedPage = dataStorage.updatePage(note);
-    NotePageProperties properties = note.getProperties();
-    if (userIdentity != null && properties != null) {
-      try {
-        properties.setNoteId(Long.parseLong(updatedPage.getId()));
-        properties.setDraft(false);
-        properties = saveNoteMetadata(note.getProperties(),
-                                      note.getLang(),
-                                      Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
-        updatedPage.setProperties(properties);
-      } catch (Exception e) {
-        log.error("Error while updating note metadata properties", e);
-      }
-    }
-    invalidateCache(note);
-
-    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
-    updatedPage.setToBePublished(note.isToBePublished());
-    updatedPage.setCanManage(note.isCanManage());
-    updatedPage.setCanImport(note.isCanImport());
-    updatedPage.setCanView(note.isCanView());
-    updatedPage.setAppName(note.getAppName());
-    if (userIdentity != null) {
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), userIdentity.getUserId());
-      updatedPage.setMetadatas(metadata);
-      note.setAuthor(userIdentity.getUserId());
-      updatedPage.setLastUpdater(userIdentity.getUserId());
-    }
-    Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
-    if (broadcast) {
-      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), new Page(updatedPage), type);
-      Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
-      if (mentionsMatcher.find()) {
-        Utils.sendMentionInNoteNotification(note,
-                                            existingNote,
-                                            userIdentity != null ? userIdentity.getUserId() : existingNote.getAuthor());
-      }
-    }
-    updatedPage.setLang(note.getLang());
-    return updatedPage;
+    return saveNote(note, type, userIdentity, broadcast);
   }
-  /**
-   * {@inheritDoc}
-   */
-  @SneakyThrows
+
   @Override
-  public Page updateNote(Page note, PageUpdateType type) throws WikiException {
-    return updateNote(note, type, null);
+  public Page updateNote(Page note) {
+    return saveNote(note, null, null, false);
+  }
+
+  @Override
+  public void deleteNote(String noteId) {
+    dataStorage.deletePage(noteId);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public boolean deleteNote(String noteType, String noteOwner, String noteName) throws WikiException {
+  public boolean deleteNote(String wikiType, String wikiOwner, String noteName) {
     if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
-    try {
-      dataStorage.deletePage(noteType, noteOwner, noteName);
-    } catch (WikiException e) {
-      log.error("Can't delete note '" + noteName + "' ", e);
-      return false;
-    }
+    dataStorage.deletePage(wikiType, wikiOwner, noteName);
     return true;
   }
 
@@ -454,52 +415,42 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    * {@inheritDoc}
    */
   @Override
-  public boolean deleteNote(String noteType, String noteOwner, String noteName, Identity userIdentity) throws WikiException,
+  public boolean deleteNote(String wikiType, String wikiOwner, String noteName, Identity userIdentity) throws WikiException,
                                                                                                        IllegalAccessException,
                                                                                                        EntityNotFoundException {
     if (NoteConstants.NOTE_HOME_NAME.equals(noteName) || noteName == null) {
       return false;
     }
 
-    try {
-      Page note = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
-      if (note == null) {
-        log.error("Can't delete note '" + noteName + "'. This note does not exist.");
-        throw new EntityNotFoundException("Note to delete not found");
-      }
-      Space space = spaceService.getSpaceByGroupId(note.getWikiOwner());
-      if (!Utils.canManageNotes(userIdentity.getUserId(), space, note)) {
-        log.error("Can't delete note '" + noteName + "'. does not have edit permission on it.");
-        throw new IllegalAccessException("User does not have edit permissions on the note.");
-      }
+    Page note = getNoteOfNoteBookByName(wikiType, wikiOwner, noteName);
+    if (note == null) {
+      log.error("Can't delete note '" + noteName + "'. This note does not exist.");
+      throw new EntityNotFoundException("Note to delete not found");
+    } else if (userIdentity == null || !canEditNote(note, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have edit permissions on the note.");
+    }
 
-      invalidateCachesOfPageTree(note);
-      invalidateAttachmentCache(note);
-
-      // Store all children to launch post deletion listeners
-      List<Page> allChrildrenPages = new ArrayList<>();
-      Queue<Page> queue = new LinkedList<>();
-      queue.add(note);
-      Page tempPage;
-      while (!queue.isEmpty()) {
-        tempPage = queue.poll();
-        List<Page> childrenPages = getChildrenNoteOf(tempPage, false, false);
-        for (Page childPage : childrenPages) {
-          queue.add(childPage);
-          allChrildrenPages.add(childPage);
-        }
+    // Store all children to launch post deletion listeners
+    List<Page> allChrildrenPages = new ArrayList<>();
+    Queue<Page> queue = new LinkedList<>();
+    queue.add(note);
+    Page tempPage;
+    while (!queue.isEmpty()) {
+      tempPage = queue.poll();
+      List<Page> childrenPages = getChildrenNoteOf(tempPage, false, false);
+      for (Page childPage : childrenPages) {
+        queue.add(childPage);
+        allChrildrenPages.add(childPage);
       }
+    }
 
-      deleteNote(noteType, noteOwner, noteName);
-      postDeletePage(noteType, noteOwner, noteName, note);
-      Utils.broadcast(listenerService, NOTE_DELETED, userIdentity, note);
-      // Post delete activity for all children pages
-      for (Page childNote : allChrildrenPages) {
-        postDeletePage(childNote.getWikiType(), childNote.getWikiOwner(), childNote.getName(), childNote);
-      }
-    } catch (WikiException e) {
-      log.error("Can't delete note '" + noteName + "' ", e);
-      return false;
+    deleteNote(wikiType, wikiOwner, noteName);
+    postDeletePage(wikiType, wikiOwner, noteName, note);
+    Utils.broadcast(listenerService, NOTE_DELETED, userIdentity, note);
+    processPageContent(note.getId(), "", null);
+    // Post delete activity for all children pages
+    for (Page childNote : allChrildrenPages) {
+      postDeletePage(childNote.getWikiType(), childNote.getWikiOwner(), childNote.getName(), childNote);
     }
     return true;
   }
@@ -527,8 +478,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Page page = new Page(noteName);
     page.setWikiType(noteType);
     page.setWikiOwner(noteOwner);
-    invalidateCache(page);
-
     return true;
   }
 
@@ -551,24 +500,16 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       Page moveNote = getNoteOfNoteBookByName(currentLocationParams.getType(),
                                               currentLocationParams.getOwner(),
                                               currentLocationParams.getPageName());
-
       if (moveNote == null) {
         throw new EntityNotFoundException("Note to move not found");
+      } else if (userIdentity == null || !canEditNote(moveNote, userIdentity.getUserId())) {
+        throw new IllegalAccessException("User does not have edit the note.");
       }
-      if (moveNote != null) {
-        Space space = spaceService.getSpaceByGroupId(moveNote.getWikiOwner());
-        if (!Utils.canManageNotes(userIdentity.getUserId(), space, moveNote) && !spaceService.canPublishOnSpace(space, userIdentity.getUserId())) {
-          throw new IllegalAccessException("User does not have edit the note.");
-        }
-      }
-
       moveNote(currentLocationParams, newLocationParams);
 
       Page note = new Page(currentLocationParams.getPageName());
       note.setWikiType(currentLocationParams.getType());
       note.setWikiOwner(currentLocationParams.getOwner());
-      invalidateCache(note);
-      invalidateAttachmentCache(note);
 
       postUpdatePage(newLocationParams.getType(),
                      newLocationParams.getOwner(),
@@ -623,10 +564,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    */
   @Override
   public Page getNoteOfNoteBookByName(String noteType,
-                                             String noteOwner,
-                                             String noteName,
-                                             String lang,
-                                             Identity userIdentity) throws WikiException, IllegalAccessException {
+                                      String noteOwner,
+                                      String noteName,
+                                      String lang,
+                                      Identity userIdentity) throws WikiException, IllegalAccessException {
     Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName, userIdentity);
     if (lang != null) {
       page.setMetadatas(retrieveMetadataItems(page.getId() + "-" + lang, userIdentity.getUserId()));
@@ -642,23 +583,17 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                                       String noteOwner,
                                       String noteName,
                                       Identity userIdentity) throws IllegalAccessException, WikiException {
-    Page page = null;
-    page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
+    Page page = getNoteOfNoteBookByName(noteType, noteOwner, noteName);
     if (page == null) {
       throw new EntityNotFoundException("page not found");
+    } else if (!canViewNote(page, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
-      }
-      page.setCanView(true);
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
-      page.setMetadatas(metadata);
-    }
-
+    page.setCanView(true);
+    page.setCanManage(canEditNote(page, userIdentity.getUserId()));
+    page.setCanImport(wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), userIdentity.getUserId()));
+    Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(page.getId(), userIdentity.getUserId());
+    page.setMetadatas(metadata);
     return page;
   }
 
@@ -666,11 +601,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    * {@inheritDoc}
    */
   @Override
-  public Page getNoteById(String id) throws WikiException {
-    if (id == null) {
+  public Page getNoteById(String id) {
+    if (StringUtils.isBlank(id)) {
       return null;
     }
-
     return dataStorage.getPageById(id);
   }
 
@@ -678,13 +612,21 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getDraftNoteById(String id, String userId) throws WikiException, IllegalAccessException {
-    if (id == null) {
+  public DraftPage getDraftNoteById(String id, String userId) throws IllegalAccessException {
+    if (StringUtils.isBlank(id)) {
       return null;
     }
-    DraftPage draftPage = dataStorage.getDraftPageById(id);
+    DraftPage draftPage = getDraftNoteById(id);
     computeDraftProps(draftPage, userId);
     return draftPage;
+  }
+
+  @Override
+  public DraftPage getDraftNoteById(String id) {
+    if (StringUtils.isBlank(id)) {
+      return null;
+    }
+    return dataStorage.getDraftPageById(id);
   }
 
   /**
@@ -695,10 +637,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (targetPage == null) {
       return null;
     }
-
     return dataStorage.getLatestDraftOfPage(targetPage);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -712,21 +653,70 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    */
   @Override
   public Page getNoteById(String id, Identity userIdentity) throws IllegalAccessException, WikiException {
-    if (id == null) {
+    Page page = getNoteById(id);
+    if (page == null) {
       return null;
+    } else if (!canViewNote(page, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    Page page = null;
-    page = getNoteById(id);
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
-      }
-      page.setCanView(true);
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-    }
+    page.setCanView(true);
+    page.setCanManage(canEditNote(page, userIdentity.getUserId()));
+    page.setCanImport(canEditNote(page, userIdentity.getUserId()));
     return page;
+  }
+
+  @Override
+  public boolean canViewNote(Page page, String username) {
+    if (page == null) {
+      return false;
+    }
+    String wikiOwner = page.getWikiOwner();
+    String wikiType = page.getWikiType();
+    String pageOwner = page.getOwner();
+
+    if (page.isDraftPage()) {
+      return canEditNote(page, username);
+    } else if (TC_NOTE_TYPE.equals(wikiType) && TC_NOTE_NAME.equals(page.getName())) {
+      return true;
+    } else if ((StringUtils.equals(pageOwner, IdentityConstants.SYSTEM) || StringUtils.isBlank(pageOwner))
+               && cmsService.hasAccessPermission(Utils.getIdentity(username),
+                                                 NotePageViewService.CMS_CONTENT_TYPE,
+                                                 page.getName())) {
+      return true;
+    } else if (StringUtils.equalsIgnoreCase(WikiType.PORTAL.name(), wikiType)) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(wikiOwner);
+      return userAcl.hasAccessPermission(portalConfig, userAcl.getUserIdentity(username));
+    } else if (StringUtils.isBlank(wikiType) || StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+      Space space = getSpaceByWiki(wikiType, wikiOwner);
+      return space == null ? userAcl.hasPermission(userAcl.getUserIdentity(username),
+                                                   String.format("%s:%s",
+                                                                 userAcl.getAdminMSType(),
+                                                                 wikiOwner)) :
+                           spaceService.canViewSpace(space, username);
+    } else {
+      return spaceService.isSuperManager(username) || StringUtils.equals(pageOwner, username);
+    }
+  }
+
+  @Override
+  public boolean canEditNote(Page page, String username) {
+    if (page == null) {
+      return false;
+    } else if (wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username)) {
+      return true;
+    } else if (page.isDraftPage()) {
+      return page.getParent() == null && StringUtils.equals(username, page.getAuthor());
+    } else if ((StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner()))
+               && cmsService.hasEditPermission(Utils.getIdentity(username),
+                                               NotePageViewService.CMS_CONTENT_TYPE,
+                                               page.getName())) {
+      return true;
+    } else if (StringUtils.equalsIgnoreCase(WikiType.PORTAL.name(), page.getWikiType())) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(page.getWikiOwner());
+      return userAcl.hasEditPermission(portalConfig, userAcl.getUserIdentity(username));
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -734,29 +724,28 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    */
   @Override
   public Page getNoteById(String id, Identity userIdentity, String source) throws IllegalAccessException, WikiException {
-    if (id == null) {
+    Page page = getNoteById(id);
+    String username = userIdentity == null ? null : userIdentity.getUserId();
+    if (page == null) {
       return null;
+    } else if (!canViewNote(page, username)) {
+      throw new IllegalAccessException("User does not have view the note.");
     }
-    Page page;
-    page = getNoteById(id);
-    if (page != null) {
-      Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
-      if (!canViewNotes(userIdentity.getUserId(), space, page)) {
-        throw new IllegalAccessException("User does not have view the note.");
-      }
-      page.setCanView(true);
-      page.setUrl(Utils.getPageUrl(page));
-      page.setCanManage(Utils.canManageNotes(userIdentity.getUserId(), space, page));
-      page.setCanImport(canImportNotes(userIdentity.getUserId(), space, page));
-      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, userIdentity.getUserId());
+    page.setCanView(true);
+    page.setUrl(Utils.getPageUrl(page));
+    boolean canManageNotes = wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username);
+    page.setCanManage(canManageNotes || canEditNote(page, username));
+    page.setCanImport(canManageNotes);
+    if (username != null) {
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(id, username);
       page.setMetadatas(metadata);
-      if (StringUtils.isNotBlank(source)) {
-        if (source.equals("tree")) {
-          postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-        }
-        if (source.equals("breadCrumb")) {
-          postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
-        }
+    }
+    if (StringUtils.isNotBlank(source)) {
+      if (source.equals("tree")) {
+        postOpenByTree(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
+      }
+      if (source.equals("breadCrumb")) {
+        postOpenByBreadCrumb(page.getWikiType(), page.getWikiOwner(), page.getName(), page);
       }
     }
     return page;
@@ -830,7 +819,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public List<Page> getChildrenNoteOf(Page note, String userId, boolean withDrafts, boolean withChild) throws WikiException {
     return getChildrenNoteOf(note, withDrafts, withChild);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -865,7 +854,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return children;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -926,7 +915,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return resultList;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -946,7 +935,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Page page = getNoteOfNoteBookByName(param.getType(), param.getOwner(), param.getPageName());
     removeDraftOfNote(page);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -963,7 +952,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     List<DraftPage> draftPages = dataStorage.getDraftsOfPage(Long.valueOf(page.getId()));
     for (DraftPage draftPage : draftPages) {
       if (draftPage != null) {
-        dataStorage.deleteAttachmentsOfDraftPage(draftPage);
         try {
           deleteNoteMetadataProperties(draftPage, draftPage.getLang(), NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
         } catch (Exception e) {
@@ -973,7 +961,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     dataStorage.deleteDraftOfPage(page);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1001,7 +989,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public void removeDraft(String draftName) throws WikiException {
     dataStorage.deleteDraftByName(draftName);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1016,29 +1004,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
    * {@inheritDoc}
    */
   @Override
-  public List<PageHistory> getVersionsHistoryOfNote(Page note, String userName) throws WikiException {
-    List<PageHistory> versionsHistory = dataStorage.getHistoryOfPage(note);
-    if (versionsHistory == null || versionsHistory.isEmpty()) {
-      PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
-      pageVersion.setId(note.getId() + "-" + pageVersion.getName());
-      copyNotePageProperties(note,
-                             pageVersion,
-                             note.getLang(),
-                             null,
-                             NOTE_METADATA_PAGE_OBJECT_TYPE,
-                             NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
-                             userName);
-      versionsHistory = dataStorage.getHistoryOfPage(note);
-    }
-    for (PageHistory version : versionsHistory) {
-      if (version.getAuthor() != null) {
-        org.exoplatform.social.core.identity.model.Identity authorIdentity =
-                                                                           identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                                                                               version.getAuthor());
-        version.setAuthorFullName(authorIdentity.getProfile().getFullName());
-      }
-    }
-    return versionsHistory;
+  public List<PageHistory> getVersionsHistoryOfNote(Page note) {
+    return dataStorage.getHistoryOfPage(note);
   }
 
   /**
@@ -1081,6 +1048,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     broadcastPageVersionCreationEvent(pageVersionId,
                                       draftPage != null ? draftPage.getId() : null,
                                       previousPageVersion != null ? previousPageVersion.getId() : null);
+    processPageContent(note, note.getLang());
   }
 
   /**
@@ -1106,7 +1074,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                            NOTE_METADATA_PAGE_OBJECT_TYPE,
                            userName);
     createVersionOfNote(note, userName, true);
-    invalidateCache(note);
   }
 
   /**
@@ -1158,7 +1125,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
     if (StringUtils.isEmpty(revision)) {
-      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage, username);
+      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage);
       if (versions != null && !versions.isEmpty()) {
         newDraftPage.setTargetPageRevision(String.valueOf(versions.get(0).getVersionNumber()));
       } else {
@@ -1167,7 +1134,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     } else {
       newDraftPage.setTargetPageRevision(revision);
     }
-    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, username);
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
       if (properties != null) {
@@ -1209,7 +1176,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
 
-    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+    org.exoplatform.social.core.identity.model.Identity userIdentity = identityManager.getIdentity(userIdentityId);
+    newDraftPage = dataStorage.updateDraftPageForUser(newDraftPage, userIdentity.getRemoteId());
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
       properties = saveNoteMetadata(properties, newDraftPage.getLang(), userIdentityId);
@@ -1246,7 +1214,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
     if (StringUtils.isEmpty(revision)) {
-      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage, username);
+      List<PageHistory> versions = getVersionsHistoryOfNote(targetPage);
       if (versions != null && !versions.isEmpty()) {
         newDraftPage.setTargetPageRevision(String.valueOf(versions.get(0).getVersionNumber()));
       } else {
@@ -1273,10 +1241,11 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage.setAttachmentObjectType(draftPage.getAttachmentObjectType());
     newDraftPage = processImagesOnDraftCreation(newDraftPage, Long.parseLong(userIdentity.getId()));
     //
-    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()), newDraftPage.getLang());
+    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(newDraftPage.getTargetPageId()),
+                                                                 newDraftPage.getLang());
     if (pageVersion != null) {
       Map<String, String> eventData = new HashMap<>();
-      eventData.put("pageVersionId", pageVersion.getId());
+      eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersion.getId());
       eventData.put("draftForExistingPageId", newDraftPage.getId());
       Utils.broadcast(listenerService, "note.draft.for.exist.page.created", this, eventData);
     }
@@ -1304,7 +1273,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage.setSyntax(draftPage.getSyntax());
     newDraftPage.setCreatedDate(new Date(clientTime));
     newDraftPage.setUpdatedDate(new Date(clientTime));
-    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, Utils.getCurrentUser());
+
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
+    newDraftPage = dataStorage.createDraftPageForUser(newDraftPage, identity.getRemoteId());
     NotePageProperties properties = draftPage.getProperties();
     try {
       if (properties != null) {
@@ -1319,19 +1290,18 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     newDraftPage = processImagesOnDraftCreation(newDraftPage, userIdentityId);
     return newDraftPage;
   }
-  
-  /**
-   * {@inheritDoc}
-   */
+
   @Override
-  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, Identity user) throws WikiException {
+  public boolean hasPermissionOnPage(Page page, PermissionType permissionType, String username) {
     if (StringUtils.equals(IdentityConstants.SYSTEM, page.getOwner())) {
       return false;
+    } else {
+      return switch (permissionType) {
+      case VIEWPAGE -> canViewNote(page, username);
+      case EDITPAGE, ADMINPAGE -> canEditNote(page, username);
+      default -> wikiService.canManageWiki(page.getWikiType(), page.getWikiOwner(), username);
+      };
     }
-    else if (page.isDraftPage()) {
-      return true;
-    }
-    return dataStorage.hasPermissionOnPage(page, permissionType, user);
   }
 
   /**
@@ -1340,26 +1310,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   @Override
   public Page getNoteByRootPermission(String wikiType, String wikiOwner, String pageId) throws WikiException {
     return dataStorage.getPageOfWikiByName(wikiType, wikiOwner, pageId);
-  }
-  
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String getNoteRenderedContent(Page note) {
-    String renderedContent = StringUtils.EMPTY;
-    try {
-      MarkupKey key = new MarkupKey(new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName()), false);
-      MarkupData cachedData = renderingCache.get(key.hashCode());
-      if (cachedData != null) {
-        return cachedData.build();
-      }
-      renderedContent = note.getContent();
-      renderingCache.put(key.hashCode(), new MarkupData(renderedContent));
-    } catch (Exception e) {
-      log.error(String.format("Failed to get rendered content of note [%s:%s:%s]", note.getWikiType(), note.getWikiOwner(), note.getName()), e);
-    }
-    return renderedContent;
   }
 
   /**
@@ -1381,7 +1331,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     String notesFilePath = "";
     for (String file : files) {
       if (file.contains("notesExport_")) {
-          notesFilePath = file;
+        notesFilePath = file;
       }
       if (file.contains("/" + FEATURED_IMAGE_FOLDER + "/")) {
         String fileName = file.substring(file.lastIndexOf("/") + 1);
@@ -1409,11 +1359,11 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
       for (Page note : notes.getNotes()) {
         importNote(note,
-                parent,
-                featuredImages,
-                wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
-                conflict,
-                userIdentity);
+                   parent,
+                   featuredImages,
+                   wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
+                   conflict,
+                   userIdentity);
       }
       for (Page note : notes.getNotes()) {
         replaceIncludedPages(note, wiki, userIdentity);
@@ -1431,8 +1381,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     try {
       PageList<SearchResult> result = dataStorage.search(data);
 
-      if ((data.getTitle() != null) && (data.getWikiType() != null) && (data.getWikiOwner() != null)
-              && (result.getPageSize() > 0)) {
+      if ((data.getTitle() != null) && (data.getWikiType() != null)
+          && (data.getWikiOwner() != null)
+          && (result.getPageSize() > 0)) {
         Page homePage = wikiService.getWikiByTypeAndOwner(data.getWikiType(), data.getWikiOwner()).getWikiHome();
         if (data.getTitle().equals("") || homePage != null && homePage.getTitle().contains(data.getTitle())) {
           Calendar wikiHomeCreateDate = Calendar.getInstance();
@@ -1442,14 +1393,13 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
           wikiHomeUpdateDate.setTime(homePage.getUpdatedDate());
 
           SearchResult wikiHomeResult = new SearchResult(data.getWikiType(),
-                  data.getWikiOwner(),
-                  homePage.getName(),
-                  null,
-                  null,
-                  homePage.getTitle(),
-                  SearchResultType.PAGE,
-                  wikiHomeUpdateDate,
-                  wikiHomeCreateDate);
+                                                         data.getWikiOwner(),
+                                                         homePage.getName(),
+                                                         null,
+                                                         homePage.getTitle(),
+                                                         SearchResultType.PAGE,
+                                                         wikiHomeUpdateDate,
+                                                         wikiHomeCreateDate);
           List<SearchResult> tempSearchResult = result.getAll();
           tempSearchResult.add(wikiHomeResult);
           result = new ObjectPageList<>(tempSearchResult, result.getPageSize());
@@ -1461,7 +1411,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return new ObjectPageList<>(new ArrayList<SearchResult>(), 0);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1481,7 +1431,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
     }
     if (page != null && publishedVersion == null && lang != null) {
-      //no version with lang, set the latest version id without lang
+      // no version with lang, set the latest version id without lang
       publishedVersion = dataStorage.getPublishedVersionByPageIdAndLang(pageId, null);
       page.setLatestVersionId(publishedVersion == null ? null : publishedVersion.getId());
     }
@@ -1497,7 +1447,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       page.setTitle(publishedVersion.getTitle());
       page.setContent(publishedVersion.getContent());
       page.setLang(publishedVersion.getLang());
-      page.setProperties(publishedVersion.getProperties());}
+      page.setProperties(publishedVersion.getProperties());
+    }
     return page;
   }
 
@@ -1507,7 +1458,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public PageVersion getPublishedVersionByPageIdAndLang(Long pageId, String lang) {
     return dataStorage.getPublishedVersionByPageIdAndLang(pageId, lang);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1524,13 +1475,13 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return langs.stream().toList();
   }
-  
+
   /**
    * {@inheritDoc}
    */
   @Override
   public List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException {
-    return getPageAvailableTranslationLanguages(pageId, withDrafts);  
+    return getPageAvailableTranslationLanguages(pageId, withDrafts);
   }
 
   /**
@@ -1540,7 +1491,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public List<PageHistory> getVersionsHistoryOfNoteByLang(Page note, String userName, String lang) throws WikiException {
     List<PageHistory> pageHistories = dataStorage.getPageHistoryVersionsByPageIdAndLang(Long.valueOf(note.getId()), lang);
     if (lang == null && pageHistories.isEmpty()) {
-      PageVersion pageVersion =  dataStorage.addPageVersion(note, userName);
+      PageVersion pageVersion = dataStorage.addPageVersion(note, userName);
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
                              pageVersion,
@@ -1553,7 +1504,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return pageHistories;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1561,12 +1512,12 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public DraftPage getLatestDraftPageByTargetPageAndLang(Long targetPageId, String lang) {
     return dataStorage.getLatestDraftPageByTargetPageAndLang(targetPageId, lang);
   }
-  
+
   /**
    * {@inheritDoc}
    */
   @Override
-  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang)  {
+  public DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang) {
     return getLatestDraftPageByTargetPageAndLang(targetPageId, lang);
   }
 
@@ -1579,7 +1530,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (note != null) {
       deleteNoteMetadataProperties(note, lang, NOTE_METADATA_PAGE_OBJECT_TYPE);
     }
-    PageVersion pageVersion = getPublishedVersionByPageIdAndLang(noteId, lang);
     dataStorage.deleteVersionsByNoteIdAndLang(noteId, lang);
     List<DraftPage> drafts = dataStorage.getDraftsOfPage(noteId);
     for (DraftPage draftPage : drafts) {
@@ -1587,11 +1537,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
         removeDraftById(draftPage.getId());
       }
     }
-    if (broadcast) {
-      postDeletePageVersionLanguage(pageVersion);
-    }
+    processPageContent(String.valueOf(noteId), StringUtils.EMPTY, lang);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1599,7 +1547,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   public void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception {
     deleteVersionsByNoteIdAndLang(noteId, lang, false);
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -1675,8 +1623,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (noteId == null) {
       throw new IllegalArgumentException("note id is mandatory");
     }
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
     Page note;
-    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(String.valueOf(userIdentityId));
     if (isDraft) {
       note = getDraftNoteById(String.valueOf(noteId), identity.getRemoteId());
     } else {
@@ -1688,12 +1636,12 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                            NOTE_METADATA_PAGE_OBJECT_TYPE);
     if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
       String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
       long noteFeaturedImageId = featuredImageIdProp != null
-          && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
+                                 && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
       FileItem fileItem = fileService.getFile(noteFeaturedImageId);
       if (fileItem != null && fileItem.getFileInfo() != null) {
         FileInfo fileInfo = fileItem.getFileInfo();
@@ -1725,9 +1673,11 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Page note;
     if (isDraft) {
       DraftPage draftPage = getDraftNoteById(String.valueOf(noteId),
-                                             identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+                                             identityManager.getIdentity(userIdentityId).getRemoteId());
       if (draftPage != null && (draftPage.getTargetPageId() == null
-          || isOriginalFeaturedImage(draftPage, getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()), lang)))) {
+                                || isOriginalFeaturedImage(draftPage,
+                                                           getNoteByIdAndLang(Long.valueOf(draftPage.getTargetPageId()),
+                                                                              lang)))) {
         removeFeaturedImageFile = false;
       }
       note = draftPage;
@@ -1742,8 +1692,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                            : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                            NOTE_METADATA_PAGE_OBJECT_TYPE);
     if (metadataItem != null) {
       Map<String, String> properties = metadataItem.getProperties();
       properties.remove(FEATURED_IMAGE_ID);
@@ -1769,7 +1719,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     NoteFeaturedImage featuredImage = notePageProperties.getFeaturedImage();
     if (notePageProperties.isDraft()) {
       note = getDraftNoteById(String.valueOf(notePageProperties.getNoteId()),
-                              identityManager.getIdentity(String.valueOf(userIdentityId)).getRemoteId());
+                              identityManager.getIdentity(userIdentityId).getRemoteId());
     } else {
       note = getNoteByIdAndLang(notePageProperties.getNoteId(), lang);
     }
@@ -1789,12 +1739,13 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     NoteMetadataObject noteMetadataObject =
                                           buildNoteMetadataObject(note,
                                                                   lang,
-                                                                  notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                                                               : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                                  notePageProperties.isDraft() ?
+                                                                                               NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                                                               NOTE_METADATA_PAGE_OBJECT_TYPE);
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE
-                                                                                 : NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
+                                                                                 NOTE_METADATA_PAGE_OBJECT_TYPE);
 
     Map<String, String> properties = new HashMap<>();
     if (metadataItem != null && metadataItem.getProperties() != null) {
@@ -1849,7 +1800,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       l.postDeletePageVersion(pageVersion);
     }
   }
-  
+
   public void postUpdatePage(final String wikiType,
                              final String wikiOwner,
                              final String pageId,
@@ -1921,97 +1872,18 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
   @Override
   public void markNoteAsViewed(Page note, Identity userIdentity) {
-      List<PageWikiListener> listeners = wikiService.getPageListeners();
-      for (PageWikiListener l : listeners) {
-          try {
-              l.markNoteAsViewed(note, userIdentity.getUserId());
-          } catch (Exception e) {
-              if (log.isWarnEnabled()) {
-                  log.warn(String.format("Executing listener [%s] on [%s] failed", l, note.getName()), e);
-              }
-          }
-      }
-  }
-
-  protected void invalidateCache(Page page) {
-    WikiPageParams params = new WikiPageParams(page.getWikiType(), page.getWikiOwner(), page.getName());
-    List<WikiPageParams> linkedPages = pageLinksMap.get(params);
-    if (linkedPages == null) {
-      linkedPages = new ArrayList<>();
-    } else {
-      linkedPages = new ArrayList<>(linkedPages);
-    }
-    linkedPages.add(params);
-
-    for (WikiPageParams wikiPageParams : linkedPages) {
+    List<PageWikiListener> listeners = wikiService.getPageListeners();
+    for (PageWikiListener l : listeners) {
       try {
-        MarkupKey key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(wikiPageParams, false);
-        renderingCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        renderingCache.remove(new Integer(key.hashCode()));
+        l.markNoteAsViewed(note, userIdentity.getUserId());
       } catch (Exception e) {
-        log.warn(String.format("Failed to invalidate cache of page [%s:%s:%s]",
-                               wikiPageParams.getType(),
-                               wikiPageParams.getOwner(),
-                               wikiPageParams.getPageName()));
+        if (log.isWarnEnabled()) {
+          log.warn(String.format("Executing listener [%s] on [%s] failed", l, note.getName()), e);
+        }
       }
     }
   }
 
-  protected void invalidateCachesOfPageTree(Page note) throws WikiException {
-    Queue<Page> queue = new LinkedList<>();
-    queue.add(note);
-    while (!queue.isEmpty()) {
-      Page currentPage = queue.poll();
-      invalidateCache(currentPage);
-      List<Page> childrenPages = getChildrenNoteOf(currentPage, false, false);
-      for (Page child : childrenPages) {
-        queue.add(child);
-      }
-    }
-  }
-
-  protected void invalidateAttachmentCache(Page note) {
-    WikiPageParams wikiPageParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
-
-    List<WikiPageParams> linkedPages = pageLinksMap.get(wikiPageParams);
-    if (linkedPages == null) {
-      linkedPages = new ArrayList<>();
-    } else {
-      linkedPages = new ArrayList<>(linkedPages);
-    }
-    linkedPages.add(wikiPageParams);
-
-    for (WikiPageParams linkedWikiPageParams : linkedPages) {
-      try {
-        MarkupKey key = new MarkupKey(linkedWikiPageParams, false);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-
-        key = new MarkupKey(linkedWikiPageParams, false);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-        key.setSupportSectionEdit(true);
-        attachmentCountCache.remove(new Integer(key.hashCode()));
-      } catch (Exception e) {
-        log.warn(String.format("Failed to invalidate cache of note [%s:%s:%s]",
-                               linkedWikiPageParams.getType(),
-                               linkedWikiPageParams.getOwner(),
-                               linkedWikiPageParams.getPageName()));
-      }
-    }
-  }
-  
   /******* Private methods *******/
 
   private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
@@ -2022,10 +1894,10 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
         String featuredImageId = properties.get(FEATURED_IMAGE_ID);
         if (note.isDraftPage() && ((DraftPage) note).getTargetPageId() != null) {
           removeNoteFeaturedImage(Long.parseLong(note.getId()),
-                  Long.parseLong(featuredImageId),
-                  lang,
-                  true,
-                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
+                                  Long.parseLong(featuredImageId),
+                                  lang,
+                                  true,
+                                  Long.parseLong(identityManager.getOrCreateUserIdentity(note.getOwner()).getId()));
         } else if (note.isDraftPage()) {
           // When delete a draft of non-existing page
           // check if its featured image was linked to a saved page
@@ -2113,33 +1985,33 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       }
     }
   }
-  
+
   private List<Page> getAllNotes(Page note) throws WikiException {
-    List<Page> listOfNotes = new ArrayList<Page>();
+    List<Page> listOfNotes = new ArrayList<>();
     addAllNodes(note, listOfNotes);
     return listOfNotes;
   }
-  
+
   private void cleanUp(File file) throws IOException {
-    if(Files.exists(file.toPath())){
+    if (Files.exists(file.toPath())) {
       Files.delete(file.toPath());
     }
   }
-  
-  private void computeDraftProps(DraftPage draftPage, String userId) throws WikiException, IllegalAccessException {
-    if (draftPage != null) {
-      Space space = spaceService.getSpaceByGroupId(draftPage.getWikiOwner());
-      if (!canViewNotes(userId, space, draftPage)) {
-        throw new IllegalAccessException("User does not have the right view the note.");
-      }
-      draftPage.setCanView(true);
-      draftPage.setCanManage(Utils.canManageNotes(userId, space, draftPage));
-      draftPage.setCanImport(canImportNotes(userId, space, draftPage));
-      String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
-              .getProfile()
-              .getFullName();
-      draftPage.setAuthorFullName(authorFullName);
+
+  private void computeDraftProps(DraftPage draftPage, String username) throws WikiException, IllegalAccessException {
+    if (draftPage == null) {
+      return;
+    } else if (!canViewNote(draftPage, username)) {
+      throw new IllegalAccessException("User does not have the right view the note.");
     }
+    draftPage.setCanView(true);
+    boolean canManageNotes = wikiService.canManageWiki(draftPage.getWikiType(), draftPage.getWikiOwner(), username);
+    draftPage.setCanManage(canManageNotes || canEditNote(draftPage, username));
+    draftPage.setCanImport(canManageNotes);
+    String authorFullName = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, draftPage.getAuthor())
+                                           .getProfile()
+                                           .getFullName();
+    draftPage.setAuthorFullName(authorFullName);
   }
 
   private void checkToRemoveDomainInUrl(Page note) {
@@ -2157,31 +2029,6 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
           log.warn("Malformed url " + url, ex);
         }
       }
-    }
-  }
-
-  private boolean canImportNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null) {
-      return (spaceService.canRedactOnSpace(space, authenticatedUser));
-    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)) {
-      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser), NotePageViewService.CMS_CONTENT_TYPE, page.getName());
-    } else {
-      return StringUtils.equals(page.getOwner(), authenticatedUser);
-    }
-  }
-
-  private boolean canViewNotes(String authenticatedUser, Space space, Page page) throws WikiException {
-    if (space != null) {
-      return !page.isDraftPage() ? spaceService.canViewSpace(space, authenticatedUser)
-                                 : Utils.canManageNotes(authenticatedUser, space, page);
-    } else if (TC_NOTE_TYPE.equals(page.getWikiType()) && TC_NOTE_NAME.equals(page.getName())) {
-      return true;
-    } else if (StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner())) {
-      return cmsService.hasAccessPermission(Utils.getIdentity(authenticatedUser),
-                                            NotePageViewService.CMS_CONTENT_TYPE,
-                                            page.getName());
-    } else {
-      return spaceService.isSuperManager(space, authenticatedUser) || StringUtils.equals(page.getOwner(), authenticatedUser);
     }
   }
 
@@ -2217,7 +2064,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   }
 
   private String getNoteTitleWithTraduction(Page note, Identity userIdentity, String source, String lang) throws WikiException,
-                                                                                                  IllegalAccessException {
+                                                                                                          IllegalAccessException {
     if (userIdentity == null || StringUtils.isEmpty(lang)) {
       return note.getTitle();
     }
@@ -2227,7 +2074,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     }
     return note.getTitle();
   }
-  
+
   private String getDraftNameSuffix(long clientTime) {
     return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(clientTime));
   }
@@ -2270,7 +2117,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       listOfNotes.add(note);
       List<Page> children = getChildrenNoteOf(note, true, false);
       if (children != null) {
-        for (Page child: children) {
+        for (Page child : children) {
           addAllNodes(child, listOfNotes);
         }
       }
@@ -2287,7 +2134,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     Map<String, List<MetadataItem>> metadata = new HashMap<>();
     metadataItems.stream()
                  .filter(metadataItem -> metadataItem.getMetadata().getAudienceId() == 0
-                     || metadataItem.getMetadata().getAudienceId() == currentUserId)
+                                         || metadataItem.getMetadata().getAudienceId() == currentUserId)
                  .forEach(metadataItem -> {
                    String type = metadataItem.getMetadata().getType().getName();
                    metadata.computeIfAbsent(type, k -> new ArrayList<>());
@@ -2312,6 +2159,52 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                           .orElse(null);
   }
 
+  private Page saveNote(Page note, PageUpdateType type, Identity userIdentity, boolean broadcast) {
+    Page existingNote = getNoteById(note.getId());
+    note.setContent(updateNoteContentImages(note, userIdentity));
+    Page updatedPage = dataStorage.updatePage(note);
+    NotePageProperties properties = note.getProperties();
+    String updater = userIdentity == null ? null : userIdentity.getUserId();
+    if (properties != null && updater != null) {
+      try {
+        properties.setNoteId(Long.parseLong(updatedPage.getId()));
+        properties.setDraft(false);
+        properties = saveNoteMetadata(properties,
+                                      note.getLang(),
+                                      Long.valueOf(identityManager.getOrCreateUserIdentity(updater).getId()));
+        updatedPage.setProperties(properties);
+      } catch (Exception e) {
+        log.error("Error while updating note metadata properties", e);
+      }
+    }
+
+    updatedPage.setUrl(Utils.getPageUrl(updatedPage));
+    updatedPage.setToBePublished(note.isToBePublished());
+    updatedPage.setCanManage(note.isCanManage());
+    updatedPage.setCanImport(note.isCanImport());
+    updatedPage.setCanView(note.isCanView());
+    updatedPage.setAppName(note.getAppName());
+    if (userIdentity != null) {
+      Map<String, List<MetadataItem>> metadata = retrieveMetadataItems(note.getId(), updater);
+      updatedPage.setMetadatas(metadata);
+      note.setAuthor(updater);
+      updatedPage.setLastUpdater(updater);
+    }
+    Utils.broadcast(listenerService, "note.updated", note.getAuthor(), updatedPage);
+    processPageContent(updatedPage, note.getLang());
+    if (broadcast) {
+      postUpdatePage(updatedPage.getWikiType(), updatedPage.getWikiOwner(), updatedPage.getName(), new Page(updatedPage), type);
+      Matcher mentionsMatcher = Utils.MENTION_PATTERN.matcher(note.getContent());
+      if (mentionsMatcher.find()) {
+        Utils.sendMentionInNoteNotification(note,
+                                            existingNote,
+                                            updater == null ? existingNote.getAuthor() : updater);
+      }
+    }
+    updatedPage.setLang(note.getLang());
+    return updatedPage;
+  }
+
   private void copyNotePageProperties(Page oldNote,
                                       Page note,
                                       String oldLang,
@@ -2322,7 +2215,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     if (note == null || oldNote == null) {
       return;
     }
-      if (username != null) {
+    if (username != null) {
       org.exoplatform.social.core.identity.model.Identity identity =
                                                                    identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
                                                                                                        username);
@@ -2358,7 +2251,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     NoteFeaturedImage draftFeaturedImage = draftPage.getProperties().getFeaturedImage();
     NoteFeaturedImage targetFeaturedImage = targetPage.getProperties().getFeaturedImage();
     return draftFeaturedImage != null && targetFeaturedImage != null
-        && targetFeaturedImage.getId().equals(draftFeaturedImage.getId());
+           && targetFeaturedImage.getId().equals(draftFeaturedImage.getId());
   }
 
   private File extractNoteFeaturedImageFileToImport(Page note, Map<String, String> featuredImages) {
@@ -2414,7 +2307,9 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                                                  long userIdentityId) throws WikiException {
     String newDraftContent = saveUploadedContentImages(draftPage.getContent(),
                                                        draftPage.getAttachmentObjectType(),
-                                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() : draftPage.getId(),
+                                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ?
+                                                                                                           draftPage.getTargetPageId() :
+                                                                                                           draftPage.getId(),
                                                        userIdentityId);
     if (!newDraftContent.equals(draftPage.getContent())) {
       draftPage.setContent(newDraftContent);
@@ -2427,8 +2322,8 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     try {
       return saveUploadedContentImages(draftPage.getContent(),
                                        draftPage.getAttachmentObjectType(),
-                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
-                                                                                           : draftPage.getId(),
+                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() :
+                                                                                           draftPage.getId(),
                                        userIdentityId);
     } catch (Exception exception) {
       return draftPage.getContent();
@@ -2465,12 +2360,14 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
       return content;
     }
     try {
-      String regex = "<img[^>]*cke_upload_id=\"([^\"]+)\"[^>]*>";
+      String regex = "<img[^>]*cke_upload_id=\"([^\"]+)\"[^>]*(src=\"[^/][^>^\"]+\")?[^>]*>";
       Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(content);
       // Check if the pattern matches and extract the upload ID
       while (matcher.find()) {
+        String imgElement = matcher.group(0);
         String uploadId = matcher.group(1);
+        String imgSrc = matcher.group(2);
         UploadResource uploadResource = uploadService.getUploadResource(uploadId);
 
         if (uploadResource != null) {
@@ -2479,10 +2376,13 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
 
           String fileId = uploadedAttachmentDetail.getId();
           String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
-          String archivedUploadId = "archived_cke_uploadId=".concat(uploadId);
+          String archivedUploadId = String.format("archived_cke_uploadId=\"%s\"", uploadId);
           // Replace the entire img tag with the new src
-          String newImgTag = matcher.group(0).replaceAll("cke_upload_id=\"[^\"]*\"", archivedUploadId.concat(" ".concat(newSrc)));
-          content = content.replace(matcher.group(0), newImgTag);
+          String newImgTag = imgElement.replaceAll("cke_upload_id=\"[^\"]*\"", String.format("%s %s", archivedUploadId, newSrc));
+          if (StringUtils.isNotBlank(imgSrc)) {
+            newImgTag = newImgTag.replace(imgSrc, "");
+          }
+          content = content.replace(imgElement, newImgTag);
         }
       }
     } catch (Exception e) {
@@ -2492,20 +2392,20 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
     return content;
   }
 
-  private String updateNoteContentImages(Page note) {
+  private String updateNoteContentImages(Page note, Identity userIdentity) {
     String processedContent = note.getContent();
-    if (note.getContent().contains("cke_upload_id=")) {
+    if (userIdentity != null && note.getContent().contains("cke_upload_id=")) {
       processedContent = saveUploadedContentImages(note.getContent(),
                                                    note.getAttachmentObjectType(),
                                                    note.getId(),
-                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                  .getId()));
     }
 
-    if (IMAGES_IMPORT_PATTERN.matcher(processedContent).find()) {
+    if (userIdentity != null && IMAGES_IMPORT_PATTERN.matcher(processedContent).find()) {
       // process imported images
       processedContent = processImportedNoteImages(note,
-                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(Utils.getCurrentUser())
+                                                   Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                  .getId()));
     }
     return processedContent;
@@ -2532,7 +2432,7 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
                                                                       pageVersion.getParentPageId(),
                                                                       fileId));
   }
-  
+
   private DraftPage updateDraftPageContent(long draftId, String content) throws WikiException {
     return dataStorage.updateDraftContent(draftId, content);
   }
@@ -2586,14 +2486,47 @@ import static io.meeds.notes.service.TermsAndConditionsService.TC_NOTE_TYPE;
   private void broadcastPageVersionCreationEvent(String pageVersionId, String draftPageId, String previousPageVersionId) {
     Map<String, String> eventData = new HashMap<>();
     if (draftPageId != null) {
-      eventData.put("draftPageId", draftPageId);
+      eventData.put(DRAFT_PAGE_ID_PROP_NAME, draftPageId);
     } else if (previousPageVersionId != null) {
       eventData.put("previousPageVersionId", previousPageVersionId);
     }
     if (!eventData.isEmpty()) {
-      eventData.put("pageVersionId", pageVersionId);
+      eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersionId);
       Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
     }
   }
 
- }
+  private void processPageContent(Page page, String lang) {
+    if (page != null) {
+      String content = page.getContent();
+      String id = page.getId();
+      processPageContent(id, content, lang);
+    }
+  }
+
+  private void processPageContent(String id, String content, String lang) {
+    HtmlUtils.process(content,
+                      new HtmlProcessorContext(NoteContentLinkPlugin.OBJECT_TYPE,
+                                               id,
+                                               null,
+                                               getLocale(lang)));
+  }
+
+  private Space getSpaceByWiki(String wikiType, String wikiOwner) {
+    if (StringUtils.isBlank(wikiType)
+        || StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
+      return spaceService.getSpaceByGroupId(wikiOwner);
+    } else {
+      return null;
+    }
+  }
+
+  private Locale getLocale(String lang) {
+    return StringUtils.isBlank(lang) ? getDefaultLocale() : LocaleUtils.toLocale(lang);
+  }
+
+  private Locale getDefaultLocale() {
+    return localeConfigService.getDefaultLocaleConfig().getLocale();
+  }
+
+}

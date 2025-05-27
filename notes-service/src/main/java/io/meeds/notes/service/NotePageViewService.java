@@ -189,13 +189,10 @@ public class NotePageViewService {
                            Identity currentUserAclIdentity) throws IllegalAccessException, ObjectNotFoundException {
     if (!cmsService.isSettingNameExists(CMS_CONTENT_TYPE, name)) {
       throw new ObjectNotFoundException(String.format("CMS Setting name %s wasn't found", name));
-    } else {
-      if (!cmsService.hasEditPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
-        throw new IllegalAccessException("Note page isn't editable");
-      }
-      String username = currentUserAclIdentity.getUserId();
-      saveNotePage(name, content, lang, username);
+    } else if (!cmsService.hasEditPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
+      throw new IllegalAccessException("Note page isn't editable");
     }
+    saveNotePage(name, content, lang, currentUserAclIdentity.getUserId());
   }
 
   private Page saveNotePage(String name,

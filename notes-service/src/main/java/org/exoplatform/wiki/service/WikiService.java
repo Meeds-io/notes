@@ -22,15 +22,9 @@ package org.exoplatform.wiki.service;
 import java.util.List;
 
 import org.exoplatform.container.component.ComponentPlugin;
-import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.model.Attachment;
-import org.exoplatform.wiki.model.Page;
-import org.exoplatform.wiki.model.PermissionEntry;
-import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.model.Wiki;
-import org.exoplatform.wiki.service.impl.SpaceBean;
-import org.exoplatform.wiki.service.listener.AttachmentWikiListener;
+import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 
 /**
@@ -51,124 +45,12 @@ public interface WikiService {
   public WikiPageParams getWikiPageParams(BreadcrumbData data) throws WikiException;
 
   /**
-   * Gets a list of Wiki permissions based on its type and owner.
-   *
-   * @param wikiType It can be Portal, Group, or User.
-   * @param wikiOwner The Wiki owner.
-   * @return The list of Wiki permissions.
-   * @throws WikiException if an error occured if an error occured
-   */
-  public List<PermissionEntry> getWikiPermission(String wikiType, String wikiOwner) throws WikiException;
-
-  /**
-   * Adds a list of permissions to Wiki.
-   *
-   * @param wikiType It can be Portal, Group, or User.
-   * @param wikiOwner The Wiki owner.
-   * @param permissionEntries The list of permissions.
-   * @throws WikiException if an error occured if an error occured
-   */
-  public void updateWikiPermission(String wikiType, String wikiOwner, List<PermissionEntry> permissionEntries) throws WikiException;
-
-  /**
-   * Gets a wiki page by its unique name in the wiki.
-   *
-   * @param wikiType It can be Portal, Group, or User.
-   * @param wikiOwner The Wiki owner.
-   * @param pageName Id of the wiki page.
-   * @return The wiki page if the current user has the read permission. Otherwise, it is "null".
-   * @throws WikiException if an error occured if an error occured
-   */
-  public Page getPageOfWikiByName(String wikiType, String wikiOwner, String pageName) throws WikiException;
-
-
-
-
-  /**
    * Gets Id of a default Wiki syntax.
    *
    * @return The Id.
    */
   public String getDefaultWikiSyntaxId();
 
-  /**
-   * Gets attachments of the given page, without loading their content
-   * @param page The wiki page
-   * @return The attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public List<Attachment> getAttachmentsOfPage(Page page) throws WikiException;
-
-  /**
-   * Gets attachments of the given page,
-   * and allow to load their attachment content by setting loadContent to true
-   * @param page The wiki page
-   * @param loadContent treue if need to load the attachement content
-   * @return The attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public default List<Attachment> getAttachmentsOfPage(Page page, boolean loadContent) throws WikiException {
-    return getAttachmentsOfPage(page);
-  }
-
-  /**
-   * Get the number of attachment of the given page
-   * @param page The wiki page
-   * @return The number of attachments of the page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public int getNbOfAttachmentsOfPage(Page page) throws WikiException;
-
-  /**
-   * Get a attachment of a the given page by name, without loading its content
-   *
-   * @param attachmentName The name of the attachment
-   * @param page The wiki page
-   * @return Attachment
-   * @throws WikiException if an error occured if an error occured
-   */
-  public Attachment getAttachmentOfPageByName(String attachmentName, Page page) throws WikiException;
-
-  /**
-   * Get a attachment of a the given page by name,
-   * and allow to load the attachment content by setting loadContent to true
-   *
-   * @param attachmentName The name of the attachment
-   * @param page           The wiki page
-   * @param loadContent    true to load the attachment content
-   * @return attachement
-   * @throws WikiException if an error occured if an error occured
-   */
-  public default Attachment getAttachmentOfPageByName(String attachmentName, Page page, boolean loadContent) throws WikiException {
-    return getAttachmentOfPageByName(attachmentName, page);
-  }
-
-  /**
-   * Add the given attachment to the given page
-   * @param attachment The attachment to add
-   * @param page The wiki page
-   * @throws WikiException if an error occured if an error occured
-   */
-  public void addAttachmentToPage(Attachment attachment, Page page) throws WikiException;
-
-  /**
-   * Deletes the given attachment of the given page
-   * @param attachmentId Id of the attachment
-   * @param page The wiki page
-   * @throws WikiException if an error occured
-   */
-  public void deleteAttachmentOfPage(String attachmentId, Page page) throws WikiException;
-
-  /**
-   * Gets a list of Wiki default permissions.
-   *
-   * @param wikiType It can be Portal, Group, or User.
-   * @param wikiOwner The Wiki owner.
-   * @return The list of Wiki default permissions.
-   * @throws WikiException if an error occured
-   */
-  public List<PermissionEntry> getWikiDefaultPermissions(String wikiType, String wikiOwner) throws WikiException;
-  
   /**
    * Registers a component plugin into the Wiki service.
    * @param plugin The component plugin to be registered.
@@ -180,13 +62,6 @@ public interface WikiService {
    * @return The list of listeners.
    */
   public List<PageWikiListener> getPageListeners();
-
-  /**
-   * Gets attachment listeners that are registered into the Wiki service.
-   * @return The list of attachment listeners.
-   */
-  public List<AttachmentWikiListener> getAttachmentListeners();
-
 
   /**
    * Gets a user Wiki. If it does not exist, the new one will be created.
@@ -204,16 +79,7 @@ public interface WikiService {
    * @return The space name.
    */
   public String getSpaceNameByGroupId(String groupId);
-  
-  /**
-   * Searches for spaces by a given keyword.
-   * 
-   * @param keyword The keyword to search for spaces.
-   * @return The list of spaces matching with the keyword.
-   * @throws WikiException if an error occured
-   */
-  public List<SpaceBean> searchSpaces(String keyword) throws WikiException;
-  
+
   /**
    * Gets a Wiki which is defined by its type and owner.
    *
@@ -249,38 +115,6 @@ public interface WikiService {
   public String getWikiWebappUri();
 
   /**
-   * Check if the identity has the given permission type on a wiki
-   * @param wiki Wiki
-   * @param permissionType Permission type to check
-   * @param user Identity of the user
-   * @return true if the user has the given permission type on the wiki
-   * @throws WikiException if an error occured
-   */
-  boolean hasPermissionOnWiki(Wiki wiki, PermissionType permissionType, Identity user) throws WikiException;
-
-
-
-  /** 
-   * Checks if the current user has the admin permission on a space or not.
-   *
-   * @param wikiType It can be Portal, Group, or User.
-   * @param owner Owner of the space.
-   * @return The returned value is "true" if the current user has the admin permission on the space, or "false" if not.
-   * @throws WikiException if an error occured
-   */
-  public boolean hasAdminSpacePermission(String wikiType, String owner) throws WikiException;
-  
-  /**
-   * Checks if the current user has the admin permission on a wiki page.
-   * 
-   * @param wikiType It can be Portal, Group, or User.
-   * @param owner Owner of the wiki page.
-   * @return "True" if the current user has the admin permission on the wiki page, or "false" if not.
-   * @throws WikiException if an error occured
-   */
-  public boolean hasAdminPagePermission(String wikiType, String owner) throws WikiException;
-
-  /**
    * Gets a Wiki by its Id.
    * 
    * @param wikiId The Wiki Id.
@@ -288,14 +122,15 @@ public interface WikiService {
    * @throws WikiException if an error occured
    */
   public Wiki getWikiById(String wikiId) throws WikiException;
-  
+
   /**
-   * Gets a Wiki name by its Id.
-   *
-   * @param wikiId The Wiki Id.
-   * @return The Wiki name.
-   * @throws WikiException if an error occured
+   * Checks whether a user can manage a {@link Wiki} or not
+   * 
+   * @param wikiType {@link WikiType} name
+   * @param wikiOwner {@link Wiki} owner
+   * @param username User login
+   * @return true if can manage wiki and its notes, else false
    */
-  public String getWikiNameById(String wikiId) throws WikiException;
+  boolean canManageWiki(String wikiType, String wikiOwner, String username);
 
 }

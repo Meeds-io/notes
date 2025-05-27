@@ -33,16 +33,14 @@ import lombok.EqualsAndHashCode;
  */
 @Entity(name = "WikiPageEntity")
 @Table(name = "WIKI_PAGES")
-@NamedQueries({
-    @NamedQuery(name = "wikiPage.getAllIds", query = "SELECT p.id FROM WikiPageEntity p  WHERE p.deleted = false ORDER BY p.id"),
-    @NamedQuery(name = "wikiPage.countAllIds", query = "SELECT COUNT(*) FROM WikiPageEntity p  WHERE p.deleted = false"),
-    @NamedQuery(name = "wikiPage.getPageOfWikiByName", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE p.name = :name AND w.type = :type AND w.owner = :owner AND p.deleted = false"),
-    @NamedQuery(name = "wikiPage.getAllPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner"),
-    @NamedQuery(name = "wikiPage.getPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner AND p.deleted = :deleted"),
-    @NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.name"),
-    @NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC"),
-    @NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false"),
-})
+@NamedQuery(name = "wikiPage.getAllIds", query = "SELECT p.id FROM WikiPageEntity p  WHERE p.deleted = false ORDER BY p.id")
+@NamedQuery(name = "wikiPage.countAllIds", query = "SELECT COUNT(*) FROM WikiPageEntity p  WHERE p.deleted = false")
+@NamedQuery(name = "wikiPage.getPageOfWikiByName", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE p.name = :name AND w.type = :type AND w.owner = :owner AND p.deleted = false")
+@NamedQuery(name = "wikiPage.getAllPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner")
+@NamedQuery(name = "wikiPage.getPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner AND p.deleted = :deleted")
+@NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.name")
+@NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC")
+@NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class PageEntity extends BasePageEntity {
@@ -66,10 +64,6 @@ public class PageEntity extends BasePageEntity {
   @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
   @EqualsAndHashCode.Exclude
   private List<PageVersionEntity> versions;
-
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "page")
-  @EqualsAndHashCode.Exclude
-  private List<PageAttachmentEntity> attachments;
 
   @ManyToMany
   @JoinTable(name = "WIKI_PAGES_RELATED_PAGES",
@@ -102,14 +96,6 @@ public class PageEntity extends BasePageEntity {
   @Column(name="USERNAME")
   @EqualsAndHashCode.Exclude
   private Set<String> watchers = new HashSet<>();
-
-  @ElementCollection
-  @CollectionTable(
-      name = "WIKI_PAGE_PERMISSIONS",
-      joinColumns=@JoinColumn(name = "PAGE_ID")
-  )
-  @EqualsAndHashCode.Exclude
-  private List<PermissionEntity> permissions;
 
   @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
   @EqualsAndHashCode.Exclude

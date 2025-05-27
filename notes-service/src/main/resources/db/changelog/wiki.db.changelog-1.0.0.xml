@@ -75,39 +75,6 @@
     </modifySql>
   </changeSet>
 
-  <changeSet author="wiki" id="1.0.0-3">
-    <validCheckSum>7:246c5b19f40881febd2095d6d0bd9a02</validCheckSum>
-    <validCheckSum>7:c14eb683d9733450288a15b119123083</validCheckSum>
-    <validCheckSum>7:d0b4e4374990d4c328f7098d89c9b7af</validCheckSum>
-    <validCheckSum>7:00968469a8dd1e767d7ab2b6eedc5f22</validCheckSum>
-    <validCheckSum>7:2b1d896f653805f50bcecc559f356a10</validCheckSum>
-    <createTable tableName="WIKI_PAGE_ATTACHMENTS">
-      <column name="ATTACHMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_ATTACHEMENTS_ID"/>
-      </column>
-      <column name="WIKI_PAGE_ID" type="BIGINT">
-        <constraints nullable="false" foreignKeyName="FK_WIKI_ATTACHMENTS_PAGES" references="WIKI_PAGES(PAGE_ID)" />
-      </column>
-      <column name="NAME" type="NVARCHAR(550)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="CREATOR" type="NVARCHAR(200)"/>
-      <column name="CREATED_DATE" type="TIMESTAMP">
-        <constraints nullable="true"/>
-      </column>
-      <column name="UPDATED_DATE" type="TIMESTAMP">
-        <constraints nullable="true"/>
-      </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
-      <column name="FULL_TITLE" type="NVARCHAR(550)"/>
-      <column name="CONTENT" type="LONGBLOB"/>
-      <column name="MIMETYPE" type="NVARCHAR(100)"/>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
   <changeSet author="wiki" id="1.0.0-5">
     <validCheckSum>7:64b2244a464b0514873ea42da07ae17a</validCheckSum>
     <validCheckSum>7:48ad43ffbc0c2ca43499288d8ac0717d</validCheckSum>
@@ -270,77 +237,6 @@
     </modifySql>
   </changeSet>
 
-  <changeSet author="wiki" id="1.0.0-11">
-    <validCheckSum>7:dd752a9508a50e11a6f8e5c7872f3b12</validCheckSum>
-    <validCheckSum>7:80f2240b387f534e9deffcd8544ba673</validCheckSum>
-    <validCheckSum>7:fb55a6e5095fcc1cf576ececf8797a47</validCheckSum>
-    <validCheckSum>7:d1499302a7b3465e49250479aabee176</validCheckSum>
-    <validCheckSum>7:b696d10c210627ab39e883c2f28d1dda</validCheckSum>
-    <createTable tableName="WIKI_DRAFT_ATTACHMENTS">
-      <column name="ATTACHMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_WIKI_DRAFT_ATTACHMENTS_ID"/>
-      </column>
-      <column name="DRAFT_PAGE_ID" type="BIGINT">
-        <constraints nullable="false" foreignKeyName="FK_WIKI_DRAFTATTACHMENTS_PAGES" references="WIKI_DRAFT_PAGES(DRAFT_PAGE_ID)" />
-      </column>
-      <column name="NAME" type="NVARCHAR(550)"/>
-      <column name="CREATOR" type="NVARCHAR(200)"/>
-      <column name="CREATED_DATE" type="TIMESTAMP">
-        <constraints nullable="true"/>
-      </column>
-      <column name="UPDATED_DATE" type="TIMESTAMP">
-        <constraints nullable="true"/>
-      </column>
-      <column name="TITLE" type="NVARCHAR(550)"/>
-      <column name="FULL_TITLE" type="NVARCHAR(550)"/>
-      <column name="CONTENT" type="LONGBLOB"/>
-      <column name="MIMETYPE" type="NVARCHAR(100)"/>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-13">
-    <createTable tableName="WIKI_WIKI_PERMISSIONS">
-      <column name="WIKI_ID" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-14">
-    <createTable tableName="WIKI_PAGE_PERMISSIONS">
-      <column name="PAGE_ID" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY" type="NVARCHAR(200)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="IDENTITY_TYPE" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="PERMISSION" type="NVARCHAR(50)">
-        <constraints nullable="false"/>
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-    </modifySql>
-  </changeSet>
-
   <changeSet author="wiki" id="1.0.0-15">
     <createTable tableName="WIKI_PAGES_RELATED_PAGES">
       <column name="PAGE_ID" type="BIGINT">
@@ -416,22 +312,6 @@
                              referencedColumnNames="PAGE_ID" referencedTableName="WIKI_PAGES"/>
   </changeSet>
 
-  <changeSet author="wiki" id="1.0.0-25">
-    <addForeignKeyConstraint baseColumnNames="WIKI_ID" baseTableName="WIKI_WIKI_PERMISSIONS"
-                             constraintName="FK_WIKI_WIKIS_PERM_WIKIS_01" deferrable="false"
-                             initiallyDeferred="false"
-                             onDelete="NO ACTION" onUpdate="NO ACTION"
-                             referencedColumnNames="WIKI_ID" referencedTableName="WIKI_WIKIS"/>
-  </changeSet>
-
-  <changeSet author="wiki" id="1.0.0-26">
-    <addForeignKeyConstraint baseColumnNames="PAGE_ID" baseTableName="WIKI_PAGE_PERMISSIONS"
-                             constraintName="FK_WIKI_PAGES_PERM_PAGES_01" deferrable="false"
-                             initiallyDeferred="false"
-                             onDelete="NO ACTION" onUpdate="NO ACTION"
-                             referencedColumnNames="PAGE_ID" referencedTableName="WIKI_PAGES"/>
-  </changeSet>
-
   <changeSet author="wiki" id="1.0.0-27">
     <addForeignKeyConstraint baseColumnNames="RELATED_PAGE_ID" baseTableName="WIKI_PAGES_RELATED_PAGES"
                              constraintName="FK_WIKI_RELATED_PAGES_PAGES_01" deferrable="false"
@@ -491,95 +371,6 @@
 
   <changeSet author="wiki" id="1.0.0-38" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID" startValue="1"/>
-  </changeSet>
-
-  <!-- Migration Attachment to File RDBMS -->
-  <changeSet author="wiki" id="1.0.0-39">
-    <addColumn tableName="WIKI_PAGE_ATTACHMENTS">
-      <column name="ATTACHMENT_FILE_ID" type="BIGINT"/>
-    </addColumn>
-  </changeSet>
-
-
-  <changeSet author="wiki" id="1.0.0-40">
-    <addColumn tableName="WIKI_DRAFT_ATTACHMENTS">
-      <column name="ATTACHMENT_FILE_ID" type="BIGINT"/>
-    </addColumn>
-  </changeSet>
-
-  <changeSet id="1.0.0-42" author="wiki">
-    <validCheckSum>7:7d4a990e4664c19155e9beb35e6e8ebc</validCheckSum>
-    <validCheckSum>7:21d239448c33f39a9300ea433349d470</validCheckSum>
-    <validCheckSum>8:5e8e466efcb51beb7d15b30774a0038c</validCheckSum>
-    <validCheckSum>8:52596a538221249a0e8ac976cfa0d6dc</validCheckSum>
-    <sql dbms="mssql">
-      IF EXISTS(SELECT * FROM sys.objects WHERE type='D' AND NAME='DF_WIKI_PAGE_ATTACHMENTS_UPDATED_DATE')
-        ALTER TABLE WIKI_PAGE_ATTACHMENTS
-          DROP CONSTRAINT DF_WIKI_PAGE_ATTACHMENTS_UPDATED_DATE
-    </sql>
-    <dropColumn tableName="WIKI_PAGE_ATTACHMENTS">
-      <column name="NAME"/>
-      <column name="UPDATED_DATE"/>
-      <column name="CREATOR"/>
-      <column name="TITLE"/>
-      <column name="CONTENT"/>
-      <column name="MIMETYPE"/>
-    </dropColumn>
-  </changeSet>
-
-  <changeSet id="1.0.0-43" author="wiki">
-    <validCheckSum>7:44cfbff48ff23a305643392177e0c79a</validCheckSum>
-    <validCheckSum>7:ab5aad25946a4f22c88996951806ccfe</validCheckSum>
-    <validCheckSum>8:4fb0d683e4840475d1078bd36743a512</validCheckSum>
-    <validCheckSum>8:52596a538221249a0e8ac976cfa0d6dc</validCheckSum>
-    <sql dbms="mssql">
-      IF EXISTS(SELECT * FROM sys.objects WHERE type='D' AND NAME='DF_WIKI_DRAFT_ATTACHMENTS_UPDATED_DATE')
-        ALTER TABLE WIKI_DRAFT_ATTACHMENTS
-          DROP CONSTRAINT DF_WIKI_DRAFT_ATTACHMENTS_UPDATED_DATE
-    </sql>
-    <dropColumn tableName="WIKI_DRAFT_ATTACHMENTS">
-      <column name="NAME"/>
-      <column name="UPDATED_DATE"/>
-      <column name="CREATOR"/>
-      <column name="TITLE"/>
-      <column name="CONTENT"/>
-      <column name="MIMETYPE"/>
-    </dropColumn>
-  </changeSet>
-
-  <changeSet id="1.0.0-44" author="wiki">
-    <addNotNullConstraint tableName="WIKI_PAGE_ATTACHMENTS" columnName="ATTACHMENT_FILE_ID" columnDataType="BIGINT"/>
-  </changeSet>
-
-  <changeSet id="1.0.0-45" author="wiki">
-    <addNotNullConstraint tableName="WIKI_DRAFT_ATTACHMENTS" columnName="ATTACHMENT_FILE_ID" columnDataType="BIGINT"/>
-  </changeSet>
-
-  <!--Fix issue SOC-5440-->
-  <changeSet id="1.0.0-46" author="wiki">
-    <renameColumn tableName="WIKI_PAGE_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
-    <renameColumn tableName="WIKI_WIKI_PERMISSIONS" oldColumnName="IDENTITY" newColumnName="WIKI_IDENTITY"
-                  columnDataType="NVARCHAR(200)"/>
-  </changeSet>
-
-  <!--Fix issue WIKI-1263-->
-  <changeSet id="1.0.0-47" author="wiki">
-    <validCheckSum>8:a8ff11a96473337e61b0f417e0dbae6e</validCheckSum>
-    <addNotNullConstraint
-      tableName="WIKI_PAGE_ATTACHMENTS"
-      columnName="CREATED_DATE"
-      columnDataType="TIMESTAMP"
-      defaultNullValue="${now}" />
-  </changeSet>
-
-  <changeSet id="1.0.0-48" author="wiki">
-    <validCheckSum>8:66b484b99bbf4d80647c954b3356edda</validCheckSum>
-    <addNotNullConstraint
-      tableName="WIKI_DRAFT_ATTACHMENTS"
-      columnName="CREATED_DATE"
-      columnDataType="TIMESTAMP"
-      defaultNullValue="${now}" />
   </changeSet>
 
   <changeSet id="1.0.0-49" author="wiki">
@@ -740,6 +531,34 @@
       ALTER TABLE WIKI_PAGE_VERSIONS MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
       ALTER TABLE WIKI_TEMPLATES MODIFY COLUMN TITLE VARCHAR(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     </sql>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-01">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_WIKI_PERMISSIONS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_WIKI_PERMISSIONS"/>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-02">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_PAGE_PERMISSIONS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_PAGE_PERMISSIONS"/>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-03">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_PAGE_ATTACHMENTS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_PAGE_ATTACHMENTS"/>
+  </changeSet>
+
+  <changeSet author="notes" id="1.0.0-mip-192-04">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="WIKI_DRAFT_ATTACHMENTS"/>
+    </preConditions>
+    <dropTable tableName="WIKI_DRAFT_ATTACHMENTS"/>
   </changeSet>
 
 </databaseChangeLog>

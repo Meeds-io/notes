@@ -1,6 +1,9 @@
 package org.exoplatform.wiki;
 
-public class WikiException extends Exception {
+public class WikiException extends RuntimeException {
+
+  private static final long serialVersionUID = 6524070877616079103L;
+
   public WikiException() {
   }
 
