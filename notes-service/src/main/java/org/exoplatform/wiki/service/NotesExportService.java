@@ -27,10 +27,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+
 import org.exoplatform.commons.file.services.FileService;
 import org.picocontainer.Startable;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.common.service.HTMLUploadImageProcessor;
@@ -58,7 +58,8 @@ public class NotesExportService implements Startable {
     this.htmlUploadImageProcessor = htmlUploadImageProcessor;
     this.fileService = fileService;
     this.exportThreadPool =
-                          Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Notes-Export-File-%d").build());
+                          Executors.newCachedThreadPool(new BasicThreadFactory.Builder().namingPattern("Notes-Export-File-%d")
+                                                                                        .build());
   }
 
   @Override
