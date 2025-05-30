@@ -25,22 +25,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-/**
- * Created by The eXo Platform SAS
- * Author : eXoPlatform
- *          exo@exoplatform.com
- * Jun 23, 2015
- */
 @Entity(name = "WikiPageMoveEntity")
 @Table(name = "WIKI_PAGE_MOVES")
-@NamedQueries({
-        @NamedQuery(name = "wikiPageMove.getPreviousPage", query = "SELECT p FROM WikiPageMoveEntity p WHERE p.wikiType = :wikiType AND p.wikiOwner = :wikiOwner AND p.pageName = :pageName")
-})
+@NamedQuery(name = "wikiPageMove.getPreviousPage", query = "SELECT p FROM WikiPageMoveEntity p WHERE p.wikiType = :wikiType AND p.wikiOwner = :wikiOwner AND p.pageName = :pageName")
+@NamedQuery(name = "wikiPageMove.findMovesByPage", query = "SELECT p FROM WikiPageMoveEntity p WHERE p.page.id = :pageId")
 public class PageMoveEntity {
 
   public PageMoveEntity() {
