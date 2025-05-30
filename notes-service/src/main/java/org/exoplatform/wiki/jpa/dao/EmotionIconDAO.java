@@ -16,7 +16,6 @@
  */
 package org.exoplatform.wiki.jpa.dao;
 
-import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.wiki.jpa.entity.EmotionIconEntity;
 
 import jakarta.persistence.NoResultException;

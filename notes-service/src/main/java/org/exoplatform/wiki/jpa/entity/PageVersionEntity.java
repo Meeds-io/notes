@@ -26,7 +26,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
@@ -39,16 +38,14 @@ import jakarta.persistence.Table;
  */
 @Entity(name = "WikiPageVersionEntity")
 @Table(name = "WIKI_PAGE_VERSIONS")
-@NamedQueries({
-        @NamedQuery(name = "wikiPageVersion.getLastversionNumberOfPage", query = "SELECT max(p.versionNumber) FROM WikiPageVersionEntity p WHERE p.page.id = :pageId"),
-        @NamedQuery(name = "wikiPageVersion.getPageversionByPageIdAndVersion", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.versionNumber = :versionNumber"),
-        @NamedQuery(name = "wikiPageVersion.getAllPagesVersionsBySyntax", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC"),
-        @NamedQuery(name = "wikiPageVersion.countAllPagesVersionsBySyntax", query = "SELECT COUNT(p) FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL"),
-        @NamedQuery(name = "wikiPageVersion.getPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang))"),
-        @NamedQuery(name = "wikiPageVersion.getLatestPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang)) ORDER BY  p.versionNumber DESC"),
-        @NamedQuery(name = "wikiPageVersion.getPageAvailableTranslationLanguages", query = "SELECT DISTINCT p.lang FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.lang IS NOT NULL")
-
-})
+@NamedQuery(name = "wikiPageVersion.getLastversionNumberOfPage", query = "SELECT max(p.versionNumber) FROM WikiPageVersionEntity p WHERE p.page.id = :pageId")
+@NamedQuery(name = "wikiPageVersion.getPageversionByPageIdAndVersion", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.versionNumber = :versionNumber")
+@NamedQuery(name = "wikiPageVersion.getAllPagesVersionsBySyntax", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC")
+@NamedQuery(name = "wikiPageVersion.countAllPagesVersionsBySyntax", query = "SELECT COUNT(p) FROM WikiPageVersionEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL")
+@NamedQuery(name = "wikiPageVersion.getPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang))")
+@NamedQuery(name = "wikiPageVersion.getLatestPageVersionsByPageIdAndLang", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND ((:lang IS NULL AND p.lang IS NULL) OR (:lang IS NOT NULL AND p.lang = :lang)) ORDER BY  p.versionNumber DESC")
+@NamedQuery(name = "wikiPageVersion.getPageAvailableTranslationLanguages", query = "SELECT DISTINCT p.lang FROM WikiPageVersionEntity p WHERE p.page.id = :pageId AND p.lang IS NOT NULL")
+@NamedQuery(name = "wikiPageVersion.findVersionsByPage", query = "SELECT p FROM WikiPageVersionEntity p WHERE p.page.id = :pageId")
 public class PageVersionEntity extends BasePageEntity {
   @Id
   @SequenceGenerator(name="SEQ_WIKI_PAGE_VERSIONS_VERS_ID", sequenceName="SEQ_WIKI_PAGE_VERSIONS_VERS_ID", allocationSize = 1)
