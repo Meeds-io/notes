@@ -18,24 +18,43 @@
  */
 package org.exoplatform.wiki.jpa.dao;
 
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+
 import org.exoplatform.wiki.jpa.entity.PageMoveEntity;
 import org.exoplatform.wiki.model.WikiType;
 
 import jakarta.persistence.TypedQuery;
-import java.util.List;
 
-public class PageMoveDAO extends WikiBaseDAO<PageMoveEntity,Long> {
+public class PageMoveDAO extends WikiBaseDAO<PageMoveEntity, Long> {
+
+  private static final String PAGE_ID_PARAM = "pageId";
 
   public List<PageMoveEntity> findInPageMoves(String wikiType, String wikiOwner, String pageName) {
 
-    //We need to add the first "/" on the wiki owner if it's  wiki group
-    if (wikiType.toUpperCase().equals(WikiType.GROUP.name())) wikiOwner = validateGroupWikiOwner(wikiOwner);
+    // We need to add the first "/" on the wiki owner if it's wiki group
+    if (wikiType.toUpperCase().equals(WikiType.GROUP.name()))
+      wikiOwner = validateGroupWikiOwner(wikiOwner);
 
     TypedQuery<PageMoveEntity> query = getEntityManager().createNamedQuery("wikiPageMove.getPreviousPage", PageMoveEntity.class)
-            .setParameter("wikiType", wikiType)
-            .setParameter("wikiOwner", wikiOwner)
-            .setParameter("pageName", pageName);
+                                                         .setParameter("wikiType", wikiType)
+                                                         .setParameter("wikiOwner", wikiOwner)
+                                                         .setParameter("pageName", pageName);
     return query.getResultList();
+  }
+
+  public List<PageMoveEntity> findMovesByPage(Long pageId) {
+    return getEntityManager().createNamedQuery("wikiPageMove.findMovesByPage", PageMoveEntity.class)
+                             .setParameter(PAGE_ID_PARAM, pageId)
+                             .getResultList();
+  }
+
+  public void deletePageMoves(long pageId) {
+    List<PageMoveEntity> moves = findMovesByPage(pageId);
+    if (CollectionUtils.isNotEmpty(moves)) {
+      moves.forEach(this::delete);
+    }
   }
 
 }

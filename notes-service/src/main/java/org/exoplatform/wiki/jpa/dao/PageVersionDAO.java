@@ -16,32 +16,37 @@
  */
 package org.exoplatform.wiki.jpa.dao;
 
-import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
-import org.exoplatform.wiki.jpa.entity.PageEntity;
-import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
-
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
 
-public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
-   public Long getLastversionNumberOfPage(Long pageId) {
-     Query query = getEntityManager().createNamedQuery("wikiPageVersion.getLastversionNumberOfPage")
-             .setParameter("pageId", pageId);
+import org.apache.commons.collections4.CollectionUtils;
 
-     try {
-       return (Long) query.getSingleResult();
-     } catch (NoResultException e) {
-       return null;
-     }
-   }
+import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
+
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+
+public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
+
+  private static final String PAGE_ID_PARAM = "pageId";
+
+  public Long getLastversionNumberOfPage(Long pageId) {
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("wikiPageVersion.getLastversionNumberOfPage", Long.class)
+                                               .setParameter(PAGE_ID_PARAM, pageId);
+
+    try {
+      return query.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
 
   public PageVersionEntity getPageversionByPageIdAndVersion(Long pageId, Long versionNumber) {
-    TypedQuery<PageVersionEntity> query = getEntityManager().createNamedQuery("wikiPageVersion.getPageversionByPageIdAndVersion", PageVersionEntity.class)
-            .setParameter("pageId", pageId)
-            .setParameter("versionNumber", versionNumber);
+    TypedQuery<PageVersionEntity> query = getEntityManager()
+                                                            .createNamedQuery("wikiPageVersion.getPageversionByPageIdAndVersion",
+                                                                              PageVersionEntity.class)
+                                                            .setParameter(PAGE_ID_PARAM, pageId)
+                                                            .setParameter("versionNumber", versionNumber);
 
     try {
       return query.getSingleResult();
@@ -51,24 +56,24 @@ public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
   }
 
   public List<PageVersionEntity> findAllVersionsBySyntax(String syntax, int offset, int limit) {
-    return getEntityManager().createNamedQuery("wikiPageVersion.getAllPagesVersionsBySyntax")
-            .setParameter("syntax", syntax)
-            .setFirstResult(offset)
-            .setMaxResults(limit)
-            .getResultList();
+    return getEntityManager().createNamedQuery("wikiPageVersion.getAllPagesVersionsBySyntax", PageVersionEntity.class)
+                             .setParameter("syntax", syntax)
+                             .setFirstResult(offset)
+                             .setMaxResults(limit)
+                             .getResultList();
   }
 
   public Long countPagesVersionsBySyntax(String syntax) {
     return (Long) getEntityManager().createNamedQuery("wikiPageVersion.countAllPagesVersionsBySyntax")
-            .setParameter("syntax", syntax)
-            .getSingleResult();
+                                    .setParameter("syntax", syntax)
+                                    .getSingleResult();
   }
 
   public List<PageVersionEntity> findPageVersionsByPageIdAndLang(Long pageId, String lang) {
     TypedQuery<PageVersionEntity> query = getEntityManager()
                                                             .createNamedQuery("wikiPageVersion.getPageVersionsByPageIdAndLang",
                                                                               PageVersionEntity.class)
-                                                            .setParameter("pageId", pageId)
+                                                            .setParameter(PAGE_ID_PARAM, pageId)
                                                             .setParameter("lang", lang);
     try {
       return query.getResultList();
@@ -76,12 +81,12 @@ public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
       return Collections.emptyList();
     }
   }
-  
+
   public PageVersionEntity findLatestVersionByPageIdAndLang(Long pageId, String lang) {
     TypedQuery<PageVersionEntity> query = getEntityManager()
                                                             .createNamedQuery("wikiPageVersion.getLatestPageVersionsByPageIdAndLang",
                                                                               PageVersionEntity.class)
-                                                            .setParameter("pageId", pageId)
+                                                            .setParameter(PAGE_ID_PARAM, pageId)
                                                             .setParameter("lang", lang);
     query.setMaxResults(1);
     try {
@@ -90,15 +95,24 @@ public class PageVersionDAO extends WikiBaseDAO<PageVersionEntity, Long> {
       return null;
     }
   }
-  
+
   public List<String> findPageAvailableTranslationLanguages(Long pageId) {
-    Query query = getEntityManager().createNamedQuery("wikiPageVersion.getPageAvailableTranslationLanguages")
-                                                 .setParameter("pageId", pageId);
-    try {
-      return query.getResultList();
-    } catch (NoResultException e) {
-      return Collections.emptyList();
+    return getEntityManager().createNamedQuery("wikiPageVersion.getPageAvailableTranslationLanguages", String.class)
+                             .setParameter(PAGE_ID_PARAM, pageId)
+                             .getResultList();
+  }
+
+  public List<PageVersionEntity> findVersionsByPage(Long pageId) {
+    return getEntityManager().createNamedQuery("wikiPageVersion.findVersionsByPage", PageVersionEntity.class)
+                             .setParameter(PAGE_ID_PARAM, pageId)
+                             .getResultList();
+  }
+
+  public void deletePageVersions(long pageId) {
+    List<PageVersionEntity> versions = findVersionsByPage(pageId);
+    if (CollectionUtils.isNotEmpty(versions)) {
+      versions.forEach(this::delete);
     }
   }
-  
+
 }
