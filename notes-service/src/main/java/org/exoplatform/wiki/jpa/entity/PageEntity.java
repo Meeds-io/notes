@@ -19,9 +19,27 @@
 
 package org.exoplatform.wiki.jpa.entity;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,6 +57,8 @@ import lombok.EqualsAndHashCode;
 @NamedQuery(name = "wikiPage.getAllPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner")
 @NamedQuery(name = "wikiPage.getPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner AND p.deleted = :deleted")
 @NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.name")
+@NamedQuery(name = "wikiPage.getAllChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id ORDER BY p.name")
+@NamedQuery(name = "wikiPage.getRelatedPages", query = "SELECT p FROM WikiPageEntity p INNER JOIN p.relatedPages r where r.id = :pageId")
 @NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC")
 @NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false")
 @Data
@@ -61,14 +81,23 @@ public class PageEntity extends BasePageEntity {
   @EqualsAndHashCode.Exclude
   private PageEntity parentPage;
 
-  @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "parentPage")
+  @EqualsAndHashCode.Exclude
+  private List<PageEntity>        children;
+
+  @OneToMany(mappedBy = "targetPage")
+  @EqualsAndHashCode.Exclude
+  private List<DraftPageEntity>   drafts;
+
+  @OneToMany(mappedBy = "page")
   @EqualsAndHashCode.Exclude
   private List<PageVersionEntity> versions;
 
   @ManyToMany
-  @JoinTable(name = "WIKI_PAGES_RELATED_PAGES",
-      joinColumns = {@JoinColumn(name = "PAGE_ID")},
-      inverseJoinColumns = {@JoinColumn(name = "RELATED_PAGE_ID")}
+  @JoinTable(
+    name = "WIKI_PAGES_RELATED_PAGES",
+    joinColumns = {@JoinColumn(name = "PAGE_ID")},
+    inverseJoinColumns = {@JoinColumn(name = "RELATED_PAGE_ID")}
   )
   @EqualsAndHashCode.Exclude
   private List<PageEntity> relatedPages;

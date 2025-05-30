@@ -24,6 +24,7 @@ import java.util.List;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
+import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.model.WikiType;
 
@@ -33,8 +34,17 @@ import org.exoplatform.wiki.model.WikiType;
  */
 public class WikiDAO extends WikiBaseDAO<WikiEntity, Long> {
 
+  private PageDAO pageDAO;
+
+  public WikiDAO(PageDAO pageDAO) {
+    this.pageDAO = pageDAO;
+  }
+
   public List<Long> findAllIds(int offset, int limit) {
-    return getEntityManager().createNamedQuery("wiki.getAllIds").setFirstResult(offset).setMaxResults(limit).getResultList();
+    return getEntityManager().createNamedQuery("wiki.getAllIds", Long.class)
+                             .setFirstResult(offset)
+                             .setMaxResults(limit)
+                             .getResultList();
   }
 
   public WikiEntity getWikiByTypeAndOwner(String wikiType, String wikiOwner) {
@@ -58,6 +68,16 @@ public class WikiDAO extends WikiBaseDAO<WikiEntity, Long> {
                                                .setParameter("type", wikiType);
 
     return query.getResultList();
+  }
+
+  @Override
+  @ExoTransactional
+  public void delete(WikiEntity entity) {
+    if (entity.getWikiHome() != null) {
+      pageDAO.delete(entity.getWikiHome());
+    }
+    entity.setWikiHome(null);
+    super.delete(entity);
   }
 
 }
