@@ -53,13 +53,15 @@ public class NoteFeaturedImage implements Serializable {
                            String mimeType,
                            long fileSize,
                            Long lastUpdated,
-                           InputStream fileInputStream) {
+                           InputStream fileInputStream,
+                           String altText) {
     this.id = id;
     this.fileName = fileName;
     this.mimeType = mimeType;
     this.fileSize = fileSize;
     this.lastUpdated = lastUpdated;
     this.fileInputStream = fileInputStream;
+    this.altText = altText;
   }
 
   public NoteFeaturedImage(Long id,
