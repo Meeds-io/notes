@@ -3,6 +3,7 @@
     <v-card
       flat
       class="pa-0"
+      :aria-label="$t('search.access.to.result', {0 :wikiTitleText})"
       @click="openWiki">
       <v-list class="pa-0" :class="hover && 'light-grey-background-color no-border-radius' || ''">
         <v-list-item>
@@ -12,9 +13,8 @@
 
           <v-list-item-content>
             <div class="d-flex flex-row full-width align-center">
-              <v-list-item-title class="flex-grow-1" :title="wikiTitle">
+              <v-list-item-title class="flex-grow-1">
                 <p
-                  :title="wikiTitleText"
                   class="title pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
                   v-sanitized-html="wikiTitle"></p>
               </v-list-item-title>
@@ -65,7 +65,6 @@
               </span>
               <div
                 class="pt-2 text-wrap text-body text-break"
-                :title="summaryText"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
             </v-list-item-subtitle>
@@ -94,9 +93,6 @@ export default {
     },
     excerpt() {
       return this.result?.excerpt;
-    },
-    summaryText() {
-      return this.excerpt && $('<div />').html(this.excerpt).text() || $('<div />').html(this.summary).text();
     },
     wikiTitle() {
       return this.result && this.result.title || '';
