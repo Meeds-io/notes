@@ -197,8 +197,6 @@ export default {
         formData.append('spaceGroupId', eXo.env.portal?.spaceGroup);
       }
       formData.append('isDraft', 'false');
-      formData.append('showMaxWindow', 'true');
-      formData.append('hideSharedLayout', 'true');
       if (this.note?.lang) {
         formData.append('translation', this.lang);
       }
