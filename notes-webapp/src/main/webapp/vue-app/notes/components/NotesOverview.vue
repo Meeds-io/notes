@@ -788,7 +788,7 @@ export default {
     },
     addNote() {
       if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&spaceName=${eXo.env.portal?.spaceDisplayName}&appName=${this.appName}&showMaxWindow=true&hideSharedLayout=true`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
       }
     },
     editNote() {
@@ -796,7 +796,7 @@ export default {
       if (this.selectedTranslation.value){
         translation = `&translation=${this.selectedTranslation.value}`;
       }
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}&parentNoteId=${this.note.parentPageId ? this.note.parentPageId : this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&spaceName=${eXo.env.portal?.spaceDisplayName}&appName=${this.appName}&isDraft=${this.isDraft}&showMaxWindow=true&hideSharedLayout=true${translation}&spaceId=${eXo.env.portal.spaceId}`, '_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
