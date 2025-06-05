@@ -124,8 +124,6 @@ export default {
       }
       formData.append('pageName', document.title);
       formData.append('isDraft', 'false');
-      formData.append('showMaxWindow', 'true');
-      formData.append('hideSharedLayout', 'true');
       formData.append('webPageNote', 'true');
       formData.append('webPageUrl', eXo?.env?.portal?.webPageUrl || `${window.location.pathname}${window.location.search || ''}`);
       if (this.note?.lang) {
