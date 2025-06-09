@@ -1645,6 +1645,7 @@ public class NoteServiceImpl implements NoteService {
                                                             NOTE_METADATA_PAGE_OBJECT_TYPE);
     if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
       String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
+      String featuredImageAltText = metadataItem.getProperties().get(FEATURED_IMAGE_ALT_TEXT);
       long noteFeaturedImageId = featuredImageIdProp != null
                                  && !featuredImageIdProp.equals("null") ? Long.parseLong(featuredImageIdProp) : 0L;
       FileItem fileItem = fileService.getFile(noteFeaturedImageId);
@@ -1659,7 +1660,8 @@ public class NoteServiceImpl implements NoteService {
                                      fileInfo.getMimetype(),
                                      fileInfo.getSize(),
                                      fileInfo.getUpdatedDate().getTime(),
-                                     fileItem.getAsStream());
+                                     fileItem.getAsStream(),
+                                     featuredImageAltText);
       }
     }
     return null;

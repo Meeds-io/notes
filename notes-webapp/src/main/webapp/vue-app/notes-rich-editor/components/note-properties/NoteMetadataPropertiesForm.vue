@@ -219,6 +219,7 @@ export default {
       this.noteObject = structuredClone(this.note);
       this.hasFeaturedImageValue = this.hasFeaturedImage;
       this.summaryContent = this.currentProperties?.summary || '';
+      this.featuredImageAltText = this.currentProperties?.featuredImage?.altText || '';
     },
     propertiesUpdated() {
       const savedFeaturedImageId = this.noteObject?.properties?.featuredImage?.id;
