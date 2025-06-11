@@ -4,7 +4,7 @@
       flat
       class="pa-0"
       :aria-label="$t('search.access.to.result', {0 :wikiTitleText})"
-      @click="openWiki">
+      :href="wikiUrl">
       <v-list class="pa-0" :class="hover && 'light-grey-background-color no-border-radius' || ''">
         <v-list-item>
           <v-list-item-icon class="me-4">
@@ -14,9 +14,10 @@
           <v-list-item-content>
             <div class="d-flex flex-row full-width align-center">
               <v-list-item-title class="flex-grow-1">
-                <p
+                <h1
                   class="title pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
-                  v-sanitized-html="wikiTitle"></p>
+                  v-sanitized-html="wikiTitle">
+                </h1>
               </v-list-item-title>
               <span v-show="hover || isMobile" class="ml-2">
                 <note-favorite-action
@@ -122,12 +123,5 @@ export default {
       return `${eXo.env.portal.context}/s/${this.space?.id}`;
     }
   },
-  methods: {
-    openWiki() {
-      if (this.wikiUrl) {
-        window.location.href = this.wikiUrl; // same tab
-      }
-    },
-  }
 };
 </script>
