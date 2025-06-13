@@ -495,10 +495,6 @@ public class NotesRestService implements ResourceContainer {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
-    if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
-      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
-    }
     String noteBookType = note.getWikiType();
     String noteBookOwner = note.getWikiOwner();
     try {
@@ -556,10 +552,6 @@ public class NotesRestService implements ResourceContainer {
                             DraftPageEntity draftNoteToSave) {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
-    }
-    if (NumberUtils.isNumber(draftNoteToSave.getTitle())) {
-      log.warn("Draft Note's title should not be number");
-      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Draft Note's title should not be number}").build();
     }
     String noteBookType = draftNoteToSave.getWikiType();
     String noteBookOwner = draftNoteToSave.getWikiOwner();
@@ -650,10 +642,6 @@ public class NotesRestService implements ResourceContainer {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
-    if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
-      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
-    }
     try {
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
         noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
@@ -718,11 +706,6 @@ public class NotesRestService implements ResourceContainer {
                                    @RequestBody(description = "note object to be updated", required = true) PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
-    }
-
-    if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
-      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -856,11 +839,6 @@ public class NotesRestService implements ResourceContainer {
   Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
-    }
-
-    if (NumberUtils.isNumber(note.getTitle())) {
-      log.warn("Note's title should not be number");
-      return Response.status(Response.Status.BAD_REQUEST).entity("{ message: Note's title should not be number}").build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
