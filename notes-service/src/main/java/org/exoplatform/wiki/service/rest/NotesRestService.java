@@ -59,6 +59,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.portal.application.localization.LocalizationFilter;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -1309,7 +1310,7 @@ public class NotesRestService implements ResourceContainer {
               noteSearchResult.setPoster(posterIdentity);
             }
             noteSearchResult.setWikiOwner(wikiOwnerIdentity);
-            noteSearchResult.setExcerpt(searchResult.getExcerpt());
+            noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
             noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
             noteSearchResult.setType(searchResult.getType());
             noteSearchResult.setUrl(page.getUrl());

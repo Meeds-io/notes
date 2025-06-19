@@ -108,7 +108,7 @@ export default {
       return this.result?.wikiOwner?.space;
     },
     summary() {
-      return this.$utils.htmlToText(this.result?.summary || this.excerpt || this.result.content);
+      return this.result?.summary || this.excerpt || this.result.content;
     },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
