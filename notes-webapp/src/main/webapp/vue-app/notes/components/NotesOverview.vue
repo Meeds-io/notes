@@ -140,7 +140,7 @@
               </span>
               <span>
                 <notes-translation-menu
-                  note="note"
+                  :note="note"
                   :translations="translations"
                   :selected-translation="selectedTranslation"
                   @change-translation="changeTranslation" />
