@@ -59,6 +59,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.exoplatform.portal.application.localization.LocalizationFilter;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -100,7 +101,7 @@ import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
-import org.exoplatform.wiki.service.search.TitleSearchResult;
+import org.exoplatform.wiki.service.search.NoteSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.PageTreeNode;
@@ -1270,7 +1271,7 @@ public class NotesRestService implements ResourceContainer {
       data.setWikiOwner(wikiOwner);
       data.setWikiType(wikiType);
       List<SearchResult> results = noteService.search(data).getAll();
-      List<TitleSearchResult> titleSearchResults = new ArrayList<>();
+      List<NoteSearchResult> noteSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
         Page page = null;
         try {
@@ -1299,27 +1300,32 @@ public class NotesRestService implements ResourceContainer {
                             uriInfo.getPath(),
                             "all")
                             : null;
-            TitleSearchResult titleSearchResult = new TitleSearchResult();
-            titleSearchResult.setTitle(searchResult.getTitle());
-            titleSearchResult.setId(page.getId());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setPageName(page.getName());
-            titleSearchResult.setActivityId(page.getActivityId());
+            NoteSearchResult noteSearchResult = new NoteSearchResult();
+            noteSearchResult.setTitle(searchResult.getTitle());
+            noteSearchResult.setId(page.getId());
+            noteSearchResult.setPageName(page.getName());
+            noteSearchResult.setPageName(page.getName());
+            noteSearchResult.setActivityId(page.getActivityId());
             if (posterIdentity != null) {
-              titleSearchResult.setPoster(posterIdentity);
+              noteSearchResult.setPoster(posterIdentity);
             }
-            titleSearchResult.setWikiOwner(wikiOwnerIdentity);
-            titleSearchResult.setExcerpt(searchResult.getExcerpt());
-            titleSearchResult.setCreatedDate(searchResult.getCreatedDate().getTimeInMillis());
-            titleSearchResult.setType(searchResult.getType());
-            titleSearchResult.setUrl(page.getUrl());
-            titleSearchResult.setLang(searchResult.getLang());
-            titleSearchResult.setMetadatas(page.getMetadatas());
-            titleSearchResults.add(titleSearchResult);
+            noteSearchResult.setWikiOwner(wikiOwnerIdentity);
+            noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
+            noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
+            noteSearchResult.setType(searchResult.getType());
+            noteSearchResult.setUrl(page.getUrl());
+            noteSearchResult.setLang(searchResult.getLang());
+            noteSearchResult.setMetadatas(page.getMetadatas());
+            noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
+            String summary = pageVersion != null
+                && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
+                                                       : page.getProperties() != null ? page.getProperties().getSummary() : null;
+            noteSearchResult.setSummary(summary);
+            noteSearchResults.add(noteSearchResult);
           }
         }
       }
-      return Response.ok(new BeanToJsons(titleSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+      return Response.ok(new BeanToJsons(noteSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Error when search notes", e);
       return Response.serverError().build();
