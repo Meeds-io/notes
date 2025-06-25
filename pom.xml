@@ -30,11 +30,11 @@
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
 
-    <io.meeds.social.version>7.0.x-exo-SNAPSHOT</io.meeds.social.version>
-    <io.meeds.platform-ui.version>7.0.x-exo-SNAPSHOT</io.meeds.platform-ui.version>
-    <addon.meeds.gamification.version>7.0.x-exo-SNAPSHOT</addon.meeds.gamification.version>
-    <addon.meeds.analytics.version>7.0.x-exo-SNAPSHOT</addon.meeds.analytics.version>
-    <addon.meeds.layout.version>7.0.x-exo-SNAPSHOT</addon.meeds.layout.version>
+    <io.meeds.social.version>7.0.2-exo</io.meeds.social.version>
+    <io.meeds.platform-ui.version>7.0.2-exo</io.meeds.platform-ui.version>
+    <addon.meeds.gamification.version>7.0.2-exo</addon.meeds.gamification.version>
+    <addon.meeds.analytics.version>7.0.2-exo</addon.meeds.analytics.version>
+    <addon.meeds.layout.version>7.0.2-exo</addon.meeds.layout.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
