@@ -23,31 +23,33 @@ import java.util.List;
 
 @Data
 public class SearchData {
-  public String title;
+  public String        title;
 
-  public String content;
+  public String        content;
 
-  public String wikiType;
+  public String        wikiType;
 
-  public String wikiOwner;
+  public String        wikiOwner;
 
-  public String userId;
+  public String        userId;
 
-  public String pageId;
-  
-  private long offset = 0;
+  public String        pageId;
 
-  private boolean isFavorites;
-  
-  protected String sort;
-  
-  protected String order;
-  
-  public int limit = Integer.MAX_VALUE;
+  private long         offset = 0;
+
+  private boolean      isFavorites;
+
+  protected String     sort;
+
+  protected String     order;
+
+  public int           limit  = Integer.MAX_VALUE;
 
   private List<String> tagNames;
 
-  private boolean isNotesTreeFilter;
+  private List<Long>   spaceIds;
+
+  private boolean      isNotesTreeFilter;
 
   public SearchData(String title, String content, String wikiType, String wikiOwner, String pageId, String userId) {
     this.title = org.exoplatform.wiki.utils.Utils.escapeIllegalCharacterInQuery(title);

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -135,13 +136,18 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites, boolean isNotesTreeFilter, int offset, int limit) {
-      return filteredWikiSearch(searchedText, userId, wikiOwner, tagNames, isFavorites, isNotesTreeFilter, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, WikiSearchData wikiSearchData) {
+      return filteredWikiSearch(searchedText, wikiSearchData);
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites,boolean isNotesTreeFilter , int offset, int limit) {
-    Set<String> ids = getUserSpaceIds(userId, wikiOwner);
-    String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, isNotesTreeFilter,offset, limit);
+  protected List<SearchResult> filteredWikiSearch(String query, WikiSearchData wikiSearchData) {
+    Set<String> ids = getUserSpaceIds(wikiSearchData.getUserId(), wikiSearchData.getWikiOwner());
+    if (!CollectionUtils.isEmpty(wikiSearchData.getSpaceIds())) {
+      // Filter the space identity IDs that I have access to
+      Set<String> spaceIds = getFilterSpaceIdentityIds(wikiSearchData.getSpaceIds());
+      ids.retainAll(spaceIds);
+    }
+    String esQuery = buildQueryStatement(ids, wikiSearchData.getUserId(), wikiSearchData.getTagNames(), query, wikiSearchData.isFavorites(), wikiSearchData.isNotesTreeFilter(), wikiSearchData.getOffset(), wikiSearchData.getLimit());
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
@@ -381,6 +387,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     }
 
   }
+
   public void setSearchQuery(String searchQuery){
     this.searchQuery=searchQuery;
   }
@@ -406,6 +413,21 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       metadataFilters.put(FavoriteService.METADATA_TYPE.getName(), Collections.singletonList(viewerIdentity.getId()));
     }
     return metadataFilters;
+  }
+
+  private Set<String> getFilterSpaceIdentityIds(List<Long> spaceIds) {
+    if (!CollectionUtils.isEmpty(spaceIds)) {
+      IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
+      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
+      return spaceIds.stream().map(spaceService::getSpaceById)
+              .filter(Objects::nonNull)
+              .map(Space::getPrettyName)
+              .map(identityManager::getOrCreateSpaceIdentity)
+              .filter(Objects::nonNull)
+              .map(identity -> Long.toString(identity.getIdentityId()))
+              .collect(Collectors.toSet());
+    }
+    return Collections.emptySet();
   }
 
 }
