@@ -112,14 +112,8 @@ public class NoteDataStorage {
                                                     PortalContainer.getInstance()
                                                                    .getComponentInstanceOfType(WikiElasticSearchServiceConnector.class);
 
-    List<SearchResult> searchResults = searchService.searchWiki(getSearchedText(wikiSearchData),
-                                                                wikiSearchData.getUserId(),
-                                                                wikiSearchData.getWikiOwner(),
-                                                                wikiSearchData.getTagNames(),
-                                                                wikiSearchData.isFavorites(),
-                                                                wikiSearchData.isNotesTreeFilter(),
-                                                                (int) wikiSearchData.getOffset(),
-                                                                wikiSearchData.getLimit());
+
+    List<SearchResult> searchResults = searchService.searchWiki(getSearchedText(wikiSearchData), wikiSearchData);
 
     return new ObjectPageList<>(searchResults, searchResults.size());
   }
