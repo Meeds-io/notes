@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -144,7 +145,15 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     // when
     List<String> tagNames = new ArrayList<>();
     tagNames.add("testNoteTag");
-    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*","__system", null, tagNames, false, false, 0, 20);
+    WikiSearchData wikiSearchData = new WikiSearchData(null,"__system");
+    wikiSearchData.setTagNames(tagNames);
+    wikiSearchData.setWikiOwner(null);
+    wikiSearchData.setFavorites(false);
+    wikiSearchData.setNotesTreeFilter(false);
+    wikiSearchData.setOffset(0);
+    wikiSearchData.setLimit(20);
+
+    List<SearchResult> searchResults = searchServiceConnector.searchWiki("*", wikiSearchData);
 
     // Then
     assertNotNull(searchResults);
