@@ -1265,7 +1265,7 @@ public class NotesRestService implements ResourceContainer {
                                      List<String> tagNames,
                                      @Parameter(description = "Space id used to search notes of one space", required = false)
                                      @QueryParam("spaceId")
-                                     Long spaceId,
+                                     String spaceId,
                                      @QueryParam("isNotesTreeFilter")
                                      boolean isNotesTreeFilter) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
