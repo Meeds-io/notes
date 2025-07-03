@@ -47,7 +47,7 @@ public class SearchData {
 
   private List<String> tagNames;
 
-  private List<Long>   spaceIds;
+  private List<String> spaceIds;
 
   private boolean      isNotesTreeFilter;
 

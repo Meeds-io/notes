@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -143,9 +144,11 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   protected List<SearchResult> filteredWikiSearch(String query, WikiSearchData wikiSearchData) {
     Set<String> ids = getUserSpaceIds(wikiSearchData.getUserId(), wikiSearchData.getWikiOwner());
     if (!CollectionUtils.isEmpty(wikiSearchData.getSpaceIds())) {
-      // Filter the space identity IDs that I have access to
-      Set<String> spaceIds = getFilterSpaceIdentityIds(wikiSearchData.getSpaceIds());
-      ids.retainAll(spaceIds);
+      List<String> spaceIdentityIds = SpaceUtils.getSpaceIdentityIds(wikiSearchData.getUserId(),wikiSearchData.getSpaceIds());
+      ids.retainAll(spaceIdentityIds);
+      if (ids.isEmpty()) {
+        return Collections.emptyList();
+      }
     }
     String esQuery = buildQueryStatement(ids, wikiSearchData.getUserId(), wikiSearchData.getTagNames(), query, wikiSearchData.isFavorites(), wikiSearchData.isNotesTreeFilter(), wikiSearchData.getOffset(), wikiSearchData.getLimit());
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
@@ -413,21 +416,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       metadataFilters.put(FavoriteService.METADATA_TYPE.getName(), Collections.singletonList(viewerIdentity.getId()));
     }
     return metadataFilters;
-  }
-
-  private Set<String> getFilterSpaceIdentityIds(List<Long> spaceIds) {
-    if (!CollectionUtils.isEmpty(spaceIds)) {
-      IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
-      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
-      return spaceIds.stream().map(spaceService::getSpaceById)
-              .filter(Objects::nonNull)
-              .map(Space::getPrettyName)
-              .map(identityManager::getOrCreateSpaceIdentity)
-              .filter(Objects::nonNull)
-              .map(identity -> Long.toString(identity.getIdentityId()))
-              .collect(Collectors.toSet());
-    }
-    return Collections.emptySet();
   }
 
 }
