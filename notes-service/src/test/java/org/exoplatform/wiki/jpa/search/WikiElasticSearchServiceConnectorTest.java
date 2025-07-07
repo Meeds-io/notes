@@ -17,7 +17,6 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.InitParams;
@@ -59,22 +58,37 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
   @Mock
   private ConfigurationManager              configurationManager;
 
-  private MockedStatic<CommonsUtils>        commonsUtils;
-
   private MockedStatic<Utils>               utils;
 
   @Override
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    commonsUtils = mockStatic(CommonsUtils.class);
     utils = mockStatic(Utils.class);
+    InitParams initParams = new InitParams();
+    PropertiesParam properties = new PropertiesParam();
+    properties.setProperty("searchType", "wiki-es");
+    properties.setProperty("displayName", "wiki-es");
+    properties.setProperty("index", "wiki");
+    properties.setProperty("type", "wiki,wiki-page");
+    properties.setProperty("titleField", "title");
+    properties.setProperty("searchFields", "name,title,content,comment,file");
+    initParams.put("constructor.params", properties);
+    this.searchServiceConnector = new WikiElasticSearchServiceConnector(configurationManager,
+                                                                        initParams,
+                                                                        elasticSearchingClient,
+                                                                        identityManager,
+                                                                        spaceService) {
+      @Override
+      protected String getPermissionFilter() {
+        return "";
+      }
+    };
   }
 
   @Override
   @After
   public void tearDown() throws Exception {
-    commonsUtils.close();
     utils.close();
     super.tearDown();
   }
@@ -84,8 +98,6 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
 
     Identity systemIdentity = new Identity(IdentityConstants.SYSTEM);
     ConversationState.setCurrent(new ConversationState(systemIdentity));
-    commonsUtils.when(() -> CommonsUtils.getService(SpaceService.class)).thenReturn(spaceService);
-    commonsUtils.when(() -> CommonsUtils.getService(IdentityManager.class)).thenReturn(identityManager);
     utils.when(() -> Utils.html2text(anyString())).thenReturn("");
     // Given
     when(elasticSearchingClient.sendRequest(anyString(),anyString()))
@@ -103,25 +115,7 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
                + "        \"wikiType\": \"portal\",\n" + "        \"updatedDate\": \"1494833380251\",\n"
                + "        \"title\": \"Page 2\",\n" + "        \"url\": \"/portal/intranet/wiki/Page_2\"\n" + "      }\n"
                + "    }]\n" + "  }\n" + "}");
-
-    InitParams initParams = new InitParams();
-    PropertiesParam properties = new PropertiesParam();
-    properties.setProperty("searchType", "wiki-es");
-    properties.setProperty("displayName", "wiki-es");
-    properties.setProperty("index", "wiki");
-    properties.setProperty("type", "wiki,wiki-page");
-    properties.setProperty("titleField", "title");
-    properties.setProperty("searchFields", "name,title,content,comment,file");
-    initParams.put("constructor.params", properties);
-    this.searchServiceConnector = new WikiElasticSearchServiceConnector(configurationManager,
-                                                                        initParams,
-                                                                        elasticSearchingClient,
-                                                                        identityManager) {
-      @Override
-      protected String getPermissionFilter() {
-        return "";
-      }
-    };
+    
     this.searchServiceConnector.setSearchQuery("{\n" + "  \"from\": \"@offset@\",\n" + "  \"size\": \"@limit@\",\n"
         + "  \"query\":{\n" + "    \"bool\":{\n" + "      \"filter\":{\n" + "        \"terms\":{\n"
         + "          \"permissions\": [@permissions@]\n" + "        }\n" + "      },\n" + "      \"should\": {\n"
