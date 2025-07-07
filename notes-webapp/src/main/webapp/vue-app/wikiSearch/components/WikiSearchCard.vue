@@ -15,7 +15,7 @@
             <div class="d-flex flex-row full-width align-center">
               <v-list-item-title class="flex-grow-1">
                 <h1
-                  class="title pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
+                  class="title font-weight-bold primary--text pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
                   v-sanitized-html="wikiTitle">
                 </h1>
               </v-list-item-title>
@@ -65,7 +65,7 @@
                 <date-format class="ms-1 my-auto" :value="wikiUpdateDate" />
               </span>
               <div
-                class="pt-2 text-wrap text-body text-break"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
             </v-list-item-subtitle>
