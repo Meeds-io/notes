@@ -1250,17 +1250,26 @@ public class NotesRestService implements ResourceContainer {
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
   public Response searchData(@Context
-                                     UriInfo uriInfo, @QueryParam("keyword")
-                                     String keyword, @QueryParam("limit")
-                                     int limit, @QueryParam("wikiType")
-                                     String wikiType, @QueryParam("wikiOwner")
-                                     String wikiOwner, @QueryParam("favorites")
-                                     boolean favorites, @QueryParam("tags")
-                                     List<String> tagNames, @QueryParam("isNotesTreeFilter")
+                                     UriInfo uriInfo,
+                                     @QueryParam("keyword")
+                                     String keyword,
+                                     @QueryParam("limit")
+                                     int limit,
+                                     @QueryParam("wikiType")
+                                     String wikiType,
+                                     @QueryParam("wikiOwner")
+                                     String wikiOwner,
+                                     @QueryParam("favorites")
+                                     boolean favorites,
+                                     @QueryParam("tags")
+                                     List<String> tagNames,
+                                     @Parameter(description = "Space id used to search notes of one space", required = false)
+                                     @QueryParam("spaceId")
+                                     String spaceId,
+                                     @QueryParam("isNotesTreeFilter")
                                      boolean isNotesTreeFilter) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
-
       keyword = keyword.toLowerCase();
       Identity currentIdentity = ConversationState.getCurrent().getIdentity();
       WikiSearchData data = new WikiSearchData(keyword, currentIdentity.getUserId());
@@ -1270,6 +1279,9 @@ public class NotesRestService implements ResourceContainer {
       data.setTagNames(tagNames);
       data.setWikiOwner(wikiOwner);
       data.setWikiType(wikiType);
+      if (spaceId != null) {
+        data.setSpaceIds(Arrays.asList(spaceId));
+      }
       List<SearchResult> results = noteService.search(data).getAll();
       List<NoteSearchResult> noteSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {

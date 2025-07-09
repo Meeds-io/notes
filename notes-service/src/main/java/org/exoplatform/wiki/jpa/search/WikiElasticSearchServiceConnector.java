@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.core.space.SpaceUtils;
+import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -58,17 +60,22 @@ import io.meeds.notes.legacy.search.es.ElasticSearchServiceConnector;
  */
 public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConnector {
 
-  private static final Log           LOG                          = ExoLogger.getLogger(WikiElasticSearchServiceConnector.class);
+  private static final Log           LOG                                     =
+                                         ExoLogger.getLogger(WikiElasticSearchServiceConnector.class);
 
-  private static final String        SEARCH_QUERY_FILE_PATH_PARAM = "query.file.path";
+  private static final String        SEARCH_QUERY_FILE_PATH_PARAM            = "query.file.path";
+
   private final IdentityManager      identityManager;
+
   private final ConfigurationManager configurationManager;
+
+  private final SpaceService         spaceService;
 
   private String                     searchQuery;
 
   private String                     searchQueryFilePath;
 
-  public static final String         SEARCH_QUERY_TERM            = """
+  public static final String         SEARCH_QUERY_TERM                       = """
       ,"must":{
         "query_string":{
           "fields": ["name","title","content","comment"],
@@ -78,29 +85,29 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       """;
 
-  public static final String         SEARCH_QUERY_TERM_FOR_NOTES_APPLICATION            = """
-          ,"must": [
-            @wildcard_query@
-          ]
-          """;
+  public static final String         SEARCH_QUERY_TERM_FOR_NOTES_APPLICATION = """
+      ,"must": [
+        @wildcard_query@
+      ]
+      """;
 
-  public static final String         WILDCARD_QUERY            = """
-          {
-            "wildcard": {
-              "title": "*@term@*"
-            }
-          }
-          """;
-
-
+  public static final String         WILDCARD_QUERY                          = """
+      {
+        "wildcard": {
+          "title": "*@term@*"
+        }
+      }
+      """;
 
   public WikiElasticSearchServiceConnector(ConfigurationManager configurationManager,
                                            InitParams initParams,
                                            ElasticSearchingClient client,
-                                           IdentityManager identityManager) {
+                                           IdentityManager identityManager,
+                                           SpaceService spaceService) {
     super(initParams, client);
     this.configurationManager = configurationManager;
     this.identityManager = identityManager;
+    this.spaceService = spaceService;
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
     if (initParams.containsKey(SEARCH_QUERY_FILE_PATH_PARAM)) {
       searchQueryFilePath = initParams.getValueParam(SEARCH_QUERY_FILE_PATH_PARAM).getValue();
@@ -135,13 +142,20 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return StringUtils.join(sourceFields, ",");
   }
 
-  public List<SearchResult> searchWiki(String searchedText, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites, boolean isNotesTreeFilter, int offset, int limit) {
-      return filteredWikiSearch(searchedText, userId, wikiOwner, tagNames, isFavorites, isNotesTreeFilter, offset, limit);
+  public List<SearchResult> searchWiki(String searchedText, WikiSearchData wikiSearchData) {
+      return filteredWikiSearch(searchedText, wikiSearchData);
   }
 
-  protected List<SearchResult> filteredWikiSearch(String query, String userId, String wikiOwner, List<String> tagNames, boolean isFavorites,boolean isNotesTreeFilter , int offset, int limit) {
-    Set<String> ids = getUserSpaceIds(userId, wikiOwner);
-    String esQuery = buildQueryStatement(ids, userId, tagNames, query, isFavorites, isNotesTreeFilter,offset, limit);
+  protected List<SearchResult> filteredWikiSearch(String query, WikiSearchData wikiSearchData) {
+    Set<String> ids = getUserSpaceIds(wikiSearchData.getUserId(), wikiSearchData.getWikiOwner());
+    if (!CollectionUtils.isEmpty(wikiSearchData.getSpaceIds())) {
+      List<String> spaceIdentityIds = SpaceUtils.getSpaceIdentityIds(wikiSearchData.getUserId(),wikiSearchData.getSpaceIds());
+      ids.retainAll(spaceIdentityIds);
+      if (ids.isEmpty()) {
+        return Collections.emptyList();
+      }
+    }
+    String esQuery = buildQueryStatement(ids, wikiSearchData.getUserId(), wikiSearchData.getTagNames(), query, wikiSearchData.isFavorites(), wikiSearchData.isNotesTreeFilter(), wikiSearchData.getOffset(), wikiSearchData.getLimit());
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
@@ -329,9 +343,11 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       wikiSearchResult.setScore(score);
 
       if (wikiOwner != null && wikiOwner.startsWith("spaces/")) {
-        String wikiOwnerPrettyName = wikiOwner.split("spaces/")[1];
-        Identity wikiOwnerIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, wikiOwnerPrettyName, true);
-        wikiSearchResult.setWikiOwnerIdentity(wikiOwnerIdentity);
+        Space space = spaceService.getSpaceByGroupId(wikiOwner.startsWith("/") ? wikiOwner : "/".concat(wikiOwner));
+        if (space != null) {
+          Identity wikiOwnerIdentity = identityManager.getOrCreateSpaceIdentity(space.getPrettyName());
+          wikiSearchResult.setWikiOwnerIdentity(wikiOwnerIdentity);
+        }
       }
 
       if (owner != null) {
@@ -353,8 +369,6 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       throw new IllegalStateException("No Identity found: userId is empty");
     }  else {
       Set<String> permissions = new HashSet<>();
-      IdentityManager identityManager = CommonsUtils.getService(IdentityManager.class);
-      SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
       ListAccess<Space> userSpaces = spaceService.getMemberSpaces(userId);
       List<Space> spaceList = new ArrayList<>();
       try {
@@ -381,6 +395,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     }
 
   }
+
   public void setSearchQuery(String searchQuery){
     this.searchQuery=searchQuery;
   }
