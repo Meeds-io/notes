@@ -1,5 +1,9 @@
 <template>
-  <v-list-item class="clickable" :href="noteUrl">
+  <v-list-item
+    :href="noteUrl"
+    @keydown.enter="setAsViewed"
+    @auxclick="setAsViewed"
+    @click="setAsViewed">
     <v-list-item-icon class="me-3 my-auto">
       <v-img
         :src="noteImg"
@@ -30,6 +34,14 @@ export default {
     id: {
       type: String,
       default: () => null,
+    },
+    clickCallback: {
+      type: Function,
+      default: null,
+    },
+    expanded: {
+      type: Boolean,
+      default: false,
     },
   },
   data: () => ({ 
@@ -72,6 +84,11 @@ export default {
         message,
         type: type || 'success',
       }}));
+    },
+    setAsViewed(event) {
+      if (event.which === 1 || event.which === 2) {
+        this.clickCallback('notes', this.id);
+      }
     },
   },
 };
