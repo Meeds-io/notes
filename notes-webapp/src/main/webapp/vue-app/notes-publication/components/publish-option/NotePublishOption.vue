@@ -266,6 +266,7 @@ export default {
     },
     selectAllTargets() {
       this.selectedTargets = this.allTargetsSelected && [...this.allowedTargets] || [];
+      this.checkRestrictedAudience();
     },
     clearInputFilter() {
       this.$refs.targets.internalSearch = '';
