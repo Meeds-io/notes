@@ -1426,6 +1426,7 @@ public class NoteServiceImpl implements NoteService {
       page.setLang(publishedVersion.getLang());
       page.setProperties(publishedVersion.getProperties());
       page.setLatestVersionId(publishedVersion.getId());
+      page.setLastUpdater(publishedVersion.getAuthor());
       if (lang != null) {
         page.setMetadatas(retrieveMetadataItems(pageId + "-" + lang, userIdentity.getUserId()));
       }
