@@ -1955,7 +1955,7 @@ public class NoteServiceImpl implements NoteService {
             targetNote = note_;
           }
           if (conflict.equals("duplicate")) {
-            note_ = createNote(wiki, parent_.getName(), note, userIdentity, false, true);
+            note_ = createNote(wiki, parent_.getName(), note, userIdentity, true, true);
             targetNote = note_;
           }
           if (conflict.equals("update")) {
