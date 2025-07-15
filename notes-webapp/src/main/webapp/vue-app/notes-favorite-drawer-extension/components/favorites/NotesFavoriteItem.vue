@@ -1,14 +1,38 @@
 <template>
-  <v-list-item class="clickable" :href="noteUrl">
+  <v-list-item
+    :href="noteUrl"
+    @keydown.enter="setAsViewed"
+    @auxclick="setAsViewed"
+    @click="setAsViewed">
     <v-list-item-icon class="me-3 my-auto">
-      <v-img
-        :src="noteImg"
-        max-height="28"
-        max-width="25" />
+      <v-card
+        :min-width="iconWidth"
+        class="d-flex justify-center no-border-radius"
+        color="transparent"
+        flat>
+        <v-icon :size="iconSize">fa-clipboard</v-icon>
+      </v-card>
     </v-list-item-icon>
-
     <v-list-item-content>
-      <v-list-item-title class="text-color text-truncate">{{ noteTitle }}</v-list-item-title>
+      <v-list-item-title class="text-truncate">{{ noteTitle }}</v-list-item-title>
+      <v-list-item-subtitle v-if="expanded" class="d-flex align-center full-width overflow-hidden pt-2px">
+        <template v-if="spaceGroupId">
+          <favorite-space-avatar
+            :space-group-id="spaceGroupId"
+            :size="16"
+            class="flex-grow-0 flex-shrink-1 text-truncate"
+            link-style />
+          <v-icon class="flex-grow-0 flex-shrink-0 mx-2" size="2">fa-circle</v-icon>
+        </template>
+        <date-format class="flex-grow-0 flex-shrink-0" :value="updatedDate" />
+        <template v-if="author">
+          <v-icon class="flex-grow-0 flex-shrink-0 mx-2" size="2">fa-circle</v-icon>
+          <favorite-user-avatar
+            :username="author"
+            :size="16"
+            class="flex-grow-1 flex-shrink-1 text-truncate" />
+        </template>
+      </v-list-item-subtitle>
     </v-list-item-content>
 
     <v-list-item-action>
@@ -31,19 +55,41 @@ export default {
       type: String,
       default: () => null,
     },
+    clickCallback: {
+      type: Function,
+      default: null,
+    },
+    expanded: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({ 
     isFavorite: true,
     note: {},
-    noteImg: '/notes/images/notes-appicon.png',
   }),
   computed: {
+    iconWidth() {
+      return this.expanded ? 40 : 30;
+    },
     noteTitle() {
       return this.note?.title || '';
     },
+    updatedDate() {
+      return this.note?.updatedDate?.time || this.note?.createdDate?.time;
+    },
+    author() {
+      return this.note?.lastUpdater || this.note?.author;
+    },
     noteUrl() {
-      return this.note.lang && `${this.note?.url}?translation=${this.note.lang}` || `${this.note?.url}?translation=original`;
-    }
+      return this.note?.lang && `${this.note?.url}?translation=${this.note.lang}` || `${this.note?.url}?translation=original`;
+    },
+    spaceGroupId() {
+      return this.note?.wikiType === 'group' &&  this.note?.wikiOwner?.startsWith?.('/spaces/') ? this.note?.wikiOwner : null;
+    },
+    iconSize() {
+      return this.expanded ? 34 : 24;
+    },
   },
   created() {
     let noteId = this.id;
@@ -72,6 +118,11 @@ export default {
         message,
         type: type || 'success',
       }}));
+    },
+    setAsViewed(event) {
+      if (event.which === 1 || event.which === 2) {
+        this.clickCallback('notes', this.id);
+      }
     },
   },
 };
