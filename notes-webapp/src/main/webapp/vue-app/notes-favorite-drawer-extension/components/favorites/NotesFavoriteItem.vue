@@ -17,7 +17,7 @@
       <v-list-item-title class="text-truncate">{{ noteTitle }}</v-list-item-title>
       <v-list-item-subtitle v-if="expanded" class="d-flex align-center full-width overflow-hidden pt-2px">
         <template v-if="spaceGroupId">
-          <space-avatar
+          <favorite-space-avatar
             :space-group-id="spaceGroupId"
             :size="16"
             class="flex-grow-0 flex-shrink-1 text-truncate"
@@ -27,10 +27,10 @@
         <date-format class="flex-grow-0 flex-shrink-0" :value="updatedDate" />
         <template v-if="author">
           <v-icon class="flex-grow-0 flex-shrink-0 mx-2" size="2">fa-circle</v-icon>
-          <user-avatar
+          <favorite-user-avatar
             :profile-id="author"
             :size="16"
-            class="flex-grow-0 flex-shrink-1 text-truncate" />
+            class="flex-grow-1 flex-shrink-1 text-truncate" />
         </template>
       </v-list-item-subtitle>
     </v-list-item-content>
