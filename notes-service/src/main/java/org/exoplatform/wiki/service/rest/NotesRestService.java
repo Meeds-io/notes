@@ -55,6 +55,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1265,7 +1266,7 @@ public class NotesRestService implements ResourceContainer {
                                      List<String> tagNames,
                                      @Parameter(description = "Space id used to search notes of one space", required = false)
                                      @QueryParam("spaceId")
-                                     String spaceId,
+                                     List<String> spaceIds,
                                      @QueryParam("isNotesTreeFilter")
                                      boolean isNotesTreeFilter) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
@@ -1279,8 +1280,8 @@ public class NotesRestService implements ResourceContainer {
       data.setTagNames(tagNames);
       data.setWikiOwner(wikiOwner);
       data.setWikiType(wikiType);
-      if (spaceId != null) {
-        data.setSpaceIds(Arrays.asList(spaceId));
+      if (CollectionUtils.isNotEmpty(spaceIds)) {
+        data.setSpaceIds(spaceIds);
       }
       List<SearchResult> results = noteService.search(data).getAll();
       List<NoteSearchResult> noteSearchResults = new ArrayList<>();
