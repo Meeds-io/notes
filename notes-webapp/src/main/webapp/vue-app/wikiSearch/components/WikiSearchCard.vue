@@ -15,7 +15,7 @@
             <div class="d-flex flex-row full-width align-center">
               <v-list-item-title class="flex-grow-1">
                 <h1
-                  class="title font-weight-bold primary--text pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
+                  class="title primary--text pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
                   v-sanitized-html="wikiTitle">
                 </h1>
               </v-list-item-title>
