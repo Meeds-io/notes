@@ -72,7 +72,7 @@ export default {
       }
     });
     document.addEventListener('showSettingsApps', () => {
-      this.displayed = true;
+      this.checkTermsAndConditionsPublished();
     });
     this.checkTermsAndConditionsPublished().then(() => {
       this.handleHashChange();
