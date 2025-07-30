@@ -17,6 +17,7 @@
 package org.exoplatform.wiki.service.search;
 
 import lombok.Data;
+import org.exoplatform.social.core.search.Sorting;
 import org.exoplatform.wiki.utils.Utils;
 
 import java.util.List;
@@ -39,15 +40,15 @@ public class SearchData {
 
   private boolean      isFavorites;
 
-  protected String     sort;
-
-  protected String     order;
-
   public int           limit  = Integer.MAX_VALUE;
 
   private List<String> tagNames;
 
   private List<String> spaceIds;
+
+  private String       SortField;
+
+  private String       sortDirection;
 
   private boolean      isNotesTreeFilter;
 
