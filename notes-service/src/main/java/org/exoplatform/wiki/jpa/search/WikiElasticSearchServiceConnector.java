@@ -32,7 +32,6 @@ import org.json.simple.parser.ParseException;
 
 import org.exoplatform.commons.search.es.ElasticSearchException;
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.IOUtil;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.commons.utils.PropertyManager;
@@ -99,6 +98,23 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       }
       """;
 
+  public static final String         DEFAULT_SORTING_QUERY                   = """
+          {
+            "_score": {
+              "order": "desc"
+            }
+          }
+      """;
+
+  public static final String         SORTING_QUERY                           = """
+          {
+            "@sortField@": {
+              "order": "@sortOrder@"
+            }
+          },
+          "_score"
+      """;
+
   public WikiElasticSearchServiceConnector(ConfigurationManager configurationManager,
                                            InitParams initParams,
                                            ElasticSearchingClient client,
@@ -155,7 +171,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
         return Collections.emptyList();
       }
     }
-    String esQuery = buildQueryStatement(ids, wikiSearchData.getUserId(), wikiSearchData.getTagNames(), query, wikiSearchData.isFavorites(), wikiSearchData.isNotesTreeFilter(), wikiSearchData.getOffset(), wikiSearchData.getLimit());
+    String esQuery = buildQueryStatement(ids, query, wikiSearchData);
     String jsonResponse = getClient().sendRequest(esQuery, getIndex());
     return buildWikiResult(jsonResponse);
   }
@@ -219,24 +235,21 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
   }
   
   private String buildQueryStatement(Set<String> calendarOwnersOfUser,
-                                     String userId,
-                                     List<String> tagNames,
                                      String term,
-                                     boolean isFavorites,
-                                     boolean isNotesTreeFilter,
-                                     long offset,
-                                     long limit) {
+                                     WikiSearchData wikiSearchData) {
     term = removeSpecialCharacters(term);
-    Map<String, List<String>> metadataFilters = buildMetadataFilter(isFavorites, userId);
+    Map<String, List<String>> metadataFilters = buildMetadataFilter(wikiSearchData.isFavorites(), wikiSearchData.getUserId());
     String metadataQuery = buildMetadataQueryStatement(metadataFilters);
-    String tagsQuery = buildTagsQueryStatement(tagNames);
-    String termsQuery = buildTermQuery(term, isNotesTreeFilter);
+    String tagsQuery = buildTagsQueryStatement(wikiSearchData.getTagNames());
+    String termsQuery = buildTermQuery(term, wikiSearchData.isNotesTreeFilter());
+    String sortQuery = buildSortQueryStatement(wikiSearchData);
     return retrieveSearchQuery().replace("@term_query@", termsQuery)
                                 .replace("@metadatas_query@", metadataQuery)
                                 .replace("@tags_query@", tagsQuery)
                                 .replace("@permissions@", StringUtils.join(calendarOwnersOfUser, ","))
-                                .replace("@offset@", String.valueOf(offset))
-                                .replace("@limit@", String.valueOf(limit));
+                                .replace("@sortQuery@", sortQuery)
+                                .replace("@offset@", String.valueOf(wikiSearchData.getOffset()))
+                                .replace("@limit@", String.valueOf(wikiSearchData.getLimit()));
   }
 
   private String retrieveSearchQuery() {
@@ -421,6 +434,19 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
       metadataFilters.put(FavoriteService.METADATA_TYPE.getName(), Collections.singletonList(viewerIdentity.getId()));
     }
     return metadataFilters;
+  }
+
+  private String buildSortQueryStatement(WikiSearchData wikiSearchData) {
+    String sortFiled = wikiSearchData.getSortField();
+    String sortDirection = wikiSearchData.getSortDirection();
+
+    if (StringUtils.isBlank(sortFiled)) {
+      return DEFAULT_SORTING_QUERY;
+    }
+    return switch (sortFiled) {
+      case "date" -> SORTING_QUERY.replace("@sortField@", "lastUpdatedDate").replace("@sortOrder@", sortDirection);
+      default -> SORTING_QUERY.replace("@sortField@", sortFiled).replace("@sortOrder@", sortDirection);
+    };
   }
 
 }
