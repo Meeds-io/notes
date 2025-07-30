@@ -61,6 +61,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.exoplatform.portal.application.localization.LocalizationFilter;
+import org.exoplatform.social.core.search.Sorting;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -1268,7 +1269,13 @@ public class NotesRestService implements ResourceContainer {
                                      @QueryParam("spaceId")
                                      List<Long> spaceIds,
                                      @QueryParam("isNotesTreeFilter")
-                                     boolean isNotesTreeFilter) throws Exception {
+                                     boolean isNotesTreeFilter,
+                                     @Parameter(description = "Sort field. Possible values: createdDate, startDate, endDate or relevancy.")
+                                     @QueryParam("sortBy")
+                                     String sortField,
+                                     @Parameter(description = "Whether to retrieve results sorted descending or not")
+                                     @QueryParam("sortDescending")
+                                     boolean sortDescending ) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
       keyword = keyword.toLowerCase();
@@ -1283,6 +1290,7 @@ public class NotesRestService implements ResourceContainer {
       if (CollectionUtils.isNotEmpty(spaceIds)) {
         data.setSpaceIds(spaceIds.stream().map(String::valueOf).toList());
       }
+      data.setSorting(Sorting.valueOf(sortField, sortDescending ? Sorting.OrderBy.DESC.name() : Sorting.OrderBy.ASC.name()));
       List<SearchResult> results = noteService.search(data).getAll();
       List<NoteSearchResult> noteSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {
