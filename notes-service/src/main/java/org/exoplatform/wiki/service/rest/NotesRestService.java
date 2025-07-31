@@ -1270,12 +1270,12 @@ public class NotesRestService implements ResourceContainer {
                                      List<Long> spaceIds,
                                      @QueryParam("isNotesTreeFilter")
                                      boolean isNotesTreeFilter,
-                                     @Parameter(description = "Sort field. Possible values: createdDate, startDate, endDate or relevancy.")
-                                     @QueryParam("sortBy")
+                                     @Parameter(description = "Field to sort by", required = false)
+                                     @QueryParam("sort")
                                      String sortField,
-                                     @Parameter(description = "Whether to retrieve results sorted descending or not")
-                                     @QueryParam("sortDescending")
-                                     boolean sortDescending ) throws Exception {
+                                     @Parameter(description = "Sort order (asc or desc)")
+                                     @QueryParam("order")
+                                     String sortDirection ) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
       keyword = keyword.toLowerCase();
@@ -1290,7 +1290,8 @@ public class NotesRestService implements ResourceContainer {
       if (CollectionUtils.isNotEmpty(spaceIds)) {
         data.setSpaceIds(spaceIds.stream().map(String::valueOf).toList());
       }
-      data.setSorting(Sorting.valueOf(sortField, sortDescending ? Sorting.OrderBy.DESC.name() : Sorting.OrderBy.ASC.name()));
+      data.setSortField(sortField);
+      data.setSortDirection(sortDirection);
       List<SearchResult> results = noteService.search(data).getAll();
       List<NoteSearchResult> noteSearchResults = new ArrayList<>();
       for (SearchResult searchResult : results) {

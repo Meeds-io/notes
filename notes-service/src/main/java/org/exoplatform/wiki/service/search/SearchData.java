@@ -46,7 +46,9 @@ public class SearchData {
 
   private List<String> spaceIds;
 
-  private Sorting      sorting;
+  private String       SortField;
+
+  private String       sortDirection;
 
   private boolean      isNotesTreeFilter;
 

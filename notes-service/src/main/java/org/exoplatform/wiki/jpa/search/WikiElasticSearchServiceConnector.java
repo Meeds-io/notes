@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.exoplatform.social.core.search.Sorting;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.json.simple.JSONArray;
@@ -33,7 +32,6 @@ import org.json.simple.parser.ParseException;
 
 import org.exoplatform.commons.search.es.ElasticSearchException;
 import org.exoplatform.commons.search.es.client.ElasticSearchingClient;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.IOUtil;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.commons.utils.PropertyManager;
@@ -244,7 +242,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     String metadataQuery = buildMetadataQueryStatement(metadataFilters);
     String tagsQuery = buildTagsQueryStatement(wikiSearchData.getTagNames());
     String termsQuery = buildTermQuery(term, wikiSearchData.isNotesTreeFilter());
-    String sortQuery = buildSortQueryStatement(wikiSearchData.getSorting());
+    String sortQuery = buildSortQueryStatement(wikiSearchData);
     return retrieveSearchQuery().replace("@term_query@", termsQuery)
                                 .replace("@metadatas_query@", metadataQuery)
                                 .replace("@tags_query@", tagsQuery)
@@ -438,19 +436,16 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     return metadataFilters;
   }
 
-  private String buildSortQueryStatement(Sorting wikiSort) {
+  private String buildSortQueryStatement(WikiSearchData wikiSearchData) {
+    String sortFiled = wikiSearchData.getSortField();
+    String sortDirection = wikiSearchData.getSortDirection();
 
-    if (wikiSort == null || wikiSort.sortBy == null) {
+    if (StringUtils.isBlank(sortFiled)) {
       return DEFAULT_SORTING_QUERY;
     }
-
-    return switch (wikiSort.sortBy) {
-    case DATE ->
-      SORTING_QUERY.replace("@sortField@", "lastUpdatedDate").replace("@sortOrder@", wikiSort.orderBy.name().toLowerCase());
-    case RELEVANCY ->
-      SORTING_QUERY.replace("@sortField@", "_score").replace("@sortOrder@", wikiSort.orderBy.name().toLowerCase());
-    default -> SORTING_QUERY.replace("@sortField@", wikiSort.sortBy.getFieldName())
-                            .replace("@sortOrder@", wikiSort.orderBy.name().toLowerCase());
+    return switch (sortFiled) {
+      case "date" -> SORTING_QUERY.replace("@sortField@", "lastUpdatedDate").replace("@sortOrder@", sortDirection);
+      default -> SORTING_QUERY.replace("@sortField@", sortFiled).replace("@sortOrder@", sortDirection);
     };
   }
 
