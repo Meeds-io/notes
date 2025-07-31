@@ -478,6 +478,8 @@ export default {
         const hours = today.getHours() + Math.floor(roundedMinutes / 60);
         const adjustedMinutes = roundedMinutes % 60;
         this.minStartTime = `${hours.toString().padStart(2, '0')}:${adjustedMinutes.toString().padStart(2, '0')}`;
+      } else {
+        this.minStartTime = '';
       }
       this.startDateMenu = false;
       this.updateEndMinTime();
@@ -487,16 +489,22 @@ export default {
     updateEndMinTime() {
       const selectedDate = new Date(this.endDate);
       const startDate = new Date(this.startDate);
-      if (!this.isUntilScheduleType && selectedDate.toDateString() === startDate.toDateString()) {
-        const [hours, minutes] = this.startTime.split(':').map(Number);
-        this.minEndTime = `${hours.toString().padStart(2, '0')}:${(minutes + 15).toString().padStart(2, '0')}`;
-      } else if (this.isUntilScheduleType) {
+      if (!this.isUntilScheduleType) {
+        if (selectedDate.toDateString() === startDate.toDateString()) {
+          const [hours, minutes] = this.startTime.split(':').map(Number);
+          this.minEndTime = `${hours.toString().padStart(2, '0')}:${(minutes + 15).toString().padStart(2, '0')}`;
+        } else {          
+          this.minEndTime = '';
+        }
+      } else {
         const today = new Date();
         if (selectedDate.toDateString() === today.toDateString()) {
           const roundedMinutes = Math.ceil(today.getMinutes() / 15) * 15;
           const hours = today.getHours() + Math.floor(roundedMinutes / 60);
           const adjustedMinutes = roundedMinutes % 60;
           this.minEndTime = `${hours.toString().padStart(2, '0')}:${adjustedMinutes.toString().padStart(2, '0')}`;
+        } else {
+          this.minEndTime = '';
         }
       }
       this.endDateMenu = false;
