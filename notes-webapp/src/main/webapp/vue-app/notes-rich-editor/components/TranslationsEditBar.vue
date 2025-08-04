@@ -239,6 +239,7 @@ export default {
     add(){
       this.$root.$emit('add-translation', this.selectedLang);
       this.selectedTranslation=this.selectedLang;
+      this.$root.$emit('save-draft');
       this.selectedLang = {value: '', text: this.$t('notes.label.chooseLangage')};
     },
     changeTranslation(translation){

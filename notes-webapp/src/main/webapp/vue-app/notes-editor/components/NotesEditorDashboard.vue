@@ -473,9 +473,6 @@ export default {
       }).finally(() => this.enableClickOnce());
     },
     autoSave() {
-      if (this.translationSwitch) {
-        return;
-      }
       // No draft saving if init not done or in edit mode for the moment
       if (!this.initCompleted || !this.initActualNoteDone) {
         return;
