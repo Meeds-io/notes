@@ -644,7 +644,7 @@ export default {
       } else {
         this.persistDraftNote(draftNote, update);
       }
-      if (!this.newTranslation) {
+      if (!(this.note.title || this.note.content) && !this.newTranslation) {
         // delete draft
         this.deleteDraftNote();
       }
