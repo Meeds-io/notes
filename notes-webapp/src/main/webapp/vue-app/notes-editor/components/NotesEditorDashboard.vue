@@ -260,6 +260,7 @@ export default {
         message: this.$t('notes.message.manualChild')
       });
     });
+    this.$root.$on('save-draft', this.autoSave);
   },
   methods: {
     processAutoSaveFromEditorExtension(event) {
@@ -472,19 +473,12 @@ export default {
       }).finally(() => this.enableClickOnce());
     },
     autoSave() {
-      if (this.translationSwitch) {
-        return;
-      }
       // No draft saving if init not done or in edit mode for the moment
       if (!this.initCompleted || !this.initActualNoteDone) {
         return;
       }
       // if the Note is being posted, no need to autosave anymore
       if (this.postingNote) {
-        return;
-      }
-
-      if (!this.note?.title?.length && !this.note?.content?.length) {
         return;
       }
 
@@ -584,6 +578,7 @@ export default {
           this.$notesService.getNoteById(noteId,this.selectedLanguage,'','','',true)
             .then(note => {
               if (this.selectedLanguage && !note?.lang) {
+                this.updateNoteContent(data.content);
                 return;
               }
               if (note?.children?.length) {
@@ -628,29 +623,28 @@ export default {
     },
     saveNoteDraft(update) {
       const draftNote = this.fillDraftNote();
-      if (this.note.title || this.note.content) {
-        let isContentIncludeImagesToBeProcessed = draftNote.content.includes('cke_upload_id');
-        if (draftNote.content.includes(`/${this.wikiPageObjectType}/`) || draftNote.content.includes(`/${this.wikiDraftObjectType}/`)) {
-          isContentIncludeImagesToBeProcessed = true;
-        }
-        // if draft page not created persist it only the first time else update it in browser's localStorage
-        if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeImagesToBeProcessed) {
-          this.note.parentPageId = this.parentPageId;
-          localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
-          this.actualNote = {
-            name: draftNote.name,
-            title: draftNote.title,
-            content: draftNote.content,
-            properties: draftNote.properties
-          };
-          setTimeout(() => {
-            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-            this.savingDraft = false;
-          }, this.autoSaveDelay/2);
-        } else {
-          this.persistDraftNote(draftNote, update);
-        }
-      } else if (!this.newTranslation) {
+      let isContentIncludeImagesToBeProcessed = draftNote.content.includes('cke_upload_id');
+      if (draftNote.content.includes(`/${this.wikiPageObjectType}/`) || draftNote.content.includes(`/${this.wikiDraftObjectType}/`)) {
+        isContentIncludeImagesToBeProcessed = true;
+      }
+      // if draft page not created persist it only the first time else update it in browser's localStorage
+      if (this.note.draftPage && this.note.id && !this.note?.lang && !this.featuredImageUpdated && !isContentIncludeImagesToBeProcessed) {
+        this.note.parentPageId = this.parentPageId;
+        localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(draftNote));
+        this.actualNote = {
+          name: draftNote.name,
+          title: draftNote.title,
+          content: draftNote.content,
+          properties: draftNote.properties
+        };
+        setTimeout(() => {
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+          this.savingDraft = false;
+        }, this.autoSaveDelay/2);
+      } else {
+        this.persistDraftNote(draftNote, update);
+      }
+      if (!(this.note.title || this.note.content) && !this.newTranslation) {
         // delete draft
         this.deleteDraftNote();
       }
@@ -658,51 +652,49 @@ export default {
     persistDraftNote(draftNote,update) {
       clearTimeout(this.saveDraft);
       draftNote.lang = this.selectedLanguage;
-      if (this.note.title || this.note.content) {
-        if (this.newDraft){
-          draftNote.id = null;
-        }
-        if (draftNote.properties) {
-          draftNote.properties.draft = true;
-          if (this.newTranslation && !this.featuredImageUpdated) {
-            draftNote.properties.featuredImage = {};
-          }
-        }
-        this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
-          document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
-            content: savedDraftNote.content,
-          }}));
-          if (update){
-            this.actualNote = {
-              id: savedDraftNote.id,
-              name: savedDraftNote.name,
-              title: savedDraftNote.title,
-              content: savedDraftNote.content,
-              author: savedDraftNote.author,
-              owner: savedDraftNote.owner,
-              properties: savedDraftNote.properties
-            };
-            this.newDraft=false;
-            savedDraftNote.parentPageId = this.parentPageId;
-            this.note = savedDraftNote;
-            localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
-            this.newTranslation = false;
-          } else {
-            this.removeLocalStorageCurrentDraft(draftNote.id);
-          }
-        }).then(() => {
-          this.savingDraft = false;
-          setTimeout(() => {
-            this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
-          }, this.autoSaveDelay/2);
-        }).catch(e => {
-          console.error('Error when creating draft note: ', e);
-          this.$root.$emit('show-alert', {
-            type: 'error',
-            message: this.$t(`notes.message.${e.message}`)
-          });
-        });
+      if (this.newDraft){
+        draftNote.id = null;
       }
+      if (draftNote.properties) {
+        draftNote.properties.draft = true;
+        if (this.newTranslation && !this.featuredImageUpdated) {
+          draftNote.properties.featuredImage = {};
+        }
+      }
+      this.$notesService.saveDraftNote(draftNote, this.parentPageId).then(savedDraftNote => {
+        document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
+          content: savedDraftNote.content,
+        }}));
+        if (update){
+          this.actualNote = {
+            id: savedDraftNote.id,
+            name: savedDraftNote.name,
+            title: savedDraftNote.title,
+            content: savedDraftNote.content,
+            author: savedDraftNote.author,
+            owner: savedDraftNote.owner,
+            properties: savedDraftNote.properties
+          };
+          this.newDraft=false;
+          savedDraftNote.parentPageId = this.parentPageId;
+          this.note = savedDraftNote;
+          localStorage.setItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`, JSON.stringify(savedDraftNote));
+          this.newTranslation = false;
+        } else {
+          this.removeLocalStorageCurrentDraft(draftNote.id);
+        }
+      }).then(() => {
+        this.savingDraft = false;
+        setTimeout(() => {
+          this.draftSavingStatus = this.$t('notes.draft.savedDraftStatus');
+        }, this.autoSaveDelay/2);
+      }).catch(e => {
+        console.error('Error when creating draft note: ', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
     },
     displayDraftMessage() {
       if (!this.draftNote) {
