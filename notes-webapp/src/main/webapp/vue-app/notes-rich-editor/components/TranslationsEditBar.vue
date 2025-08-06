@@ -243,7 +243,7 @@ export default {
       this.selectedLang = {value: '', text: this.$t('notes.label.chooseLangage')};
     },
     changeTranslation(translation){
-      if ( !this.note.title && this.note.content === '' && this.selectedTranslation !== translation ) {
+      if (!this.note.title && this.note.content === '' && this.selectedTranslation !== translation) {
         this.$root.$emit('save-draft');
       }       
       this.selectedTranslation = translation;
