@@ -143,7 +143,7 @@ export default {
                                 && !this.propertiesModified && !this.draftNote && !this.note.draftPage) || this.savingDraft;
     },
     notValidTitle() {
-      return !this.webPageNote && (!this.note?.title || this.note?.title?.length < 3 || this.note?.title?.length > this.titleMaxLength);
+      return !this.webPageNote && (!this.note?.title || this.note?.title?.length < 1 || this.note?.title?.length > this.titleMaxLength);
     },
     noteNotModified() {
       return this.note?.title === this.originalNote?.title && this.$noteUtils.isSameContent(this.note?.content, this.originalNote?.content);
