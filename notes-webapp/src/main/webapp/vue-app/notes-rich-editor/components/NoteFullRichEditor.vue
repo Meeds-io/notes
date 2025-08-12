@@ -195,6 +195,14 @@ export default {
       type: String,
       default: null
     },
+    suggesterSpaceId: {
+      type: String,
+      default: null
+    },
+    suggesterSpacePrettyName: {
+      type: String,
+      default: null
+    },
     spaceGroupId: {
       type: String,
       default: null
@@ -438,6 +446,8 @@ export default {
         allowedContent: true,
         typeOfRelation: 'mention_activity_stream',
         spaceURL: self.suggesterSpaceUrl,
+        spacePrettyName: self.suggesterSpacePrettyName,
+        spaceId: self.suggesterSpaceId,
         spaceGroupId: self.spaceGroupId,
         imagesDownloadFolder: self.imagesDownloadFolder,
         toolbarLocation: 'top',
