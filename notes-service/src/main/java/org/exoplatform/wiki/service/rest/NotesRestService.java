@@ -801,8 +801,9 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
         }
-      } else if ((featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null))
+      } else if (featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null)
           || !Objects.equals(note_.getProperties(), notePageProperties)) {
+        NotePageProperties currentNodeProperties = note_.getProperties();
         if (StringUtils.isBlank(note.getLang())) {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
@@ -811,7 +812,13 @@ public class NotesRestService implements ResourceContainer {
           note_.setLang(note.getLang());
           note_.setProperties(notePageProperties);
         }
-        noteService.createVersionOfNote(note_, identity.getUserId(), true);
+        if (featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null)
+            || !currentNodeProperties.getFeaturedImage().getId().equals(featuredImage.getId())
+            || !StringUtils.defaultString(currentNodeProperties.getFeaturedImage().getAltText())
+                           .equals(StringUtils.defaultString(featuredImage.getAltText()))
+            || !currentNodeProperties.getSummary().equals(notePageProperties.getSummary())) {
+          noteService.createVersionOfNote(note_, identity.getUserId(), true);
+        }
         if (!Utils.ANONYM_IDENTITY.equals(identity.getUserId())) {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
