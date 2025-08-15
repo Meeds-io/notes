@@ -16,6 +16,7 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -54,7 +55,7 @@ public class WikiEntity {
   @Column(name = "TYPE")
   private String type;
 
-  @OneToOne
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "WIKI_HOME")
   private PageEntity wikiHome;
 
