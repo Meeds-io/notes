@@ -381,7 +381,7 @@ public class NoteServiceImpl implements NoteService {
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
-    if (PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
+    if (PageUpdateType.EDIT_PAGE_TITLE.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT.equals(type) || PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE.equals(type)
         || PageUpdateType.EDIT_PAGE_PROPERTIES.equals(type)) {
       note.setUpdatedDate(Calendar.getInstance().getTime());
     }

@@ -59,9 +59,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.exoplatform.portal.application.localization.LocalizationFilter;
-import org.exoplatform.social.core.search.Sorting;
 import org.gatein.api.EntityNotFoundException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -1271,10 +1269,10 @@ public class NotesRestService implements ResourceContainer {
                                      @QueryParam("isNotesTreeFilter")
                                      boolean isNotesTreeFilter,
                                      @Parameter(description = "Field to sort by", required = false)
-                                     @QueryParam("sort")
+                                     @QueryParam("sortField")
                                      String sortField,
                                      @Parameter(description = "Sort order (asc or desc)")
-                                     @QueryParam("order")
+                                     @QueryParam("sortDirection")
                                      String sortDirection ) throws Exception {
     limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
     try {
