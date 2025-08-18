@@ -17,7 +17,6 @@
 package org.exoplatform.wiki.service.search;
 
 import lombok.Data;
-import org.exoplatform.social.core.search.Sorting;
 import org.exoplatform.wiki.utils.Utils;
 
 import java.util.List;
@@ -46,7 +45,7 @@ public class SearchData {
 
   private List<String> spaceIds;
 
-  private String       SortField;
+  private String       sortField;
 
   private String       sortDirection;
 
