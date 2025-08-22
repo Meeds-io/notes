@@ -445,7 +445,7 @@ public class WikiElasticSearchServiceConnector extends ElasticSearchServiceConne
     }
     return switch (sortFiled) {
       case "date" -> SORTING_QUERY.replace("@sortField@", "lastUpdatedDate").replace("@sortOrder@", sortDirection);
-      default -> SORTING_QUERY.replace("@sortField@", sortFiled).replace("@sortOrder@", sortDirection);
+      default -> DEFAULT_SORTING_QUERY;
     };
   }
 
