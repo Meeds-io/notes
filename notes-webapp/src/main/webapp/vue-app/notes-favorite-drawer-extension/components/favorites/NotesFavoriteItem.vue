@@ -1,5 +1,6 @@
 <template>
   <v-list-item
+    v-if="note"
     :href="noteUrl"
     @keydown.enter="setAsViewed"
     @auxclick="setAsViewed"
@@ -91,7 +92,7 @@ export default {
       return this.expanded ? 34 : 24;
     },
   },
-  created() {
+  async created() {
     let noteId = this.id;
     let lang = null;
     if (this.id.includes('-')) {
@@ -99,9 +100,11 @@ export default {
       noteId = parts[0];
       lang = parts[1];
     }
-    this.$notesService.getNoteById(noteId, lang).then(note => {
-      this.note = note;
-    });
+    try {
+      this.note = await this.$notesService.getNoteById(noteId, lang);
+    } catch {
+      this.$root.$emit('favorite-removed', 'notes', this.id);
+    }
   },
   methods: {
     removed() {
