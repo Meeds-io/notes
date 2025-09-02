@@ -41,15 +41,15 @@ public class SearchData {
 
   private boolean      isFavorites;
 
-  protected String     sort;
-
-  protected String     order;
-
   public int           limit  = Integer.MAX_VALUE;
 
   private List<String> tagNames;
 
   private List<String> spaceIds;
+
+  private String       sortField;
+
+  private String       sortDirection;
 
   private boolean      isNotesTreeFilter;
 
