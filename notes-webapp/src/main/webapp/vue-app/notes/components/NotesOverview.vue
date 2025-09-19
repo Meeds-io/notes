@@ -613,7 +613,10 @@ export default {
     },
     targetLang() {
       return this.selectedTranslation?.value || this.lang;
-    }
+    },
+    parentPageId() {
+      return this.note?.parentPageId;
+    },
   },
   created() {
     this.getAvailableLanguages();
@@ -672,6 +675,7 @@ export default {
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
+    this.$root.$on('duplicate-note', this.duplicateNote);
     document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
     document.addEventListener('note-published', this.handleNotePublished);
     this.refreshOverviewExtensions();
@@ -1191,6 +1195,33 @@ export default {
         alertLink: link,
         alertLinkText: this.$t('notes.view.label')
       }}));
+    },
+    duplicateNote() {
+      const properties = this.note?.properties;
+      if (properties) {
+        properties.draft = this.note?.draftPage;
+      }
+      const note = {
+        title: `${this.$t('notes.menu.label.copyOf')} ${this.note.title}`,
+        name: `${this.$t('notes.menu.label.copyOf')} ${this.note.name}`,
+        lang: this.note.lang,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        content: this.note.content,
+        parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
+        toBePublished: false,
+        appName: this.appName,
+        properties: properties,
+        extensionDataUpdated: false
+      };
+      this.$notesService.createNote(note).then(duplicated => {
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
+      }).catch(e => {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
     }
   }
 };
