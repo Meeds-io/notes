@@ -64,13 +64,23 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   enabled: (note) => !note?.parentPageId && note?.canImport
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
+  id: 'duplicateNote',
+  labelKey: 'notes.menu.label.duplicate',
+  icon: 'fas fa-copy',
+  sortable: true,
+  cssClass: 'ps-2 pe-4 action-menu-item',
+  rank: 70,
+  actionEvent: 'duplicate-note',
+  enabled: (note) => note?.parentPageId && note?.canManage
+});
+extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'deleteNote',
   labelKey: 'notes.menu.label.delete',
   icon: 'fas fa-trash',
   sortable: true,
   cssClass: 'ps-2 pe-4 action-menu-item',
   iconCssClass: 'delete-option-color',
-  rank: 70,
+  rank: 80,
   actionEvent: 'delete-note',
   enabled: (note) => note?.parentPageId && note?.canManage
 });
