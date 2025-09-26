@@ -116,10 +116,10 @@ public class NotePageViewService {
   }
 
   @SneakyThrows
-  public void savePageData(String name, NotePageData pageData) {
+  public Page savePageData(String name, NotePageData pageData) {
     Map<String, String> pages = pageData.getPages();
     if (MapUtils.isEmpty(pages)) {
-      return;
+      return null;
     }
     String pageContent = pages.get(DEFAULT_CONTENT_LANG);
     Page page = saveNotePage(name, pageContent, null, userACL.getSuperUser());
@@ -142,6 +142,7 @@ public class NotePageViewService {
         }
       }
     });
+    return page;
   }
 
   @SneakyThrows
@@ -182,7 +183,7 @@ public class NotePageViewService {
     }
   }
 
-  public void saveNotePage(String name,
+  public Page saveNotePage(String name,
                            String content,
                            String lang,
                            Identity currentUserAclIdentity) throws IllegalAccessException, ObjectNotFoundException {
@@ -191,7 +192,7 @@ public class NotePageViewService {
     } else if (!cmsService.hasEditPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
       throw new IllegalAccessException("Note page isn't editable");
     }
-    saveNotePage(name, content, lang, currentUserAclIdentity.getUserId());
+    return saveNotePage(name, content, lang, currentUserAclIdentity.getUserId());
   }
 
   private Page saveNotePage(String name,
