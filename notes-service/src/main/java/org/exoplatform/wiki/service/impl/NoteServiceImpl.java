@@ -29,18 +29,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -2326,11 +2315,18 @@ public class NoteServiceImpl implements NoteService {
 
   private String processImagesOnDraftUpdate(DraftPage draftPage, long userIdentityId) {
     try {
-      return saveUploadedContentImages(draftPage.getContent(),
-                                       draftPage.getAttachmentObjectType(),
-                                       StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() :
-                                                                                           draftPage.getId(),
-                                       userIdentityId);
+      String updatedContent = saveUploadedContentImages(draftPage.getContent(),
+                                                        draftPage.getAttachmentObjectType(),
+                                                        StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId() :
+                                                                                                              draftPage.getId(),
+                                                        userIdentityId);
+      updatedContent = saveCopiedContentImages(updatedContent,
+                                               draftPage.getAttachmentObjectType(),
+                                               StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
+                                                                                                   : draftPage.getId(),
+                                               userIdentityId
+      );
+      return updatedContent;
     } catch (Exception exception) {
       return draftPage.getContent();
     }
@@ -2393,6 +2389,36 @@ public class NoteServiceImpl implements NoteService {
       }
     } catch (Exception e) {
       log.error("Error while saving uploaded content images");
+      return content;
+    }
+    return content;
+  }
+
+  private String saveCopiedContentImages(String content, String objectType, String objectId, long userId) {
+    if (StringUtils.isEmpty(content)) {
+      return content;
+    }
+    try {
+      String regex = "<img[^>]*src=[\"'][^\"']*/attachments/([^/]+)/([^/]+)/([^\"'/]+)[\"'][^>]*>";
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(content);
+      while (matcher.find()) {
+        String imgElement = matcher.group(0);
+        String oldObjectType = matcher.group(1);
+        String oldObjectId = matcher.group(2);
+        String fileId = matcher.group(3);
+        if (oldObjectId.equals(String.valueOf(objectId))) {
+          continue;
+        }
+        if (attachmentService.getAttachment(oldObjectType, oldObjectId, fileId) != null) {
+          attachmentService.createAttachment(fileId, objectType, objectId, null, userId, Collections.emptyMap());
+          String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
+          String newImgTag = imgElement.replaceAll("src=[\"'][^\"']+[\"']", newSrc);
+          content = content.replace(imgElement, newImgTag);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error while saving copied content images");
       return content;
     }
     return content;
