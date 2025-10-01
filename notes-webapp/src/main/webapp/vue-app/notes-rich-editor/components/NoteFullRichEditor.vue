@@ -495,6 +495,16 @@ export default {
             self.autoSave();
             self.bindNavigationRemoveListener();
           },
+          paste: function (evt) {
+            if (!self.noteContentInitialized) {
+              // First time setting data
+              self.noteContentInitialized = true;
+              return;
+            }
+            self.noteObject.content = evt.data.dataValue;
+            self.autoSave();
+            self.bindNavigationRemoveListener();
+          },
           doubleclick: function(evt) {
             const element = evt.data.element;
             if ( element && element.is('a')) {

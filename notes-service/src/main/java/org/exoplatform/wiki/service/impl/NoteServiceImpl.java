@@ -2306,6 +2306,11 @@ public class NoteServiceImpl implements NoteService {
                                                                                                            draftPage.getTargetPageId() :
                                                                                                            draftPage.getId(),
                                                        userIdentityId);
+    newDraftContent = saveCopiedContentImages(newDraftContent,
+                                              draftPage.getAttachmentObjectType(),
+                                              StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
+                                                                                                  : draftPage.getId(),
+                                              userIdentityId);
     if (!newDraftContent.equals(draftPage.getContent())) {
       draftPage.setContent(newDraftContent);
       return updateDraftPageContent(Long.parseLong(draftPage.getId()), draftPage.getContent());
@@ -2324,8 +2329,7 @@ public class NoteServiceImpl implements NoteService {
                                                draftPage.getAttachmentObjectType(),
                                                StringUtils.isNotEmpty(draftPage.getTargetPageId()) ? draftPage.getTargetPageId()
                                                                                                    : draftPage.getId(),
-                                               userIdentityId
-      );
+                                               userIdentityId);
       return updatedContent;
     } catch (Exception exception) {
       return draftPage.getContent();
@@ -2425,7 +2429,11 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private String updateNoteContentImages(Page note, Identity userIdentity) {
-    String processedContent = note.getContent();
+    String processedContent = saveCopiedContentImages(note.getContent(),
+                                                      note.getAttachmentObjectType(),
+                                                      note.getId(),
+                                                      Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
+                                                                                    .getId()));
     if (userIdentity != null && note.getContent().contains("cke_upload_id=")) {
       processedContent = saveUploadedContentImages(note.getContent(),
                                                    note.getAttachmentObjectType(),
