@@ -2429,11 +2429,7 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private String updateNoteContentImages(Page note, Identity userIdentity) {
-    String processedContent = saveCopiedContentImages(note.getContent(),
-                                                      note.getAttachmentObjectType(),
-                                                      note.getId(),
-                                                      Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
-                                                                                    .getId()));
+    String processedContent = note.getContent();
     if (userIdentity != null && note.getContent().contains("cke_upload_id=")) {
       processedContent = saveUploadedContentImages(note.getContent(),
                                                    note.getAttachmentObjectType(),
@@ -2448,7 +2444,15 @@ public class NoteServiceImpl implements NoteService {
                                                    Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
                                                                                  .getId()));
     }
-    return processedContent;
+    if (userIdentity != null) {
+      processedContent = saveCopiedContentImages(processedContent,
+                                                 note.getAttachmentObjectType(),
+                                                 note.getId(),
+                                                 Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId())
+                                                                               .getId()));
+    
+    }
+   return processedContent;
   }
 
   private void updateVersionContentImages(PageVersion pageVersion) throws WikiException {
