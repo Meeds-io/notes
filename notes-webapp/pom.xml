@@ -4,7 +4,7 @@
   <parent>
     <artifactId>notes</artifactId>
     <groupId>io.meeds.notes</groupId>
-    <version>7.0.3-exo</version>
+    <version>7.0.3-exo-patched</version>
   </parent>
   <artifactId>notes-webapp</artifactId>
   <packaging>war</packaging>
