@@ -356,10 +356,12 @@ public class EntityConverter {
     if (!CollectionUtils.isEmpty(metadataItems)) {
       originalNoteSharedProperties = metadataItems.getFirst().getProperties();
     }
-    return originalNoteSharedProperties.entrySet()
-                                       .stream()
-                                       .filter(entry -> ORIGINAL_SHARED_PROPERTIES.contains(entry.getKey()))
-                                       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return originalNoteSharedProperties != null ? originalNoteSharedProperties.entrySet()
+                                                                              .stream()
+                                                                              .filter(entry -> ORIGINAL_SHARED_PROPERTIES.contains(entry.getKey()))
+                                                                              .collect(Collectors.toMap(Map.Entry::getKey,
+                                                                                                        Map.Entry::getValue))
+                                                : new HashMap<>();
   }
 
   private static void buildPageProperties(Map<String, String> properties,
