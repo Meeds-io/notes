@@ -124,6 +124,10 @@ public class NoteServiceImpl implements NoteService {
 
   private static final String                             IMAGE_URL_REPLACEMENT_SUFFIX           = "-//";
 
+  private static final String                             CONTENT_LINK_TAG                       = "content-link";
+
+  private static final String                             CONTENT_LINK_TAG_REPLACEMENT           = "--content--link-to-insert";
+
   private static final Pattern                            IMAGES_IMPORT_PATTERN                  =
                                                                                 Pattern.compile("src=\"//-(.*?)-//\"");
 
@@ -1353,6 +1357,7 @@ public class NoteServiceImpl implements NoteService {
                    userIdentity);
       }
       for (Page note : notes.getNotes()) {
+        replaceInsertedNotes(note, wiki, userIdentity);
         replaceIncludedPages(note, wiki, userIdentity);
       }
       cleanUp(notesFile);
@@ -2098,6 +2103,38 @@ public class NoteServiceImpl implements NoteService {
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
         replaceIncludedPages(child, wiki, userIdentity);
+      }
+    }
+  }
+
+  private void replaceInsertedNotes(Page note, Wiki wiki, Identity userIdentity) {
+    Page note_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+    if (note_ != null) {
+      String content = note_.getContent();
+      Pattern pattern = Pattern.compile("(<)" + CONTENT_LINK_TAG_REPLACEMENT + "([^>]*?>/notes:)([^<]+)(</)" + CONTENT_LINK_TAG_REPLACEMENT + "(>)");
+      Matcher matcher = pattern.matcher(content);
+      StringBuilder result = new StringBuilder();
+      while (matcher.find()) {
+        String noteName = matcher.group(3);
+        Page noteToInsert = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), noteName);
+        String noteId = "0";
+        if (noteToInsert != null) {
+          noteId = matcher.group(1) + CONTENT_LINK_TAG + matcher.group(2)
+                  + noteToInsert.getId() + matcher.group(4) + CONTENT_LINK_TAG + matcher.group(5);
+        }
+        matcher.appendReplacement(result, Matcher.quoteReplacement(noteId));
+      }
+      matcher.appendTail(result);
+      content = result.toString();
+      if (!content.equals(note_.getContent())) {
+        note_.setContent(content);
+        updateNote(note_);
+        createVersionOfNote(note_, userIdentity.getUserId(), true);
+      }
+    }
+    if (note.getChildren() != null) {
+      for (Page child : note.getChildren()) {
+        replaceInsertedNotes(child, wiki, userIdentity);
       }
     }
   }
