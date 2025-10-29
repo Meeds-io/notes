@@ -425,6 +425,7 @@
                     v-else
                     :href="item.draftPage ? `${item.noteId}/draft` : item.noteId"
                     :class="{'text-color': (isDraftFilter && item.draftPage) || !item.draftPage}"
+                    :aria-current="(item.noteId === activeItem[0] && !item.draftPage) ? 'page' : null"
                     @click.prevent="openNote($event,item)">
                     {{ item.name }}
                   </a>
