@@ -446,7 +446,7 @@ export default {
     noteTitle() {
       const companyName = eXo.env.portal.companyName;
       const spaceDisplayName = eXo.env.portal.spaceDisplayName;
-      window.document.title = `${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
+      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
     }
   },
   computed: {
