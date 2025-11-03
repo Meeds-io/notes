@@ -14,6 +14,7 @@
                 :id="breadcrumbItem.id"
                 :ref="breadcrumbItem.id"
                 :class="breadcrumbItem.classLink"
+                :aria-current="breadcrumbItem.id === 'lastBreadcrumbItem' ? 'page' : null"
                 v-bind="attrs"
                 v-on="on"
                 @click="openNote(noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}</a>
