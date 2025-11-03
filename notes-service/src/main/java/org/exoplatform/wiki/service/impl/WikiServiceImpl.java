@@ -245,7 +245,8 @@ public class WikiServiceImpl implements WikiService {
                                                    String.format("%s:%s",
                                                                  userAcl.getAdminMSType(),
                                                                  wikiOwner)) :
-                           spaceService.canRedactOnSpace(space, username);
+                           spaceService.canRedactOnSpace(space, username)
+                                   || spaceService.canPublishOnSpace(space, username);
     } else if (StringUtils.equalsIgnoreCase(WikiType.PORTAL.name(), wikiType)) {
       PortalConfig portalConfig = layoutService.getPortalConfig(wikiOwner);
       return userAcl.hasEditPermission(portalConfig, userAcl.getUserIdentity(username));
