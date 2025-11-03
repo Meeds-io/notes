@@ -483,6 +483,23 @@ export default {
             self.$root.$applicationLoaded();
             self.instanceReady = true;
             self.setToolBarEffect();
+            self.editor.on('contentDom', function () {
+              const editable = self.editor.editable();
+              editable.attachListener(editable, 'keydown', function (event) {
+                const domEvent = event.data.$;
+                if (domEvent.ctrlKey && domEvent.shiftKey && domEvent.keyCode !== 16) {
+                  domEvent.preventDefault();
+                  domEvent.stopPropagation();
+                  const synthetic = new KeyboardEvent('keydown', {
+                    key: domEvent.key,
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                  });
+                  window.dispatchEvent(synthetic);
+                }
+              });
+            });
           },
           change: function (evt) {
             if (!self.noteContentInitialized || self.isContentImagesUploadProgress) {
