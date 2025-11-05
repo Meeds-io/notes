@@ -3,7 +3,7 @@
     v-if="isDesktop"
     class="note-breadcrumb-wrapper"
     role="navigation" 
-    aria-label="Breadcrumbs">
+    :aria-label="$t('notes.label.breadcrumbs')">
     <div class="notes-tree-items d-flex align-center">
       <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
         <div 
