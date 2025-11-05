@@ -1,7 +1,9 @@
 <template>
   <div 
     v-if="isDesktop"
-    class="note-breadcrumb-wrapper">
+    class="note-breadcrumb-wrapper"
+    role="navigation" 
+    :aria-label="$t('notes.label.breadcrumbs')">
     <div class="notes-tree-items d-flex align-center">
       <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
         <div 
@@ -9,15 +11,18 @@
           :key="index"
           :class="breadcrumbItem.class">
           <v-tooltip max-width="300" bottom>
-            <template #activator="{ on, attrs }">
+            <template #activator="{ on, filteredAttrs }">
               <a
                 :id="breadcrumbItem.id"
                 :ref="breadcrumbItem.id"
                 :class="breadcrumbItem.classLink"
                 :aria-current="breadcrumbItem.id === 'lastBreadcrumbItem' ? 'page' : null"
-                v-bind="attrs"
+                v-bind="filteredAttrs"
                 v-on="on"
-                @click="openNote(noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}</a>
+                tabindex="0"
+                @click="openNote(noteBreadcrumb[breadcrumbItem.index])"
+                @keydown="openNoteOnEnter($event, noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}
+              </a>
             </template>
             <span class="caption">{{ breadcrumbItem.title }}</span>
           </v-tooltip>
@@ -41,7 +46,8 @@
                 v-on="on"
                 class="text-sub-title"
                 size="18"
-                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
+                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])"
+                @keydown="openNoteOnEnter($event, noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
                 fas fa-ellipsis-h
               </v-icon>
             </template>
@@ -82,6 +88,11 @@ export default {
     isDesktop() {
       return this.$vuetify.breakpoint.width >= 960;
     },
+    filteredAttrs() {
+      const attrs = { ...(this.attrs || {}) };
+      delete attrs.role;
+      return attrs;
+    }
   },
   watch: {
     noteBreadcrumb() {
@@ -116,6 +127,11 @@ export default {
         this.noteBreadcrumb = [];
         this.$emit('open-note',note.id);
         document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
+      }
+    },
+    openNoteOnEnter(event, note) {
+      if (event.key === 'Enter') {
+        this.openNote(note);
       }
     },
     initNoteBreadcrumb() {
