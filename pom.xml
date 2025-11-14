@@ -22,12 +22,12 @@
   <parent>
     <artifactId>addons-parent-pom</artifactId>
     <groupId>io.meeds.addons</groupId>
-    <version>19-M02</version>
+    <version>19</version>
     <relativePath />
   </parent>
   <groupId>io.meeds.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.1.0-M26</version>
+  <version>7.1.x-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Meeds:: PLF:: Notes</name>
   <description>Meeds Notes</description>
@@ -39,18 +39,18 @@
   <scm>
     <connection>scm:git:git://github.com/meeds-io/notes.git</connection>
     <developerConnection>scm:git:git@github.com:meeds-io/notes.git</developerConnection>
-    <tag>7.1.0-M26</tag>
+    <tag>HEAD</tag>
     <url>https://github.com/meeds-io/notes</url>
   </scm>
   <properties>
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-    <io.meeds.social.version>7.1.0-M26</io.meeds.social.version>
-    <io.meeds.platform-ui.version>7.1.0-M26</io.meeds.platform-ui.version>
-    <addon.meeds.gamification.version>7.1.0-M26</addon.meeds.gamification.version>
-    <addon.meeds.analytics.version>7.1.0-M26</addon.meeds.analytics.version>
-    <addon.meeds.layout.version>7.1.0-M26</addon.meeds.layout.version>
+    <io.meeds.social.version>7.1.x-SNAPSHOT</io.meeds.social.version>
+    <io.meeds.platform-ui.version>7.1.x-SNAPSHOT</io.meeds.platform-ui.version>
+    <addon.meeds.gamification.version>7.1.x-SNAPSHOT</addon.meeds.gamification.version>
+    <addon.meeds.analytics.version>7.1.x-SNAPSHOT</addon.meeds.analytics.version>
+    <addon.meeds.layout.version>7.1.x-SNAPSHOT</addon.meeds.layout.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
