@@ -38,6 +38,7 @@
         <v-btn
           :loading="loading"
           :elevation="loading && 2 || 0"
+          :title="$t('notePageView.actions.title')"
           small
           icon
           class="ma-1"
