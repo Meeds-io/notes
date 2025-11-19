@@ -805,7 +805,7 @@ export default {
       if (this.selectedTranslation.value){
         translation = `&translation=${this.selectedTranslation.value}`;
       }
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}`, '_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
