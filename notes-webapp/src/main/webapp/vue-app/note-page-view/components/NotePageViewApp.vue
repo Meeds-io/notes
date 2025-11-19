@@ -21,16 +21,19 @@
 <template>
   <v-app
     v-if="canView">
-    <v-hover v-slot="{ hover }">
+    <v-hover v-model="hover">
       <v-card
         :class="{
           'pa-5': viewMode,
           'overflow-hidden': edit,
         }"
+        :tabindex="tabindex"
         min-width="100%"
         max-width="100%"
         class="d-flex flex-column border-box-sizing position-relative application-body"
-        flat>
+        flat
+        @focusin="onFocusIn"
+        @focusout="onFocusOut">
         <template v-if="edit">
           <note-page-edit-drawer
             v-if="$root.isMobile"
@@ -49,6 +52,7 @@
         <template v-if="!hideViewMode">
           <note-page-header
             v-if="displayEditMode"
+            ref="header"
             :hover="hover || editorLoading"
             :loading="editorLoading"
             @edit="openEditor" />
@@ -67,6 +71,8 @@ export default {
     edit: false,
     editorReady: false,
     previewMode: false,
+    hover: false,
+    tabindex: '0',
   }),
   computed: {
     hasNote() {
@@ -150,6 +156,25 @@ export default {
     },
     switchToEdit() {
       this.previewMode = false;
+    },
+    onFocusIn() {
+      this.hover = true;
+      this.$nextTick(() => {
+        const header = this.$refs.header?.$refs?.menuBtnHeader?.$el;
+        if (header) {
+          header.focus();
+          this.tabindex = '-1';
+        }
+      });
+    },
+    onFocusOut(event) {
+      const root = this.$el;
+      const next = event.relatedTarget;
+      if (next && root.contains(next)) {
+        return;
+      }
+      this.tabindex = '0';
+      this.hover = false;
     }
   },
 };
