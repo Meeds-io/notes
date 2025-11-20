@@ -36,6 +36,7 @@
       attach>
       <template #activator="{ on, attrs }">
         <v-btn
+          ref="menuBtnHeader"
           :loading="loading"
           :elevation="loading && 2 || 0"
           :title="$t('notePageView.actions.title')"
