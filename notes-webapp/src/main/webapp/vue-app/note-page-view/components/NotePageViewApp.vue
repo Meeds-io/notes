@@ -28,9 +28,10 @@
           'overflow-hidden': edit,
         }"
         :tabindex="tabindex"
+        :ripple="false"
         min-width="100%"
         max-width="100%"
-        class="d-flex flex-column border-box-sizing position-relative application-body"
+        class="d-flex not-clickable flex-column border-box-sizing position-relative application-body"
         flat
         @focusin="onFocusIn"
         @focusout="onFocusOut">
@@ -157,11 +158,11 @@ export default {
     switchToEdit() {
       this.previewMode = false;
     },
-    onFocusIn() {
+    onFocusIn(event) {
       this.hover = true;
       this.$nextTick(() => {
         const header = this.$refs.header?.$refs?.menuBtnHeader?.$el;
-        if (header) {
+        if (header && event.relatedTarget) {
           header.focus();
           this.tabindex = '-1';
         }
