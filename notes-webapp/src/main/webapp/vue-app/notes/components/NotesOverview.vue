@@ -96,6 +96,13 @@
                     <span class="caption">{{ $t('notes.label.editPage') }}</span>
                   </v-tooltip>
                 </div>
+                <extension-registry-components
+                  :params="params"
+                  name="NotesDetails"
+                  type="notes-toolbar"
+                  parent-element="div"
+                  element="div"
+                  class="d-flex" />
                 <note-favorite-action
                   :icon-size="20"
                   :note="note"
@@ -461,6 +468,11 @@ export default {
     },
     entityType() {
       return this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS';
+    },
+    params() {
+      return {
+        note: this.note,
+      };
     },
     hasSummary() {
       return this.note?.properties?.summary?.length;
