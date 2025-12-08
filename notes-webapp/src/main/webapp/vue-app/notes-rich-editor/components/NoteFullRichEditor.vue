@@ -115,7 +115,8 @@ export default {
       updatingProperties: false,
       enablePostKeys: 0,
       isPublishing: false,
-      contentImageUploadProgress: false
+      contentImageUploadProgress: false,
+      pendingEditorContent: null,
     };
   },
   props: {
@@ -345,14 +346,15 @@ export default {
       this.editor.focus();
     },
     setEditorData(content) {
-      if (content) {
-        content = this.replaceWithSuggesterClass(content);
+      content = this.replaceWithSuggesterClass(content || '');
+
+      if (!this.editor || !this.instanceReady) {
+        this.pendingEditorContent = content;
+        return;
       }
-      if (this.editor) {
-        this.editor.setData(content);
-      } else {
-        this.$refs[this.editorBodyInputRef].value = content;
-      }
+
+      this.pendingEditorContent = null;
+      this.editor.setData(content);
     },
     cloneNoteObject() {
       this.noteObject = structuredClone(this.note);
@@ -482,6 +484,7 @@ export default {
             window.setTimeout(() => self.setFocus(), 50);
             self.$root.$applicationLoaded();
             self.instanceReady = true;
+            self.checkPendingContent();
             self.setToolBarEffect();
             let isAttachedKeyListener = false;
             self.editor.on('contentDom', function () {
@@ -497,7 +500,9 @@ export default {
           change: function (evt) {
             if (!self.noteContentInitialized || self.isContentImagesUploadProgress) {
               // First time setting data
-              self.noteContentInitialized = true;
+              if (evt.editor.checkDirty()) {
+                self.noteContentInitialized = true;
+              }
               return;
             }
             self.waitUserTyping(self);
@@ -524,6 +529,12 @@ export default {
           }
         }
       });
+    },
+    checkPendingContent() {
+      if (this.pendingEditorContent !== null) {
+        this.editor.setData(this.pendingEditorContent);
+        this.pendingEditorContent = null;
+      }
     },
     attachKeyListener(editable) {
       editable.attachListener(editable, 'keydown', function (event) {
