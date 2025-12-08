@@ -229,7 +229,8 @@ export default {
       this.initActualNoteDone=true;
     }
     if (urlParams.has('parentNoteId')) {
-      this.parentPageId = urlParams.get('parentNoteId');
+      const parentNoteId = urlParams.get('parentNoteId');
+      this.parentPageId = parentNoteId === 'null' ? null : parentNoteId;
       this.spaceId = urlParams.get('spaceId');
       this.spaceGroupId  = urlParams.get('spaceGroupId');
       this.spaceDisplayName  = urlParams.get('spaceName');
