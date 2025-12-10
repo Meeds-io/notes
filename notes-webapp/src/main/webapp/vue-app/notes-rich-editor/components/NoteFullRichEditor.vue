@@ -540,8 +540,6 @@ export default {
       editable.attachListener(editable, 'keydown', function (event) {
         const domEvent = event.data.$;
         if (domEvent.ctrlKey && domEvent.shiftKey && domEvent.keyCode !== 16) {
-          domEvent.preventDefault();
-          domEvent.stopPropagation();
           const synthetic = new KeyboardEvent('keydown', {
             key: domEvent.key,
             ctrlKey: true,
