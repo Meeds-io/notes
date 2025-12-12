@@ -27,7 +27,7 @@
   </parent>
   <groupId>io.meeds.notes</groupId>
   <artifactId>notes</artifactId>
-  <version>7.1.1-exo</version>
+  <version>7.1.1-exo-patched</version>
   <packaging>pom</packaging>
   <name>Meeds:: PLF:: Notes</name>
   <description>Meeds Notes</description>
