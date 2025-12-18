@@ -84,6 +84,7 @@ export default {
   created() {
     // Load CKEditor only when needed
     window.require(['SHARED/jquery', 'SHARED/commons-editor', 'SHARED/suggester', 'SHARED/tagSuggester']);
+    this.$utils.includeExtensions('RichEditorExtension');
   },
   mounted() {
     this.content = this.$noteUtils.getContentToEdit(this.value);

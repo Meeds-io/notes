@@ -298,6 +298,7 @@ export default {
   },
   created() {
     this.cloneNoteObject();
+    this.$utils.includeExtensions('RichEditorExtension');
     this.refreshEditorExtensions();
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
