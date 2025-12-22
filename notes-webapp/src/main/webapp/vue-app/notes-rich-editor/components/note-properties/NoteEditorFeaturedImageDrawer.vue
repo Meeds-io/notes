@@ -28,9 +28,7 @@
     :crop-options="cropOptions"
     use-format
     alt
-    @input="uploadId = $event"
-    @data="imageData = $event"
-    @alt-text="featuredImageAltText = $event" />
+    @apply="updateImage" />
 </template>
 
 <script>
@@ -115,6 +113,11 @@ export default {
     isClosed() {
       return this.$refs.featuredImageDrawer.$el.classList.contains('v-navigation-drawer--close');
     },
+    updateImage(image) {
+      this.uploadId = image.uploadId;
+      this.imageData = image.src;
+      this.featuredImageAltText = image.altText;
+    }
   }
 };
 </script>

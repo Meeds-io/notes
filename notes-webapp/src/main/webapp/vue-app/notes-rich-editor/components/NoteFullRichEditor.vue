@@ -455,6 +455,7 @@ export default {
         imagesDownloadFolder: self.imagesDownloadFolder,
         toolbarLocation: 'top',
         extraAllowedContent: 'table[summary];img[style,class,src,referrerpolicy,alt,width,height];span(*)[*]{*}; span[data-atwho-at-query,data-atwho-at-value,contenteditable]; a[*];i[*];',
+       
         removeButtons: '',
         enterMode: CKEDITOR.ENTER_P,
         shiftEnterMode: CKEDITOR.ENTER_BR,
@@ -499,6 +500,7 @@ export default {
             }
           },
           change: function (evt) {
+            console.warn('test');
             if (!self.noteContentInitialized || self.isContentImagesUploadProgress) {
               // First time setting data
               if (evt.editor.checkDirty()) {
@@ -512,6 +514,7 @@ export default {
             self.bindNavigationRemoveListener();
           },
           paste: function (evt) {
+            console.warn('data', evt.data.dataValue);
             if (!self.noteContentInitialized) {
               // First time setting data
               self.noteContentInitialized = true;
