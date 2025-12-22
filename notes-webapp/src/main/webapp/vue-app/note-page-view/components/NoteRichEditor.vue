@@ -128,7 +128,7 @@ export default {
           format_tags: 'p;h1;h2;h3',
           bodyClass: 'notesContent notesRichEditorContent',
           dialog_noConfirmCancel: true,
-          pasteFilter: 'p; div; a[!href]; strong; i; img;',
+          pasteFilter: 'p; a[!href]; strong; i', 
           on: {
             instanceReady: function (evt) {
               self.editor = evt.editor;
