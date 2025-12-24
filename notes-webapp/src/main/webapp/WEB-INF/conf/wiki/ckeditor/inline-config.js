@@ -18,7 +18,7 @@ CKEDITOR.editorConfig = function (config) {
 
 
   let extraPlugins = 'simpleLink,a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-        'autolink,colordialog,emoji,link,font,justify,widget,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,image2,insertImage,insertContentLink';
+        'autolink,colordialog,emoji,link,font,justify,widget,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,image2,insertImage';
 
   let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed,tagSuggester,attachImage';
 
@@ -47,7 +47,7 @@ CKEDITOR.editorConfig = function (config) {
     }
   });
 
-  config.extraPlugins = extraPlugins;
+  config.extraPlugins = `${extraPlugins},insertContentLink`;
   config.removePlugins = removePlugins;
   config.toolbar = [
     ['formatOption', 'Bold', 'Italic', 'BulletedList', 'NumberedList', 'Blockquote', 'emoji', 'InsertContentLink'],
