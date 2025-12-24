@@ -76,6 +76,8 @@ CKEDITOR.editorConfig = function (config) {
   let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,emoji,link,font,justify,widget${!webPageNote && ',suggester,tagSuggester' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,image2,insertImage,insertContentLink,vuetifyStyle`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
+  let configOptions = {};
+
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
     if (notesEditorExtensions?.length) {
@@ -88,6 +90,12 @@ CKEDITOR.editorConfig = function (config) {
         }
         if (notesEditorExtension.extraToolbarItem) {
           toolbar[toolbar.length - 1].items.push(notesEditorExtension.extraToolbarItem);
+        }
+        if (notesEditorExtension?.configOptions) {
+          configOptions = {
+            ...configOptions,
+            ...notesEditorExtension.configOptions,
+          };
         }
       });
     }
@@ -110,4 +118,6 @@ CKEDITOR.editorConfig = function (config) {
   config.autoGrow_minHeight = 500;
   config.height = 'auto';
   config.format_tags = 'p;h1;h2;h3';
+
+  Object.keys(configOptions).forEach(k => config[k] = configOptions[k]);
 };
