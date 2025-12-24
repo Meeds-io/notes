@@ -322,7 +322,6 @@ export default {
       }
     },
     async refreshEditorExtensions() {
-      await this.$utils.includeExtensions('RichEditorExtension');
       await this.$nextTick();
       this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
     },
@@ -428,6 +427,7 @@ export default {
         this.editor.destroy(true);
       }
       await this.refreshEditorExtensions();
+      await this.$utils.includeExtensions('RichEditorExtension');
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
 

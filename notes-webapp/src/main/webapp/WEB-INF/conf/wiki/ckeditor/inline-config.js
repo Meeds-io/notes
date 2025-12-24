@@ -24,6 +24,10 @@ CKEDITOR.editorConfig = function (config) {
 
   let configOptions = {};
 
+  config.toolbar = [
+    ['formatOption', 'Bold', 'Italic', 'BulletedList', 'NumberedList', 'Blockquote', 'emoji', 'InsertContentLink'],
+  ];
+
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
     if (notesEditorExtensions?.length) {
@@ -35,7 +39,7 @@ CKEDITOR.editorConfig = function (config) {
           removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
         }
         if (notesEditorExtension.extraToolbarItem) {
-          toolbar[0].push(notesEditorExtension.extraToolbarItem);
+          config.toolbar[0].splice(config.toolbar[0].length - 1, 0, notesEditorExtension.extraToolbarItem);
         }
         if (notesEditorExtension?.configOptions) {
           configOptions = {
@@ -49,9 +53,6 @@ CKEDITOR.editorConfig = function (config) {
 
   config.extraPlugins = `${extraPlugins},insertContentLink`;
   config.removePlugins = removePlugins;
-  config.toolbar = [
-    ['formatOption', 'Bold', 'Italic', 'BulletedList', 'NumberedList', 'Blockquote', 'emoji', 'InsertContentLink'],
-  ];
 
   config.autoGrow_onStartup = true;
   config.autoGrow_minHeight = 165;
