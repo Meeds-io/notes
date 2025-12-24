@@ -6,7 +6,7 @@
     <div>
       <div
         v-if="isAvailableNote"
-        class="notes-application application-body pa-5"
+        class="notes-application notes-application-content  application-body pa-5"
         ref="content">
         <div class="notes-application-header">
           <v-row
@@ -152,14 +152,6 @@
                   :selected-translation="selectedTranslation"
                   @change-translation="changeTranslation" />
               </span>
-              <extension-registry-components
-                v-if="overviewExtensions.length > 0"
-                name="NotesOverview"
-                type="notes-overview-extensions"
-                :params="extensionParams"
-                element-class="ms-3"
-                parent-element="span"
-                element="span" />
             </p>
           </div>
           <p
@@ -170,12 +162,12 @@
         </div>
         <div class="note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
-            class="notes-application-content text-color">
+            class="text-color">
             <component :is="notesContentProcessor" />
           </div>
         </div>
         <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
-          <div v-if="isManager" class="notes-application-content d-flex flex-column justify-center text-center">
+          <div v-if="isManager" class="d-flex flex-column justify-center text-center">
             <v-img
               :src="emptyNoteNoManager"
               class="mx-auto mb-4"
@@ -224,7 +216,7 @@
               </p>
             </div>
           </div>
-          <div v-else class="notes-application-content d-flex flex-column justify-center text-center text-color">
+          <div v-else class="d-flex flex-column justify-center text-center text-color">
             <v-img
               :src="emptyNoteWithManager"
               class="mx-auto mb-4"
@@ -247,7 +239,7 @@
           </div>
         </div>
 
-        <div v-else class="notes-application-content">
+        <div v-else>
           <v-treeview
             v-if="noteChildren?.length"
             ref="noteTreeview"
@@ -269,6 +261,11 @@
             </template>
           </v-treeview>
         </div>
+        <extension-registry-components
+          :params="extensionParams"
+          name="NotesDetailsFooter"
+          type="notes-attachment-list"
+          element-class="ms-3" />
       </div>
       <div v-else class="note-not-found-wrapper text-center mt-6">
         <v-img
@@ -395,7 +392,6 @@ export default {
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       initialized: false,
-      overviewExtensions: [],
       isPublishing: false,
       publishTargets: [],
       canPublish: false,
@@ -408,7 +404,6 @@ export default {
       return {
         entityId: this.entityId,
         entityType: this.entityType,
-        editMode: false
       };
     },
     noteHomeTitle() {
@@ -695,16 +690,12 @@ export default {
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     this.$root.$on('duplicate-note', this.duplicateNote);
-    document.addEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
-    document.addEventListener('note-published', this.handleNotePublished);
-    this.refreshOverviewExtensions();
   },
   mounted() {
     this.handleChangePages();
   },
   beforeDestroy() {
     window.removeEventListener('popstate', this.handlePopstate);
-    document.removeEventListener('notes-extensions-updated', this.refreshOverviewExtensions);
     document.removeEventListener('note-published', this.handleNotePublished);
   },
   methods: {
@@ -1195,9 +1186,6 @@ export default {
       if (this.initialized) {
         this.$root.$emit('refresh-treeView-items', this.note);
       }
-    },
-    refreshOverviewExtensions() {
-      this.overviewExtensions = extensionRegistry.loadComponents('NotesOverview') || [];
     },
     handleNotePublished(event) {
       const {editPublication, isPublishSchedule, link} = event.detail;
