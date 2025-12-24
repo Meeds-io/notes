@@ -403,58 +403,6 @@ export default {
       published: false
     };
   },
-  watch: {
-    note() {
-      if (!this.note.draftPage) {
-        this.getNoteVersionByNoteId(this.note.id);
-      }
-      if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
-        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
-        this.currentNoteBreadcrumb = this.note.breadcrumb;
-      }
-      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
-      this.noteContent = this.note.content;
-      this.noteSummary = this.note?.properties?.summary;
-      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
-        this.retrieveNoteTreeById();
-      }
-    },
-    actualVersion() {
-      if (!this.isDraft && this.actualVersion) {
-        this.noteContent = this.actualVersion.content;
-        this.displayLastVersion = false;
-      }
-    },
-    exportStatus(){
-      if (this.exportStatus.status==='ZIP_CREATED'){
-        this.stopGetStatus();
-        this.getExportedZip();
-        this.exportStatus={};
-      }
-      if (this.exportStatus.status===null){
-        this.stopGetStatus();
-        this.exportStatus={};
-      }
-    },
-    initialized() {
-      if (this.initialized) {
-        Vue.prototype.$utils.includeExtensions('NotesExtension');
-        const urlHash = window.location.hash;
-        if (urlHash) {
-          const elementId = urlHash.substring(1);
-          const targetElement = document.getElementById(elementId);
-          if (targetElement) {
-            targetElement.scrollIntoView({ behavior: 'smooth' });
-          }
-        }
-      }
-    },
-    noteTitle() {
-      const companyName = eXo.env.portal.companyName;
-      const spaceDisplayName = eXo.env.portal.spaceDisplayName;
-      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
-    }
-  },
   computed: {
     extensionParams() {
       return {
@@ -462,6 +410,9 @@ export default {
         entityType: this.entityType,
         editMode: false
       };
+    },
+    noteHomeTitle() {
+      return this.spaceId ? this.$t('notes.label.noteHome') : this.$t('notes.label.myNotes');
     },
     entityId() {
       return this.note?.draftPage && this.note?.id || this.note.latestVersionId;
@@ -634,6 +585,58 @@ export default {
       return this.note?.parentPageId;
     },
   },
+  watch: {
+    note() {
+      if (!this.note.draftPage) {
+        this.getNoteVersionByNoteId(this.note.id);
+      }
+      if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
+        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+      }
+      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
+      this.noteContent = this.note.content;
+      this.noteSummary = this.note?.properties?.summary;
+      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+        this.retrieveNoteTreeById();
+      }
+    },
+    actualVersion() {
+      if (!this.isDraft && this.actualVersion) {
+        this.noteContent = this.actualVersion.content;
+        this.displayLastVersion = false;
+      }
+    },
+    exportStatus(){
+      if (this.exportStatus.status==='ZIP_CREATED'){
+        this.stopGetStatus();
+        this.getExportedZip();
+        this.exportStatus={};
+      }
+      if (this.exportStatus.status===null){
+        this.stopGetStatus();
+        this.exportStatus={};
+      }
+    },
+    initialized() {
+      if (this.initialized) {
+        Vue.prototype.$utils.includeExtensions('NotesExtension');
+        const urlHash = window.location.hash;
+        if (urlHash) {
+          const elementId = urlHash.substring(1);
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    },
+    noteTitle() {
+      const companyName = eXo.env.portal.companyName;
+      const spaceDisplayName = eXo.env.portal.spaceDisplayName;
+      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
+    }
+  },
   created() {
     this.getAvailableLanguages();
     const queryPath = window.location.search;
@@ -801,7 +804,7 @@ export default {
       }
     },
     getHomeTitle(title) {
-      return title === 'Home' && this.$t('notes.label.noteHome') || title;
+      return title === 'Home' && this.noteHomeTitle || title;
     },
     addNote() {
       if (!this.hasDraft) {
@@ -1102,7 +1105,7 @@ export default {
       });
     },
     retrieveNoteTreeById() {
-      this.note.wikiOwner = this.note.wikiOwner.substring(1);
+      this.note.wikiOwner = this.spaceId ? this.note.wikiOwner.substring(1) : this.note.wikiOwner;
       this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name, 'children').then(data => {
         if (data?.jsonList?.length) {
           this.noteChildren = data?.jsonList;
@@ -1170,7 +1173,7 @@ export default {
           this.noteContent = note.content;
           this.note.title = note.title;
           this.note.latestVersionId = note.latestVersionId;
-          this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
+          this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
           this.note.properties = note?.properties;
           this.noteSummary = note?.properties?.summary;
         }
