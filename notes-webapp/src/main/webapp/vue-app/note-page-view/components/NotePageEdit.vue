@@ -183,15 +183,15 @@ export default {
   },
   mounted() {
     if (!this.isSmall) {
-      document.querySelector('#UISiteBody').addEventListener('scroll', this.controlBodyScrollClass, false);
-      document.querySelector('#UIPageBody').addEventListener('scroll', this.controlBodyScrollClass, false);
+      document.querySelector('#UISiteBody')?.addEventListener?.('scroll', this.controlBodyScrollClass, false);
+      document.querySelector('#UIPageBody')?.addEventListener?.('scroll', this.controlBodyScrollClass, false);
       window.addEventListener('resize', this.controlBodyScrollClass, false);
       this.$root.$on('notes-editor-ready', this.controlBodyScrollClass);
     }
   },
   beforeDestroy() {
-    document.querySelector('#UISiteBody').removeEventListener('scroll', this.controlBodyScrollClass, false);
-    document.querySelector('#UIPageBody').removeEventListener('scroll', this.controlBodyScrollClass, false);
+    document.querySelector('#UISiteBody')?.removeEventListener?.('scroll', this.controlBodyScrollClass, false);
+    document.querySelector('#UIPageBody')?.removeEventListener?.('scroll', this.controlBodyScrollClass, false);
     window.removeEventListener('resize', this.controlBodyScrollClass, false);
     this.$root.$off('notes-editor-ready', this.controlBodyScrollClass);
   },
