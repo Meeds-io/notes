@@ -684,6 +684,8 @@ public class NoteServiceImpl implements NoteService {
                                                                  userAcl.getAdminMSType(),
                                                                  wikiOwner)) :
                            spaceService.canViewSpace(space, username);
+    } else if (StringUtils.isBlank(wikiType) || StringUtils.equalsIgnoreCase(WikiType.USER.name(), wikiType)) {
+      return wikiOwner.equals(username);
     } else {
       return spaceService.isSuperManager(username) || StringUtils.equals(pageOwner, username);
     }

@@ -503,6 +503,7 @@ export default {
     movePage: false,
     exportNotes: false,
     selectionNotes: [],
+    spaceId: eXo.env.portal.spaceId,
     spaceDisplayName: eXo.env.portal.spaceDisplayName,
     breadcrumb: [],
     destinationNote: {},
@@ -548,7 +549,10 @@ export default {
   },
   computed: {
     homeLabel() {
-      return this.home?.name === 'Home' && this.$t('notes.label.noteHome') || this.home.name;
+      return this.home?.name === 'Home' && this.noteHomeTitle || this.home.name;
+    },
+    noteHomeTitle() {
+      return this.spaceId ? this.$t('notes.label.noteHome') : this.$t('notes.label.myNotes');
     },
     enableExport() {
       return !this.inProgressTreeFetches?.length;
@@ -781,7 +785,7 @@ export default {
             this.$notesService.getNoteById(note.noteId,'', '', '', '', true).then(data => {
               this.breadcrumb = data?.breadcrumb || [];
               this.enableMove = true;
-              this.breadcrumb[0].name = this.$t('notes.label.noteHome');
+              this.breadcrumb[0].name = this.noteHomeTitle;
               this.destinationNote = data;
             });
           } else {
@@ -803,7 +807,7 @@ export default {
       if (id) {
         return this.$notesService.getNoteById(id).then(data => {
           this.note = data || [];
-          this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
+          this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
           if (this.note.wikiType === 'group'){
@@ -817,7 +821,7 @@ export default {
       if (id) {
         return this.$notesService.getDraftNoteById(id).then(data => {
           this.note = data || [];
-          this.note.breadcrumb[0].title = this.$t('notes.label.noteHome');
+          this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
           if (this.note.wikiType === 'group') {
