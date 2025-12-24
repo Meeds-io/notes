@@ -89,7 +89,7 @@ CKEDITOR.editorConfig = function (config) {
           removePlugins = `${extraPlugins},${notesEditorExtension.removePlugin}`;
         }
         if (notesEditorExtension.extraToolbarItem) {
-          toolbar[toolbar.length - 1].items.push(notesEditorExtension.extraToolbarItem);
+          blocksToolbarGroup.splice(blocksToolbarGroup.length - 1, 0, notesEditorExtension.extraToolbarItem);
         }
         if (notesEditorExtension?.configOptions) {
           configOptions = {
