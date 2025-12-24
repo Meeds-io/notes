@@ -118,6 +118,8 @@ export default {
           enterMode: CKEDITOR.ENTER_P,
           shiftEnterMode: CKEDITOR.ENTER_BR,
           copyFormatting_allowedContexts: true,
+          ckEditorType: 'notePageInline',
+          objectType: 'notes',
           isImagePasteBlocked: true,
           hideUploadImageLink: true,
           isImageDragBlocked: true,
