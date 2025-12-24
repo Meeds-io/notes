@@ -298,7 +298,6 @@ export default {
   },
   created() {
     this.cloneNoteObject();
-    this.$utils.includeExtensions('RichEditorExtension');
     this.refreshEditorExtensions();
     this.$root.$on('include-page', this.includePage);
     this.$root.$on('update-note-title', this.updateTranslatedNoteTitle);
@@ -322,10 +321,10 @@ export default {
         this.updatingProperties = false;
       }
     },
-    refreshEditorExtensions() {
-      this.$nextTick().then(() => {
-        this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
-      });
+    async refreshEditorExtensions() {
+      await this.$utils.includeExtensions('RichEditorExtension');
+      await this.$nextTick();
+      this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
     },
     editorClosed(){
       this.$emit('editor-closed');
@@ -424,10 +423,11 @@ export default {
       }
       this.editor.setData('');
     },
-    initCKEditor: function() {
+    async initCKEditor() {
       if (this.editor?.destroy) {
         this.editor.destroy(true);
       }
+      await this.refreshEditorExtensions();
 
       CKEDITOR.dtd.$removeEmpty['i'] = false;
 
