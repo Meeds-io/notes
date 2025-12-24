@@ -460,6 +460,9 @@ export default {
         shiftEnterMode: CKEDITOR.ENTER_BR,
         copyFormatting_allowedContexts: true,
         autoParagraph: false,
+        ckEditorType: 'notes',
+        objectType: 'notes',
+        objectId: this.entityId,
         indentBlock: {
           offset: 40,
           unit: 'px'

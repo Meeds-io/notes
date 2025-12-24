@@ -22,6 +22,8 @@ CKEDITOR.editorConfig = function (config) {
 
   let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed,tagSuggester,attachImage';
 
+  let configOptions = {};
+
   require(['SHARED/extensionRegistry'], function(extensionRegistry) {
     const notesEditorExtensions = extensionRegistry.loadExtensions('NotesEditor', 'ckeditor-extensions');
     if (notesEditorExtensions?.length) {
@@ -34,6 +36,12 @@ CKEDITOR.editorConfig = function (config) {
         }
         if (notesEditorExtension.extraToolbarItem) {
           toolbar[0].push(notesEditorExtension.extraToolbarItem);
+        }
+        if (notesEditorExtension?.configOptions) {
+          configOptions = {
+            ...configOptions,
+            ...notesEditorExtension.configOptions,
+          };
         }
       });
     }
@@ -51,4 +59,6 @@ CKEDITOR.editorConfig = function (config) {
 
   config.height = 165;
   config.format_tags = 'p;h1;h2;h3';
+
+  Object.keys(configOptions).forEach(k => config[k] = configOptions[k]);
 };
