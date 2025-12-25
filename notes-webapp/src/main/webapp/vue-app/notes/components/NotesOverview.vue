@@ -152,6 +152,12 @@
                   :selected-translation="selectedTranslation"
                   @change-translation="changeTranslation" />
               </span>
+              <extension-registry-components
+                name="NotesDetailTitle"
+                type="notes-overview-extensions"
+                element-class="ms-3"
+                parent-element="span"
+                element="span" />
             </p>
           </div>
           <p
