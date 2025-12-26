@@ -262,7 +262,7 @@
                 <v-chip
                   class="identitySuggesterItem me-2 mt-2">
                   <span class="text-truncate">
-                    {{ currentSpaceDisplayName }}
+                    {{ currentLocation }}
                   </span>
                 </v-chip>
               </div>
@@ -601,8 +601,8 @@ export default {
     showCurrentDestination() {
       return this.settings?.showCurrentDestination ?? true;
     },
-    currentSpaceDisplayName() {
-      return this.settings?.spaceDisplayName || this.spaceDisplayName;
+    currentLocation() {
+      return this.settings?.spaceDisplayName || this.spaceDisplayName || eXo.env.portal.siteLabel;
     },
     isEditMode() {
       return this.settings?.isEditMode ?? false;
