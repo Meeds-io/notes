@@ -187,7 +187,7 @@
 
               // Optionally update any associated CKEditor widgets
               const widget = Object.values(editor.widgets.instances).find(
-                (w) => w.name === 'image' && w.data.src.includes(fileId)
+                (w) => w.name === 'image' && w.data?.src?.includes?.(fileId)
               );
               if (widget) {
                 widget.data.src = src;
