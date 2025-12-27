@@ -1574,7 +1574,7 @@ public class NoteServiceImpl implements NoteService {
     if (uploadId != null) {
 
       UploadResource uploadResource = uploadService.getUploadResource(uploadId);
-      if (uploadResource != null) {
+      if (uploadResource != null && uploadResource.getStatus() != UploadResource.UPLOADING_STATUS) {
         String fileDiskLocation = uploadResource.getStoreLocation();
         try (InputStream inputStream = new FileInputStream(fileDiskLocation);) {
           FileItem fileItem = new FileItem(featuredImageId,
@@ -2408,19 +2408,24 @@ public class NoteServiceImpl implements NoteService {
         String imgSrc = matcher.group(2);
         UploadResource uploadResource = uploadService.getUploadResource(uploadId);
 
-        if (uploadResource != null) {
-          UploadedAttachmentDetail uploadedAttachmentDetail = new UploadedAttachmentDetail(uploadResource);
-          attachmentService.saveAttachment(uploadedAttachmentDetail, objectType, objectId, null, userId);
+        if (uploadResource != null && uploadResource.getStatus() != UploadResource.UPLOADING_STATUS) {
+          try {
+            UploadedAttachmentDetail uploadedAttachmentDetail = new UploadedAttachmentDetail(uploadResource);
+            attachmentService.saveAttachment(uploadedAttachmentDetail, objectType, objectId, null, userId);
 
-          String fileId = uploadedAttachmentDetail.getId();
-          String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
-          String archivedUploadId = String.format("archived_cke_uploadId=\"%s\"", uploadId);
-          // Replace the entire img tag with the new src
-          String newImgTag = imgElement.replaceAll("cke_upload_id=\"[^\"]*\"", String.format("%s %s", archivedUploadId, newSrc));
-          if (StringUtils.isNotBlank(imgSrc)) {
-            newImgTag = newImgTag.replace(imgSrc, "");
+            String fileId = uploadedAttachmentDetail.getId();
+            String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
+            String archivedUploadId = String.format("archived_cke_uploadId=\"%s\"", uploadId);
+            // Replace the entire img tag with the new src
+            String newImgTag =
+                             imgElement.replaceAll("cke_upload_id=\"[^\"]*\"", String.format("%s %s", archivedUploadId, newSrc));
+            if (StringUtils.isNotBlank(imgSrc)) {
+              newImgTag = newImgTag.replace(imgSrc, "");
+            }
+            content = content.replace(imgElement, newImgTag);
+          } finally {
+            uploadService.removeUploadResource(uploadId);
           }
-          content = content.replace(imgElement, newImgTag);
         }
       }
     } catch (Exception e) {

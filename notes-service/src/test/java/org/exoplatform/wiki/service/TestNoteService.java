@@ -798,6 +798,7 @@ public class TestNoteService extends BaseTest {
     UploadService uploadService = mock(UploadService.class);
     UploadResource uploadResource = mock(UploadResource.class);
     when(uploadResource.getUploadedSize()).thenReturn(12548d);
+    when(uploadResource.getStatus()).thenReturn(UploadResource.UPLOADED_STATUS);
     when(uploadService.getUploadResource(anyString())).thenReturn(uploadResource);
     String location = getClass().getResource("/images/John.png").getPath();
     when(uploadResource.getStoreLocation()).thenReturn(location);
