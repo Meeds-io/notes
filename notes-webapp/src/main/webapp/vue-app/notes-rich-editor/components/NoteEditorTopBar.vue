@@ -94,20 +94,18 @@
             @click.once="postNote(false)">
             {{ publishButtonText }}
           </v-btn>
-          <div
-            v-else>
+          <div v-else class="d-flex">
             <v-btn
-              class="btn-primary primary pa-0"
+              class="btn btn-primary pa-0"
               width="42"
               height="36"
               min-width="42"
-              text
               :key="postKey"
               :disabled="saveButtonDisabled"
               :aria-label="publishButtonText"
               @click.once="postNote(false)">
               <v-icon
-                class="text--white save-button-icon"
+                class="save-button-icon"
                 size="20">
                 {{ saveButtonIcon }}
               </v-icon>
