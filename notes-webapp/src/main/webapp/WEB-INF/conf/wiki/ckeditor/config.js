@@ -91,6 +91,9 @@ CKEDITOR.editorConfig = function (config) {
         if (notesEditorExtension.extraToolbarItem) {
           blocksToolbarGroup.splice(blocksToolbarGroup.length - 1, 0, notesEditorExtension.extraToolbarItem);
         }
+        if (notesEditorExtension.extraMobileToolbarItem && !webPageNote) {
+          mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push(notesEditorExtension.extraMobileToolbarItem);
+        }
         if (notesEditorExtension?.configOptions) {
           configOptions = {
             ...configOptions,
