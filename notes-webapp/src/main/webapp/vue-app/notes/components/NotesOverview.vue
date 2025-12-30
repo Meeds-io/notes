@@ -404,6 +404,61 @@ export default {
       published: false
     };
   },
+  watch: {
+    note: {
+      deep: true,
+      handler() {
+        if (!this.note.draftPage) {
+          this.getNoteVersionByNoteId(this.note.id);
+        }
+        if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
+          this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
+          this.currentNoteBreadcrumb = this.note.breadcrumb;
+        }
+        this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
+        this.noteContent = this.note.content;
+        this.noteSummary = this.note?.properties?.summary;
+        if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+          this.retrieveNoteTreeById();
+        }
+      }
+    },
+    actualVersion() {
+      if (!this.isDraft && this.actualVersion) {
+        this.noteContent = this.actualVersion.content;
+        this.displayLastVersion = false;
+      }
+    },
+    exportStatus(){
+      if (this.exportStatus.status==='ZIP_CREATED'){
+        this.stopGetStatus();
+        this.getExportedZip();
+        this.exportStatus={};
+      }
+      if (this.exportStatus.status===null){
+        this.stopGetStatus();
+        this.exportStatus={};
+      }
+    },
+    initialized() {
+      if (this.initialized) {
+        Vue.prototype.$utils.includeExtensions('NotesExtension');
+        const urlHash = window.location.hash;
+        if (urlHash) {
+          const elementId = urlHash.substring(1);
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    },
+    noteTitle() {
+      const companyName = eXo.env.portal.companyName;
+      const spaceDisplayName = eXo.env.portal.spaceDisplayName;
+      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
+    }
+  },
   computed: {
     extensionParams() {
       return {
