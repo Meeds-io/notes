@@ -40,4 +40,6 @@ public class PageHistory {
   private String content;
 
   private String lang;
+
+  private String title;
 }

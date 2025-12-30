@@ -405,19 +405,22 @@ export default {
     };
   },
   watch: {
-    note() {
-      if (!this.note.draftPage) {
-        this.getNoteVersionByNoteId(this.note.id);
-      }
-      if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
-        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
-        this.currentNoteBreadcrumb = this.note.breadcrumb;
-      }
-      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
-      this.noteContent = this.note.content;
-      this.noteSummary = this.note?.properties?.summary;
-      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
-        this.retrieveNoteTreeById();
+    note: {
+      deep: true,
+      handler() {
+        if (!this.note.draftPage) {
+          this.getNoteVersionByNoteId(this.note.id);
+        }
+        if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
+          this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
+          this.currentNoteBreadcrumb = this.note.breadcrumb;
+        }
+        this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
+        this.noteContent = this.note.content;
+        this.noteSummary = this.note?.properties?.summary;
+        if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+          this.retrieveNoteTreeById();
+        }
       }
     },
     actualVersion() {
@@ -1061,16 +1064,18 @@ export default {
       this.actualVersion = version;
       this.actualVersion.current = true;
       this.note.content = version.content;
+      this.note.title = version.title;
     },
     restoreVersion(version) {
       const note = {
         id: this.note.id,
-        title: this.note.title,
+        title: version.title,
         content: version.content,
         updatedDate: version.updatedDate,
         owner: version.author
       };
       this.note.content = version.content;
+      this.note.title = version.title;
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
