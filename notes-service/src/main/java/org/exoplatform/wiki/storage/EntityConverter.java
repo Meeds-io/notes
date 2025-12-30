@@ -319,6 +319,7 @@ public class EntityConverter {
       pageHistory.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
       pageHistory.setLang(pageVersionEntity.getLang());
+      pageHistory.setTitle(pageVersionEntity.getTitle());
       if (StringUtils.isNotBlank(pageHistory.getAuthor())) {
         Identity identity = ExoContainerContext.getService(IdentityManager.class)
             .getOrCreateUserIdentity(pageHistory.getAuthor());
