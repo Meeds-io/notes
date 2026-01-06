@@ -563,7 +563,17 @@ public class Utils {
   }
 
   public static String getPageUrl(Page page) {
+    if (page == null || StringUtils.isBlank(page.getWikiType())) {
+      return "";
+    }
+    WikiType wikiType;
     try {
+      wikiType = WikiType.valueOf(page.getWikiType().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      return "";
+    }
+    switch (wikiType) {
+    case GROUP:
       SpaceService spaceService = CommonsUtils.getService(SpaceService.class);
       Space space = spaceService.getSpaceByGroupId(page.getWikiOwner());
       if (space != null) {
@@ -575,8 +585,10 @@ public class Utils {
         }
         return spaceUrl.toString();
       }
-      return "";
-    } catch (Exception e) {
+    case USER:
+      return '/' + PortalContainer.getCurrentPortalContainerName() + '/' + CommonsUtils.getCurrentPortalOwner() + "/notes/"
+          + page.getId();
+    default:
       return "";
     }
   }
