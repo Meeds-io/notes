@@ -414,6 +414,9 @@ export default {
       }
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
+        if (this.note.wikiType === 'user') {
+          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/dashboard/notes/${this.noteId}`;
+        }
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {
           detail: {
             content: data.content,
@@ -458,6 +461,9 @@ export default {
         this.noteId = data.id;
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
+        if (this.note.wikiType === 'user') {
+          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/dashboard/notes/${this.noteId}`;
+        }
         // delete draft note
         this.deleteDraftNote(draftNote, this.note?.url);
         this.displayMessage({
