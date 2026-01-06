@@ -7,6 +7,9 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   rank: 10,
   enabled: (note) => note?.canView,
   action: (vm) => {
+    if (vm.note.wikiType === 'user') {
+      vm.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/dashboard/notes/${vm.note.id}`;
+    }
     navigator.clipboard.writeText(`${window.location.origin}${vm.note.url}`).then(() => {
       vm.$root.$emit('show-alert', {type: 'success', message: vm.$t('notes.alert.success.label.linkCopied')});
       vm.$root.$emit('close-action-menu');
