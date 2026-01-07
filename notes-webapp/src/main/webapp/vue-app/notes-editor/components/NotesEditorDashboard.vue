@@ -39,6 +39,7 @@
       :publish-button-text="$t('notes.button.publish')"
       :editor-icon="editorIcon"
       :space-group-id="`/spaces/${spaceGroupId}`"
+      :target-space-id="targetSpaceId"
       :suggester-space-url="spaceGroupId"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
@@ -113,6 +114,7 @@ export default {
       navigationLabel: `${this.$t('notes.label.Navigation')}`,
       noteNavigationDisplayed: false,
       spaceGroupId: null,
+      targetSpaceId: null,
       oembedMinWidth: 300,
       selectedLanguage: null,
       translations: null,
@@ -233,6 +235,7 @@ export default {
       this.parentPageId = parentNoteId === 'null' ? null : parentNoteId;
       this.spaceId = urlParams.get('spaceId');
       this.spaceGroupId  = urlParams.get('spaceGroupId');
+      this.getTargetSpaceId(this.spaceGroupId);
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
@@ -264,6 +267,14 @@ export default {
     this.$root.$on('save-draft', this.autoSave);
   },
   methods: {
+    getTargetSpaceId(groupId) {
+      if (this.spaceId || !groupId) {
+        return;
+      }
+      this.$spaceService.getSpaceByGroupId(groupId).then((space) => {
+        this.targetSpaceId = space?.id;
+      });
+    },
     processAutoSaveFromEditorExtension(event) {
       if (event.detail.processAutoSave) {
         this.extensionDataUpdated = true;
