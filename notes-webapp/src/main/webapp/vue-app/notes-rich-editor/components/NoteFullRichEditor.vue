@@ -227,6 +227,10 @@ export default {
     publicationParams: {
       type: Object,
       default: null
+    },
+    targetSpaceId: {
+      type: Number,
+      default: null
     }
   },
   watch: {
@@ -269,7 +273,7 @@ export default {
     },
     extensionParams() {
       return {
-        spaceId: this.getURLQueryParam('spaceId'),
+        spaceId: this.getURLQueryParam('spaceId') || this.targetSpaceId,
         entityId: this.entityId,
         entityType: this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS',
         lang: this.note.lang,
