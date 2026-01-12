@@ -455,6 +455,40 @@
       columnDataType="TIMESTAMP"
       defaultNullValue="${now}" />
   </changeSet>
+  
+  <changeSet id="1.0.0-53-clean-duplicates" author="wiki">
+    <sql>
+		DELETE FROM WIKI_PAGES
+		WHERE WIKI_ID IN (
+		  SELECT w1.WIKI_ID
+		  FROM WIKI_WIKIS w1
+		  JOIN WIKI_WIKIS w2
+			ON w1.OWNER = w2.OWNER
+		   AND w1.TYPE = w2.TYPE
+		   AND w1.WIKI_ID > w2.WIKI_ID
+		)
+       
+		DELETE FROM WIKI_TEMPLATES
+		WHERE WIKI_ID IN (
+		  SELECT w1.WIKI_ID
+		  FROM WIKI_WIKIS w1
+		  JOIN WIKI_WIKIS w2
+			ON w1.OWNER = w2.OWNER
+		   AND w1.TYPE = w2.TYPE
+		   AND w1.WIKI_ID > w2.WIKI_ID
+		)
+		
+		DELETE FROM WIKI_WIKIS
+		WHERE WIKI_ID IN (
+		  SELECT w1.WIKI_ID
+		  FROM WIKI_WIKIS w1
+		  JOIN WIKI_WIKIS w2
+			ON w1.OWNER = w2.OWNER
+		   AND w1.TYPE = w2.TYPE
+		   AND w1.WIKI_ID > w2.WIKI_ID
+		)
+    </sql>
+  </changeSet>
 
   <changeSet id="1.0.0-54" author="wiki" failOnError="false">
     <addUniqueConstraint columnNames="OWNER, TYPE" tableName="WIKI_WIKIS"
