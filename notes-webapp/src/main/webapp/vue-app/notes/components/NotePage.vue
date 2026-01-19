@@ -1,0 +1,1307 @@
+<!--
+
+ This file is part of the Meeds project (https://meeds.io/).
+
+ Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 3 of the License, or (at your option) any later version.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public License
+ along with this program; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+-->
+<template>
+  <v-app
+    class="transparent"
+    role="main"
+    flat>
+    <div>
+      <div
+        v-if="isAvailableNote"
+        class="notes-application notes-application-content application-body pa-5"
+        ref="content">
+        <div class="notes-application-header">
+          <v-row
+            no-gutters
+            class="mb-5">
+            <v-col
+              xl="10"
+              lg="10"
+              md="9"
+              sm="8"
+              cols="6">
+              <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
+                <v-tooltip v-if="!treeViewExpended || isMobile" bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      icon
+                      v-bind="attrs"
+                      v-on="on"
+                      class="me-2 ms-n2"
+                      @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', true)">
+                      <img
+                        src="/social/images/sidebar.svg"
+                        class="icon-default-color"
+                        height="20px"
+                        width="20px">
+                    </v-btn>
+                  </template>
+                  <span class="caption">
+                    {{ $t('notes.tooltip.open.tree') }}
+                  </span>
+                </v-tooltip>
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      v-on="on"
+                      v-bind="attrs"
+                      class="pa-0 me-2"
+                      width="36"
+                      min-width="36"
+                      height="36"
+                      icon
+                      @click="$refs.notesBreadcrumb.open(note, 'displayNote')">
+                      <v-icon
+                        class="icon-default-color"
+                        size="20">
+                        fas fa-sitemap
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
+                </v-tooltip>
+                <note-breadcrumb
+                  class="my-auto"
+                  :note-breadcrumb="notebreadcrumb"
+                  :actual-note-id="note.id"
+                  @open-note="getNoteByName($event, 'breadCrumb', true)" />
+              </div>
+            </v-col>
+            <v-col
+              xl="2"
+              lg="2"
+              md="3"
+              sm="4"
+              cols="6">
+              <div
+                id="note-actions-menu"
+                v-if="loadData && !hideElementsForSavingPDF"
+                class="notes-header-icons text-right d-flex justify-end">
+                <div
+                  class="d-inline-flex">
+                  <v-tooltip bottom v-if="!hasDraft && isManager">
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        v-on="on"
+                        v-bind="attrs"
+                        class="pa-0 mt-0"
+                        @click="addNote"
+                        icon>
+                        <v-icon
+                          size="20"
+                          class="clickable add-note-click">
+                          fas fa-plus
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span class="caption">{{ $t('notes.label.addPage') }}</span>
+                  </v-tooltip>
+                </div>
+                <div
+                  class="d-inline-flex ms-2">
+                  <v-tooltip bottom v-if="isManager">
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        v-on="on"
+                        v-bind="attrs"
+                        class="pa-0 mt-0"
+                        @click="editNote">
+                        <v-icon
+                          size="20"
+                          class="clickable edit-note-click">
+                          fas fa-edit
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span class="caption">{{ $t('notes.label.editPage') }}</span>
+                  </v-tooltip>
+                </div>
+                <extension-registry-components
+                  :params="params"
+                  name="NotesDetails"
+                  type="notes-toolbar"
+                  parent-element="div"
+                  element="div"
+                  class="d-flex" />
+                <note-favorite-action
+                  :icon-size="20"
+                  :note="note"
+                  :activity-id="note.activityId"
+                  class="ms-2" />
+                <div
+                  class="d-inline-flex ms-2">
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        v-on="on"
+                        @click="$root.$emit('display-action-menu')"
+                        v-bind="attrs"
+                        class="pa-0 mt-0"
+                        icon>
+                        <v-icon
+                          size="20"
+                          class="clickable">
+                          fas fa-ellipsis-v
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span class="caption">{{ $t('notes.label.openMenu') }}</span>
+                  </v-tooltip>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+          <v-img
+            v-if="hasFeaturedImage"
+            :lazy-src="featuredImageLink"
+            :alt="featuredImageAltText"
+            :src="featuredImageLink"
+            contain
+            class="mb-5"
+            width="100%"
+            max-height="400" />
+          <div class="notes-title">
+            <p ref="noteTitle" class="title text-color text-break">
+              <span>
+                {{ noteTitle }}
+              </span>
+              <span>
+                <notes-translation-menu
+                  :note="note"
+                  :translations="translations"
+                  :selected-translation="selectedTranslation"
+                  @change-translation="changeTranslation" />
+              </span>
+              <extension-registry-components
+                name="NotesDetailTitle"
+                type="notes-overview-extensions"
+                element-class="ms-3"
+                parent-element="span"
+                element="span" />
+            </p>
+          </div>
+          <p
+            v-if="hasSummary"
+            class="note-summary text-break text-sub-title mt-4 mb-0">
+            {{ noteSummary }}
+          </p>
+        </div>
+        <div class="note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
+          <div
+            class="text-color">
+            <component :is="notesContentProcessor" />
+          </div>
+        </div>
+        <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
+          <div v-if="isManager" class="d-flex flex-column justify-center text-center">
+            <v-img
+              :src="emptyNoteNoManager"
+              class="mx-auto mb-4"
+              max-height="150"
+              max-width="250"
+              contain
+              eager />
+            <div>
+              <p class="notes-welcome-patragraph">
+                <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      class="pa-0"
+                      icon
+                      v-on="on"
+                      v-bind="attrs"
+                      @click="editNote">
+                      <v-icon
+                        size="16"
+                        class="clickable edit-note-click">
+                        mdi-square-edit-outline
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.editPage') }}</span>
+                </v-tooltip>
+                <span v-if="!hasDraft">{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
+                <v-tooltip bottom v-if="!hasDraft">
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      class="pa-0"
+                      v-on="on"
+                      v-bind="attrs"
+                      @click="addNote"
+                      icon>
+                      <v-icon
+                        size="16"
+                        class="clickable add-note-click">
+                        fas fa-plus
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="caption">{{ $t('notes.label.addPage') }}</span>
+                </v-tooltip>
+              </p>
+            </div>
+          </div>
+          <div v-else class="d-flex flex-column justify-center text-center text-color">
+            <v-img
+              :src="emptyNoteWithManager"
+              class="mx-auto mb-4"
+              max-height="150"
+              max-width="250"
+              contain
+              eager />
+            <div>
+              <h4 class="notes-welcome-title font-weight-bold text-color">
+                {{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }}
+              </h4>
+              <p class="notes-welcome-patragraph">
+                <span>{{ $t('notes.label.no-content.redactor.content.first') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-manager') }}</a>
+                <span>{{ $t('notes.label.or') }}</span>
+                <a :href="spaceMembersUrl" class="text-decoration-underline">{{ $t('notes.label.no-content-redactor') }}</a>
+                <span>{{ $t('notes.label.no-content.redactor.content.last') }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else>
+          <v-treeview
+            v-if="noteChildren?.length"
+            ref="noteTreeview"
+            :items="noteChildren"
+            class="ps-1 notes-custom-treeview"
+            item-key="noteId"
+            expand-icon=""
+            dense>
+            <template #prepend="{ item, open }">
+              <note-treeview-item-prepend
+                :item="item"
+                :open="open"
+                @click="fetchChildren(item, $refs.noteTreeview)" />
+            </template>
+            <template #label="{ item }">
+              <note-content-table-item
+                :note="item"
+                @open-note="openNoteChild" />
+            </template>
+          </v-treeview>
+        </div>
+        <extension-registry-components
+          :params="extensionParams"
+          name="NotesDetailsFooter"
+          type="notes-attachment-list"
+          element-class="ms-3" />
+      </div>
+      <div v-else class="note-not-found-wrapper text-center mt-6">
+        <v-img
+          :src="noteNotFountImage"
+          class="mx-auto"
+          max-height="150"
+          max-width="250"
+          contain
+          eager />
+        <p class="title mt-3 text-light-color">{{ $t('notes.label.noteNotFound') }}</p>
+        <a
+          class="btn btn-primary"
+          :href="defaultPath">
+          {{ $t('notes.label.noteNotFound.button') }}
+        </a>
+      </div>
+    </div>
+    <exo-confirm-dialog
+      ref="DeleteNoteDialog"
+      :message="confirmMessage"
+      :title="hasDraft ? $t('popup.confirmation.delete.draft') : $t('popup.confirmation.delete')"
+      :ok-label="$t('notes.button.delete')"
+      :cancel-label="$t('notes.button.cancel')"
+      persistent
+      @ok="deleteNote()"
+      @dialog-opened="$emit('confirmDialogOpened')"
+      @dialog-closed="$emit('confirmDialogClosed')" />
+    <notes-actions-menu
+      v-if="!isMobile"
+      :note="note" />
+    <notes-mobile-action-menu
+      v-else
+      ref="notesMobileActionMenu"
+      :note="note" />
+    <note-treeview-drawer
+      ref="notesBreadcrumb" />
+    <version-history-drawer
+      :versions="noteVersionsArray"
+      :can-manage="this.note.canManage"
+      :show-load-more="hasMoreVersions"
+      @open-version="displayVersion($event)"
+      @restore-version="restoreVersion($event)"
+      @load-more="loadMoreVersions"
+      ref="noteVersionsHistoryDrawer" />
+    <note-import-drawer
+      ref="noteImportDrawer" />
+    <note-featured-image-drawer
+      ref="featuredImageDrawer"
+      :note="note"
+      :has-featured-image="hasFeaturedImage" />
+    <note-publication-target-drawer />
+    <note-publication-drawer
+      ref="publicationDrawer"
+      :has-featured-image="hasFeaturedImage"
+      :is-publishing="isPublishing"
+      :params="{
+        spaceId: spaceId,
+        allowedTargets: publishTargets,
+        canPublish: canPublish,
+        canSchedule: canScheduleNotePublication
+      }"
+      :edit-mode="published"
+      @publish="publishNote" />
+  </v-app>
+</template>
+<script>
+
+import {notesConstants} from '../../../javascript/eXo/wiki/notesConstants.js';
+import html2canvas from 'html2canvas';
+import JSPDF from 'jspdf';
+
+export default {
+  props: {
+    treeViewExpended: {
+      type: Boolean,
+      default: true
+    },
+  },
+  data() {
+    return {
+      versionsPageSize: null,
+      note: {},
+      lastUpdatedTime: '',
+      lang: eXo.env.portal.language,
+      dateTimeFormat: {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+      dateTimeFormatZip: {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      },
+      confirmMessage: '',
+      spaceDisplayName: eXo.env.portal.spaceDisplayName,
+      spaceId: eXo.env.portal.spaceId,
+      noteBookType: eXo.env.portal.spaceName ? 'group' : 'user',
+      noteBookOwner: eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner,
+      noteNotFountImage: '/notes/skin/images/notes_not_found.png',
+      emptyNoteWithManager: '/notes/images/no-content-with-manager.png',
+      emptyNoteNoManager: '/notes/images/no-content-no-manager.png',
+      defaultPath: 'Home',
+      existingNote: true,
+      currentPath: window.location.pathname,
+      currentNoteBreadcrumb: [],
+      loadData: false,
+      openTreeView: false,
+      hideElementsForSavingPDF: false,
+      noteVersions: [],
+      actualVersion: {},
+      noteContent: '',
+      displayLastVersion: true,
+      noteChildren: [],
+      isDraft: false,
+      noteTitle: '',
+      noteSummary: '',
+      spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
+      childNodes: [],
+      exportStatus: '',
+      exportId: 0,
+      iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
+      selectedTranslation: { value: null, text: this.$t('notes.label.translation.originalVersion') },
+      translations: [],
+      languages: [],
+      slectedLanguage: null,
+      translationsMenu: false,
+      originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
+      illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      initialized: false,
+      isPublishing: false,
+      publishTargets: [],
+      canPublish: false,
+      canSchedule: false,
+      published: false,
+      ascending: false,
+      sortMenu: false,
+      sortField: 'lastUpdated',
+    };
+  },
+  computed: {
+    sortFields() {
+      return [
+        {value: 'lastUpdated', label: this.$t('documents.label.lastUpdated')},
+        {value: 'name', label: this.$t('documents.label.name')},
+        {value: 'size', label: this.$t('documents.label.size')}
+      ];
+    },
+    selectedSort() {
+      const item = this.sortFields.find(i => i.value === this.sortField);
+      return item ? item : null;
+    },
+    sortDirectionIcon() {
+      return this.ascending ? 'fa-arrow-down' : 'fa-arrow-up';
+    },
+    extensionParams() {
+      return {
+        entityId: this.entityId,
+        entityType: this.entityType,
+      };
+    },
+    noteHomeTitle() {
+      return this.spaceId ? this.$t('notes.label.noteHome') : this.$t('notes.label.myNotes');
+    },
+    entityId() {
+      return this.note?.draftPage && this.note?.id || this.note.latestVersionId;
+    },
+    entityType() {
+      return this.note.draftPage && 'WIKI_DRAFT_PAGES' || 'WIKI_PAGE_VERSIONS';
+    },
+    params() {
+      return {
+        note: this.note,
+      };
+    },
+    hasSummary() {
+      return this.note?.properties?.summary?.length;
+    },
+    langParam() {
+      return this.note?.lang && `&lang=${this.note?.lang}` || '';
+    },
+    noteFeatureImageUpdatedDate() {
+      return this.note?.properties?.featuredImage?.lastUpdated || 0;
+    },
+    hasFeaturedImage() {
+      return !!this.note?.properties?.featuredImage?.id;
+    },
+    featuredImageAltText() {
+      return this.note?.properties?.featuredImage?.altText;
+    },
+    featuredImageLink() {
+      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x400`;
+    },
+    notesContentProcessor() {
+      return {
+        template: `<div class='rich-editor-content extended-rich-content'>${this.$noteUtils.getContentToDisplay(this.noteContent, this.note?.id, this.noteBookType, this.noteBookOwner, true)}</div>`,
+        data() {
+          return {
+            vTreeComponent: {
+              template: `
+                <v-treeview
+                  ref="noteTreeview"
+                  :items="noteChildItems"
+                  class="ps-1 notes-custom-treeview"
+                  item-key="noteId"
+                  expand-icon=""
+                  dense>
+                  <template #prepend="{ item, open }" >
+                    <note-treeview-item-prepend
+                       :item="item"
+                       :open="open"
+                       @click="fetchChildren(item, $refs.noteTreeview)" />
+                  </template>
+                  <template #label="{ item }">
+                    <note-content-table-item
+                      :note="item"
+                      @open-note="openNoteChild"/>
+                  </template>
+                </v-treeview >`,
+              props: {
+                noteId: 0,
+                source: '',
+                noteBookType: '',
+                noteBookOwner: ''
+              },
+              data: function () {
+                return {
+                  noteChildItems: [],
+                  selectedTranslation: {value: eXo.env.portal.language},
+                  note: null
+                };
+              },
+              created: function () {
+                this.$nextTick().then(() => {
+                  this.getNodeById(this.noteId, this.source, this.noteBookType, this.noteBookOwner);
+                });
+              },
+              methods: {
+                openNoteChild(item) {
+                  return this.$root.$children[0].openNoteChild(item);
+                },
+                fetchChildren(item, treeview) {
+                  return this.$root.$children[0].fetchChildren(item, treeview);
+                },
+                getNoteLanguages(noteId) {
+                  return this.$root.$children[0].getNoteLanguages(noteId);
+                },
+                getNodeById(noteId, source, noteBookType, noteBookOwner) {
+                  return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
+                    this.note = data || {};
+                    this.getNoteLanguages(noteId);
+                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children').then(data => {
+                      if (data?.jsonList?.length) {
+                        this.noteChildItems = data.jsonList;
+                      }
+                    });
+                  }).catch(e => {
+                    console.error('Error when getting note', e);
+                  });
+                }
+              }
+            }
+          };
+        }
+      };
+    },
+    noteVersionsArray() {
+      return this.noteVersions.slice(0, this.versionsPageSize);
+    },
+    allNoteVersionsCount() {
+      return this.noteVersions.length;
+    },
+    hasMoreVersions() {
+      return this.allNoteVersionsCount > this.versionsPageSize;
+    },
+    isHomeNoteDefaultContent() {
+      return !this.note.parentPageId && ( this.noteContent===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>` || this.noteContent === '');
+    },
+    isMobile() {
+      return this.$vuetify?.breakpoint?.smAndDown;
+    },
+    isAvailableNote() {
+      return this.existingNote;
+    },
+    notebreadcrumb() {
+      return this.currentNoteBreadcrumb;
+    },
+    hasDraft(){
+      return !!this.note?.draftPage;
+    },
+    hasEmptyContent(){
+      return !this.note?.content;
+    },
+    hasChildren(){
+      return this.noteChildren?.length;
+    },
+    isManager(){
+      return this.note?.canManage;
+    },
+    notesPageName() {
+      if (this.currentPath.endsWith(eXo.env.portal.selectedNodeUri)||this.currentPath.endsWith(`${eXo.env.portal.selectedNodeUri}/`)){
+        return 'homeNote';
+      } else {
+        const noteId = this.currentPath.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
+        if (noteId) {
+          return noteId;
+        } else {
+          return 'homeNote';
+        }
+
+      }
+    },
+    noteId() {
+      const pathParams = this.currentPath.split('/');
+      const noteId = this.isDraft ? this.currentPath.split('/')[pathParams.length - 2] : this.currentPath.split('/')[pathParams.length - 1];
+      if (!isNaN(noteId)) {
+        return noteId;
+      } else {
+        return 0;
+      }
+    },
+    appName() {
+      const uris = eXo.env.portal.selectedNodeUri.split('/');
+      return uris[uris.length - 1];
+    },
+    canScheduleNotePublication() {
+      return this.note?.canManage || this.canSchedule;
+    },
+    targetLang() {
+      return this.selectedTranslation?.value || this.lang;
+    },
+    parentPageId() {
+      return this.note?.parentPageId;
+    },
+  },
+  watch: {
+    note() {
+      if (!this.note.draftPage) {
+        this.getNoteVersionByNoteId(this.note.id);
+      }
+      if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
+        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+      }
+      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
+      this.noteContent = this.note.content;
+      this.noteSummary = this.note?.properties?.summary;
+      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+        this.retrieveNoteTreeById();
+      }
+    },
+    actualVersion() {
+      if (!this.isDraft && this.actualVersion) {
+        this.noteContent = this.actualVersion.content;
+        this.displayLastVersion = false;
+      }
+    },
+    exportStatus(){
+      if (this.exportStatus.status==='ZIP_CREATED'){
+        this.stopGetStatus();
+        this.getExportedZip();
+        this.exportStatus={};
+      }
+      if (this.exportStatus.status===null){
+        this.stopGetStatus();
+        this.exportStatus={};
+      }
+    },
+    initialized() {
+      if (this.initialized) {
+        Vue.prototype.$utils.includeExtensions('NotesExtension');
+        const urlHash = window.location.hash;
+        if (urlHash) {
+          const elementId = urlHash.substring(1);
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    },
+    noteTitle() {
+      const companyName = eXo.env.portal.companyName;
+      const spaceDisplayName = eXo.env.portal.spaceDisplayName;
+      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
+    }
+  },
+  created() {
+    this.getAvailableLanguages();
+    const queryPath = window.location.search;
+    const urlParams = new URLSearchParams(queryPath);
+    if (urlParams.has('translation')) {
+      this.updateSelectedTranslation({value: urlParams.get('translation')});
+    }
+    if (this.currentPath.endsWith('draft')) {
+      this.isDraft = true;
+    }
+    this.$root.$on('open-note-by-name', (noteName, isDraft) => {
+      if (!isDraft) {
+        this.noteId = noteName;
+        this.getNoteByName(noteName,'tree',true);
+      } else {
+        this.getDraftNote(noteName);
+      }
+    });
+    this.$root.$on('confirmDeleteNote', () => {
+      this.confirmDeleteNote();
+    });
+    this.$root.$on('show-alert', this.displayMessage);
+    this.$root.$on('delete-note', () => {
+      this.confirmDeleteNote();
+    });
+    this.$root.$on('move-page', (note, newParentNote) => {
+      this.moveNote(note, newParentNote);
+    });
+    this.$root.$on('export-notes', (notesSelected,importAll,homeNoteId) => {
+      this.exportNotes(notesSelected,importAll,homeNoteId);
+    });
+    this.$root.$on('cancel-export-notes', () => {
+      this.cancelExportNotes();
+    });
+    this.$root.$on('import-notes', (uploadId,overrideMode) => {
+      this.importNotes(uploadId,overrideMode);
+    });
+    window.addEventListener('popstate', this.handlePopstate);
+    this.$root.$on('update-note-title', this.updateNoteTitle);
+    this.$root.$on('update-note-content', this.updateNoteContent);
+    this.$root.$on('update-note-summary', this.updateNoteSummary);
+    this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
+    window.addEventListener('message', (event) => {
+      if (this.iframelyOriginRegex.exec(event.origin)) {
+        const data = JSON.parse(event.data);
+        if (data.method === 'open-href') {
+          window.open(data.href, '_blank');
+        }
+      }
+    });
+
+    this.$root.$on('open-note-treeview', this.openNoteTreeView);
+    this.$root.$on('note-export-pdf', this.createPDF);
+    this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
+    this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
+    this.$root.$on('open-note-import-drawer', this.openImportDrawer);
+    this.$root.$on('open-publish-drawer', this.openPublishDrawer);
+    this.$root.$on('duplicate-note', this.duplicateNote);
+  },
+  mounted() {
+    this.handleChangePages();
+  },
+  beforeDestroy() {
+    window.removeEventListener('popstate', this.handlePopstate);
+    document.removeEventListener('note-published', this.handleNotePublished);
+  },
+  methods: {
+    publishNote(publicationSettings, note) {
+      const scheduleSettings = publicationSettings?.scheduleSettings;
+      const noteArticle = structuredClone(note || this.note);
+      noteArticle.schedulePostDate = scheduleSettings?.postDate;
+      noteArticle.scheduleUnpublishDate = scheduleSettings?.unpublishDate;
+      noteArticle.activityPosted = publicationSettings?.post;
+      noteArticle.published = publicationSettings?.publish;
+      noteArticle.targets = publicationSettings?.selectedTargets;
+      noteArticle.audience = publicationSettings?.selectedAudience;
+      noteArticle.isHomeDefaultContent = this.isHomeNoteDefaultContent;
+      noteArticle.hasChildren = this.hasChildren;
+      this.isPublishing = true;
+      if (note) {
+        this.$notesService.updateNoteById(note).then(() => {
+          document.dispatchEvent(new CustomEvent('publish-note', {
+            detail: {
+              editPublication: false,
+              article: noteArticle
+            }
+          }));
+        });
+      } else {
+        document.dispatchEvent(new CustomEvent('publish-note', {
+          detail: {
+            editPublication: true,
+            article: noteArticle,
+            scheduleSettings: scheduleSettings,
+          }
+        }));
+      }
+    },
+    openPublishDrawer(publicationParams) {
+      const savedSettings = publicationParams?.savedSettings;
+      this.published = !!savedSettings;
+      this.publishTargets = publicationParams.targets;
+      this.canPublish = publicationParams?.canPublish;
+      this.canSchedule = publicationParams?.canSchedule;
+      this.note = Object.assign(this.note, savedSettings);
+      setTimeout(() => {
+        this.$refs.publicationDrawer.open(this.note);
+      },200);
+    },
+    closeMobileActionMenu() {
+      setTimeout(() => {
+        this.$refs.notesMobileActionMenu?.close();
+      }, 200);
+    },
+    openNoteTreeView(note, action) {
+      this.$refs.notesBreadcrumb.open(note, action);
+      this.closeMobileActionMenu();
+    },
+    openImportDrawer() {
+      this.$refs.noteImportDrawer.open();
+      this.closeMobileActionMenu();
+    },
+    updateNoteTitle(title) {
+      this.noteTitle = title;
+    },
+    updateNoteContent(content) {
+      this.noteContent = content;
+    },
+    updateNoteSummary(summary) {
+      this.noteSummary = summary;
+    },
+    updateSelectedTranslation(translation) {
+      if (!this.initialized) {
+        return;
+      }
+      this.selectedTranslation = translation;
+    },
+    getNoteLink(noteId) {
+      const baseUrl = window.location.href;
+      return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
+    },
+    loadMoreVersions() {
+      this.versionsPageSize += this.versionsPageSize;
+    },
+    handlePopstate(event) {
+      this.currentPath = window.location.pathname;
+      if (event?.state?.translation) {
+        this.updateSelectedTranslation(event?.state?.translation);
+      }
+      this.handleChangePages();
+    },
+    handleChangePages() {
+      if (this.noteId) {
+        if (this.isDraft) {
+          this.getDraftNote(this.noteId);
+        } else {
+          this.getNoteById(this.noteId,'',true);
+        }
+      } else {
+        this.getNoteByName(this.notesPageName,'',true);
+      }
+    },
+    getHomeTitle(title) {
+      return title === 'Home' && this.noteHomeTitle || title;
+    },
+    addNote() {
+      if (!this.hasDraft) {
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
+      }
+    },
+    editNote() {
+      let translation = '';
+      if (this.selectedTranslation.value){
+        translation = `&translation=${this.selectedTranslation.value}`;
+      }
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}`, '_blank');
+    },
+    deleteNote() {
+      if (this.hasDraft) {
+        this.$notesService.deleteDraftNote(this.note).then(() => {
+          this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
+        }).catch(e => {
+          console.error('Error when deleting draft note', e);
+        });
+      } else {
+        this.$notesService.deleteNotes(this.note).then(() => {
+          this.getNoteByName(this.notebreadcrumb[this.notebreadcrumb.length - 2].id);
+        }).catch(e => {
+          console.error('Error when deleting note', e);
+        });
+      }
+    },
+    moveNote(note, newParentNote){
+      note.parentPageId=newParentNote.id;
+      this.$notesService.moveNotes(note, newParentNote).then(() => {
+        this.getNoteByName(note.name);
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.noteMoved')});
+      }).catch(e => {
+        console.error('Error when move note page', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    exportNotes(notesSelected, exportAll, homeNoteId) {
+      const maxExportId = 10000;
+      this.exportId = Math.floor(Math.random() * maxExportId);
+      if (exportAll) {
+        notesSelected = homeNoteId;
+      }
+      this.$notesService.exportNotes(notesSelected, exportAll,this.exportId);
+      this.getExportStatus();
+    },
+    cancelExportNotes() {
+      this.stopGetStatus();
+      this.$notesService.cancelExportNotes(this.exportId).then(() => {
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.export.canceled')});
+      }).catch(e => {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    getExportedZip() {
+      const date = this.$dateUtil.formatDateObjectToDisplay(Date.now(), this.dateTimeFormatZip, this.lang);
+      this.$notesService.getExportedZip(this.exportId).then((transfer) => {
+        return transfer.blob();
+      }).then((bytes) => {
+        const elm = document.createElement('a');
+        elm.href = URL.createObjectURL(bytes);
+        elm.setAttribute('download', `${date}_notes_${this.spaceDisplayName}.zip`);
+        elm.click();
+        this.exportId=0;
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.exported')});
+      }).catch(e => {
+        console.error('Error when export note page', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    getExportStatus() {
+      this.intervalId = window.setInterval(() =>{
+        return this.$notesService.getExportStatus(this.exportId).then(data => {
+          this.exportStatus = data;
+          this.$refs.notesBreadcrumb.setExportStaus(this.exportStatus);
+        }).catch(() => {
+          this.stopGetStatus();
+        });
+      }, 500);
+    },
+    stopGetStatus(){
+      clearInterval(this.intervalId);
+    },
+    getNoteById(noteId, source, viewNote) {
+      return this.$notesService.getNoteById(noteId,this.targetLang, source, this.noteBookType, this.noteBookOwner).then(data => {
+        this.note = data || {};
+        this.isDraft = data.draftPage;
+        this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+        this.getNoteLanguages(noteId);
+        this.selectedTranslation = this.note.lang ? { value: this.targetLang } : this.originalVersion;
+        this.updateURL();
+        if (viewNote){
+          this.viewNoteStatistics(this.note);
+        }
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$applicationLoaded();
+        this.refreshTreeView();
+        this.initialized = true;
+      });
+    },
+    importNotes(uploadId,overrideMode){
+      this.$notesService.importZipNotes(this.note.id,uploadId,overrideMode).then(() => {
+        this.$root.$emit('close-note-tree-drawer');
+        this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.notes.imported')});
+      }).catch(e => {
+        console.error('Error when import notese', e);
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    getNoteByName(noteName, source, viewNote) {
+      return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.targetLang).then(data => {
+        this.note = data || {};
+        this.isDraft = data.draftPage;
+        this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+        this.getNoteLanguages(this.note.id);
+        const translation = this.note.lang ? { value: this.targetLang } : this.originalVersion;
+        this.updateSelectedTranslation(translation);
+        this.updateURL();
+        if (viewNote){
+          this.viewNoteStatistics(this.note);
+        }
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$applicationLoaded();
+        this.refreshTreeView();
+        this.initialized = true;
+      });
+    },
+    getDraftNote(noteId) {
+      return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
+        this.note = {};
+        this.note = data || {};
+        this.isDraft = true;
+        this.loadData = true;
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+        this.updateURL();
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+        this.existingNote = false;
+      }).finally(() => {
+        this.$root.$applicationLoaded();
+        this.refreshTreeView();
+        this.initialized = true;
+      });
+    },
+    confirmDeleteNote: function () {
+      let parentsBreadcrumb = '';
+      for (let index = 0; index < this.notebreadcrumb.length - 1; index++) {
+        parentsBreadcrumb = parentsBreadcrumb.concat(this.notebreadcrumb[index].title);
+        if (index < this.notebreadcrumb.length - 2) {
+          parentsBreadcrumb = parentsBreadcrumb.concat('>');
+        }
+      }
+      this.confirmMessage = `${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo1', { 0: `<b>${this.note && this.note.title}</b>` }) :
+        this.$t('popup.msg.confirmation.DeleteInfo1', { 0: `<b>${this.note && this.note.title}</b>` })}`
+          + `<p>${this.$t('popup.msg.confirmation.DeleteInfo2')}</p>`
+          + `<li>${this.$t('popup.msg.confirmation.DeleteInfo4')}</li>`
+          + `<li>${this.note.draftPage ? this.$t('popup.msg.confirmation.DeleteDraftInfo5', {
+            0: `<b>${parentsBreadcrumb}</b>`
+          }) : this.$t('popup.msg.confirmation.DeleteInfo5', {
+            0: `<b>${parentsBreadcrumb}</b>`
+          })}</li>`;
+      this.$refs.DeleteNoteDialog.open();
+    },
+    createPDF(note) {
+      this.hideElementsForSavingPDF = true;
+      this.closeMobileActionMenu();
+      window.setTimeout(() => {
+        const title = `${this.noteTitle}`;
+        if (note.title !== title) {
+          this.noteTitle = note.title;
+        }
+        const self = this;
+        this.$nextTick(() => {
+          const element = this.$refs.content;
+          this.hideElementsForSavingPDF = false;
+          html2canvas(element, {
+            useCORS: true
+          }).then(function (canvas) {
+            if (note.title !== title) {
+              self.noteTitle = title;
+            }
+            const pdf = new JSPDF('p', 'mm', 'a4');
+            const ctx = canvas.getContext('2d');
+            const a4w = 170;
+            const a4h = 257;
+            const imgHeight = Math.floor(a4h * canvas.width / a4w);
+            let renderedHeight = 0;
+
+            while (renderedHeight < canvas.height) {
+              const page = document.createElement('canvas');
+              page.width = canvas.width;
+              page.height = Math.min(imgHeight, canvas.height - renderedHeight);
+
+              page.getContext('2d').putImageData(ctx.getImageData(0, renderedHeight, canvas.width, Math.min(imgHeight, canvas.height - renderedHeight)), 0, 0);
+              pdf.addImage(page.toDataURL('image/jpeg', 1.0), 'JPEG', 10, 10, a4w, Math.min(a4h, a4w * page.height / page.width));
+              renderedHeight += imgHeight;
+              if (renderedHeight < canvas.height) {
+                pdf.addPage();
+              }
+            }
+            const filename = `${note.title}.pdf`;
+            pdf.save(filename);
+          }).catch(e => {
+            this.displayMessage({
+              type: 'error',
+              message: this.$t('notes.message.export.error')
+            });
+            console.error('Error when exporting note: ', e);
+          });
+        });
+      }, 200);
+    },
+    displayMessage(message) {
+      this.$root.$emit('alert-message', message?.message, message?.type || 'success');
+    },
+    getNoteVersionByNoteId(noteId) {
+      this.noteVersionsArray = [];
+      this.noteVersions = [];
+      return this.$notesService.getNoteVersionsByNoteId(noteId, this.selectedTranslation?.value).then(data => {
+        this.noteVersions = data && data.reverse() || [];
+        if (this.noteVersions.length) {
+          this.displayVersion(this.noteVersions[0]);
+          this.$root.$emit('version-restored', this.noteVersions[0]);
+        }
+      });
+    },
+    displayVersion(version) {
+      this.actualVersion = version;
+      this.actualVersion.current = true;
+      this.note.content = version.content;
+    },
+    restoreVersion(version) {
+      const note = {
+        id: this.note.id,
+        title: this.note.title,
+        content: version.content,
+        updatedDate: version.updatedDate,
+        owner: version.author
+      };
+      this.note.content = version.content;
+      this.$notesService.restoreNoteVersion(note,version.versionNumber)
+        .catch(e => {
+          console.error('Error when restore note version', e);
+          this.$root.$emit('version-restore-error');
+        })
+        .finally(() => {
+          this.getNoteVersionByNoteId(this.note.id);
+        });
+    },
+    openNoteVersionsHistoryDrawer() {
+      if (!this.isDraft) {
+        if ( this.note.canManage ) {
+          this.versionsPageSize = Math.round((window.innerHeight-79)/80);
+        } else {
+          this.versionsPageSize = Math.round((window.innerHeight-79)/60);
+        }
+        this.$refs.noteVersionsHistoryDrawer.open();
+      }
+      this.closeMobileActionMenu();
+    },
+    fetchChildren(item, treeview) {
+      if (item.isOpen) {
+        treeview.updateOpen(item.noteId, false);
+        item.isOpen = false;
+        return;
+      }
+      item.isLoading = true;
+      return this.$notesService.getNoteTreeLevel(item.path).then(data => {
+        item.children = data?.jsonList;
+        treeview.updateOpen(item.noteId, true);
+        item.isOpen = true;
+        item.isLoading = false;
+      });
+    },
+    retrieveNoteTreeById() {
+      this.note.wikiOwner = this.spaceId ? this.note.wikiOwner.substring(1) : this.note.wikiOwner;
+      this.$notesService.getNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name, 'children').then(data => {
+        if (data?.jsonList?.length) {
+          this.noteChildren = data?.jsonList;
+        }
+        else {
+          this.noteChildren = [];
+        }
+      });
+    },
+    openNoteChild(item) {
+      const noteName = item.path.split('%2F').pop();
+      this.$root.$emit('open-note-by-name', noteName);
+      document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: item}));
+    },
+    updateNote(noteParam) {
+      const note = {
+        id: noteParam.id,
+        title: noteParam.title,
+        name: noteParam.name,
+        wikiType: noteParam.wikiType,
+        wikiOwner: noteParam.wikiOwner,
+        content: '',
+        parentPageId: null,
+      };
+      if (note.id) {
+        this.$notesService.updateNoteById(note).catch(e => {
+          console.error('Error when update note page', e);
+        });
+      }
+    },
+    updateURL(){
+      const urlHash = window.location.hash;
+      const charsToRemove = notesConstants.PORTAL_BASE_URL.length-notesConstants.PORTAL_BASE_URL.lastIndexOf(`/${this.appName}`);
+      let translation = '';
+      if (this.selectedTranslation.value) {
+        translation = `?translation=${this.selectedTranslation.value}`;
+      }
+      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}${urlHash}`;
+      window.history.pushState({'translation': this.selectedTranslation}, window.document.title, notesConstants.PORTAL_BASE_URL);
+    },
+    getNoteLanguages(noteId){
+      this.translations = [];
+      return this.$notesService.getNoteLanguages(noteId).then(data => {
+        this.translations =  data || [];
+        if (this.translations.length>0) {
+          this.translations = this.languages.filter(item1 => this.translations.some(item2 => item2 === item1.value));
+          this.translations.sort((a, b) => a.text.localeCompare(b.text));
+        }
+        this.translations.unshift(this.originalVersion);
+      });
+    },
+    getAvailableLanguages(){
+      return this.$notesService.getAvailableLanguages().then(data => {
+        this.languages = data || [];
+      });
+    },
+    changeTranslation(translation){
+      this.selectedTranslation = translation;
+      return this.$notesService.getNoteById(this.note.id,this.selectedTranslation.value).then(data => {
+        const note = data || {};
+        if (note) {
+          this.note.content = note.content;
+          this.note.metadatas = note.metadatas;
+          this.note.lang = note.lang;
+          this.noteContent = note.content;
+          this.note.title = note.title;
+          this.note.latestVersionId = note.latestVersionId;
+          this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
+          this.note.properties = note?.properties;
+          this.noteSummary = note?.properties?.summary;
+        }
+        this.updateURL();
+        this.getNoteVersionByNoteId(this.note.id);
+        this.viewNoteStatistics();
+        return this.$nextTick();
+      }).catch(e => {
+        console.error('Error when getting note', e);
+      });
+    },
+    viewNoteStatistics() {
+      if (this.isDraft) {
+        return;
+      }
+      this.$notesService.markNoteAsViewed(this.note.id || this.noteId, this.selectedTranslation?.value);
+    },
+    refreshTreeView() {
+      if (this.initialized) {
+        this.$root.$emit('refresh-treeView-items', this.note);
+      }
+    },
+    handleNotePublished(event) {
+      const {editPublication, isPublishSchedule, link} = event.detail;
+      this.isPublishing = false;
+      this.$refs.publicationDrawer.close();
+      document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
+        alertType: 'success',
+        alertMessage: isPublishSchedule && this.$t('notes.schedule.success.message')
+              || editPublication && this.$t('notes.publication.settings.update.success')
+              || this.$t('notes.publication.success.message'),
+        alertLink: link,
+        alertLinkText: this.$t('notes.view.label')
+      }}));
+    },
+    duplicateNote() {
+      const properties = this.note?.properties;
+      if (properties) {
+        properties.draft = this.note?.draftPage;
+      }
+      const note = {
+        title: `${this.$t('notes.menu.label.copyOf')} ${this.note.title}`,
+        name: `${this.$t('notes.menu.label.copyOf')} ${this.note.name}`,
+        lang: this.note.lang,
+        wikiType: this.note.wikiType,
+        wikiOwner: this.note.wikiOwner,
+        content: this.note.content,
+        parentPageId: this.note?.draftPage && this.note?.targetPageId === this.parentPageId ? null : this.parentPageId,
+        toBePublished: false,
+        appName: this.appName,
+        properties: properties,
+        extensionDataUpdated: false
+      };
+      this.$notesService.createNote(note).then(duplicated => {
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
+      }).catch(e => {
+        this.$root.$emit('show-alert', {
+          type: 'error',
+          message: this.$t(`notes.message.${e.message}`)
+        });
+      });
+    },
+    openSidebarTreeView() {
+      if (this.isMobile) {
+        this.$root.$emit('openTreeFolderDrawer',this.showHidden);
+      } else {
+        this.$root.$emit('sidebar-tree-view-expend', true);
+      }
+    },
+  }
+};
+</script>
