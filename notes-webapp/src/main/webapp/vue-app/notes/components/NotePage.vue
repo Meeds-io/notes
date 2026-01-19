@@ -45,7 +45,7 @@
                       icon
                       v-bind="attrs"
                       v-on="on"
-                      class="me-2 ms-n2"
+                      class="pa-0 me-2"
                       @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', true)">
                       <img
                         src="/social/images/sidebar.svg"
@@ -57,26 +57,6 @@
                   <span class="caption">
                     {{ $t('notes.tooltip.open.tree') }}
                   </span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
-                    <v-btn
-                      v-on="on"
-                      v-bind="attrs"
-                      class="pa-0 me-2"
-                      width="36"
-                      min-width="36"
-                      height="36"
-                      icon
-                      @click="$refs.notesBreadcrumb.open(note, 'displayNote')">
-                      <v-icon
-                        class="icon-default-color"
-                        size="20">
-                        fas fa-sitemap
-                      </v-icon>
-                    </v-btn>
-                  </template>
-                  <span class="caption">{{ $t('notes.label.noteTreeview.tooltip') }}</span>
                 </v-tooltip>
                 <note-breadcrumb
                   class="my-auto"

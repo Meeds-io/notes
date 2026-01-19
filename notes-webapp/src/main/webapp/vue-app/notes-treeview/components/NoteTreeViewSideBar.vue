@@ -20,7 +20,7 @@
 -->
 
 <template>
-  <aside v-if="treeViewExpended" class="sidebar pa-5">
+  <aside v-if="treeViewExpended" class="sidebar py-5 ps-5">
     <template>
       <v-card
         flat
@@ -53,7 +53,7 @@
             :items="items"
             :active="active"
             :open="openedItems"
-            class="ps-1 notes-custom-treeview treeview-item"
+            class="px-0 notes-custom-treeview treeview-item"
             item-key="noteId"
             expand-icon=""
             open-on-click
@@ -61,56 +61,21 @@
             activatable
             transition
             dense>
-            <template #prepend="{ item, open }">
-              <div class="d-flex flex-grow-1">
-                <v-btn
-                  v-if="item.hasChild"
-                  :loading="item.isLoading"
-                  class="me-n3"
-                  width="30"
-                  height="30"
-                  min-width="30"
-                  icon
-                  @click="fetchChildren(item, $refs.treeSearch)">
-                  <v-icon
-                    size="16">
-                    {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
-                  </v-icon>
-                </v-btn>
-                <template v-if="item.nodeType === 'WIKIHOME'">
-                  <exo-space-avatar
-                    v-if="isSpaceNote"
-                    :space-group-id="spaceGroupId"
-                    extra-class="align-self-center ms-4"
-                    :size="18"
-                    popover
-                    avatar />
-                  <exo-user-avatar
-                    v-else
-                    :profile-id="noteWikiOwner"
-                    extra-class="align-self-center ms-4"
-                    :size="18"
-                    popover
-                    avatar />
-                </template>
-              </div>
+            <template #prepend="{ item }">
+              <note-treeview-sidebar-item-prepend
+                :note="item"
+                :space-note="isSpaceNote"
+                :note-wiki-owner="noteWikiOwner"
+                :space-group-id="spaceGroupId"
+                @fetch-children="fetchChildren" />
             </template>
             <template #label="{ item }">
-              <v-list-item-title class="body-2">
-                <div
-                  v-if="isDraftFilter && !item.draftPage"
-                  class="not-clickable">
-                  {{ item.name }}
-                </div>
-                <a
-                  v-else
-                  :href="item.draftPage ? `${item.noteId}/draft` : item.noteId"
-                  :class="{'text-color': (isDraftFilter && item.draftPage) || !item.draftPage}"
-                  :aria-current="(item.noteId === activeItem[0] && !item.draftPage) ? 'page' : null"
-                  @click.prevent="openNote($event,item)">
-                  {{ item.name }}
-                </a>
-              </v-list-item-title>
+              <note-treeview-sidebar-item-label
+                :note="item"
+                :is-draft-filter="isDraftFilter"
+                :active-item="activeItem"
+                :space-note="isSpaceNote"
+                @open-note="openNote" />
             </template>
           </v-treeview>
         </v-card-text>
