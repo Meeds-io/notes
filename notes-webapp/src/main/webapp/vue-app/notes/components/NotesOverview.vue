@@ -33,6 +33,7 @@
           :note-id="currentNoteId" />
       </div>
     </div>
+    <note-treeview-filter-drawer />
   </v-container>
 </template>
 
