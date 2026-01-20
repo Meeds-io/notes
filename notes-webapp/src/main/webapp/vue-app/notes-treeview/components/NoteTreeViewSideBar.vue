@@ -20,33 +20,18 @@
 -->
 
 <template>
-  <aside v-if="treeViewExpended" class="sidebar py-5 ps-5">
+  <aside v-if="treeViewExpended" class="sidebar pb-5 ps-5">
     <template>
       <v-card
         flat
         class="border-right-color expand-transition-enter-active">
-        <v-card-title class="pa-0 border-bottom-color">
-          <span class="text-header">{{ $t('notes.label.tree') }}</span>
-          <v-spacer />
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                v-bind="attrs"
-                v-on="on"
-                @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
-                <img
-                  src="/social/images/sidebar.svg"
-                  class="icon-default-color"
-                  height="20px"
-                  width="20px">
-              </v-btn>
-            </template>
-            <span class="caption">
-              {{ $t('notes.tooltip.close.tree') }}
-            </span>
-          </v-tooltip>
-        </v-card-title>
+        <note-treeview-toolbar
+          :filter="filter"
+          :filter-message="$t('spacesList.label.spacesSize', {0: 2})"
+          :filters-count="2"
+          class="border-bottom-color"
+          compact-display
+          @keyword-changed="search = $event" />
         <v-card-text class="px-0">
           <v-treeview
             ref="treeSearch"
@@ -119,7 +104,7 @@ export default {
     displayArrow: true,
     closeAll: true,
     drawer: false,
-    filter: '',
+    filter: 'published',
     filterOptions: [],
     checkbox: false,
     showTree: true,
@@ -176,7 +161,7 @@ export default {
       return this.isIncludePage;
     },
     isDraftFilter() {
-      return this.filter === this.$t('notes.filter.label.drafts');
+      return this.filter === 'drafts';
     },
   },
   watch: {
@@ -208,15 +193,16 @@ export default {
     },
   },
   created() {
+    this.$root.$on('notes-filter-update', this.updateFilter);
     this.getNoteById(this.activeNoteId);
   },
-  mounted() {
-    this.filterOptions = [
-      this.$t('notes.filter.label.published.notes')
-    ];
-    this.filter = this.filterOptions[0];
+  beforeDestroy() {
+    this.$root.$off('notes-filter-update', this.updateFilter);
   },
   methods: {
+    updateFilter(filter) {
+      this.filter = filter;
+    },
     fetchChildrenInParallel(children, level = 0) {
       if (level >= 2) {
         return;
@@ -241,13 +227,13 @@ export default {
           this.selectionNotes.push(
             ...item.children.map(item => item.noteId).filter(id => !this.selectionNotes.includes(id)));
           item.children.forEach(child => this.selectChildren(child));
-          this.openItem(item, this.$refs.treeSearch);
+          this.openItem(item);
           this.inProgressTreeFetches.splice(this.inProgressTreeFetches.indexOf(item.noteId), 1);
         });
       } else if (item?.children?.length) {
         this.selectionNotes.push(
           ...item.children.map(item => item.noteId).filter(id => !this.selectionNotes.includes(id)));
-        this.openItem(item, this.$refs.treeSearch);
+        this.openItem(item);
         item.children.forEach(item => this.selectChildren(item));
       }
     },
@@ -264,10 +250,10 @@ export default {
     },
     open(note, source, includeDisplay,filter) {
       if (note.draftPage) {
-        this.filter = filter === 'published' && this.filterOptions[0] || this.filterOptions[1];
+        this.filter = filter === 'published';
         this.getDraftNote(note.id);
       } else {
-        this.filter = filter === 'draft' && this.filterOptions[1] || this.filterOptions[0];
+        this.filter = filter === 'drafts';
         this.getNoteById(note.id);
       }
       this.isIncludePage = source === 'includePages';
@@ -297,9 +283,8 @@ export default {
       const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
       const isEditDifferentNote = this.isEditMode && noteIdParam !== note.noteId;
       const isNotCurrentNote = this.note.id !== note.noteId;
-      const canOpenNote = (this.filter !== this.$t('notes.filter.label.drafts') || this.filter === this.$t('notes.filter.label.drafts') && note.draftPage) && isEditDifferentNote || isNotCurrentNote;
+      const canOpenNote = (!this.isDraftFilter || this.isDraftFilter && note.draftPage) && isEditDifferentNote || isNotCurrentNote;
       if (canOpenNote) {
-        this.filter = this.filterOptions[0];
         this.activeItem = [note.noteId];
         if (this.includePage) {
           this.$root.$emit('include-page', note);
@@ -345,29 +330,29 @@ export default {
         });
       }
     },
-    fetchChildren(item, treeview) {
+    fetchChildren(item) {
       if (item?.isOpen || item.expanded) {
-        this.closeItem(item, treeview);
+        this.closeItem(item);
         return;
       }
       if (this.isDraftFilter) {
-        this.openItem(item, treeview);
+        this.openItem(item);
         return;
       }
       item.isLoading = true;
       this.$notesService.getNoteTreeLevel(item.path).then(data => {
         item.children = data?.jsonList;
-        this.openItem(item, treeview);
+        this.openItem(item);
         item.isLoading = false;
       });
     },
-    openItem(item, treeview) {
-      treeview.updateOpen(item.noteId, true);
+    openItem(item) {
+      this.$refs.treeSearch.updateOpen(item.noteId, true);
       item.isOpen = true;
       item.expanded = item.isOpen;
     },
-    closeItem(item, treeview) {
-      treeview.updateOpen(item.noteId, false);
+    closeItem(item) {
+      this.$refs.treeSearch.updateOpen(item.noteId, false);
       item.isOpen = false;
       item.expanded = item.isOpen;
       if (!this.isDraftFilter) {
@@ -390,7 +375,6 @@ export default {
       }
     },
     retrieveNoteTree(noteBookType, noteOwner, noteName, treeType) {
-      const noteType = this.isDraftFilter && 'drafts' || 'published';
       if (this.isDraftFilter) {
         noteName = this.note?.breadcrumb[0]?.id;
         treeType = 'all';
@@ -398,7 +382,7 @@ export default {
       this.isLoading = true;
       this.items = [];
 
-      this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, noteType).then(data => {
+      this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter).then(data => {
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
@@ -410,7 +394,7 @@ export default {
             this.filterItemsForSearch(this.filterItems);
           }
           this.allItems = data.treeNodeData;
-          this.allItemsHome = [...data.jsonList[0]];
+          this.allItemsHome = [this.home];
         }
         this.isLoading = false;
         const openedTreeViewItems = this.getOpenedTreeViewItems(this.note.breadcrumb);
@@ -441,7 +425,7 @@ export default {
         if (this.isDraftFilter) {
           this.items = this.filterItemsDraft.filter(item => item.name.includes(this.search));
         } else {
-          this.$notesService.searchNotes(this.search, `/${this.note.wikiOwner}`, this.limit).then(data => {
+          this.$notesService.searchNotes(this.search, `/${this.noteWikiOwner}`, this.limit).then(data => {
             this.items = data?.jsonList.length ? this.toListNotes(data?.jsonList) : [];
             this.showTree = !!this.items.length;
           });
