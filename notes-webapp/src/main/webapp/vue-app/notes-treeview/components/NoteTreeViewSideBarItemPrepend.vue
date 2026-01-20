@@ -28,7 +28,7 @@
       height="30"
       min-width="30"
       icon
-      @click="$emit('fetch-children', note, $refs.treeSearch)">
+      @click="$emit('fetch-children', note)">
       <v-icon
         size="16">
         {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
