@@ -19,20 +19,29 @@
 
 -->
 <template>
-  <v-container fluid class="notes-layout pa-0">
-    <div class="row no-gutters">
-      <div :class="treeViewExpended ? 'col-3' : ''">
+  <v-container fluid class="pa-0">
+    <v-row no-gutters>
+      <v-sheet
+        v-if="treeViewExpended && !$root.isMobile"
+        :width="sidebarWidth"
+        class="overflow-auto">
         <note-treeview-sideBar
           :tree-view-expended="treeViewExpended"
           :active-note-id="currentNoteId"
           @note-selected="onSelectNote" />
-      </div>
-      <div :class="treeViewExpended ? 'col-9' : 'col-12'">
+      </v-sheet>
+      <v-sheet
+        v-if="treeViewExpended"
+        width="6"
+        class="d-flex align-center justify-center"
+        style="cursor: col-resize;"
+        @mousedown="startResize" />
+      <v-col class="pa-0">
         <notes-page
           :tree-view-expended="treeViewExpended"
           :note-id="currentNoteId" />
-      </div>
-    </div>
+      </v-col>
+    </v-row>
     <note-treeview-filter-drawer />
   </v-container>
 </template>
@@ -42,7 +51,13 @@ export default {
   data() {
     return {
       currentNoteId: null,
-      treeViewExpended: true
+      treeViewExpended: true,
+      sidebarWidth: 320,
+      minWidth: 240,
+      maxWidth: 480,
+      isResizing: false,
+      startX: 0,
+      startWidth: 0
     };
   },
   created() {
@@ -51,14 +66,46 @@ export default {
   },
   mounted() {
     window.addEventListener('popstate', this.onPopState);
+    window.addEventListener('mousemove', this.resize);
+    window.addEventListener('mouseup', this.stopResize);
   },
+
   beforeDestroy() {
+    this.$root.$off('sidebar-tree-view-expend', this.extendTreeView);
+    window.removeEventListener('mousemove', this.resize);
+    window.removeEventListener('mouseup', this.stopResize);
     window.removeEventListener('popstate', this.onPopState);
   },
+
   methods: {
     getNoteIdFromUrl() {
       const match = location.pathname.match(/\/notes\/(.+)/);
       return match ? match[1] : null;
+    },
+    startResize(e) {
+      this.isResizing = true;
+      this.startX = e.clientX;
+      this.startWidth = this.sidebarWidth;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    },
+    resize(e) {
+      if (!this.isResizing) {
+        return;
+      }
+      const delta = e.clientX - this.startX;
+      this.sidebarWidth = Math.min(
+        Math.max(this.startWidth + delta, this.minWidth),
+        this.maxWidth
+      );
+    },
+    stopResize() {
+      if (!this.isResizing) {
+        return;
+      }
+      this.isResizing = false;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     },
     onSelectNote(id) {
       history.pushState({}, '', `/notes/${id}`);
