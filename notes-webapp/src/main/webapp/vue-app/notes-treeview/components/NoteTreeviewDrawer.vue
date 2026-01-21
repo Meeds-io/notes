@@ -644,6 +644,7 @@ export default {
     },
   },
   created() {
+    this.$root.$on('open-note-tree-view-drawer', this.open);
     this.$root.$on('refresh-treeView-items', (note)=> {
       if (note.draftPage) {
         this.getDraftNote(note.id);
