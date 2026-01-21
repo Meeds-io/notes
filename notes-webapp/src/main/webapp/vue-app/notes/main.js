@@ -49,7 +49,12 @@ export function init() {
     Vue.createApp({
       template: `<notes-overview v-cacheable id="${appId}" />`,
       vuetify,
-      i18n
+      i18n,
+      computed: {
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        },
+      },
     }, appElement, 'Notes Overview');
   });
 }
