@@ -39,7 +39,7 @@
               sm="8"
               cols="6">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
-                <v-tooltip v-if="!treeViewExpended || isMobile" bottom>
+                <v-tooltip v-if="!treeViewExpended" bottom>
                   <template #activator="{ on, attrs }">
                     <v-btn
                       icon
