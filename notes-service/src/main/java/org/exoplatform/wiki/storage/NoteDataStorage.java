@@ -721,6 +721,8 @@ public class NoteDataStorage {
       pageVersionEntity.setVersionNumber(versionNumber);
       pageVersionEntity.setName(page.getName());
       pageVersionEntity.setTitle(page.getTitle());
+      pageVersionEntity.setSummary(page.getProperties().getSummary());
+      pageVersionEntity.setFeaturedImageId(page.getProperties().getFeaturedImage().getId());
       if (StringUtils.isNotEmpty(userName)) {
         pageVersionEntity.setAuthor(userName);
       } else {

@@ -18,6 +18,7 @@
  */
 package org.exoplatform.wiki.jpa.entity;
 
+import io.meeds.notes.model.NotePageProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -62,6 +63,12 @@ public class PageVersionEntity extends BasePageEntity {
   @Column(name = "LANG")
   private String lang;
 
+  @Column(name="SUMMARY")
+  private String summary;
+
+  @Column(name="FEATURED_IMAGE_ID")
+  private Long featuredImageId;
+
   public long getId() {
     return id;
   }
@@ -105,4 +112,12 @@ public class PageVersionEntity extends BasePageEntity {
   public void setLang(String lang) {
     this.lang = lang;
   }
+
+  public void setSummary(String summary) { this.summary = summary; }
+
+  public String getSummary() { return summary; }
+
+  public void setFeaturedImageId(Long featuredImageId) { this.featuredImageId = featuredImageId; }
+
+  public Long getFeaturedImageId() { return featuredImageId; }
 }

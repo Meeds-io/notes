@@ -20,6 +20,7 @@ package org.exoplatform.wiki.model;
 
 import java.util.Date;
 
+import io.meeds.notes.model.NoteFeaturedImage;
 import lombok.Data;
 
 @Data
@@ -42,4 +43,8 @@ public class PageHistory {
   private String lang;
 
   private String title;
+
+  private String summary;
+
+  private NoteFeaturedImage noteFeaturedImage;
 }
