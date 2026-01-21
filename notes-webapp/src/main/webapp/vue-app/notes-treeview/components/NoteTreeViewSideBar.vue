@@ -27,8 +27,6 @@
         class="border-right-color expand-transition-enter-active">
         <note-treeview-toolbar
           :filter="filter"
-          :filter-message="$t('spacesList.label.spacesSize', {0: 2})"
-          :filters-count="2"
           class="border-bottom-color"
           compact-display
           @keyword-changed="search = $event" />
