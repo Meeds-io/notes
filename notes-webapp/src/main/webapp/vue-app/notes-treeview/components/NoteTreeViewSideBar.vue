@@ -20,11 +20,11 @@
 -->
 
 <template>
-  <aside v-if="treeViewExpended" class="sidebar pb-5 ps-5">
+  <aside v-if="treeViewExpended" class="sidebar pb-5 ps-5 d-contents">
     <template>
       <v-card
         flat
-        class="border-right-color expand-transition-enter-active">
+        class="border-right-color full-height expand-transition-enter-active">
         <note-treeview-toolbar
           :filter="filter"
           class="border-bottom-color"

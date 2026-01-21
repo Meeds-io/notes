@@ -39,14 +39,14 @@
               sm="8"
               cols="6">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
-                <v-tooltip v-if="!treeViewExpended" bottom>
+                <v-tooltip v-if="!treeViewExpended || isMobile" bottom>
                   <template #activator="{ on, attrs }">
                     <v-btn
                       icon
                       v-bind="attrs"
                       v-on="on"
                       class="pa-0 me-2"
-                      @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', true)">
+                      @click.stop.prevent="openSidebarTreeView">
                       <img
                         src="/social/images/sidebar.svg"
                         class="icon-default-color"
@@ -572,7 +572,7 @@ export default {
       return !this.note.parentPageId && ( this.noteContent===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>` || this.noteContent === '');
     },
     isMobile() {
-      return this.$vuetify?.breakpoint?.smAndDown;
+      return this.$root.isMobile;
     },
     isAvailableNote() {
       return this.existingNote;
@@ -1287,7 +1287,7 @@ export default {
     },
     openSidebarTreeView() {
       if (this.isMobile) {
-        this.$root.$emit('openTreeFolderDrawer',this.showHidden);
+        this.$root.$emit('open-note-tree-view-drawer', this.note);
       } else {
         this.$root.$emit('sidebar-tree-view-expend', true);
       }
