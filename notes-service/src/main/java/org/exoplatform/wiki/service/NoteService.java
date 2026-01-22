@@ -908,9 +908,10 @@ public interface NoteService {
    * @param isDraft is target not a draft
    * @param thumbnailSize featured image thumbnail size
    * @param userIdentityId user identity id
+   * @param versionNumber note version number
    * @return {@link NoteFeaturedImage}
    */
-  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId) throws Exception;
+  NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId, Long versionNumber) throws Exception;
 
   /**
    * Save note metadata properties

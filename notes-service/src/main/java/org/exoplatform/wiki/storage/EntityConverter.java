@@ -28,17 +28,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.metadata.MetadataService;
-import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.social.metadata.model.MetadataItem;
 import org.exoplatform.social.metadata.model.MetadataKey;
 import org.exoplatform.social.metadata.model.MetadataType;
@@ -49,7 +45,6 @@ import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.PageVersionEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.model.DraftPage;
-import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
@@ -68,13 +63,9 @@ import io.meeds.notes.model.NotePageProperties;
  */
 public class EntityConverter {
 
-  private static final Log LOG = ExoLogger.getLogger(EntityConverter.class);
-
   private static SpaceService       spaceService;
 
   private static MetadataService    metadataService;
-
-  private static FileService        fileService;
 
   public static final MetadataType  NOTES_METADATA_TYPE        = new MetadataType(1001, "notes");
 
@@ -156,23 +147,28 @@ public class EntityConverter {
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
       page.setUrl(Utils.getPageUrl(page));
-      buildNotePageMetadata(page, page.isDraftPage());
+      buildNotePageMetadata(page, page.isDraftPage(), String.valueOf(pageEntity.getId()));
     }
     return page;
   }
   
-  public static void buildNotePageMetadata(Page note, boolean isDraft) {
+  public static void buildNotePageMetadata(Page note, boolean isDraft, String pageId) {
     if (note == null) {
       return;
     }
     Space space = getSpaceService().getSpaceByGroupId(note.getWikiOwner());
     String spaceId = space != null ? space.getId() : "0";
     String noteId = note.getId();
+    String metaDataType = isDraft ? "noteDraftPage" : "notePage";
+    if (note instanceof PageHistory) {
+      noteId = pageId + "-" + ((PageHistory) note).getVersionNumber();
+      metaDataType = "noteVersionPage";
+    }
     if (note.getLang() != null) {
       noteId = noteId + "-" + note.getLang();
     }
     Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, spaceId);
-    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
+    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(metaDataType,
                                                                    noteId,
                                                                    note.getParentPageId(),
                                                                    Long.parseLong(spaceId));
@@ -261,7 +257,7 @@ public class EntityConverter {
           draftPage.setWikiType(wiki.getType());
         }
       }
-      buildNotePageMetadata(draftPage, true);
+      buildNotePageMetadata(draftPage, true, String.valueOf(draftPageEntity.getId()));
     }
     return draftPage;
   }
@@ -291,7 +287,7 @@ public class EntityConverter {
         draftPageEntity.setParentPage(pageDAO.find(Long.valueOf(parentPageId)));
       }
       draftPageEntity.setTargetRevision(draftPage.getTargetPageRevision());
-      buildNotePageMetadata(draftPage, true);
+      buildNotePageMetadata(draftPage, true, draftPage.getId());
     }
     return draftPageEntity;
   }
@@ -312,7 +308,7 @@ public class EntityConverter {
       pageVersion.setParent(convertPageEntityToPage(pageVersionEntity.getPage()));
       pageVersion.setLang(pageVersionEntity.getLang());
       pageVersion.setWikiOwner(pageVersionEntity.getPage().getWiki().getOwner());
-      buildNotePageMetadata(pageVersion, pageVersion.isDraftPage());
+      buildNotePageMetadata(pageVersion, pageVersion.isDraftPage(), String.valueOf(pageVersionEntity.getPage().getId()));
     }
     return pageVersion;
   }
@@ -321,7 +317,7 @@ public class EntityConverter {
     PageHistory pageHistory = null;
     if (pageVersionEntity != null) {
       pageHistory = new PageHistory();
-      pageHistory.setId(pageVersionEntity.getId());
+      pageHistory.setId(String.valueOf(pageVersionEntity.getId()));
       pageHistory.setVersionNumber(pageVersionEntity.getVersionNumber());
       pageHistory.setAuthor(pageVersionEntity.getAuthor());
       pageHistory.setContent(pageVersionEntity.getContent());
@@ -329,22 +325,7 @@ public class EntityConverter {
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
       pageHistory.setLang(pageVersionEntity.getLang());
       pageHistory.setTitle(pageVersionEntity.getTitle());
-      pageHistory.setSummary(pageVersionEntity.getSummary());
-      if (pageVersionEntity.getFeaturedImageId() != null) {
-        try {
-          FileItem fileItem = getFileService().getFile(pageVersionEntity.getFeaturedImageId());
-          FileInfo fileInfo = fileItem.getFileInfo();
-          pageHistory.setNoteFeaturedImage( new NoteFeaturedImage(fileInfo.getId(),
-                  fileInfo.getName(),
-                  fileInfo.getMimetype(),
-                  fileInfo.getSize(),
-                  fileInfo.getUpdatedDate().getTime(),
-                  fileItem.getAsStream(),
-                  ""));
-        } catch (Exception exception) {
-          LOG.error("Error when getting note featured image", exception);
-        }
-      }
+      buildNotePageMetadata(pageHistory, false, String.valueOf(pageVersionEntity.getPage().getId()));
       if (StringUtils.isNotBlank(pageHistory.getAuthor())) {
         Identity identity = ExoContainerContext.getService(IdentityManager.class)
             .getOrCreateUserIdentity(pageHistory.getAuthor());
@@ -426,10 +407,4 @@ public class EntityConverter {
     return metadataService;
   }
 
-  private static FileService getFileService() {
-    if (fileService == null) {
-      fileService = CommonsUtils.getService(FileService.class);
-    }
-    return fileService;
-  }
 }

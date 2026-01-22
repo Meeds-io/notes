@@ -18,33 +18,11 @@
  */
 package org.exoplatform.wiki.model;
 
-import java.util.Date;
-
-import io.meeds.notes.model.NoteFeaturedImage;
 import lombok.Data;
 
 @Data
-public class PageHistory {
-
-  private Long   id;
+public class PageHistory extends PageVersion{
 
   private Long   versionNumber;
 
-  private String author;
-
-  private String authorFullName;
-
-  private Date   createdDate;
-
-  private Date   updatedDate;
-
-  private String content;
-
-  private String lang;
-
-  private String title;
-
-  private String summary;
-
-  private NoteFeaturedImage noteFeaturedImage;
 }

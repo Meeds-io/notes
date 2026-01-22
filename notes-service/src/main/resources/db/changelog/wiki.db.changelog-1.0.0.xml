@@ -623,12 +623,4 @@
     <dropTable tableName="WIKI_DRAFT_ATTACHMENTS"/>
   </changeSet>
 
-  <changeSet id="1.0.0-62" author="wiki">
-    <addColumn tableName="WIKI_PAGE_VERSIONS">
-      <column name="SUMMARY" type="NVARCHAR(2000)"/>
-    </addColumn>
-    <addColumn tableName="WIKI_PAGE_VERSIONS">
-      <column name="FEATURED_IMAGE_ID" type="BIGINT"/>
-    </addColumn> </changeSet>
-
 </databaseChangeLog>

@@ -721,8 +721,6 @@ public class NoteDataStorage {
       pageVersionEntity.setVersionNumber(versionNumber);
       pageVersionEntity.setName(page.getName());
       pageVersionEntity.setTitle(page.getTitle());
-      pageVersionEntity.setSummary(page.getProperties().getSummary());
-      pageVersionEntity.setFeaturedImageId(page.getProperties().getFeaturedImage().getId());
       if (StringUtils.isNotEmpty(userName)) {
         pageVersionEntity.setAuthor(userName);
       } else {
@@ -924,7 +922,7 @@ public class NoteDataStorage {
     if (pageVersion != null) {
       Page page = pageVersion.getParent();
       page.setLang(lang);
-      EntityConverter.buildNotePageMetadata(page, false);
+      EntityConverter.buildNotePageMetadata(page, false, page.getId());
       pageVersion.setProperties(page.getProperties());
       return pageVersion;
     }
