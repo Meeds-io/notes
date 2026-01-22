@@ -87,6 +87,8 @@ export default {
       this.isResizing = true;
       this.startX = e.clientX;
       this.startWidth = this.sidebarWidth;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
     },
     resize(e) {
       if (!this.isResizing) {
@@ -99,7 +101,12 @@ export default {
       );
     },
     stopResize() {
+      if (!this.isResizing) {
+        return;
+      }
       this.isResizing = false;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     },
     onSelectNote(id) {
       history.pushState({}, '', `/notes/${id}`);
