@@ -43,7 +43,6 @@
       </v-col>
     </v-row>
     <note-treeview-filter-drawer />
-    <note-treeview-drawer />
   </v-container>
 </template>
 
