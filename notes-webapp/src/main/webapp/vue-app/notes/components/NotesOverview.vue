@@ -588,22 +588,19 @@ export default {
     },
   },
   watch: {
-    note: {
-      deep: true,
-      handler() {
-        if (!this.note.draftPage) {
-          this.getNoteVersionByNoteId(this.note.id);
-        }
-        if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
-          this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
-          this.currentNoteBreadcrumb = this.note.breadcrumb;
-        }
-        this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
-        this.noteContent = this.note.content;
-        this.noteSummary = this.note?.properties?.summary;
-        if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
-          this.retrieveNoteTreeById();
-        }
+    note() {
+      if (!this.note.draftPage) {
+        this.getNoteVersionByNoteId(this.note.id);
+      }
+      if ( this.note && this.note.breadcrumb && this.note.breadcrumb.length ) {
+        this.note.breadcrumb[0].title = this.getHomeTitle(this.note.breadcrumb[0].title);
+        this.currentNoteBreadcrumb = this.note.breadcrumb;
+      }
+      this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? `${this.$t('notes.label.noteHome')}` : this.note.title;
+      this.noteContent = this.note.content;
+      this.noteSummary = this.note?.properties?.summary;
+      if (this.hasEmptyContent || this.isHomeNoteDefaultContent) {
+        this.retrieveNoteTreeById();
       }
     },
     actualVersion() {
