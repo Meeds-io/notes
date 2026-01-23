@@ -288,6 +288,14 @@ public class NoteServiceImpl implements NoteService {
         eventData.put(PAGE_VERSION_ID_PROP_NAME, pageVersion.getId());
         Utils.broadcast(listenerService, "note.page.version.created", this, eventData);
       }
+      pageVersion.setId(createdPage.getId() + "-" + pageVersion.getName());
+      copyNotePageProperties(createdPage,
+              pageVersion,
+              note.getLang(),
+              null,
+              NOTE_METADATA_PAGE_OBJECT_TYPE,
+              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
+              userIdentity.getUserId());
       return createdPage;
     } else {
       throw new EntityNotFoundException("Parent note not found");
@@ -1617,11 +1625,13 @@ public class NoteServiceImpl implements NoteService {
                                                     String lang,
                                                     boolean isDraft,
                                                     String thumbnailSize,
-                                                    long userIdentityId) throws Exception {
+                                                    long userIdentityId,
+                                                    Long versionNumber) throws Exception {
     if (noteId == null) {
       throw new IllegalArgumentException("note id is mandatory");
     }
     org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
+    String metadataType = isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE : NOTE_METADATA_PAGE_OBJECT_TYPE;
     Page note;
     if (isDraft) {
       note = getDraftNoteById(String.valueOf(noteId), identity.getRemoteId());
@@ -1631,11 +1641,13 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
-
+    if (versionNumber != null) {
+      note.setId(note.getId() + "-" + String.valueOf(versionNumber));
+      metadataType = NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE;
+    }
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
-                                                    isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
-                                                            NOTE_METADATA_PAGE_OBJECT_TYPE);
+                                                    metadataType);
     if (metadataItem != null && !MapUtils.isEmpty(metadataItem.getProperties())) {
       String featuredImageIdProp = metadataItem.getProperties().get(FEATURED_IMAGE_ID);
       String featuredImageAltText = metadataItem.getProperties().get(FEATURED_IMAGE_ALT_TEXT);

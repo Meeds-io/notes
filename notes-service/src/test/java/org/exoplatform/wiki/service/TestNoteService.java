@@ -667,7 +667,8 @@ public class TestNoteService extends BaseTest {
                                                                            "fr",
                                                                            false,
                                                                            null,
-                                                                           Long.parseLong(identity.getId()));
+                                                                           Long.parseLong(identity.getId()),
+                                                                           null);
     assertNotNull(featuredImage);
     noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note1.getId()), "en", true);
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(note1.getId()), root, "", "en");
@@ -850,12 +851,14 @@ public class TestNoteService extends BaseTest {
                                                                                    null,
                                                                                    false,
                                                                                    null,
-                                                                                   getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                                                   getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                                                   null);
     NoteFeaturedImage noteFeaturedImageInfoFr = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
                                                                                      "fr",
                                                                                      false,
                                                                                      null,
-                                                                                     getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                                                     getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                                                     null);
 
     assertNotNull(noteFeaturedImageInfo);
     assertNotNull(noteFeaturedImageInfoFr);
@@ -871,12 +874,14 @@ public class TestNoteService extends BaseTest {
                                                     null,
                                                     false,
                                                     null,
-                                                    getIdentityId(ROOT_IDENTITY.getUserId())));
+                                                    getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                    null));
     assertNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
                                                     "fr",
                                                     false,
                                                     null,
-                                                    getIdentityId(ROOT_IDENTITY.getUserId())));
+                                                    getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                    null));
   }
 
   public void testGetNoteFeaturedImageInfo() throws Exception {
@@ -892,12 +897,14 @@ public class TestNoteService extends BaseTest {
                                                                            null,
                                                                            false,
                                                                            "150x150",
-                                                                           getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                                           getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                                           null);
     NoteFeaturedImage versionLanguageFeaturedImage = noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
                                                                                           "ar",
                                                                                           false,
                                                                                           "150x150",
-                                                                                          getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                                                          getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                                                          null);
 
     assertNotNull(featuredImage);
     assertTrue(featuredImage.getLastUpdated() > 0L);
@@ -1011,7 +1018,8 @@ public class TestNoteService extends BaseTest {
                                                                          null,
                                                                          true,
                                                                          null,
-                                                                         getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                                         getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                                         null);
     assertNotNull(featuredImage);
     noteService.removeDraftById(draftPage.getId());
     assertNull(fileService.getFile(featuredImage.getId()));
@@ -1041,7 +1049,8 @@ public class TestNoteService extends BaseTest {
                                                          null,
                                                          true,
                                                          null,
-                                                         getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                         getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                         null);
     assertNotNull(featuredImage);
     noteService.removeDraftById(draftPage.getId());
     assertNotNull(fileService.getFile(featuredImage.getId()));
@@ -1056,7 +1065,8 @@ public class TestNoteService extends BaseTest {
                                                          null,
                                                          true,
                                                          null,
-                                                         getIdentityId(ROOT_IDENTITY.getUserId()));
+                                                         getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                         null);
     assertNotNull(featuredImage);
     noteService.removeDraftById(draftPage.getId());
     assertNull(fileService.getFile(featuredImage.getId()));
