@@ -35,19 +35,12 @@
       </v-icon>
     </v-btn>
     <template v-if="isHomePage">
-      <exo-space-avatar
-        v-if="spaceNote"
-        :space-group-id="spaceGroupId"
-        extra-class="align-self-center ms-4"
-        :size="18"
-        popover
-        avatar />
       <exo-user-avatar
-        v-else
+        v-if="!spaceNote"
         :profile-id="noteWikiOwner"
+        :size="24"
+        :popover="false"
         extra-class="align-self-center ms-4"
-        :size="18"
-        popover
         avatar />
     </template>
   </div>
@@ -72,6 +65,10 @@ export default {
       type: Boolean,
       default: false
     },
+    open: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     noteId() {

@@ -44,12 +44,14 @@
             activatable
             transition
             dense>
-            <template #prepend="{ item }">
+            <template #prepend="{ item, open }">
               <note-treeview-sidebar-item-prepend
                 :note="item"
                 :space-note="isSpaceNote"
                 :note-wiki-owner="noteWikiOwner"
                 :space-group-id="spaceGroupId"
+                :open="open"
+                class="me-2 ms-1"
                 @fetch-children="fetchChildren" />
             </template>
             <template #label="{ item }">
