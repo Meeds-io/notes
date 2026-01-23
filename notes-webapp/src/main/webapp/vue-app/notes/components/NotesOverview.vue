@@ -443,7 +443,7 @@ export default {
       return this.note?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x400`;
+      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&versionNumber=${this.actualVersion?.versionNumber}&size=0x400`;
     },
     notesContentProcessor() {
       return {
@@ -1061,16 +1061,24 @@ export default {
       this.actualVersion = version;
       this.actualVersion.current = true;
       this.note.content = version.content;
+      this.note.title = version.title;
+      this.noteSummary = version.properties.summary;
+      this.note.properties = version.properties;
+      this.noteTitle = version.title;
     },
     restoreVersion(version) {
       const note = {
         id: this.note.id,
-        title: this.note.title,
+        title: version.title,
         content: version.content,
         updatedDate: version.updatedDate,
-        owner: version.author
+        owner: version.author,
+        properties: version.properties
       };
       this.note.content = version.content;
+      this.note.title = version.title;
+      this.noteSummary = version.properties.summary;
+      this.note.properties = version.properties;
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);

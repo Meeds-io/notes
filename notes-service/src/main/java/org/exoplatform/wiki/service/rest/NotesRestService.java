@@ -1410,7 +1410,8 @@ public class NotesRestService implements ResourceContainer {
                                        @Parameter(description = "target version language", required = true) @QueryParam("isDraft") boolean isDraft,
                                        @Parameter(description = "target version language", required = true) @QueryParam("lang") String lang,
                                        @Parameter(description = "Optional size parameter", required = true) @QueryParam("size") String size,
-                                       @Parameter(description = "Optional last modified parameter") @QueryParam("v") long lastModified) {
+                                       @Parameter(description = "Optional last modified parameter") @QueryParam("v") long lastModified,
+                                       @Parameter(description = "Optional version number") @QueryParam("versionNumber") Long versionNumber) {
 
     if (noteId == null) {
       return Response.status(Response.Status.BAD_REQUEST).entity("note id is mandatory").build();
@@ -1420,7 +1421,8 @@ public class NotesRestService implements ResourceContainer {
                                                                                  lang,
                                                                                  isDraft,
                                                                                  size,
-                                                                                 RestUtils.getCurrentUserIdentityId());
+                                                                                 RestUtils.getCurrentUserIdentityId(),
+                                                                                 versionNumber);
       if (noteFeaturedImage == null) {
         return Response.status(HTTPStatus.NOT_FOUND).build();
       }
