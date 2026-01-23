@@ -449,7 +449,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   @Test
   public void getFeaturedImageIllustration() throws Exception {
     Request request = mock(Request.class);
-    Response response = notesRestService.getFeaturedImageIllustration(request, null, false, null, null,0L);
+    Response response = notesRestService.getFeaturedImageIllustration(request, null, false, null, null,0L, null);
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     REST_UTILS.when(RestUtils::getCurrentUserIdentityId).thenReturn(1L);
 
@@ -457,17 +457,17 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     noteFeaturedImage.setId(123L);
     noteFeaturedImage.setLastUpdated(new Date().getTime());
     noteFeaturedImage.setMimeType("image/png");
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenReturn(noteFeaturedImage);
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L, null)).thenReturn(noteFeaturedImage);
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenThrow(new ObjectNotFoundException("note not found"));
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L, null)).thenThrow(new ObjectNotFoundException("note not found"));
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
 
     reset(noteService);
-    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L)).thenThrow(new RuntimeException());
-    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L);
+    when(noteService.getNoteFeaturedImageInfo(1L, null, false, "150x150", 1L, null)).thenThrow(new RuntimeException());
+    response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
 }

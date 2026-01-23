@@ -922,7 +922,7 @@ public class NoteDataStorage {
     if (pageVersion != null) {
       Page page = pageVersion.getParent();
       page.setLang(lang);
-      EntityConverter.buildNotePageMetadata(page, false);
+      EntityConverter.buildNotePageMetadata(page, false, page.getId());
       pageVersion.setProperties(page.getProperties());
       return pageVersion;
     }

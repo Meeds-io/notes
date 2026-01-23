@@ -147,23 +147,28 @@ public class EntityConverter {
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
       page.setUrl(Utils.getPageUrl(page));
-      buildNotePageMetadata(page, page.isDraftPage());
+      buildNotePageMetadata(page, page.isDraftPage(), String.valueOf(pageEntity.getId()));
     }
     return page;
   }
   
-  public static void buildNotePageMetadata(Page note, boolean isDraft) {
+  public static void buildNotePageMetadata(Page note, boolean isDraft, String pageId) {
     if (note == null) {
       return;
     }
     Space space = getSpaceService().getSpaceByGroupId(note.getWikiOwner());
     String spaceId = space != null ? space.getId() : "0";
     String noteId = note.getId();
+    String metaDataType = isDraft ? "noteDraftPage" : "notePage";
+    if (note instanceof PageHistory) {
+      noteId = pageId + "-" + ((PageHistory) note).getVersionNumber();
+      metaDataType = "noteVersionPage";
+    }
     if (note.getLang() != null) {
       noteId = noteId + "-" + note.getLang();
     }
     Map<String, String> originalNoteSharedProperties = getOriginalNoteSharedProperties(note, spaceId);
-    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(isDraft ? "noteDraftPage" : "notePage",
+    NoteMetadataObject noteMetadataObject = new NoteMetadataObject(metaDataType,
                                                                    noteId,
                                                                    note.getParentPageId(),
                                                                    Long.parseLong(spaceId));
@@ -252,7 +257,7 @@ public class EntityConverter {
           draftPage.setWikiType(wiki.getType());
         }
       }
-      buildNotePageMetadata(draftPage, true);
+      buildNotePageMetadata(draftPage, true, String.valueOf(draftPageEntity.getId()));
     }
     return draftPage;
   }
@@ -282,7 +287,7 @@ public class EntityConverter {
         draftPageEntity.setParentPage(pageDAO.find(Long.valueOf(parentPageId)));
       }
       draftPageEntity.setTargetRevision(draftPage.getTargetPageRevision());
-      buildNotePageMetadata(draftPage, true);
+      buildNotePageMetadata(draftPage, true, draftPage.getId());
     }
     return draftPageEntity;
   }
@@ -303,7 +308,7 @@ public class EntityConverter {
       pageVersion.setParent(convertPageEntityToPage(pageVersionEntity.getPage()));
       pageVersion.setLang(pageVersionEntity.getLang());
       pageVersion.setWikiOwner(pageVersionEntity.getPage().getWiki().getOwner());
-      buildNotePageMetadata(pageVersion, pageVersion.isDraftPage());
+      buildNotePageMetadata(pageVersion, pageVersion.isDraftPage(), String.valueOf(pageVersionEntity.getPage().getId()));
     }
     return pageVersion;
   }
@@ -312,13 +317,15 @@ public class EntityConverter {
     PageHistory pageHistory = null;
     if (pageVersionEntity != null) {
       pageHistory = new PageHistory();
-      pageHistory.setId(pageVersionEntity.getId());
+      pageHistory.setId(String.valueOf(pageVersionEntity.getId()));
       pageHistory.setVersionNumber(pageVersionEntity.getVersionNumber());
       pageHistory.setAuthor(pageVersionEntity.getAuthor());
       pageHistory.setContent(pageVersionEntity.getContent());
       pageHistory.setCreatedDate(pageVersionEntity.getCreatedDate());
       pageHistory.setUpdatedDate(pageVersionEntity.getUpdatedDate());
       pageHistory.setLang(pageVersionEntity.getLang());
+      pageHistory.setTitle(pageVersionEntity.getTitle());
+      buildNotePageMetadata(pageHistory, false, String.valueOf(pageVersionEntity.getPage().getId()));
       if (StringUtils.isNotBlank(pageHistory.getAuthor())) {
         Identity identity = ExoContainerContext.getService(IdentityManager.class)
             .getOrCreateUserIdentity(pageHistory.getAuthor());
@@ -399,4 +406,5 @@ public class EntityConverter {
     }
     return metadataService;
   }
+
 }
