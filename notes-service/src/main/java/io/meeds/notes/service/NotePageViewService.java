@@ -122,7 +122,8 @@ public class NotePageViewService {
       return null;
     }
     String pageContent = pages.get(DEFAULT_CONTENT_LANG);
-    Page page = saveNotePage(name, pageContent, null, userACL.getSuperUser());
+    Identity identity = userACL.getUserIdentity(userACL.getSuperUser());
+    Page page = persistNotePage(name, pageContent, null, identity);
     String pageId = page.getId(); // NOSONAR
     String pageContentReplacement = clonePageAttachments(pageId, pageContent);
     if (!StringUtils.equals(pageContentReplacement, pageContent)) {
@@ -192,13 +193,13 @@ public class NotePageViewService {
     } else if (!cmsService.hasEditPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
       throw new IllegalAccessException("Note page isn't editable");
     }
-    return saveNotePage(name, content, lang, currentUserAclIdentity.getUserId());
+    return persistNotePage(name, content, lang, currentUserAclIdentity);
   }
 
-  private Page saveNotePage(String name,
+  private Page persistNotePage(String name,
                             String content,
                             String lang,
-                            String username) {
+                            Identity userIdentity) {
     CMSSetting setting = cmsService.getSetting(CMS_CONTENT_TYPE, name);
     String pageReference = setting.getPageReference();
     PageKey pageKey = PageKey.create(pageReference);
@@ -221,18 +222,18 @@ public class NotePageViewService {
           page.setLang(null);
           page.setContent(content);
           page.setUpdatedDate(new Date());
-          page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
+          page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT, userIdentity);
         } else {
           page.setUpdatedDate(new Date());
           page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
           page.setContent(content);
           page.setLang(pageWithLang.getLang());
         }
-        noteService.createVersionOfNote(page, username);
+        noteService.createVersionOfNote(page, userIdentity.getUserId());
         noteService.removeDraftOfNote(page);
       }
       return getNotePage(pageKey, name, lang);
-    } catch (WikiException e) {
+    } catch (Exception e) {
       throw new IllegalStateException(String.format("Error retrieving note with name %s referenced in page %s",
                                                     name,
                                                     pageKey),
