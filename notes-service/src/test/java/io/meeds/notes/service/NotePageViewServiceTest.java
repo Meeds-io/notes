@@ -33,6 +33,7 @@ import org.exoplatform.portal.mop.page.PageContext;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.portal.mop.page.PageState;
 import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.wiki.WikiException;
@@ -72,6 +73,8 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
   private IdentityRegistry      identityRegistry;
 
+  private OrganizationService  organizationService;
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -79,6 +82,7 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     this.cmsService = getContainer().getComponentInstanceOfType(CMSServiceImpl.class);
     this.layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
     this.identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    this.organizationService = getContainer().getComponentInstanceOfType(OrganizationService.class);
     this.noteService = getContainer().getComponentInstanceOfType(NoteService.class);
   }
 
@@ -122,6 +126,7 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
                  () -> notePageViewService.saveNotePage(pageNoteName, pageContentEn, null, registerInternalUser(USERNAME)));
     notePageViewService.saveNotePage(pageNoteName, pageContentFr, null, registerAdministratorUser(USERNAME));
     // Test save a language not saved, which has to change the default lang
+    createUser(USERNAME);
     notePageViewService.saveNotePage(pageNoteName, pageContentEn, "fr", registerAdministratorUser(USERNAME));
 
     assertThrows(IllegalAccessException.class, () -> notePageViewService.getNotePage(pageNoteName, null, null));
@@ -169,6 +174,7 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     assertNotNull(notePage);
     assertEquals(pageContent, notePage.getContent());
 
+    createUser(USERNAME);
     notePageViewService.saveNotePage(pageNoteName, pageContentModified, null, registerAdministratorUser(USERNAME));
 
     notePage = notePageViewService.getNotePage(pageNoteName, "fr", registerInternalUser(USERNAME));
@@ -235,6 +241,15 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
                                                                                                        Arrays.asList(new MembershipEntry("/platform/administrators")));
     identityRegistry.register(identity);
     return identity;
+  }
+
+  private void createUser(String username) {
+    try {
+      organizationService.getUserHandler().createUser(
+              organizationService.getUserHandler().createUserInstance(username), true);
+    } catch (Exception e) {
+      //Nothing
+    }
   }
 
   private org.exoplatform.services.security.Identity registerInternalUser(String username) {
