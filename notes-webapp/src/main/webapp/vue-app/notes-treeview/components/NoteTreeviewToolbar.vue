@@ -34,6 +34,7 @@
       :compact="compactDisplay || $root.isMobile"
       class="px-0 height-auto"
       no-text-truncate
+      dense
       @filter-text-input-end-typing="$emit('keyword-changed', $event)"
       @filter-button-click="$root.$emit('notes-filter-open', filter)"
       @filter-expand="filterExpand = $event"
