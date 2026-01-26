@@ -384,7 +384,7 @@ export default {
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
-          this.items = [this.home];
+          this.items = this.isDraftFilter ? this.home.children : [this.home];
           if (this.isDraftFilter) {
             this.naturalSort(this.items);
             this.filterItems = this.items;
@@ -392,7 +392,7 @@ export default {
             this.filterItemsForSearch(this.filterItems);
           }
           this.allItems = data.treeNodeData;
-          this.allItemsHome = [this.home];
+          this.allItemsHome = this.items;
         }
         this.isLoading = false;
         const openedTreeViewItems = this.getOpenedTreeViewItems(this.note.breadcrumb);
