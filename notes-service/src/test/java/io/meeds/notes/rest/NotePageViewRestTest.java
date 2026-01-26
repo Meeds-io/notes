@@ -28,6 +28,7 @@ import java.util.Random;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.exoplatform.services.organization.OrganizationService;
 import org.mockito.MockedStatic;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
@@ -73,12 +74,15 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
 
   private IdentityRegistry               identityRegistry;
 
+  private OrganizationService            organizationService;
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     this.cmsService = getContainer().getComponentInstanceOfType(CMSServiceImpl.class);
     this.layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
     this.identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    this.organizationService = getContainer().getComponentInstanceOfType(OrganizationService.class);
 
     NotePageViewService notePageViewService = getContainer().getComponentInstanceOfType(NotePageViewService.class);
     registry(new NotePageViewRest(notePageViewService));
@@ -164,6 +168,7 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     response = getNotePageWithETag(pageNoteName, null, eTagValue);
     assertEquals(304, response.getStatus());
 
+    createUser(USERNAME);
     registerAdministratorUser(USERNAME);
     response = saveNotePage(pageNoteName, pageContent, null);
     assertEquals(204, response.getStatus());
@@ -261,6 +266,15 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     REST_UTILS.when(RestUtils::getCurrentUser).thenReturn(USERNAME);
     REST_UTILS.when(RestUtils::getCurrentUserAclIdentity).thenReturn(identity);
     return identity;
+  }
+
+  private void createUser(String username) {
+    try {
+      organizationService.getUserHandler().createUser(
+              organizationService.getUserHandler().createUserInstance(username), true);
+    } catch (Exception e) {
+      //Nothing
+    }
   }
 
   private org.exoplatform.services.security.Identity registerInternalUser(String username) {
