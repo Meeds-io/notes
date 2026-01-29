@@ -68,7 +68,16 @@ export default {
     open: {
       type: Boolean,
       default: false
+    },
+    isDraftFilter: {
+      type: Boolean,
+      default: false
     }
+  },
+  data() {
+    return {
+      hover: false,
+    };
   },
   computed: {
     noteId() {
@@ -82,7 +91,7 @@ export default {
     },
     isHomePage() {
       return this.note.nodeType === 'WIKIHOME';
-    },
+    }
   }
 };
 </script>

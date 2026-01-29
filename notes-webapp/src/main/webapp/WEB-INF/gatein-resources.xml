@@ -91,6 +91,9 @@
         <module>vuetify</module>
       </depends>
       <depends>
+        <module>vueDraggable</module>
+      </depends>
+      <depends>
         <module>eXoVueI18n</module>
       </depends>
       <depends>
