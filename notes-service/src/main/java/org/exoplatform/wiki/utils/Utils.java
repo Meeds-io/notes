@@ -60,6 +60,7 @@ import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.application.PortalRequestContext;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.webui.util.Util;
@@ -669,25 +670,9 @@ public class Utils {
   public static org.exoplatform.services.security.Identity getIdentity(String username) {
     if (StringUtils.isBlank(username)) {
       return null;
+    } else {
+      return ExoContainerContext.getService(UserACL.class).getUserIdentity(username);
     }
-    IdentityRegistry identityRegistry = CommonsUtils.getService(IdentityRegistry.class);
-    org.exoplatform.services.security.Identity aclIdentity = identityRegistry.getIdentity(username);
-    if (aclIdentity == null) {
-      try {
-        OrganizationService organizationService = CommonsUtils.getService(OrganizationService.class);
-        List<MembershipEntry> entries = organizationService.getMembershipHandler()
-                                                           .findMembershipsByUser(username)
-                                                           .stream()
-                                                           .map(membership -> new MembershipEntry(membership.getGroupId(),
-                                                                                                  membership.getMembershipType()))
-                                                           .toList();
-        aclIdentity = new org.exoplatform.services.security.Identity(username, entries);
-        identityRegistry.register(aclIdentity);
-      } catch (Exception e) {
-        throw new IllegalStateException("Unable to retrieve user " + username + " memberships", e);
-      }
-    }
-    return aclIdentity;
   }
 
   public static Set<String> processMentions(String content, Space space) {
