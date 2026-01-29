@@ -5,6 +5,8 @@ import NoteTreeViewSideBarItemLabel from './components/NoteTreeViewSideBarItemLa
 import NoteTreeViewSideBarItemPrepend from './components/NoteTreeViewSideBarItemPrepend.vue';
 import NoteTreeviewToolbar from './components/NoteTreeviewToolbar.vue';
 import NoteTreeViewFilterDrawer from './components/NoteTreeViewFilterDrawer.vue';
+import NoteTreeViewItemList from './components/NoteTreeViewItemList.vue';
+import NoteTreeViewItem from './components/NoteTreeViewItem.vue';
 
 const components = {
   'note-treeview-drawer': NoteTreeviewDrawer,
@@ -13,6 +15,8 @@ const components = {
   'note-treeview-sidebar-item-prepend': NoteTreeViewSideBarItemPrepend,
   'note-treeview-toolbar': NoteTreeviewToolbar,
   'note-treeview-filter-drawer': NoteTreeViewFilterDrawer,
+  'note-treeview-item-list': NoteTreeViewItemList,
+  'note-treeview-item': NoteTreeViewItem,
   'note-breadcrumb': NoteBreadcrumb
 };
 

@@ -1099,11 +1099,11 @@ export default {
     displayVersion(version) {
       this.actualVersion = version;
       this.actualVersion.current = true;
-      this.note.content = version.content;
-      this.note.title = version.title;
+      this.note.content = version?.content;
+      this.note.title = version?.title;
       this.noteSummary = version?.properties?.summary;
-      this.note.properties = version.properties;
-      this.noteTitle = version.title;
+      this.note.properties = version?.properties;
+      this.noteTitle = version?.title;
     },
     restoreVersion(version) {
       const note = {
