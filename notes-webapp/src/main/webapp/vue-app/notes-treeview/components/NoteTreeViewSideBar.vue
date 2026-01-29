@@ -21,51 +21,38 @@
 
 <template>
   <aside v-if="treeViewExpended" class="sidebar pb-5 ps-5 d-contents">
-    <template>
-      <v-card
-        flat
-        class="border-right-color full-height expand-transition-enter-active">
-        <note-treeview-toolbar
-          :filter="filter"
-          class="border-bottom-color"
-          compact-display
-          @keyword-changed="search = $event" />
-        <v-card-text class="px-0">
-          <v-treeview
-            ref="treeSearch"
-            :items="items"
-            :active="active"
-            :open="openedItems"
-            class="px-0 notes-custom-treeview treeview-item"
-            item-key="noteId"
-            expand-icon=""
-            open-on-click
-            hoverable
-            activatable
-            transition
-            dense>
-            <template #prepend="{ item, open }">
-              <note-treeview-sidebar-item-prepend
-                :note="item"
-                :space-note="isSpaceNote"
-                :note-wiki-owner="noteWikiOwner"
-                :space-group-id="spaceGroupId"
-                :open="open"
-                class="me-2 ms-1"
-                @fetch-children="fetchChildren" />
-            </template>
-            <template #label="{ item }">
-              <note-treeview-sidebar-item-label
-                :note="item"
-                :is-draft-filter="isDraftFilter"
-                :active-item="activeItem"
-                :space-note="isSpaceNote"
-                @open-note="openNote" />
-            </template>
-          </v-treeview>
-        </v-card-text>
-      </v-card>
-    </template>
+    <v-card
+      flat
+      class="border-right-color full-height">
+      <note-treeview-toolbar
+        :filter="filter"
+        class="border-bottom-color"
+        compact-display
+        @keyword-changed="search = $event" />
+      <v-card-text class="px-0 py-2 notes-tree-container">
+        <div v-if="isLoading" class="d-flex justify-center py-4">
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            size="32" />
+        </div>
+        <note-treeview-item-list
+          v-else
+          :items="items"
+          :opened-items="openedItems"
+          :active-item="activeItem"
+          :space-note="isSpaceNote"
+          :note-wiki-owner="noteWikiOwner"
+          :space-group-id="spaceGroupId"
+          :is-draft-filter="isDraftFilter"
+          :show-actions="note && note.canManage"
+          :level="0"
+          @fetch-children="fetchChildren"
+          @open-note="handleOpenNote"
+          @toggle-open="handleToggleOpen"
+          @reorder="handleReorder" />
+      </v-card-text>
+    </v-card>
   </aside>
 </template>
 
@@ -144,16 +131,10 @@ export default {
       return this.isSpaceNote ? this.note?.wikiOwner?.substring(1) : this.note?.wikiOwner;
     },
     spaceGroupId() {
-      return this.isSpaceNote &&  this.note?.wikiOwner?.startsWith?.('/spaces/') ? this.note?.wikiOwner : null;
+      return this.isSpaceNote && this.note?.wikiOwner?.startsWith?.('/spaces/') ? this.note?.wikiOwner : null;
     },
     openedItems() {
       return this.openNotes;
-    },
-    active() {
-      return this.search
-          && this.allItems
-          && this.allItems.filter(item => item.name.toLowerCase().match(this.search.toLowerCase()))
-          || this.activeItem;
     },
     includePage() {
       return this.isIncludePage;
@@ -200,6 +181,13 @@ export default {
   methods: {
     updateFilter(filter) {
       this.filter = filter;
+    },
+    handleOpenNote(payload) {
+      const { event, note } = payload;
+      this.openNote(event, note);
+    },
+    isOpen(item) {
+      return this.openNotes.includes(item.noteId);
     },
     fetchChildrenInParallel(children, level = 0) {
       if (level >= 2) {
@@ -277,35 +265,6 @@ export default {
         this.filterOptions.push(draftFilterValue);
       }
     },
-    openNote(event, note) {
-      const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
-      const isEditDifferentNote = this.isEditMode && noteIdParam !== note.noteId;
-      const isNotCurrentNote = this.note.id !== note.noteId;
-      const canOpenNote = (!this.isDraftFilter || this.isDraftFilter && note.draftPage) && isEditDifferentNote || isNotCurrentNote;
-      if (canOpenNote) {
-        this.activeItem = [note.noteId];
-        if (this.includePage) {
-          this.$root.$emit('include-page', note);
-        } else if (this.movePage) {
-          if (note.noteId !== this.note.id && note.noteId !== this.note.parentPageId) {
-            this.$notesService.getNoteById(note.noteId,'', '', '', '', true).then(data => {
-              this.breadcrumb = data?.breadcrumb || [];
-              this.enableMove = true;
-              this.breadcrumb[0].name = this.noteHomeTitle;
-              this.destinationNote = data;
-            });
-          } else {
-            this.enableMove=false;
-            this.breadcrumb = [];
-            Object.assign(this.destinationNote, this.note);
-          }
-        } else {
-          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
-          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
-        }
-        document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
-      }
-    },
     getNoteById(id) {
       if (id) {
         return this.$notesService.getNoteById(id).then(data => {
@@ -328,36 +287,10 @@ export default {
         });
       }
     },
-    fetchChildren(item) {
-      if (item?.isOpen || item.expanded) {
-        this.closeItem(item);
-        return;
-      }
-      if (this.isDraftFilter) {
-        this.openItem(item);
-        return;
-      }
-      item.isLoading = true;
-      this.$notesService.getNoteTreeLevel(item.path).then(data => {
-        item.children = data?.jsonList;
-        this.openItem(item);
-        item.isLoading = false;
-      });
-    },
-    openItem(item) {
-      this.$refs.treeSearch.updateOpen(item.noteId, true);
-      item.isOpen = true;
-      item.expanded = item.isOpen;
-    },
-    closeItem(item) {
-      this.$refs.treeSearch.updateOpen(item.noteId, false);
-      item.isOpen = false;
-      item.expanded = item.isOpen;
-      if (!this.isDraftFilter) {
-        item.children = [];
-      }
-    },
     mapItems(itemsArray) {
+      if (!itemsArray) {
+        return [];
+      }
       for (let i = 0; i < itemsArray.length; i++) {
         const item = itemsArray[i];
         if (!item.hasChild && item.children) {
@@ -458,9 +391,102 @@ export default {
         path: note.pageName,
         parentPageId: ''
       };
+    },
+    handleToggleOpen(payload) {
+      const { item, open } = payload;
+      if (open) {
+        if (!this.openNotes.includes(item.noteId)) {
+          this.openNotes = [...this.openNotes, item.noteId];
+        }
+      } else {
+        const index = this.openNotes.indexOf(item.noteId);
+        if (index > -1) {
+          this.openNotes.splice(index, 1);
+        }
+      }
+    },
+    handleReorder(payload) {
+      const { event, items, level } = payload;
+      if (event.moved) {
+        this.onItemMoved(event.moved, items, level);
+      } else if (event.added) {
+        this.onItemAdded(event.added, items, level);
+      } else if (event.removed) {
+        this.onItemRemoved(event.removed, items, level);
+      }
+    },
+    onItemMoved() {
+      try {
+        this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+      } catch (error) {
+        console.error('Error reordering note:', error);
+        this.refreshTree();
+      }
+    },
+    onItemAdded() {
+      // TO DO
+    },
+    onItemRemoved() {
+      // TO DO
+    },
+    fetchChildren(item) {
+      if (!item.hasChild) {return;}
+      if (this.openNotes.includes(item.noteId)) {
+        this.closeItem(item);
+        return;
+      }
+      if (item.children && item.children.length) {
+        this.openItem(item);
+        return;
+      }
+      this.$set(item, 'isLoading', true);
+
+      this.$notesService.getNoteTreeLevel(item.path)
+        .then(data => {
+          this.$set(item, 'children', data?.jsonList || []);
+          this.openItem(item);
+        })
+        .catch(error => {
+          console.error('Error fetching children:', error);
+        })
+        .finally(() => {
+          this.$set(item, 'isLoading', false);
+        });
+    },
+    openItem(item) {
+      if (!this.openNotes.includes(item.noteId)) {
+        this.openNotes = [...this.openNotes, item.noteId];
+      }
+    },
+    closeItem(item) {
+      const index = this.openNotes.indexOf(item.noteId);
+      if (index > -1) {
+        this.openNotes.splice(index, 1);
+      }
+    },
+    openNote(event, note) {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
+      const isEditDifferentNote = this.isEditMode && noteIdParam !== note.noteId;
+      const isNotCurrentNote = this.note.id !== note.noteId;
+      const canOpenNote = (!this.isDraftFilter || (this.isDraftFilter && note.draftPage))
+          && (isEditDifferentNote || isNotCurrentNote);
+      if (canOpenNote) {
+        this.activeItem = [note.noteId];
+        if (this.includePage) {
+          this.$root.$emit('include-page', note);
+        } else {
+          const noteName = note.draftPage ? note.noteId : note.path.split('%2F').pop();
+          this.$root.$emit('open-note-by-name', noteName, note.draftPage);
+        }
+        document.dispatchEvent(new CustomEvent('note-navigation-updated', { detail: note }));
+      }
+    },
+    refreshTree() {
+      this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner, this.note.name);
     }
   }
 };
 </script>
-
-}
