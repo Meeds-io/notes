@@ -26,7 +26,8 @@
     <div>
       <div
         v-if="isAvailableNote"
-        class="notes-application notes-application-content application-body pa-5"
+        class="notes-application notes-application-content application-body overflow-hidden"
+        :class="treeViewExpended && 'ps-5'"
         ref="content">
         <div class="notes-application-header">
           <v-row
