@@ -52,8 +52,8 @@
     <template #footer>
       <div class="d-flex">
         <v-btn
-            class="btn ms-auto me-2"
-            @click="resetFilter()">
+          class="btn ms-auto me-2"
+          @click="resetFilter()">
           <template>
             <i class="fas fa-redo me-3"></i>
             {{ $t('notes.label.resetFilter') }}

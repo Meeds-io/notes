@@ -23,15 +23,11 @@
     <v-btn
       v-if="hasChild"
       :loading="isLoading"
-      class="me-n3"
-      width="30"
-      height="30"
-      min-width="30"
       icon
       @click="$emit('fetch-children', note)">
       <v-icon
-        size="16">
-        {{ open ? 'fas fa-caret-down' : 'fas fa-caret-right' }}
+        size="24">
+        {{ open ? 'mdi-menu-down' : 'mdi-menu-right' }}
       </v-icon>
     </v-btn>
     <template v-if="isHomePage">
@@ -40,7 +36,7 @@
         :profile-id="noteWikiOwner"
         :size="24"
         :popover="false"
-        extra-class="align-self-center ms-4"
+        extra-class="align-self-center"
         avatar />
     </template>
   </div>
