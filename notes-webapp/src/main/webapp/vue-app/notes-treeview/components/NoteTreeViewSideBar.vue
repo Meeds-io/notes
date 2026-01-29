@@ -23,7 +23,7 @@
   <aside v-if="treeViewExpended" class="sidebar pb-5 ps-5 d-contents">
     <v-card
       flat
-      class="border-right-color full-height">
+      class="border-right-color no-border-radius full-height">
       <note-treeview-toolbar
         :filter="filter"
         class="border-bottom-color"
