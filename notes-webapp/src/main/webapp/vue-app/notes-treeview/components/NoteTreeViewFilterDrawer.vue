@@ -52,6 +52,15 @@
     <template #footer>
       <div class="d-flex">
         <v-btn
+            class="btn ms-auto me-2"
+            @click="resetFilter()">
+          <template>
+            <i class="fas fa-redo me-3"></i>
+            {{ $t('notes.label.resetFilter') }}
+          </template>
+        </v-btn>
+        <v-spacer />
+        <v-btn
           class="btn ms-auto me-2"
           @click="close">
           {{ $t('notes.button.cancel') }}
@@ -101,6 +110,10 @@ export default {
       this.$root.$emit('notes-filter-update', this.filter);
       this.close();
     },
+    resetFilter() {
+      this.filter = 'published';
+      this.apply();
+    }
   },
 };
 </script>
