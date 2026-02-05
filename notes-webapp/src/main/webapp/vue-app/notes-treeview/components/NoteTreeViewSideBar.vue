@@ -51,6 +51,21 @@
           @open-note="handleOpenNote"
           @toggle-open="handleToggleOpen"
           @reorder="handleReorder" />
+        <template v-if="!resultSearch">
+          <v-card
+            flat
+            class="d-flex align-center justify-center"
+            height="60vh">
+            <div class="d-flex flex-column text-subtitle align-center">
+              <v-icon
+                class="my-auto"
+                size="60">
+                fas fa-search
+              </v-icon>
+              <span class="text-body mt-3">{{ $t('notes.label.noResults.placeholder') }}</span>
+            </div>
+          </v-card>
+        </template>
       </v-card-text>
     </v-card>
   </aside>
@@ -155,6 +170,9 @@ export default {
           return 'homeNote';
         }
       }
+    },
+    resultSearch() {
+      return this.showTree;
     },
   },
   watch: {
