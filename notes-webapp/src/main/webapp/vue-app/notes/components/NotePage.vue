@@ -151,15 +151,17 @@
               </div>
             </v-col>
           </v-row>
-          <v-img
-            v-if="hasFeaturedImage"
-            :lazy-src="featuredImageLink"
-            :alt="featuredImageAltText"
-            :src="featuredImageLink"
-            contain
-            class="mb-5"
-            width="100%"
-            max-height="400" />
+          <v-card flat class="d-sm-grid">
+            <v-img
+              v-if="hasFeaturedImage"
+              :lazy-src="featuredImageLink"
+              :alt="featuredImageAltText"
+              :src="featuredImageLink"
+              contain
+              class="mb-5"
+              width="100%"
+              max-height="400" />
+          </v-card>
           <div class="notes-title">
             <p ref="noteTitle" class="title text-color text-break">
               <span>
