@@ -112,7 +112,9 @@ export default {
     limit: 20,
     timeout: 1000,
     searchTimer: null,
-    enableMove: false
+    enableMove: false,
+    currentPath: window.location.pathname,
+    lang: eXo.env.portal.language,
   }),
   computed: {
     homeLabel() {
@@ -141,6 +143,18 @@ export default {
     },
     isDraftFilter() {
       return this.filter === 'drafts';
+    },
+    notesPageName() {
+      if (this.currentPath?.endsWith(eXo.env.portal.selectedNodeUri) || this.currentPath.endsWith(`${eXo.env.portal.selectedNodeUri}/`)){
+        return 'homeNote';
+      } else {
+        const noteId = this.currentPath?.split(`${eXo.env.portal.selectedNodeUri}/`)[1];
+        if (noteId) {
+          return noteId;
+        } else {
+          return 'homeNote';
+        }
+      }
     },
   },
   watch: {
@@ -268,6 +282,14 @@ export default {
     getNoteById(id) {
       if (id) {
         return this.$notesService.getNoteById(id).then(data => {
+          this.note = data || [];
+          this.note.breadcrumb[0].title = this.noteHomeTitle;
+          this.breadcrumb = this.note.breadcrumb;
+        }).then(() => {
+          this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner , this.note.name);
+        });
+      } else {
+        return this.$notesService.getNote(this.$root.noteBookType, this.$root.noteBookOwner, this.notesPageName, '', this.lang).then(data => {
           this.note = data || [];
           this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
@@ -470,7 +492,7 @@ export default {
       }
       const noteIdParam = new URLSearchParams(window.location.search).get('noteId');
       const isEditDifferentNote = this.isEditMode && noteIdParam !== note.noteId;
-      const isNotCurrentNote = this.note.id !== note.noteId;
+      const isNotCurrentNote = (this.note.id !== note.noteId) || (this.note.name !== note.name);
       const canOpenNote = (!this.isDraftFilter || (this.isDraftFilter && note.draftPage))
           && (isEditDifferentNote || isNotCurrentNote);
       if (canOpenNote) {
