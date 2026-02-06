@@ -20,7 +20,7 @@
 -->
 <template>
   <v-container fluid class="pa-0">
-    <v-row class="pa-5">
+    <v-row no-gutters class="pa-5">
       <v-sheet
         v-if="treeViewExpended && !$root.isMobile"
         :width="sidebarWidth"
@@ -54,7 +54,7 @@ export default {
       treeViewExpended: true,
       sidebarWidth: 320,
       minWidth: 240,
-      maxWidth: 412,
+      maxWidth: 480,
       isResizing: false,
       startX: 0,
       startWidth: 0
