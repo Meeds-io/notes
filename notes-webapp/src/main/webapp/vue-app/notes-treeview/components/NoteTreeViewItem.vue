@@ -64,40 +64,38 @@
         </v-list-item-content>
       </v-list-item>
     </v-hover>
-    <v-expand-transition>
-      <div
-        v-show="isOpen(item.noteId) && item.hasChild"
-        class="tree-children">
-        <note-treeview-item-list
-          v-if="item.children"
-          :items="item.children"
-          :opened-items="openedItems"
-          :active-item="activeItem"
-          :space-note="spaceNote"
-          :note-wiki-owner="noteWikiOwner"
-          :space-group-id="spaceGroupId"
-          :parent-id="item.noteId"
-          :is-draft-filter="isDraftFilter"
-          :level="level + 1"
-          @fetch-children="$emit('fetch-children', $event)"
-          @open-note="handleChildOpenNote"
-          @toggle-open="$emit('toggle-open', $event)"
-          @reorder="$emit('reorder', $event)"
-          @action="$emit('action', $event)" />
-        <v-list-item
-          v-else-if="item.isLoading"
-          :style="{ paddingLeft: `${(level + 1) * 20 + 8}px` }"
-          class="mx-1">
-          <v-list-item-icon class="my-auto mr-3">
-            <v-progress-circular
-              indeterminate
-              size="16"
-              width="2"
-              color="grey" />
-          </v-list-item-icon>
-        </v-list-item>
-      </div>
-    </v-expand-transition>
+    <div
+      v-show="isOpen(item.noteId) && item.hasChild"
+      class="tree-children">
+      <note-treeview-item-list
+        v-if="item.children"
+        :items="item.children"
+        :opened-items="openedItems"
+        :active-item="activeItem"
+        :space-note="spaceNote"
+        :note-wiki-owner="noteWikiOwner"
+        :space-group-id="spaceGroupId"
+        :parent-id="item.noteId"
+        :is-draft-filter="isDraftFilter"
+        :level="level + 1"
+        @fetch-children="$emit('fetch-children', $event)"
+        @open-note="handleChildOpenNote"
+        @toggle-open="$emit('toggle-open', $event)"
+        @reorder="$emit('reorder', $event)"
+        @action="$emit('action', $event)" />
+      <v-list-item
+        v-else-if="item.isLoading"
+        :style="{ paddingLeft: `${(level + 1) * 20 + 8}px` }"
+        class="mx-1">
+        <v-list-item-icon class="my-auto mr-3">
+          <v-progress-circular
+            indeterminate
+            size="16"
+            width="2"
+            color="grey" />
+        </v-list-item-icon>
+      </v-list-item>
+    </div>
   </div>
 </template>
 
