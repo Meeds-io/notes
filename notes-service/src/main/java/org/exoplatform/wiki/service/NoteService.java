@@ -21,6 +21,7 @@ package org.exoplatform.wiki.service;
 import java.io.IOException;
 import java.util.List;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.gatein.api.EntityNotFoundException;
 
 import org.exoplatform.commons.utils.PageList;
@@ -997,4 +998,11 @@ public interface NoteService {
    */
   boolean canViewNote(Page page, String username);
 
+  /**
+   * @param noteReorder the payload object encapsulating the reordering details.
+   * @param userIdentity user Identity
+   */
+  default void updateNotesPosition(NoteReorder noteReorder, Identity userIdentity) throws IllegalAccessException {
+    throw new UnsupportedOperationException();
+  }
 }
