@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
@@ -989,6 +990,65 @@ public class NoteDataStorage {
     List<DraftPageEntity> draftPageEntities = new ArrayList<>();
     getDraftsOfPage(pageEntity, draftPageEntities);
     return convertDraftPageEntitiesToDraftPages(draftPageEntities);
+  }
+
+  @ExoTransactional
+  public void updateNotesPosition(NoteReorder noteReorder) throws WikiException {
+    PageEntity pageToMove = pageDAO.find(Long.valueOf(noteReorder.getPageId()));
+
+    if (pageToMove == null) {
+      throw new WikiException("Cannot update note position: page does not exist.");
+    }
+    boolean isCrossFolderMove = noteReorder.getSourceParentId() != null
+        && !noteReorder.getSourceParentId().equals(noteReorder.getTargetParentId());
+
+    if (isCrossFolderMove) {
+      PageEntity destinationParentEntity = null;
+      if (noteReorder.getTargetParentId() != null && !noteReorder.getTargetParentId().isEmpty()) {
+        destinationParentEntity = pageDAO.find(Long.valueOf(noteReorder.getTargetParentId()));
+        if (destinationParentEntity == null) {
+          throw new WikiException("Destination parent page does not exist.");
+        }
+      }
+      List<PageMoveEntity> pageMoves = pageToMove.getMoves();
+      if (pageMoves == null) {
+        pageMoves = new ArrayList<>();
+      }
+      PageMoveEntity move = new PageMoveEntity(noteReorder.getWikiType(),
+                                               noteReorder.getWikiOwner(),
+                                               pageToMove.getName(),
+                                               Calendar.getInstance().getTime());
+      move.setPage(pageToMove);
+      pageMoveDAO.create(move);
+      pageToMove.setParentPage(destinationParentEntity);
+      if (destinationParentEntity != null) {
+        updateWikiOfPageTree(destinationParentEntity.getWiki(), pageToMove);
+      }
+
+      pageMoves.add(move);
+      pageToMove.setMoves(pageMoves);
+      pageDAO.update(pageToMove);
+    }
+    if (noteReorder.getTargetOrderedIds() != null && !noteReorder.getTargetOrderedIds().isEmpty()) {
+      int position = 1;
+      for (String id : noteReorder.getTargetOrderedIds()) {
+        PageEntity pageToUpdate = pageDAO.find(Long.valueOf(id));
+        if (pageToUpdate != null) {
+          pageToUpdate.setPosition(position++);
+          pageDAO.update(pageToUpdate);
+        }
+      }
+    }
+    if (isCrossFolderMove && noteReorder.getSourceOrderedIds() != null && !noteReorder.getSourceOrderedIds().isEmpty()) {
+      int position = 1;
+      for (String id : noteReorder.getSourceOrderedIds()) {
+        PageEntity pageToUpdate = pageDAO.find(Long.valueOf(id));
+        if (pageToUpdate != null) {
+          pageToUpdate.setPosition(position++);
+          pageDAO.update(pageToUpdate);
+        }
+      }
+    }
   }
 
   private void getDraftsOfPage(PageEntity pageEntity, List<DraftPageEntity> drafts) {

@@ -23,22 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -49,8 +34,8 @@ import lombok.EqualsAndHashCode;
 @NamedQuery(name = "wikiPage.getPageOfWikiByName", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE p.name = :name AND w.type = :type AND w.owner = :owner AND p.deleted = false")
 @NamedQuery(name = "wikiPage.getAllPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner")
 @NamedQuery(name = "wikiPage.getPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner AND p.deleted = :deleted")
-@NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.name")
-@NamedQuery(name = "wikiPage.getAllChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id ORDER BY p.name")
+@NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.position ASC, p.name ASC")
+@NamedQuery(name = "wikiPage.getAllChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id ORDER BY p.position ASC, p.name ASC")
 @NamedQuery(name = "wikiPage.getRelatedPages", query = "SELECT p FROM WikiPageEntity p INNER JOIN p.relatedPages r where r.id = :pageId")
 @NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC")
 @NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false")
@@ -75,6 +60,7 @@ public class PageEntity extends BasePageEntity {
   private PageEntity parentPage;
 
   @OneToMany(mappedBy = "parentPage")
+  @OrderBy("position ASC, name ASC")
   @EqualsAndHashCode.Exclude
   private List<PageEntity>        children;
 
@@ -125,5 +111,8 @@ public class PageEntity extends BasePageEntity {
 
   @Column(name = "DELETED")
   private boolean deleted;
+
+  @Column(name = "POSITION")
+  private Integer position;
 
 }
