@@ -69,15 +69,15 @@
         v-show="isOpen(item.noteId) && item.hasChild"
         class="tree-children">
         <note-treeview-item-list
-          v-if="item.children && item.children.length"
+          v-if="item.children"
           :items="item.children"
           :opened-items="openedItems"
           :active-item="activeItem"
           :space-note="spaceNote"
           :note-wiki-owner="noteWikiOwner"
           :space-group-id="spaceGroupId"
+          :parent-id="item.noteId"
           :is-draft-filter="isDraftFilter"
-          :show-actions="showActions"
           :level="level + 1"
           @fetch-children="$emit('fetch-children', $event)"
           @open-note="handleChildOpenNote"
@@ -105,8 +105,8 @@
 export default {
   props: {
     item: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => ({})
     },
     openedItems: {
       type: Array,
@@ -144,18 +144,19 @@ export default {
     };
   },
   computed: {
-    localItems: {
-      get() {
-        return this.items || [];
-      },
-      set(value) {
-        this.$emit('update:items', value);
-      }
-    },
     isHomePage() {
       return this.item.nodeType === 'WIKIHOME';
     }
   },
+  watch: {
+    'item.children.length'(newLength) {
+      this.$set(this.item, 'hasChild', newLength > 0);
+      if (newLength === 0 && this.isOpen(this.item.noteId)) {
+        this.$emit('toggle-open', { item: this.item, open: false });
+      }
+    }
+  },
+
   methods: {
     isOpen(noteId) {
       return this.openedItems && this.openedItems.includes(noteId);
@@ -186,7 +187,6 @@ export default {
       }
       this.$emit('open-note', { event, note });
     },
-
     handleChildOpenNote(payload) {
       this.$emit('open-note', payload);
     },

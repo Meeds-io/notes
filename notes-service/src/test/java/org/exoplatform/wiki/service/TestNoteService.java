@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.io.FileUtils;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
@@ -1210,6 +1211,48 @@ public class TestNoteService extends BaseTest {
     assertTrue(content.contains(imageSrcTagSuffix.concat(WikiPageAttachmentPlugin.OBJECT_TYPE).concat("/").concat(note.getId())));
 
     file1.delete();
+  }
+
+  @SneakyThrows
+  public void testUpdateNotesPosition() {
+    Identity root = ROOT_IDENTITY;
+    Identity mary = USER_IDENTITY;
+
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+
+    Page note1 = new Page("dragged_note", "dragged_note");
+    note1 = noteService.createNote(portalWiki, "Home", note1, root);
+
+    Page note2 = new Page("other_note", "other_note");
+    note2 = noteService.createNote(portalWiki, "Home", note2, root);
+
+    assertNotNull(noteService.getNoteById(note1.getId()));
+
+    NoteReorder validReorder = new NoteReorder();
+    validReorder.setPageId(note1.getId());
+    validReorder.setWikiType(PortalConfig.PORTAL_TYPE);
+    validReorder.setWikiOwner(PORTAL_NAME);
+    validReorder.setSourceParentId("1");
+    validReorder.setTargetParentId("1");
+    validReorder.setTargetOrderedIds(Arrays.asList(note2.getId(), note1.getId()));
+
+    noteService.updateNotesPosition(validReorder, root);
+
+    NoteReorder reorder1 = new NoteReorder();
+    reorder1.setPageId("10");
+
+    Exception notFoundException = assertThrows(Exception.class, () -> {
+      noteService.updateNotesPosition(reorder1, root);
+    });
+    assertEquals("Note to update not found", notFoundException.getMessage());
+
+    NoteReorder reorder2 = new NoteReorder();
+    reorder2.setPageId(note1.getId());
+
+    IllegalAccessException accessException = assertThrows(IllegalAccessException.class, () -> {
+      noteService.updateNotesPosition(reorder2, mary);
+    });
+    assertEquals("User does not have edit the note.", accessException.getMessage());
   }
 
   private Long getIdentityId(String username) {
