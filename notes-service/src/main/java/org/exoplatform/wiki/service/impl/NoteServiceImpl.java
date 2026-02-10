@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1891,6 +1892,16 @@ public class NoteServiceImpl implements NoteService {
         }
       }
     }
+  }
+
+  public void updateNotesPosition(NoteReorder noteReorder, Identity userIdentity) throws IllegalAccessException {
+    Page existingNote = getNoteById(noteReorder.getPageId());
+    if (existingNote == null) {
+      throw new EntityNotFoundException("Note to update not found");
+    } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have edit the note.");
+    }
+    dataStorage.updateNotesPosition(noteReorder);
   }
 
   /******* Private methods *******/

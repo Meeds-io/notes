@@ -45,8 +45,10 @@
           :note-wiki-owner="noteWikiOwner"
           :space-group-id="spaceGroupId"
           :is-draft-filter="isDraftFilter"
+          :parent-id="home.noteId"
           :show-actions="note && note.canManage"
           :level="0"
+          @update:items="items = $event"
           @fetch-children="fetchChildren"
           @open-note="handleOpenNote"
           @toggle-open="handleToggleOpen"
@@ -130,6 +132,8 @@ export default {
     enableMove: false,
     currentPath: window.location.pathname,
     lang: eXo.env.portal.language,
+    dragTimer: null,
+    dndPayload: null
   }),
   computed: {
     homeLabel() {
@@ -446,28 +450,56 @@ export default {
       }
     },
     handleReorder(payload) {
-      const { event, items, level } = payload;
+      const { event, items, parentId } = payload;
+      if (!this.dragPayload) {
+        this.dragPayload = {
+          pageId: null,
+          wikiType: this.noteWikiType,
+          wikiOwner: this.noteWikiOwner,
+          sourceParentId: null,
+          targetParentId: null,
+          sourceOrderedIds: [],
+          targetOrderedIds: []
+        };
+      }
       if (event.moved) {
-        this.onItemMoved(event.moved, items, level);
-      } else if (event.added) {
-        this.onItemAdded(event.added, items, level);
-      } else if (event.removed) {
-        this.onItemRemoved(event.removed, items, level);
+        this.dragPayload.pageId = event.moved.element.noteId;
+        this.dragPayload.sourceParentId = parentId;
+        this.dragPayload.targetParentId = parentId;
+        this.dragPayload.targetOrderedIds = items.map(item => item.noteId);
       }
-    },
-    onItemMoved() {
-      try {
-        this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
-      } catch (error) {
-        console.error('Error reordering note:', error);
-        this.refreshTree();
+      else if (event.added) {
+        this.dragPayload.pageId = event.added.element.noteId;
+        this.dragPayload.targetParentId = parentId;
+        this.dragPayload.targetOrderedIds = items.map(item => item.noteId);
       }
+      else if (event.removed) {
+        this.dragPayload.pageId = event.removed.element.noteId;
+        this.dragPayload.sourceParentId = parentId;
+        this.dragPayload.sourceOrderedIds = items.map(item => item.noteId);
+      }
+      clearTimeout(this.dragTimer);
+      this.dragTimer = setTimeout(() => {
+        const requestData = { ...this.dragPayload };
+        if (requestData.sourceParentId === this.home.noteId) {requestData.sourceParentId = null;}
+        if (requestData.targetParentId === this.home.noteId) {requestData.targetParentId = null;}
+        this.executeDragAndDropApi(requestData);
+        this.dragPayload = null;
+      }, 100);
     },
-    onItemAdded() {
-      // TO DO
-    },
-    onItemRemoved() {
-      // TO DO
+    executeDragAndDropApi() {
+      const requestData = { ...this.dragPayload };
+      this.$notesService.updateNotesOrder(requestData)
+        .then(() => {
+          this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+          if (requestData.sourceParentId !== requestData.targetParentId) {
+            this.parentUpdated = true;
+          }
+        })
+        .catch(() => {
+          this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
+          this.refreshTree();
+        });
     },
     fetchChildren(item) {
       if (!item.hasChild) {return;}
@@ -480,7 +512,6 @@ export default {
         return;
       }
       this.$set(item, 'isLoading', true);
-
       this.$notesService.getNoteTreeLevel(item.path)
         .then(data => {
           this.$set(item, 'children', data?.jsonList || []);
