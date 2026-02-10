@@ -22,10 +22,12 @@
     dense
     class="py-0 note-tree-list">
     <draggable
-      :list="localItems"
+      :list="items"
       :group="{ name: 'notes-tree' }"
       :animation="200"
       :disabled="isDraftFilter"
+      :data-level="level"
+      :move="checkMove"
       ghost-class="ghost-note"
       drag-class="dragging-note"
       chosen-class="chosen-note"
@@ -35,12 +37,13 @@
       @end="onDragEnd"
       @change="onDragChange">
       <note-treeview-item
-        v-for="item in localItems"
+        v-for="item in items"
         :key="item.noteId"
         :item="item"
         :opened-items="openedItems"
         :active-item="activeItem"
         :space-note="spaceNote"
+        :parent-id="item.noteId"
         :note-wiki-owner="noteWikiOwner"
         :space-group-id="spaceGroupId"
         :is-draft-filter="isDraftFilter"
@@ -93,56 +96,31 @@ export default {
     level: {
       type: Number,
       default: 0
-    }
+    },
+    parentId: {
+      type: String,
+      default: null
+    },
   },
   data() {
     return {
       isDragging: false
     };
   },
-  computed: {
-    localItems: {
-      get() {
-        return this.items || [];
-      },
-      set(value) {
-        this.$emit('update:items', value);
-      }
-    }
-  },
   methods: {
     isOpen(noteId) {
       return this.openedItems && this.openedItems.includes(noteId);
     },
-    isActive(item) {
-      return this.activeItem && this.activeItem.includes(item.noteId);
-    },
-    toggle(event, item) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      if (!item.hasChild) {return;}
-
-      if (this.isOpen(item.noteId)) {
-        this.$emit('toggle-open', { item, open: false });
-      } else {
-        if (!item.children || !item.children.length) {
-          this.$emit('fetch-children', item);
-        } else {
-          this.$emit('toggle-open', { item, open: true });
-        }
-      }
-    },
-    handleOpenNote(event, note) {
-      if (event.target.closest('.expand-icon') || event.target.closest('.drag-handle')) {
-        return;
-      }
-      this.$emit('open-note', { event, note });
-    },
-
     handleChildOpenNote(payload) {
       this.$emit('open-note', payload);
+    },
+    checkMove(evt) {
+      const fromLevel = parseInt(evt.from.dataset.level || 0, 10);
+      const toLevel = parseInt(evt.to.dataset.level || 0, 10);
+      if (fromLevel > 0 && toLevel === 0) {
+        return false;
+      }
+      return !(fromLevel === 0 && toLevel > 0);
     },
     onDragStart() {
       this.isDragging = true;
@@ -156,8 +134,9 @@ export default {
       if (evt.added || evt.moved || evt.removed) {
         this.$emit('reorder', {
           event: evt,
-          items: this.localItems,
-          level: this.level
+          items: this.items,
+          level: this.level,
+          parentId: this.parentId
         });
       }
     }

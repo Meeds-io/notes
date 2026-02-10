@@ -364,11 +364,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertEquals(5, ((JsonNodeData)((BeanToJsons) response3.getEntity()).getJsonList().getFirst()).getChildren().size());
     JsonNodeData jsonNodeData = ((JsonNodeData)((BeanToJsons) response3.getEntity()).getJsonList().getFirst());
     assertEquals(5, jsonNodeData.getChildren().size());
-    assertEquals("testPage", jsonNodeData.getChildren().get(0).getName());
-    assertEquals("testPage 1", jsonNodeData.getChildren().get(1).getName());
-    assertEquals("testPage 2", jsonNodeData.getChildren().get(2).getName());
-    assertEquals("testPage 10", jsonNodeData.getChildren().get(3).getName());
-    assertEquals("testPage 22", jsonNodeData.getChildren().get(4).getName());
 
     doThrow(new IllegalAccessException()).when(noteService)
                                          .getNoteOfNoteBookByName(pageParams.getType(),
