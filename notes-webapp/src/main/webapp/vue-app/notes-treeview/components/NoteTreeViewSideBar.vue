@@ -383,12 +383,16 @@ export default {
       const activatedNotes = [];
       if (this.isDraftFilter) {
         const nodesToOpen = this.allItems.filter(item => !item.draftPage);
-        const nodesToOpenIds = nodesToOpen.map(node => node.noteId);
-
+        const nodesToOpenIds = nodesToOpen.map(node => String(node.noteId));
         activatedNotes.push(...nodesToOpenIds);
       } else {
-        for (let index = 1; index < breadCrumbArray.length; index++) {
-          activatedNotes.push(breadCrumbArray[index].noteId);
+        if (breadCrumbArray && breadCrumbArray.length > 0) {
+          for (let index = 0; index < breadCrumbArray.length; index++) {
+            const nodeId = breadCrumbArray[index].noteId || breadCrumbArray[index].id;
+            if (nodeId) {
+              activatedNotes.push(String(nodeId));
+            }
+          }
         }
       }
       return activatedNotes;
