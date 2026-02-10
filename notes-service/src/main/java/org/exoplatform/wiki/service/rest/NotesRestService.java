@@ -53,6 +53,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.LocaleUtils;
@@ -1471,6 +1472,24 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception e) {
       LOG.error("An error occurred while marking a note as read", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+  }
+
+
+  @POST
+  @Path("/reorder")
+  @Operation(summary = "Reorder a note", method = "POST", description = "This reorder a note.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+                          @ApiResponse(responseCode = "401", description = "User not authorized to get the note"),
+                          @ApiResponse(responseCode = "500", description = "Internal server error") })
+  public Response reorderNotes(@RequestBody NoteReorder request) {
+    try {
+      noteService.updateNotesPosition(request, ConversationState.getCurrent().getIdentity());
+      return Response.ok().build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    } catch (IllegalAccessException e) {
+      return Response.status(Response.Status.UNAUTHORIZED).build();
     }
   }
 

@@ -18,11 +18,9 @@
  */
 package org.exoplatform.wiki.storage;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1021,6 +1019,82 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     // When
     PageVersion pageVersion = storage.addPageVersion(createdPage, identity.getId());
     assertNotNull(storage.getPageVersionById(Long.parseLong(pageVersion.getId())));
+  }
+
+  @Test
+  public void testUpdateNotesPosition() {
+    Wiki wiki = new Wiki();
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(WIKI_OWNER);
+    wiki = storage.createWiki(wiki);
+
+    Page homePage = wiki.getWikiHome();
+
+    Page folderA = new Page();
+    folderA.setName("folderA");
+    folderA.setTitle("Folder A");
+    folderA = storage.createPage(wiki, homePage, folderA);
+
+    Page note1 = new Page();
+    note1.setName("note1");
+    note1.setTitle("Note 1");
+    note1 = storage.createPage(wiki, homePage, note1);
+
+    Page note2 = new Page();
+    note2.setName("note2");
+    note2.setTitle("Note 2");
+    note2 = storage.createPage(wiki, homePage, note2);
+
+    assertNotNull(note1.getId());
+    assertNotNull(note2.getId());
+
+    NoteReorder sameFolderReorder = new NoteReorder();
+    sameFolderReorder.setPageId(note1.getId());
+    sameFolderReorder.setWikiType(WIKI_TYPE_PORTAL);
+    sameFolderReorder.setWikiOwner(WIKI_OWNER);
+    sameFolderReorder.setSourceParentId(homePage.getId());
+    sameFolderReorder.setTargetParentId(homePage.getId());
+    sameFolderReorder.setTargetOrderedIds(Arrays.asList(note2.getId(), note1.getId()));
+
+    storage.updateNotesPosition(sameFolderReorder);
+
+    restartTransaction();
+
+    PageEntity updatedNote1 = pageDAO.find(Long.valueOf(note1.getId()));
+    PageEntity updatedNote2 = pageDAO.find(Long.valueOf(note2.getId()));
+
+    assertEquals(Integer.valueOf(2), updatedNote1.getPosition());
+    assertEquals(Integer.valueOf(1), updatedNote2.getPosition());
+    assertEquals(Long.parseLong(homePage.getId()), updatedNote1.getParentPage().getId());
+
+    NoteReorder crossFolderReorder = new NoteReorder();
+    crossFolderReorder.setPageId(note1.getId());
+    crossFolderReorder.setWikiType(WIKI_TYPE_PORTAL);
+    crossFolderReorder.setWikiOwner(WIKI_OWNER);
+    crossFolderReorder.setSourceParentId(homePage.getId());
+    crossFolderReorder.setTargetParentId(folderA.getId());
+
+    crossFolderReorder.setTargetOrderedIds(Collections.singletonList(note1.getId()));
+    crossFolderReorder.setSourceOrderedIds(Collections.singletonList(note2.getId()));
+
+    storage.updateNotesPosition(crossFolderReorder);
+
+    restartTransaction();
+
+    PageEntity movedNote1 = pageDAO.find(Long.valueOf(note1.getId()));
+    PageEntity remainingNote2 = pageDAO.find(Long.valueOf(note2.getId()));
+
+    assertNotNull(movedNote1.getParentPage());
+    assertEquals(Long.parseLong(folderA.getId()), movedNote1.getParentPage().getId());
+
+    assertEquals(Integer.valueOf(1), movedNote1.getPosition());
+    assertEquals(Integer.valueOf(1), remainingNote2.getPosition());
+
+    assertNotNull(movedNote1.getMoves());
+    assertFalse(movedNote1.getMoves().isEmpty());
+    assertEquals(1, movedNote1.getMoves().size());
+    assertEquals(WIKI_OWNER, movedNote1.getMoves().getFirst().getWikiOwner());
+    assertEquals(note1.getName(), movedNote1.getMoves().getFirst().getPageName());
   }
 
   protected void startSessionAs(String user, Collection<MembershipEntry> memberships) {
