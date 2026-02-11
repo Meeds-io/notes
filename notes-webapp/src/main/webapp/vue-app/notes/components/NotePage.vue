@@ -27,12 +27,12 @@
       <div
         v-if="isAvailableNote"
         class="notes-application notes-application-content application-body overflow-hidden"
-        :class="treeViewExpended && 'ps-5'"
+        :class="treeViewExpended && 'ps-3'"
         ref="content">
         <div class="notes-application-header">
           <v-row
             no-gutters
-            class="mb-5">
+            class="mb-5 align-center">
             <v-col
               xl="10"
               lg="10"
