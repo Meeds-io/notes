@@ -32,7 +32,7 @@
       </v-sheet>
       <v-sheet
         v-if="treeViewExpended"
-        width="6"
+        width="8"
         class="d-flex align-center justify-center"
         style="cursor: col-resize;"
         @mousedown="startResize" />
