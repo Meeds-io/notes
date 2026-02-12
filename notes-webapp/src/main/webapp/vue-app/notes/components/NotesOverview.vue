@@ -580,8 +580,13 @@ export default {
     canScheduleNotePublication() {
       return this.note?.canManage || this.canSchedule;
     },
+    hasTranslations() {
+      return !!this.translations?.length;
+    },
     targetLang() {
-      return this.selectedTranslation?.value || this.lang;
+      return this.hasTranslations
+        ? (this.selectedTranslation?.value || this.lang)
+        : null;
     },
     parentPageId() {
       return this.note?.parentPageId;
@@ -1069,6 +1074,7 @@ export default {
     restoreVersion(version) {
       const note = {
         id: this.note.id,
+        name: version.name,
         title: version.title,
         content: version.content,
         updatedDate: version.updatedDate,

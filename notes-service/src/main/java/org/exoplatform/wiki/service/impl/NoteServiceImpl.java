@@ -2079,7 +2079,7 @@ public class NoteServiceImpl implements NoteService {
 
   private String getNoteTitleWithTraduction(Page note, Identity userIdentity, String source, String lang) throws WikiException,
                                                                                                           IllegalAccessException {
-    if (userIdentity == null || StringUtils.isEmpty(lang)) {
+    if (userIdentity == null) {
       return note.getTitle();
     }
     Page page = getNoteByIdAndLang(Long.valueOf(note.getId()), userIdentity, source, lang);
