@@ -294,8 +294,13 @@ public class TreeUtils {
     } else {
       if (!nodeData.isDraftPage()) {
         Page page = noteService.getNoteByIdAndLang(Long.valueOf(nodeData.getNoteId()), identity, "", locale.getLanguage());
-        if (page != null) {
+        if (page != null && page.getLang() != null) {
           nodeData.setName(page.getTitle());
+          return;
+        }
+        Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(nodeData.getNoteId()), null);
+        if (publishedVersion != null) {
+          nodeData.setName(publishedVersion.getTitle());
         }
       }
     }
