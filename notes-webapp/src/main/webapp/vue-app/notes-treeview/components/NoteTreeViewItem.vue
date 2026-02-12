@@ -40,9 +40,9 @@
           </v-icon>
         </v-list-item-icon>
         <v-list-item-icon
-          class="my-auto mr-2 expand-icon"
+          class="my-auto me-0 expand-icon align-center"
           @click.stop="toggle($event, item)">
-          <template v-if="item.hasChild">
+          <template>
             <note-treeview-sidebar-item-prepend
               :note="item"
               :space-note="spaceNote"
@@ -56,10 +56,17 @@
         <v-list-item-content>
           <v-list-item-title
             :class="[
-              'text-truncate',
+              'text-truncate d-flex align-center',
               { 'font-weight-medium primary--text': isActive(item) }
             ]">
-            {{ item.name }}
+            <exo-user-avatar
+              v-if="isHomePage && !spaceNote"
+              :profile-id="noteWikiOwner"
+              :size="24"
+              :popover="false"
+              extra-class="me-2 flex-shrink-0 not-clickable"
+              avatar />
+            <span class="text-truncate">{{ name }}</span>
           </v-list-item-title>
         </v-list-item-content>
       </v-list-item>
@@ -143,7 +150,10 @@ export default {
   },
   computed: {
     isHomePage() {
-      return this.item.nodeType === 'WIKIHOME';
+      return this.item?.nodeType === 'WIKIHOME';
+    },
+    name() {
+      return this.item?.name;
     }
   },
   watch: {
@@ -184,6 +194,10 @@ export default {
         return;
       }
       this.$emit('open-note', { event, note });
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     },
     handleChildOpenNote(payload) {
       this.$emit('open-note', payload);
