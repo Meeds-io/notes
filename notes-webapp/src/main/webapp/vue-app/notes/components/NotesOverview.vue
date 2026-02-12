@@ -579,13 +579,8 @@ export default {
     canScheduleNotePublication() {
       return this.note?.canManage || this.canSchedule;
     },
-    hasTranslations() {
-      return !!this.translations?.length;
-    },
     targetLang() {
-      return this.hasTranslations
-        ? (this.selectedTranslation?.value || this.lang)
-        : null;
+      return this.selectedTranslation?.value || this.lang;
     },
     parentPageId() {
       return this.note?.parentPageId;
