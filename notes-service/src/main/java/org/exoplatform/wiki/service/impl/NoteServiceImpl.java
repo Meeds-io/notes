@@ -2083,10 +2083,11 @@ public class NoteServiceImpl implements NoteService {
       return note.getTitle();
     }
     Page page = getNoteByIdAndLang(Long.valueOf(note.getId()), userIdentity, source, lang);
-    if (page != null) {
+    if (page != null && page.getLang() != null) {
       return page.getTitle();
     }
-    return note.getTitle();
+    Page publishedVersion = getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), null);
+    return Objects.requireNonNullElse(publishedVersion, note).getTitle();
   }
 
   private String getDraftNameSuffix(long clientTime) {

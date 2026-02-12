@@ -319,7 +319,7 @@ public class NotesRestService implements ResourceContainer {
       note.setBreadcrumb(noteService.getBreadCrumb(note.getWikiType(),
                                                    note.getWikiOwner(),
                                                    note.getName(),
-                                                   lang,
+                                                   request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
       return Response.ok(note).build();
