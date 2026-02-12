@@ -19,27 +19,15 @@
 
 -->
 <template>
-  <div class="d-flex flex-grow-1">
-    <v-btn
-      v-if="hasChild"
-      :loading="isLoading"
-      icon
-      @click="$emit('fetch-children', note)">
-      <v-icon
-        size="24">
-        {{ open ? 'mdi-menu-down' : 'mdi-menu-right' }}
-      </v-icon>
-    </v-btn>
-    <template v-if="isHomePage">
-      <exo-user-avatar
-        v-if="!spaceNote"
-        :profile-id="noteWikiOwner"
-        :size="24"
-        :popover="false"
-        extra-class="align-self-center"
-        avatar />
-    </template>
-  </div>
+  <v-btn
+    v-if="hasChild"
+    :loading="isLoading"
+    icon
+    @click="$emit('fetch-children', note)">
+    <v-icon size="20">
+      {{ open ? 'mdi-menu-down' : 'mdi-menu-right' }}
+    </v-icon>
+  </v-btn>
 </template>
 
 <script>
@@ -49,26 +37,10 @@ export default {
       type: Object,
       default: null
     },
-    noteWikiOwner: {
-      type: String,
-      default: null,
-    },
-    spaceGroupId: {
-      type: String,
-      default: null,
-    },
-    spaceNote: {
-      type: Boolean,
-      default: false
-    },
     open: {
       type: Boolean,
       default: false
     },
-    isDraftFilter: {
-      type: Boolean,
-      default: false
-    }
   },
   data() {
     return {
@@ -76,18 +48,12 @@ export default {
     };
   },
   computed: {
-    noteId() {
-      return this.note.noteId;
-    },
     hasChild() {
       return this.note.hasChild;
     },
     isLoading() {
       return this.note.isLoading;
     },
-    isHomePage() {
-      return this.note.nodeType === 'WIKIHOME';
-    }
   }
 };
 </script>
