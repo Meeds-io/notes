@@ -2,7 +2,7 @@
 
  This file is part of the Meeds project (https://meeds.io/).
 
- Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+ Copyright (C) 2020 - 2026 Meeds Association contact@meeds.io
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
     v-if="hasChild"
     :loading="isLoading"
     icon
+    small
     @click="$emit('fetch-children', note)">
     <v-icon size="20">
       {{ open ? 'mdi-menu-down' : 'mdi-menu-right' }}
