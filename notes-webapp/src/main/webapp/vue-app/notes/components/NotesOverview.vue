@@ -1071,6 +1071,7 @@ export default {
     restoreVersion(version) {
       const note = {
         id: this.note.id,
+        name: version.name,
         title: version.title,
         content: version.content,
         updatedDate: version.updatedDate,
