@@ -23,7 +23,8 @@
       <v-list-item
         :class="[
           'tree-item rounded mx-1 my-1',
-          { 'v-list-item--active primary--text': isActive(item) }
+          { 'v-list-item--active primary--text': isActive(item) },
+          { 'ps-1': level === 0 }
         ]"
         :style="{ paddingLeft: `${level * 20 + 8}px` }"
         :ripple="false"
@@ -39,7 +40,8 @@
             fas fa-grip-vertical
           </v-icon>
         </v-list-item-icon>
-        <v-list-item-icon
+        <v-list-item-avatar
+          size="30"
           class="my-auto me-0 expand-icon align-center"
           @click.stop="toggle($event, item)">
           <template>
@@ -52,7 +54,7 @@
               :is-draft-filter="isDraftFilter"
               class="align-center" />
           </template>
-        </v-list-item-icon>
+        </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title
             :class="[

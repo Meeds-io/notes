@@ -23,6 +23,7 @@
     v-if="hasChild"
     :loading="isLoading"
     icon
+    small
     @click="$emit('fetch-children', note)">
     <v-icon size="20">
       {{ open ? 'mdi-menu-down' : 'mdi-menu-right' }}
