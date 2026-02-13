@@ -696,6 +696,8 @@ export default {
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     this.$root.$on('duplicate-note', this.duplicateNote);
+
+    document.addEventListener('note-published', this.handleNotePublished);
   },
   mounted() {
     this.handleChangePages();
@@ -1058,7 +1060,7 @@ export default {
       this.actualVersion.current = true;
       this.note.content = version.content;
       this.note.title = version.title;
-      this.noteSummary = version.properties.summary;
+      this.noteSummary = version?.properties?.summary;
       this.note.properties = version.properties;
       this.noteTitle = version.title;
     },
