@@ -469,7 +469,7 @@ export function updateNotesOrder(payload) {
     if (resp?.ok) {
       return true;
     } else {
-      throw new Error('Error updating notes order:');
+      throw new Error('Error updating notes order');
     }
   });
 }
