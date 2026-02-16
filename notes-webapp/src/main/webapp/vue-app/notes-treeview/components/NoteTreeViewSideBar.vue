@@ -302,7 +302,8 @@ export default {
       }
     },
     getNoteById(id) {
-      if (id) {
+      if (id || !isNaN(Number(this.notesPageName))) {
+        id = id || this.notesPageName;
         return this.$notesService.getNoteById(id).then(data => {
           this.note = data || [];
           this.note.breadcrumb[0].title = this.noteHomeTitle;
