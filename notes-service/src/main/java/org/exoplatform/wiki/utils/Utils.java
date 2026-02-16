@@ -60,6 +60,7 @@ import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.application.PortalRequestContext;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.webui.util.Util;
@@ -70,8 +71,6 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityConstants;
-import org.exoplatform.services.security.IdentityRegistry;
-import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -669,25 +668,9 @@ public class Utils {
   public static org.exoplatform.services.security.Identity getIdentity(String username) {
     if (StringUtils.isBlank(username)) {
       return null;
+    } else {
+      return ExoContainerContext.getService(UserACL.class).getUserIdentity(username);
     }
-    IdentityRegistry identityRegistry = CommonsUtils.getService(IdentityRegistry.class);
-    org.exoplatform.services.security.Identity aclIdentity = identityRegistry.getIdentity(username);
-    if (aclIdentity == null) {
-      try {
-        OrganizationService organizationService = CommonsUtils.getService(OrganizationService.class);
-        List<MembershipEntry> entries = organizationService.getMembershipHandler()
-                                                           .findMembershipsByUser(username)
-                                                           .stream()
-                                                           .map(membership -> new MembershipEntry(membership.getGroupId(),
-                                                                                                  membership.getMembershipType()))
-                                                           .toList();
-        aclIdentity = new org.exoplatform.services.security.Identity(username, entries);
-        identityRegistry.register(aclIdentity);
-      } catch (Exception e) {
-        throw new IllegalStateException("Unable to retrieve user " + username + " memberships", e);
-      }
-    }
-    return aclIdentity;
   }
 
   public static Set<String> processMentions(String content, Space space) {
