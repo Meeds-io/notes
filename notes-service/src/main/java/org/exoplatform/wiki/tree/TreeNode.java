@@ -190,7 +190,6 @@ public class TreeNode {
   public void pushDescendants(Map<String, Object> context, String userId) throws Exception {
     addChildren(context, userId);
     pushChildren(context, userId);
-    this.children = this.children.stream().sorted((childItem1, childItem2) -> new NaturalComparator().compare(childItem1.getName(), childItem2.getName())).toList();
   }
   
   protected void addChildren(Map<String, Object> context, String userId) throws Exception {

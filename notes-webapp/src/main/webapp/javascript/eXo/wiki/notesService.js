@@ -456,3 +456,20 @@ export function markNoteAsViewed(noteId, lang){
     }
   });
 }
+
+export function updateNotesOrder(payload) {
+  return fetch(`${notesConstants.PORTAL}/${notesConstants.PORTAL_REST}/notes/reorder`, {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  }).then((resp) => {
+    if (resp?.ok) {
+      return true;
+    } else {
+      throw new Error('Error updating notes order');
+    }
+  });
+}

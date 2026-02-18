@@ -25,8 +25,6 @@ for (const index in objects) {
   }
 }
 
-Vue.use(Vuetify);
-const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
 const appId = 'notesOverviewApplication';
 
 //getting language of the PLF
@@ -43,13 +41,22 @@ if (!Vue.prototype.$notesService) {
 
 export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    const appElement = document.createElement('div');
-    appElement.id = appId;
     // init Vue app when locale ressources are ready
     Vue.createApp({
-      template: `<notes-overview v-cacheable id="${appId}" />`,
-      vuetify,
-      i18n
-    }, appElement, 'Notes Overview');
+      template: `<notes-overview id="${appId}" />`,
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+      computed: {
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        },
+        noteBookType() {
+          return eXo.env.portal.spaceName ? 'group' : 'user';
+        },
+        noteBookOwner() {
+          return eXo.env.portal.spaceGroup ? `/spaces/${eXo.env.portal.spaceGroup}` : eXo.env.portal.profileOwner;
+        }
+      },
+    }, `#${appId}`, 'Notes Overview');
   });
 }

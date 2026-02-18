@@ -12,9 +12,11 @@ import NotesActionMenuItems from './components/menu/NotesActionMenuItems.vue';
 import NotesMobileActionMenu from './components/menu/NotesMobileActionMenu.vue';
 import NoteTreeviewItemPrepend from './components/NoteTreeviewItemPrepend.vue';
 import NoteEditorFeaturedImageDrawer from '../notes-rich-editor/components/note-properties/NoteEditorFeaturedImageDrawer.vue';
+import NotePage from './components/NotePage.vue';
 
 const components = {
   'notes-overview': NotesOverview,
+  'notes-page': NotePage,
   'notes-actions-menu': NotesActionsMenu,
   'note-breadcrumb': NoteBreadcrumb,
   'note-import-drawer': NoteImportDrawer,
