@@ -13,10 +13,10 @@
       allow-expand
       class="breadcrumbDrawer"
       @closed="closeAllDrawer()">
-      <template v-if="drawerTitle" slot="title">
+      <template v-if="drawerTitle" #title>
         {{ drawerTitle }}
       </template>
-      <template v-else-if="isIncludePage && displayArrow" slot="title">
+      <template v-else-if="isIncludePage && displayArrow" #title>
         <div class="d-flex">
           <v-icon
             size="18"
@@ -26,16 +26,16 @@
           <span class="ps-2">{{ $t('notes.label.includePageTitle') }}</span>
         </div>
       </template>
-      <template v-else-if="movePage" slot="title">
+      <template v-else-if="movePage" #title>
         {{ $t('notes.label.movePageTitle') }}
       </template>
-      <template v-else-if="exportNotes" slot="title">
+      <template v-else-if="exportNotes" #title>
         {{ $t('notes.label.exportNotesTitle') }}
       </template>
-      <template v-else slot="title">
+      <template v-else #title>
         {{ $t('notes.label.breadcrumbTitle') }}
       </template>
-      <template v-if="exporting" slot="content">
+      <template v-if="exporting" #content>
         <v-card flat class="pa-2 mt-10">            
           <v-list>
             <v-list-item>
@@ -242,7 +242,7 @@
           </v-list>
         </v-card>
       </template>
-      <template slot="content" v-if="!exporting">
+      <template v-else #content>
         <v-layout v-if="movePage" column>
           <v-list-item>
             <v-list-item-content>
@@ -258,9 +258,22 @@
                   {{ $t('notes.label.movePageSpace') }}
                 </span>
               </div>
-              <div class="identitySuggester no-border mt-0">
+              <exo-identity-suggester
+                v-if="spaceSuggesterDisplay"
+                ref="audienceComposerSuggester"
+                v-model="spaceIdentity"
+                :labels="spaceSuggesterLabels"
+                :include-users="false"
+                :width="220"
+                name="audienceComposerSuggester"
+                class="user-suggester mt-n2"
+                include-spaces
+                only-redactor />
+              <div v-else class="identitySuggester no-border mt-0">
                 <v-chip
-                  class="identitySuggesterItem me-2 mt-2">
+                  class="identitySuggesterItem me-2 mt-2"
+                  close
+                  @click:close="spaceSuggester = true;spaceIdentity = null">
                   <span class="text-truncate">
                     {{ currentLocation }}
                   </span>
@@ -449,7 +462,7 @@
           </template>
         </v-col>
       </template>
-      <template v-if="movePage" slot="footer">
+      <template v-if="movePage" #footer>
         <div class="d-flex">
           <v-spacer />
           <v-btn
@@ -466,7 +479,7 @@
           </v-btn>
         </div>
       </template>
-      <template v-if="exportNotes" slot="footer">
+      <template v-else-if="exportNotes" #footer>
         <div class="d-flex">
           <v-spacer />
           <v-btn
@@ -535,7 +548,9 @@ export default {
     limit: 20,
     timeout: 1000,
     searchTimer: null,
-    enableMove: false
+    enableMove: false,
+    spaceIdentity: null,
+    spaceSuggester: false
   }),
   props: {
     selectedTranslation: {
@@ -602,11 +617,20 @@ export default {
       return this.settings?.showCurrentDestination ?? true;
     },
     currentLocation() {
-      return this.settings?.spaceDisplayName || this.spaceDisplayName || eXo.env.portal.siteLabel;
+      return this.spaceIdentity?.displayName || this.settings?.spaceDisplayName || this.spaceDisplayName || eXo.env.portal.siteLabel;
     },
     isEditMode() {
       return this.settings?.isEditMode ?? false;
-    }
+    },
+    spaceSuggesterLabels() {
+      return {
+        placeholder: this.$t('notes.label.audience.placeholder'),
+        noDataLabel: this.$t('notes.label.audience.noDataLabel'),
+      };
+    },
+    spaceSuggesterDisplay() {
+      return !this.spaceIdentity && this.spaceSuggester;
+    },
   },
   watch: {
     isLoading() {
@@ -626,6 +650,23 @@ export default {
         this.searchTerm();
       } else {
         this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.name);
+      }
+    },
+    async spaceIdentity() {
+      if (this.spaceIdentity) {
+        try {
+          const data = await this.$notesService.getNoteTreeLevel(`group${this.spaceIdentity?.groupId}/`);
+          if (data?.jsonList?.length > 0 && data.jsonList[0]?.parentPageId) {
+            const note = await this.$notesService.getNoteById(
+              data.jsonList[0].parentPageId
+            );
+            if (note?.name) {
+              this.retrieveNoteTree('group', this.spaceIdentity.groupId, note.name);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching space identity note tree:', error);
+        }
       }
     },
     filter() {
@@ -964,6 +1005,7 @@ export default {
     },
     close() {
       this.render = false;
+      this.spaceSuggester = false;
       this.$refs.breadcrumbDrawer.close();
       if (this.exporting){
         this.$root.$emit('cancel-export-notes');
