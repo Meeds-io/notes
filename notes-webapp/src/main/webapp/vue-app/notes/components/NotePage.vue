@@ -436,6 +436,13 @@ export default {
       sortField: 'lastUpdated',
     };
   },
+  provide() {
+    return {
+      fetchChildren: this.fetchChildren,
+      getNoteLanguages: this.getNoteLanguages,
+      openNoteChild: this.openNoteChild
+    };
+  },
   computed: {
     extensionParams() {
       return {
