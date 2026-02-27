@@ -487,7 +487,7 @@ export default {
       return this.note?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&versionNumber=${this.actualVersion?.versionNumber}&size=0x400`;
+      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x400`;
     },
     notesContentProcessor() {
       return {
@@ -505,56 +505,78 @@ export default {
                   dense>
                   <template #prepend="{ item, open }" >
                     <note-treeview-item-prepend
-                       :item="item"
-                       :open="open"
-                       @click="fetchChildren(item, $refs.noteTreeview)" />
+                        :item="item"
+                        :open="open"
+                        @click="handleFetchChildren(item, $refs.noteTreeview)" />
                   </template>
                   <template #label="{ item }">
                     <note-content-table-item
-                      :note="item"
-                      @open-note="openNoteChild"/>
+                        :note="item"
+                        @open-note="handleOpenNoteChild"/>
                   </template>
-                </v-treeview >`,
+                </v-treeview>`,
               props: {
-                noteId: 0,
-                source: '',
-                noteBookType: '',
-                noteBookOwner: ''
+                noteId: {
+                  type: Number,
+                  default: 0
+                },
+                source: {
+                  type: String,
+                  default: ''
+                },
+                noteBookType: {
+                  type: String,
+                  default: ''
+                },
+                noteBookOwner: {
+                  type: String,
+                  default: ''
+                }
               },
-              data: function () {
+              inject: ['fetchChildren', 'getNoteLanguages', 'openNoteChild'],
+              data() {
                 return {
                   noteChildItems: [],
-                  selectedTranslation: {value: eXo.env.portal.language},
+                  selectedTranslation: { value: eXo.env.portal.language },
                   note: null
                 };
               },
-              created: function () {
+              created() {
                 this.$nextTick().then(() => {
                   this.getNodeById(this.noteId, this.source, this.noteBookType, this.noteBookOwner);
                 });
               },
               methods: {
-                openNoteChild(item) {
-                  return this.$root.$children[0].openNoteChild(item);
+                handleOpenNoteChild(item) {
+                  if (typeof this.openNoteChild === 'function') {
+                    return this.openNoteChild(item);
+                  }
                 },
-                fetchChildren(item, treeview) {
-                  return this.$root.$children[0].fetchChildren(item, treeview);
+                handleFetchChildren(item, treeview) {
+                  if (typeof this.fetchChildren === 'function') {
+                    return this.fetchChildren(item, treeview);
+                  }
                 },
-                getNoteLanguages(noteId) {
-                  return this.$root.$children[0].getNoteLanguages(noteId);
+                handleGetNoteLanguages(noteId) {
+                  if (typeof this.getNoteLanguages === 'function') {
+                    return this.getNoteLanguages(noteId);
+                  }
                 },
                 getNodeById(noteId, source, noteBookType, noteBookOwner) {
-                  return this.$notesService.getNoteById(noteId,this.selectedTranslation.value, source, noteBookType, noteBookOwner).then(data => {
-                    this.note = data || {};
-                    this.getNoteLanguages(noteId);
-                    this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children').then(data => {
+                  return this.$notesService
+                    .getNoteById(noteId, this.selectedTranslation.value, source, noteBookType, noteBookOwner)
+                    .then(data => {
+                      this.note = data || {};
+                      this.handleGetNoteLanguages(noteId);
+                      return this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children');
+                    })
+                    .then(data => {
                       if (data?.jsonList?.length) {
                         this.noteChildItems = data.jsonList;
                       }
+                    }).catch(e => {
+                      console.error('Error when getting note', e);
                     });
-                  }).catch(e => {
-                    console.error('Error when getting note', e);
-                  });
                 }
               }
             }
