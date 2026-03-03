@@ -24,19 +24,21 @@
       <v-sheet
         v-if="treeViewExpended && !$root.isMobile"
         :width="sidebarWidth"
-        class="overflow-auto">
+        class="overflow-auto flex-shrink-0">
         <note-treeview-sideBar
           :tree-view-expended="treeViewExpended"
           :active-note-id="currentNoteId"
           @note-selected="onSelectNote" />
       </v-sheet>
       <v-sheet
-        v-if="treeViewExpended"
+        v-if="treeViewExpended && !$root.isMobile"
         width="8"
-        class="d-flex align-center justify-center"
+        class="d-flex align-center justify-center flex-shrink-0"
         style="cursor: col-resize;"
         @mousedown="startResize" />
-      <v-col class="pa-0">
+      <v-col
+        class="pa-0"
+        :style="notesColumnStyle">
         <notes-page
           :tree-view-expended="treeViewExpended"
           :note-id="currentNoteId" />
@@ -59,6 +61,22 @@ export default {
       startX: 0,
       startWidth: 0
     };
+  },
+  computed: {
+    notesColumnStyle() {
+      if (this.treeViewExpended && !this.$root.isMobile) {
+        const usedWidth = this.sidebarWidth + 8 + 40;
+        return {
+          width: `calc(100vw - ${usedWidth}px)`,
+          maxWidth: `calc(100vw - ${usedWidth}px)`,
+          minWidth: 0
+        };
+      }
+      return {
+        width: '100%',
+        minWidth: 0
+      };
+    }
   },
   created() {
     this.currentNoteId = this.getNoteIdFromUrl();
