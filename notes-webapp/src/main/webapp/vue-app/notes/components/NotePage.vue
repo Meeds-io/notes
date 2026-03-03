@@ -165,7 +165,7 @@
           <div class="notes-title">
             <p ref="noteTitle" class="title text-color text-break">
               <span>
-                {{ noteTitle }}
+                {{ noteTitleToDisplay }}
               </span>
               <span>
                 <notes-translation-menu
@@ -437,20 +437,6 @@ export default {
     };
   },
   computed: {
-    sortFields() {
-      return [
-        {value: 'lastUpdated', label: this.$t('documents.label.lastUpdated')},
-        {value: 'name', label: this.$t('documents.label.name')},
-        {value: 'size', label: this.$t('documents.label.size')}
-      ];
-    },
-    selectedSort() {
-      const item = this.sortFields.find(i => i.value === this.sortField);
-      return item ? item : null;
-    },
-    sortDirectionIcon() {
-      return this.ascending ? 'fa-arrow-down' : 'fa-arrow-up';
-    },
     extensionParams() {
       return {
         entityId: this.entityId,
@@ -652,6 +638,9 @@ export default {
     parentPageId() {
       return this.note?.parentPageId;
     },
+    noteTitleToDisplay() {
+      return this.note.title === 'Home' ? this.noteHomeTitle : this.note.title;
+    }
   },
   watch: {
     note() {
