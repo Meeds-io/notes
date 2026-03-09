@@ -96,6 +96,7 @@ export default {
     openNotes: [],
     activeItem: [],
     isIncludePage: false,
+    selectedNoteName: null,
     movePage: false,
     exportNotes: false,
     selectionNotes: [],
@@ -308,6 +309,7 @@ export default {
           this.note = data || [];
           this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
+          this.selectedNoteName = this.note?.name;
         }).then(() => {
           this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner , this.note.name);
         });
@@ -316,6 +318,7 @@ export default {
           this.note = data || [];
           this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
+          this.selectedNoteName = this.note?.name;
         }).then(() => {
           this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner , this.note.name);
         });
@@ -459,6 +462,7 @@ export default {
       if (!this.dragPayload) {
         this.dragPayload = {
           pageId: null,
+          pageName: null,
           wikiType: this.noteWikiType,
           wikiOwner: this.noteWikiOwner,
           sourceParentId: null,
@@ -469,17 +473,20 @@ export default {
       }
       if (event.moved) {
         this.dragPayload.pageId = event.moved.element.noteId;
+        this.dragPayload.pageName = this.selectedNoteName;
         this.dragPayload.sourceParentId = parentId;
         this.dragPayload.targetParentId = parentId;
         this.dragPayload.targetOrderedIds = items.map(item => item.noteId);
       }
       else if (event.added) {
         this.dragPayload.pageId = event.added.element.noteId;
+        this.dragPayload.pageName = this.selectedNoteName;
         this.dragPayload.targetParentId = parentId;
         this.dragPayload.targetOrderedIds = items.map(item => item.noteId);
       }
       else if (event.removed) {
         this.dragPayload.pageId = event.removed.element.noteId;
+        this.dragPayload.pageName = this.selectedNoteName;
         this.dragPayload.sourceParentId = parentId;
         this.dragPayload.sourceOrderedIds = items.map(item => item.noteId);
       }
@@ -497,9 +504,7 @@ export default {
       this.$notesService.updateNotesOrder(requestData)
         .then(() => {
           this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
-          if (requestData.sourceParentId !== requestData.targetParentId) {
-            this.parentUpdated = true;
-          }
+          this.$root.$emit('reorder-notes', requestData);
         })
         .catch(() => {
           this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
@@ -550,6 +555,7 @@ export default {
       const canOpenNote = (!this.isDraftFilter || (this.isDraftFilter && note.draftPage))
           && (isEditDifferentNote || isNotCurrentNote);
       if (canOpenNote) {
+        this.selectedNoteName = note.path.split('%2F').pop();
         this.activeItem = [note.noteId];
         if (this.includePage) {
           this.$root.$emit('include-page', note);
