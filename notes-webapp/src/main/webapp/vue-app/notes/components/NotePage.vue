@@ -67,13 +67,13 @@
               </div>
             </v-col>
             <v-col
+              id="note-actions-menu"
               xl="2"
               lg="2"
               md="3"
               sm="4"
               cols="6">
               <div
-                id="note-actions-menu"
                 v-if="loadData && !hideElementsForSavingPDF"
                 class="notes-header-icons text-right d-flex justify-end">
                 <div
