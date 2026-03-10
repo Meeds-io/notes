@@ -1108,7 +1108,7 @@ export default {
             console.error('Error when exporting note: ', e);
           });
         });
-      }, 200);
+      }, 400);
     },
     displayMessage(message) {
       this.$root.$emit('alert-message', message?.message, message?.type || 'success');
