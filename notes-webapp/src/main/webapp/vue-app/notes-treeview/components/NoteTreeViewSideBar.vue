@@ -210,14 +210,19 @@ export default {
   },
   created() {
     this.$root.$on('notes-filter-update', this.updateFilter);
+    this.$root.$on('note-moved', this.refreshTreeview);
     this.getNoteById(this.activeNoteId);
   },
   beforeDestroy() {
     this.$root.$off('notes-filter-update', this.updateFilter);
+    this.$root.$off('note-moved', this.refreshTreeview);
   },
   methods: {
     updateFilter(filter) {
       this.filter = filter;
+    },
+    refreshTreeview() {
+      this.getNoteById(this.activeNoteId);
     },
     handleOpenNote(payload) {
       const { event, note } = payload;
