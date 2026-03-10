@@ -39,9 +39,6 @@
       @filter-button-click="$root.$emit('notes-filter-open', filter)"
       @filter-expand="filterExpand = $event"
       @loading="$emit('loading', $event)">
-      <template #left>
-        <span class="text-header">{{ $t('notes.label.tree') }}</span>
-      </template>
     </application-toolbar>
     <v-tooltip v-if="!filterExpand" bottom>
       <template #activator="{ on, attrs }">
