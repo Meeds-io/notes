@@ -732,6 +732,7 @@ export default {
       this.importNotes(uploadId,overrideMode);
     });
     window.addEventListener('popstate', this.handlePopstate);
+    this.$root.$on('reorder-notes', this.handleReorder);
     this.$root.$on('update-note-title', this.updateNoteTitle);
     this.$root.$on('update-note-content', this.updateNoteContent);
     this.$root.$on('update-note-summary', this.updateNoteSummary);
@@ -845,6 +846,11 @@ export default {
         this.updateSelectedTranslation(event?.state?.translation);
       }
       this.handleChangePages();
+    },
+    handleReorder(requestData) {
+      if (requestData.sourceParentId !== requestData.targetParentId && requestData.pageId === this.note.id && !!requestData.pageName) {
+        this.getNoteByName(requestData.pageName,'tree',true);
+      }
     },
     handleChangePages() {
       if (this.noteId) {

@@ -40,8 +40,7 @@
         class="pa-0"
         :style="notesColumnStyle">
         <notes-page
-          :tree-view-expended="treeViewExpended"
-          :note-id="currentNoteId" />
+          :tree-view-expended="treeViewExpended" />
       </v-col>
     </v-row>
     <note-treeview-filter-drawer />
