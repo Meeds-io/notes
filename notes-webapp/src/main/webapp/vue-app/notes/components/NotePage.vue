@@ -897,6 +897,7 @@ export default {
       note.parentPageId=newParentNote.id;
       this.$notesService.moveNotes(note, newParentNote).then(() => {
         this.getNoteByName(note.name);
+        this.$root.$emit('note-moved');
         this.$root.$emit('close-note-tree-drawer');
         this.$root.$emit('show-alert', {type: 'success',message: this.$t('notes.alert.success.label.noteMoved')});
       }).catch(e => {
