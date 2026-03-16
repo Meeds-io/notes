@@ -67,13 +67,13 @@
               </div>
             </v-col>
             <v-col
+              id="note-actions-menu"
               xl="2"
               lg="2"
               md="3"
               sm="4"
               cols="6">
               <div
-                id="note-actions-menu"
                 v-if="loadData && !hideElementsForSavingPDF"
                 class="notes-header-icons text-right d-flex justify-end">
                 <div
@@ -1108,7 +1108,7 @@ export default {
             console.error('Error when exporting note: ', e);
           });
         });
-      }, 200);
+      }, 400);
     },
     displayMessage(message) {
       this.$root.$emit('alert-message', message?.message, message?.type || 'success');
