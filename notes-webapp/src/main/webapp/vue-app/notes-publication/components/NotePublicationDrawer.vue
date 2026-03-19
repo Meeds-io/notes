@@ -136,6 +136,12 @@
                               popover />
                           </div>
                         </div>
+                        <category-input
+                          :key="drawer"
+                          v-if="publicationSettings.post"
+                          v-model="publicationSettings.selectedCategoryIds" 
+                          label-class="font-weight-bold" 
+                          :label="categoryInputLabel"/>
                         <note-publish-option
                           v-if="publishAllowed"
                           :allowed-targets="allowedTargets"
@@ -215,7 +221,8 @@ export default {
       expanded: false,
       summaryMaxLength: 1300,
       publicationSettings: {
-        post: true
+        post: true,
+        selectedCategoryIds: []
       },
       scheduleSettings: {},
       advancedSettings: {},
@@ -286,6 +293,9 @@ export default {
     },
     isPublishNow() {
       return this.editMode && this.scheduleSettings?.editScheduleAction === 'publish_now';
+    },
+    categoryInputLabel() {
+      return this.publicationSettings?.selectedCategoryIds?.length && 'categoryInput.drawer.manageCategories' || 'activityStream.label.addCategories';
     }
   },
   watch: {
@@ -317,6 +327,7 @@ export default {
     updatedPublicationSettings(settings) {
       this.publicationSettings = structuredClone({
         post: this.publicationSettings.post,
+        selectedCategoryIds: this.publicationSettings.selectedCategoryIds,
         scheduleSettings: this.publicationSettings.scheduleSettings,
         advancedSettings: this.publicationSettings.advancedSettings
       });
@@ -385,6 +396,7 @@ export default {
     },
     clonePublicationSettings() {
       this.publicationSettings.post = this.noteObject?.activityPosted;
+      this.publicationSettings.selectedCategoryIds = this.noteObject?.categories;
       this.publicationSettings.scheduleSettings = this.scheduleSettings;
       this.publicationSettings.advancedSettings = this.advancedSettings;
       this.publicationSettings.publish = this.noteObject?.published;
