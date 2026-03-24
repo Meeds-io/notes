@@ -776,6 +776,7 @@ export default {
       noteArticle.schedulePostDate = scheduleSettings?.postDate;
       noteArticle.scheduleUnpublishDate = scheduleSettings?.unpublishDate;
       noteArticle.activityPosted = publicationSettings?.post;
+      noteArticle.categories = publicationSettings?.selectedCategoryIds;
       noteArticle.published = publicationSettings?.publish;
       noteArticle.targets = publicationSettings?.selectedTargets;
       noteArticle.audience = publicationSettings?.selectedAudience;
