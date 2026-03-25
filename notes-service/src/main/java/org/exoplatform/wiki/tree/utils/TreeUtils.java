@@ -18,6 +18,7 @@
  */
 package org.exoplatform.wiki.tree.utils;
 
+import java.text.Collator;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -130,6 +131,7 @@ public class TreeUtils {
       children.add(jsonNodeData);
       counter++;
     }
+    sortNodes(children, locale);
     return children;
   }
   
@@ -311,5 +313,19 @@ public class TreeUtils {
       resourceBundleService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ResourceBundleService.class);
     }
     return resourceBundleService;
+  }
+
+  private static void sortNodes(List<JsonNodeData> nodes, Locale locale) {
+    if (nodes == null || nodes.isEmpty()) {
+      return;
+    }
+    Collator collator = Collator.getInstance(locale);
+    collator.setStrength(Collator.PRIMARY);
+
+    nodes.sort((a, b) -> {
+      String nameA = a.getName() != null ? a.getName() : "";
+      String nameB = b.getName() != null ? b.getName() : "";
+      return collator.compare(nameA, nameB);
+    });
   }
 }
