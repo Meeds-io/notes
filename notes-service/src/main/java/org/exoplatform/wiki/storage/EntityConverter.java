@@ -147,6 +147,7 @@ public class EntityConverter {
       page.setActivityId(pageEntity.getActivityId());
       page.setDeleted(pageEntity.isDeleted());
       page.setUrl(Utils.getPageUrl(page));
+      page.setPosition(pageEntity.getPosition());
       buildNotePageMetadata(page, page.isDraftPage(), String.valueOf(pageEntity.getId()));
     }
     return page;

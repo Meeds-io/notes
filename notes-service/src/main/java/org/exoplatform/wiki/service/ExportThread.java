@@ -195,7 +195,8 @@ import io.meeds.notes.model.NotePageProperties;
                                                                          note.getComment(),
                                                                          note.getWikiId(),
                                                                          note.getWikiType(),
-                                                                         note.getWikiOwner()),
+                                                                         note.getWikiOwner(),
+                                                                         note.getPosition()),
                                                         exportId);
             if (noteToExport == null) {
               exportResource = notesExportService.getExportRessourceById(exportId);
@@ -233,7 +234,8 @@ import io.meeds.notes.model.NotePageProperties;
                                                          note.getComment(),
                                                          note.getWikiId(),
                                                          note.getWikiType(),
-                                                         note.getWikiOwner());
+                                                         note.getWikiOwner(),
+                                                         note.getPosition());
             noteToExport.setProperties(note.getProperties());
             noteToExport.setContent(processImagesForExport(note));
             noteToExport.setContent(processNotesLinkForExport(noteToExport));
