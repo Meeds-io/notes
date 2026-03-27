@@ -59,6 +59,8 @@ public class NoteToExport {
 
   private NotePageProperties properties;
 
+  private Integer            position;
+
   public NoteToExport() {
   }
 
@@ -76,7 +78,8 @@ public class NoteToExport {
                       String comment,
                       String wikiId,
                       String wikiType,
-                      String wikiOwner) {
+                      String wikiOwner,
+                      Integer position) {
     this();
     this.id = id;
     this.name = name;
@@ -89,6 +92,7 @@ public class NoteToExport {
     this.wikiId = wikiId;
     this.wikiType = wikiType;
     this.wikiOwner = wikiOwner;
+    this.position = position;
   }
 
   public NoteToExport(NoteToExport noteToExport) {
@@ -106,6 +110,7 @@ public class NoteToExport {
     this.children = noteToExport.getChildren();
     this.parent = noteToExport.getParent();
     this.ancestors = noteToExport.getAncestors();
+    this.position = noteToExport.getPosition();
   }
 
 }
