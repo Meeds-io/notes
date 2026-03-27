@@ -34,8 +34,8 @@
             no-gutters
             class="mb-5 align-center">
             <v-col
-              xl="10"
-              lg="10"
+              xl="9"
+              lg="9"
               md="9"
               sm="8"
               cols="6">
@@ -68,8 +68,8 @@
             </v-col>
             <v-col
               id="note-actions-menu"
-              xl="2"
-              lg="2"
+              xl="3"
+              lg="3"
               md="3"
               sm="4"
               cols="6">
