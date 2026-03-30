@@ -772,6 +772,7 @@ public class NoteServiceImpl implements NoteService {
     page.setWikiId(note.getWikiId());
     page.setWikiOwner(note.getWikiOwner());
     page.setWikiType(note.getWikiType());
+    page.setPosition(note.getPosition());
 
     Page parent = getParentNoteOf(page);
     if (parent == null) {
@@ -787,7 +788,8 @@ public class NoteServiceImpl implements NoteService {
                             parent.getComment(),
                             parent.getWikiId(),
                             parent.getWikiType(),
-                            parent.getWikiOwner());
+                            parent.getWikiOwner(),
+                            parent.getPosition());
   }
 
   /**
@@ -852,7 +854,8 @@ public class NoteServiceImpl implements NoteService {
                                     child.getComment(),
                                     child.getWikiId(),
                                     child.getWikiType(),
-                                    child.getWikiOwner()));
+                                    child.getWikiOwner(),
+                                    child.getPosition()));
     }
     return children;
   }

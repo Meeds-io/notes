@@ -108,6 +108,8 @@ public class Page{
 
   private String                          attachmentObjectType;
 
+  private Integer                         position;
+
   public Page(String name) {
     this.name = name;
   }
@@ -177,5 +179,7 @@ public class Page{
     // Shallow copy
     this.properties = other.properties;
     this.attachmentObjectType = other.attachmentObjectType;
+
+    this.position = other.position;
   }
 }
