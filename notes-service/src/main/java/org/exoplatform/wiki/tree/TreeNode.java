@@ -18,6 +18,7 @@
  */
 package org.exoplatform.wiki.tree;
 
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.wiki.model.Page;
@@ -27,7 +28,7 @@ import org.exoplatform.wiki.utils.Utils;
 
 import java.util.*;
 
-
+@Data
 public class TreeNode { 
 
   protected String           name;
@@ -43,6 +44,8 @@ public class TreeNode {
   protected TreeNodeType     nodeType;
 
   protected List<TreeNode>   children        = new ArrayList<TreeNode>();
+
+  protected Integer          position;
 
   final static public String STACK_PARAMS    = "stackParams";
   
@@ -79,66 +82,6 @@ public class TreeNode {
   public TreeNode(String name, TreeNodeType nodeType) {    
     this.name = name;
     this.nodeType = nodeType;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public TreeNodeType getNodeType() {
-    return nodeType;
-  }
-
-  public void setNodeType(TreeNodeType nodeType) {
-    this.nodeType = nodeType;
-  }
-
-  public boolean isHasChild() {
-    return hasChild;
-  }
-
-  public void setHasChild(boolean hasChild) {
-    this.hasChild = hasChild;
-  }
-
-  public List<TreeNode> getChildren() {
-    return children;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public boolean isSelected() {
-    return isSelected;
-  }
-
-  public void setSelected(boolean isSelected) {
-    this.isSelected = isSelected;
-  }
-
-  public void setChildren(List<TreeNode> children) {
-    this.children = children;
-  }
-
-  public String getPath() {
-    return path;
-  }
-  
-  public boolean isRetricted() {
-    return isRetricted;
-  }
-
-  public void setRetricted(boolean isRetricted) {
-    this.isRetricted = isRetricted;
   }
 
   @Override
@@ -180,16 +123,24 @@ public class TreeNode {
     } else if (!nodeType.equals(other.nodeType))
       return false;
     if (path == null) {
-      if (other.path != null)
-        return false;
-    } else if (!path.equals(other.path))
-      return false;
-    return true;
-  } 
-  
-  public void pushDescendants(Map<String, Object> context, String userId) throws Exception {
+      return other.path == null;
+    } else
+      return path.equals(other.path);
+  }
+
+  public void pushDescendants(Map<String, Object> context, String userId, Locale locale) throws Exception {
     addChildren(context, userId);
-    pushChildren(context, userId);
+    pushChildren(context, userId, locale);
+
+    boolean isDefaultSort = this.children.stream()
+            .allMatch(child -> child.getPosition() == null);
+
+    if (isDefaultSort) {
+      // Sort naturally by name only if all positions are null
+      this.children = this.children.stream()
+              .sorted((c1, c2) -> new NaturalComparator(locale).compare(c1.getName(), c2.getName()))
+              .toList();
+    }
   }
   
   protected void addChildren(Map<String, Object> context, String userId) throws Exception {
@@ -209,10 +160,10 @@ public class TreeNode {
     return childrenNUm;
   }
   
-  private void pushChildren(Map<String, Object> context, String userId) throws Exception {
+  private void pushChildren(Map<String, Object> context, String userId, Locale locale) throws Exception {
     Deque<WikiPageParams> paramsStk = (Deque<WikiPageParams>) context.get(STACK_PARAMS);
     if (paramsStk == null) {
-      pushChild(context, userId);
+      pushChild(context, userId, locale);
     } else {
       if (paramsStk.isEmpty()) {
         this.isSelected = true;
@@ -222,23 +173,23 @@ public class TreeNode {
         context.put(STACK_PARAMS, paramsStk);
         if (this instanceof RootTreeNode) {
           SpaceTreeNode spaceNode = new SpaceTreeNode(params.getType());
-          pushChild(spaceNode, context, userId);
+          pushChild(spaceNode, context, userId, locale);
         } else if (this instanceof SpaceTreeNode) {
           Wiki wiki = (Wiki) Utils.getObjectFromParams(params);
           WikiTreeNode wikiNode = new WikiTreeNode(wiki);
-          pushChild(wikiNode, context, userId);
+          pushChild(wikiNode, context, userId, locale);
         } else if (this instanceof WikiTreeNode) {
-          pushChild(context, userId);
+          pushChild(context, userId, locale);
         } else if (this instanceof WikiHomeTreeNode || this instanceof PageTreeNode) {
           Page page = (Page) Utils.getObjectFromParams(params);
           PageTreeNode pageNode = new PageTreeNode(page);
-          pushChild(pageNode, context, userId);
+          pushChild(pageNode, context, userId, locale);
         }
       }
     }
   }
   
-  private void pushChild(TreeNode child, Map<String, Object> context, String userId) throws Exception {
+  private void pushChild(TreeNode child, Map<String, Object> context, String userId, Locale locale) throws Exception {
     Boolean showDesCdt = (Boolean) context.get(SHOW_DESCENDANT);
 
     String depthCdt = (String) context.get(DEPTH);
@@ -253,9 +204,9 @@ public class TreeNode {
         for (int i = 0; i < children.size(); i++) {
           temp = children.get(i);
           if (child == null) {
-            temp.pushDescendants(context, userId);
+            temp.pushDescendants(context, userId, locale);
           } else if (child.equals(temp)) {
-            temp.pushDescendants(context, userId);
+            temp.pushDescendants(context, userId, locale);
             return;
           }
         }
@@ -263,8 +214,8 @@ public class TreeNode {
     }
   }
 
-  private void pushChild(Map<String, Object> context, String userId) throws Exception {
-    pushChild(null, context, userId);
+  private void pushChild(Map<String, Object> context, String userId, Locale locale) throws Exception {
+    pushChild(null, context, userId, locale);
   }
 
   public String buildPath() {

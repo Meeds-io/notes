@@ -28,8 +28,6 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.core.space.model.Space;
-import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PermissionType;
 import org.exoplatform.wiki.service.NoteService;
@@ -38,27 +36,25 @@ import org.exoplatform.wiki.tree.utils.TreeUtils;
 import org.exoplatform.wiki.utils.Utils;
 
 public class PageTreeNode extends TreeNode {
+
   private static final Log log = ExoLogger.getLogger(PageTreeNode.class);
 
   @Setter
   @Getter
-  private Page page;
+  private Page             page;
 
-  private NoteService noteService;
-  
-  private SpaceService spaceService;
+  private NoteService      noteService;
 
-  public PageTreeNode(Page page) throws Exception {
+  public PageTreeNode(Page page) {
     super(page.getTitle(), TreeNodeType.PAGE);
 
     this.noteService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NoteService.class);
-    
-    this.spaceService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(SpaceService.class);
 
     this.page = page;
     this.id = page.getId();
     this.path = buildPath();
     this.hasChild = !page.isDraftPage() && noteService.hasChildren(Long.parseLong(page.getId()));
+    this.position = page.getPosition();
   }
 
   @Override

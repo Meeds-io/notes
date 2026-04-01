@@ -1496,7 +1496,7 @@ public class NotesRestService implements ResourceContainer {
   private List<JsonNodeData> getJsonTree(WikiPageParams params, Map<String, Object> context, Identity identity, Locale locale) throws Exception {
     Wiki noteBook = noteBookService.getWikiByTypeAndOwner(params.getType(), params.getOwner());
     WikiTreeNode noteBookNode = new WikiTreeNode(noteBook);
-    noteBookNode.pushDescendants(context, ConversationState.getCurrent().getIdentity().getUserId());
+    noteBookNode.pushDescendants(context, ConversationState.getCurrent().getIdentity().getUserId(), locale);
     return TreeUtils.tranformToJson(noteBookNode, context, identity, locale);
   }
 
@@ -1504,7 +1504,7 @@ public class NotesRestService implements ResourceContainer {
                                                 Map<String, Object> context,
                                                 Identity identity,
                                                 Locale locale) throws Exception {
-    TreeNode treeNode = TreeUtils.getDescendants(params, context, ConversationState.getCurrent().getIdentity().getUserId());
+    TreeNode treeNode = TreeUtils.getDescendants(params, context, ConversationState.getCurrent().getIdentity().getUserId(), locale);
     return TreeUtils.tranformToJson(treeNode, context, identity, locale);
   }
 
