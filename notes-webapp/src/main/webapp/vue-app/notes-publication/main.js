@@ -9,3 +9,6 @@ if (extensionRegistry) {
     });
   }
 }
+Vue.prototype.$utils.includeExtensions('PublicationExtensions');
+
+
