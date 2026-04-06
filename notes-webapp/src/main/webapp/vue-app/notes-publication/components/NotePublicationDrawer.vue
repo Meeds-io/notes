@@ -76,6 +76,15 @@
                           :has-featured-image="hasFeaturedImage"
                           :summary-max-length="summaryMaxLength"
                           @properties-updated="propertiesUpdated" />
+                        <template v-for="(component) in publishExtensions">
+                          <extension-registry-component
+                            :key="component.componentOptions.id"
+                            :component="component"
+                            :params="{
+                              spaceId: spaceId,
+                              expanded: expanded
+                            }" />
+                        </template>
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -141,7 +150,7 @@
                           v-if="publicationSettings.post"
                           v-model="publicationSettings.selectedCategoryIds" 
                           label-class="font-weight-bold" 
-                          :label="categoryInputLabel"/>
+                          :label="categoryInputLabel" />
                         <note-publish-option
                           v-if="publishAllowed"
                           :allowed-targets="allowedTargets"
@@ -180,6 +189,17 @@
                           }"
                           ref="advancedOption"
                           @update="updateAdvancedSettings" />
+                        <div v-if="editMode">
+                          <template v-for="(component) in publishExtensions">
+                            <extension-registry-component
+                              :key="component.componentOptions.id"
+                              :component="component"
+                              :params="{
+                                spaceId: spaceId,
+                                expanded: expanded
+                              }" />
+                          </template>
+                        </div>
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -228,7 +248,8 @@ export default {
       advancedSettings: {},
       currentPublicationSettings: {},
       currentScheduleSettings: {},
-      currentAdvancedSettings: {}
+      currentAdvancedSettings: {},
+      publishExtensions: []
     };
   },
   props: {
@@ -309,6 +330,8 @@ export default {
     }
   },
   created() {
+    this.loadPublishExtensions();
+    document.addEventListener('content-publication-extensions-updated', this.loadPublishExtensions);
     const lang = eXo.env.portal.language;
     const urls = `/content/i18n/locale.portlet.notes.notesPortlet?lang=${lang}`;
 
@@ -316,7 +339,13 @@ export default {
       .then(() => this.$nextTick())
       .finally(() => this.loading = false);
   },
+  beforeDestroy() {
+    document.removeEventListener('content-publication-extensions-updated', this.loadPublishExtensions);
+  },
   methods: {
+    loadPublishExtensions() {
+      this.publishExtensions = extensionRegistry.loadComponents('ContentPublication');
+    },
     updateAdvancedSettings(settings) {
       this.advancedSettings = structuredClone(settings);
       this.publicationSettings.advancedSettings = this.advancedSettings;
