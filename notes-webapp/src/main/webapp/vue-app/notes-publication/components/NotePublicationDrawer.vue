@@ -82,7 +82,8 @@
                             :component="component"
                             :params="{
                               spaceId: spaceId,
-                              expanded: expanded
+                              expanded: expanded,
+                              content: noteObject
                             }" />
                         </template>
                       </div>
@@ -196,7 +197,8 @@
                               :component="component"
                               :params="{
                                 spaceId: spaceId,
-                                expanded: expanded
+                                expanded: expanded,
+                                content: noteObject
                               }" />
                           </template>
                         </div>
@@ -249,7 +251,9 @@ export default {
       currentPublicationSettings: {},
       currentScheduleSettings: {},
       currentAdvancedSettings: {},
-      publishExtensions: []
+      publishExtensions: [],
+      extensionsContext: {},
+      extensionsUpdated: false
     };
   },
   props: {
@@ -270,6 +274,16 @@ export default {
       default: null
     }
   },
+  provide() {
+    return {
+      registerExtensionContext: (id, instance) => {
+        this.extensionsContext[id] = instance;
+      },
+      notifyExtensionUpdated: () => {
+        this.extensionsUpdated = true;
+      }
+    };
+  },
   computed: {
     publishAllowed() {
       return this.canPublish && this.allowedTargets?.length;
@@ -278,7 +292,7 @@ export default {
       return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || this.publicationSettings.post || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
+      return (!this.editMode || this.publicationSettingsUpdated || this.extensionsUpdated) && this.validPublishSettings;
     },
     validPublishSettings() {
       return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
@@ -463,20 +477,75 @@ export default {
       this.publicationSettings = {post: true};
     },
     reset() {
+      this.extensionsUpdated = false;
       setTimeout(() => {
         this.cancelChanges();
+        this.resetExtensions();
       }, 1000);
       this.$emit('closed');
     },
     cancel() {
+      this.resetExtensions();
       this.close();
       setTimeout(() => {
         this.$refs.propertiesForm.cancelChanges();
       }, 1000);
     },
+    extractExtensionsCallBacks() {
+      return this.publishExtensions
+        .filter(ext => typeof ext?.componentOptions?.execute === 'function')
+        .map(ext => ({
+          id: `extension_${ext.componentOptions.id}`,
+          execute: ext.componentOptions.execute,
+        }));
+    },
+    getExtensionsContextMap() {
+      const contextMap = {};
+      Object.keys(this.extensionsContext).forEach(id => {
+        const context = this.extensionsContext[id]?.getContext?.();
+        if (context) {
+          contextMap[id] = context;
+        }
+      });
+      return contextMap;
+    },
+    async executeExtensions(extensions) {
+      const contextMap = this.getExtensionsContextMap();
+      const results = await Promise.all(
+        extensions.map(async (ext) => {
+          const context = contextMap[ext.id];
+          if (!ext?.execute) {
+            return null;
+          }
+          const result = await ext.execute(context, this.noteObject);
+          return {ext, result};
+        })
+      );
+
+      const metadata = {};
+
+      for (const item of results) {
+        if (!item) {
+          continue;
+        }
+        const {result} = item;
+        if (result?.data) {
+          Object.assign(metadata, result.data);
+        }
+      }
+      return metadata;
+    },
+    resetExtensions() {
+      Object.values(this.extensionsContext).forEach(instance => {
+        instance?.reset?.();
+      });
+    },
     save() {
+      const extensionsCallBack = {
+        executeExtensions: async () => await this.executeExtensions(this.extractExtensionsCallBacks()),
+      };
       if (this.editMode) {
-        this.$emit('publish', this.publicationSettings);
+        this.$emit('publish', this.publicationSettings, extensionsCallBack);
         return;
       }
       if (!this.expanded && this.stepper === 1) {
@@ -484,7 +553,7 @@ export default {
         return;
       }
       this.$emit('metadata-updated', this.noteObject.properties);
-      this.$emit('publish', this.publicationSettings, this.noteObject,);
+      this.$emit('publish', this.publicationSettings, this.noteObject, extensionsCallBack);
     },
     updateCurrentNoteObjectProperties(properties) {
       this.noteObject.properties.noteId = Number(properties.noteId);
