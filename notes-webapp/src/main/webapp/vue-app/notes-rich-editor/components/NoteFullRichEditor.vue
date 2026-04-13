@@ -411,12 +411,12 @@ export default {
       }
       this.postAndPublishNote();
     },
-    postAndPublishNote(publicationSettings, note) {
+    postAndPublishNote(publicationSettings, note, extensionsCallback) {
       if (this.publicationParams) {
         this.noteObject = note;
         this.updateData();
       }
-      this.$emit('post-note', publicationSettings);
+      this.$emit('post-note', publicationSettings, extensionsCallback);
     },
     resetEditorData() {
       this.noteObject.title = null;

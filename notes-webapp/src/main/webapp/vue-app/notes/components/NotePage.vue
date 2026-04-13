@@ -770,7 +770,7 @@ export default {
     document.removeEventListener('note-published', this.handleNotePublished);
   },
   methods: {
-    publishNote(publicationSettings, note) {
+    publishNote(publicationSettings, note, extensionsCallback) {
       const scheduleSettings = publicationSettings?.scheduleSettings;
       const noteArticle = structuredClone(note || this.note);
       noteArticle.schedulePostDate = scheduleSettings?.postDate;
@@ -788,7 +788,9 @@ export default {
           document.dispatchEvent(new CustomEvent('publish-note', {
             detail: {
               editPublication: false,
-              article: noteArticle
+              article: noteArticle,
+              scheduleSettings: null,
+              extensionsCallback
             }
           }));
         });
@@ -798,6 +800,7 @@ export default {
             editPublication: true,
             article: noteArticle,
             scheduleSettings: scheduleSettings,
+            extensionsCallback
           }
         }));
       }
