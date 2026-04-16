@@ -545,7 +545,7 @@ export default {
         executeExtensions: async () => await this.executeExtensions(this.extractExtensionsCallBacks()),
       };
       if (this.editMode) {
-        this.$emit('publish', this.publicationSettings, extensionsCallBack);
+        this.$emit('publish', this.publicationSettings, null, extensionsCallBack);
         return;
       }
       if (!this.expanded && this.stepper === 1) {
