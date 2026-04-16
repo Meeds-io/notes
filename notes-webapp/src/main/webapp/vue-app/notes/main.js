@@ -58,5 +58,6 @@ export function init() {
         }
       },
     }, `#${appId}`, 'Notes Overview');
+    Vue.prototype.$utils.includeExtensions('PublicationExtensions');
   });
 }
