@@ -1036,10 +1036,6 @@ public class NoteServiceImpl implements NoteService {
       } catch (Exception e) {
         log.error("Error while saving note version language metadata", e);
       }
-      if (broadcast) {
-        String versionLangId = note.getId() + "-" + note.getLang();
-        postUpdatePageVersionLanguage(versionLangId);
-      }
     } else {
       pageVersion.setId(note.getId() + "-" + pageVersion.getName());
       copyNotePageProperties(note,
@@ -1049,6 +1045,10 @@ public class NoteServiceImpl implements NoteService {
                              NOTE_METADATA_PAGE_OBJECT_TYPE,
                              NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE,
                              userName);
+    }
+    if (broadcast) {
+      String versionLangId = note.getLang()!= null ? note.getId() + "-" + note.getLang() : note.getId();
+      postUpdatePageVersionLanguage(versionLangId);
     }
     broadcastPageVersionCreationEvent(pageVersionId,
                                       draftPage != null ? draftPage.getId() : null,
