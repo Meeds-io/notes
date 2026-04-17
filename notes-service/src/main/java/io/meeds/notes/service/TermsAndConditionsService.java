@@ -139,11 +139,11 @@ public class TermsAndConditionsService {
   @SneakyThrows
   public TermsAndConditionPage getTermsAndConditions(String lang) {
     Page page = noteService.getNoteOfNoteBookByName(TC_NOTE_TYPE, IdentityConstants.SYSTEM, TC_NOTE_NAME);
-    if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
+    if (page != null && !StringUtils.equals(lang, page.getLang())) {
       Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
       publishedVersion = publishedVersion != null ? publishedVersion
                                                   : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()),
-                                                                                                   Locale.ENGLISH.getLanguage());
+                                                                                                   lang);
       if (publishedVersion != null) {
         page.setTitle(publishedVersion.getTitle());
         page.setContent(publishedVersion.getContent());

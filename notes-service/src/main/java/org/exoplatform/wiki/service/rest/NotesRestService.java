@@ -135,6 +135,8 @@ public class NotesRestService implements ResourceContainer {
 
   private static final Log            LOG              = ExoLogger.getLogger(NotesRestService.class);
 
+  public static final String          TC_NOTE_TYPE     = "terms";
+
   private final NoteService           noteService;
 
   private final WikiService           noteBookService;
@@ -742,11 +744,11 @@ public class NotesRestService implements ResourceContainer {
       NotePageProperties currentNodeProperties = note_.getProperties();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
-          newNoteName = TitleResolver.getId(note.getTitle(), false);
           note_.setTitle(note.getTitle());
           note_.setContent(note.getContent());
           note_.setProperties(notePageProperties);
-          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
+          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName) && !note.getWikiType().equals(TC_NOTE_TYPE)) {
+            newNoteName = TitleResolver.getId(note.getTitle(), false);
             noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
             note_.setName(newNoteName);
           }
@@ -765,8 +767,9 @@ public class NotesRestService implements ResourceContainer {
         }
       } else if (!note_.getTitle().equals(note.getTitle())) {
         if (StringUtils.isBlank(note.getLang())) {
-          newNoteName = TitleResolver.getId(note.getTitle(), false);
-          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName)) {
+
+          if (!NoteConstants.NOTE_HOME_NAME.equals(note.getName()) && !note.getName().equals(newNoteName) && !note.getWikiType().equals(TC_NOTE_TYPE)) {
+            newNoteName = TitleResolver.getId(note.getTitle(), false);
             noteService.renameNote(note_.getWikiType(), note_.getWikiOwner(), note_.getName(), newNoteName, note.getTitle());
             note_.setName(newNoteName);
           }

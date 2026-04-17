@@ -77,7 +77,7 @@ public class TermsAndConditionsRest {
           @ApiResponse(responseCode = "404", description = "Resource not found"), })
   public ResponseEntity<TermsAndConditionPage> getTermsAndConditionPage(HttpServletRequest request,
                                                                         @Parameter(description = "User language")
-                                                                        @RequestParam("lang")
+                                                                        @RequestParam(name= "lang", required=false)
                                                                         String lang) {
     TermsAndConditionPage termsAndConditionPage = termsAndConditionsService.getTermsAndConditions(lang);
     if (termsAndConditionPage == null) {
@@ -105,7 +105,7 @@ public class TermsAndConditionsRest {
                                                       @RequestParam("content")
                                                       String content,
                                                       @Parameter(description = "User language")
-                                                      @RequestParam("lang")
+                                                      @RequestParam(name= "lang", required=false)
                                                       String lang) {
     try {
       return termsAndConditionsService.saveTermsAndConditions(content, lang, RestUtils.getCurrentUserAclIdentity());
@@ -181,7 +181,7 @@ public class TermsAndConditionsRest {
     try {
       content = HtmlUtils.transform(content,
                                     new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                               LocaleUtils.toLocale(lang)));
+                                      !lang.isBlank() ? LocaleUtils.toLocale(lang) : null));
       return HTMLSanitizer.sanitize(content);
     } catch (Exception e) {
       LOG.warn("Error sanitizing terms and conditions content", e);

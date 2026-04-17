@@ -53,9 +53,10 @@ public class NoteVersionLanguageIndexingServiceConnector extends WikiPageIndexin
     if (StringUtils.isBlank(id)) {
       throw new IllegalArgumentException("Id is null");
     }
-    String pageId = id.substring(0, id.indexOf("-"));
-    String lang = id.substring(id.indexOf("-") + 1);
-    PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(pageId), lang);
+    String[] data = id.split("-");
+    Long pageId = Long.parseLong(data[0]);
+    String lang = (data.length > 1) ? data[1] : null;
+    PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(pageId, lang);
 
     if (pageVersion == null) {
       LOG.warn("The version language with id {} wasn't found, thus it can't be indexed", id);
