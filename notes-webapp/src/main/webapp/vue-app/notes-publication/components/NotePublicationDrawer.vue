@@ -509,7 +509,8 @@ export default {
       });
       return contextMap;
     },
-    async executeExtensions(extensions) {
+    async executeExtensions(content) {
+      const extensions = this.extractExtensionsCallBacks();
       const contextMap = this.getExtensionsContextMap();
       const results = await Promise.all(
         extensions.map(async (ext) => {
@@ -517,7 +518,7 @@ export default {
           if (!ext?.execute) {
             return null;
           }
-          const result = await ext.execute(context, this.noteObject);
+          const result = await ext.execute(context, content);
           return {ext, result};
         })
       );
@@ -542,7 +543,7 @@ export default {
     },
     save() {
       const extensionsCallBack = {
-        executeExtensions: async () => await this.executeExtensions(this.extractExtensionsCallBacks()),
+        executeExtensions: async (content) => await this.executeExtensions(content),
       };
       if (this.editMode) {
         this.$emit('publish', this.publicationSettings, null, extensionsCallBack);
