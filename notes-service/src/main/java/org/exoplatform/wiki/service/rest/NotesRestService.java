@@ -1327,7 +1327,7 @@ public class NotesRestService implements ResourceContainer {
                             "all")
                             : null;
             NoteSearchResult noteSearchResult = new NoteSearchResult();
-            noteSearchResult.setTitle(searchResult.getTitle());
+            noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
             noteSearchResult.setId(page.getId());
             noteSearchResult.setPageName(page.getName());
             noteSearchResult.setPageName(page.getName());
