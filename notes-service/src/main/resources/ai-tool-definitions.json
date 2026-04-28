@@ -1,0 +1,200 @@
+{
+  "tools": [
+    {
+      "name": "get_space_note_tree",
+      "title": "Get a space note",
+      "description": "Retrieve the full notes tree for a space.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "space_id": { "type": "integer" }
+        },
+        "required": ["space_id"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_note",
+      "title": "Get a note",
+      "description": "Get a single note by its ID.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": { "type": "integer" }
+        },
+        "required": ["note_id"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_space_note",
+      "title": "Create a note in a space",
+      "description": "Create a new note inside a space under its root note",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "space_id": { "type": "integer" },
+          "title": { "type": "string" },
+          "summary": {
+            "type": "string",
+            "description": "Text only, no html no markdown summary of the note content"
+          },
+          "html_content": { "type": "string" }
+        },
+        "required": ["space_id", "title", "html_content"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "create_child_note",
+      "title": "Create a note under another note",
+      "description": "Create a new note as a child of another note.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "parent_note_id": { "type": "integer" },
+          "title": { "type": "string" },
+          "summary": {
+            "type": "string",
+            "description": "Text only, no html no markdown summary of the note content"
+          },
+          "html_content": { "type": "string" }
+        },
+        "required": ["parent_note_id", "title", "html_content"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "update_note",
+      "title": "Update a note",
+      "description": "Update an existing note with new content or title.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": { "type": "integer" },
+          "title": { "type": "string" },
+          "html_content": { "type": "string" },
+          "language": { "type": "string" }
+        },
+        "allOf": [
+          { "required": ["note_id"] },
+          {
+            "oneOf": [
+              { "required": ["title"], "not": { "required": ["html_content"] } },
+              { "required": ["html_content"], "not": { "required": ["title"] } }
+            ]
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "publish_note",
+      "title": "Publish a note",
+      "description": "Publish a note by its ID.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": { "type": "integer" }
+        },
+        "required": ["note_id"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "delete_note",
+      "title": "Delete a note",
+      "description": "Delete a note by its ID.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": { "type": "integer" }
+        },
+        "required": ["note_id"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "move_note",
+      "title": "Move a note",
+      "description": "Move a note under another parent note.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": { "type": "integer" },
+          "target_parent_note_id": { "type": "integer" }
+        },
+        "required": ["note_id", "target_parent_note_id"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "search_notes",
+      "title": "Search for notes",
+      "description": "Search notes with query text and optional filters.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" },
+          "space_id": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "is_favorites": { "type": "boolean" }
+        },
+        "required": ["query"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

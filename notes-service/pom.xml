@@ -67,6 +67,10 @@
       <artifactId>gamification-services</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>io.meeds.mcp-server</groupId>
+      <artifactId>mcp-server-tools</artifactId>
+    </dependency>
 
     <!-- Tests -->
     <dependency>
@@ -120,6 +124,15 @@
           <excludes>
             <exclude>**/IT*.java</exclude>
           </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
     </plugins>
