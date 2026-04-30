@@ -46,12 +46,12 @@
     <!-- **************************************** -->
     <!-- Project Dependencies                     -->
     <!-- **************************************** -->
-
     <io.meeds.social.version>7.2.x-exo-SNAPSHOT</io.meeds.social.version>
     <io.meeds.platform-ui.version>7.2.x-exo-SNAPSHOT</io.meeds.platform-ui.version>
     <addon.meeds.gamification.version>7.2.x-exo-SNAPSHOT</addon.meeds.gamification.version>
     <addon.meeds.analytics.version>7.2.x-exo-SNAPSHOT</addon.meeds.analytics.version>
     <addon.meeds.layout.version>7.2.x-exo-SNAPSHOT</addon.meeds.layout.version>
+    <addon.meeds.mcp-server.version>7.2.x-exo-SNAPSHOT</addon.meeds.mcp-server.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
@@ -63,7 +63,7 @@
     <!-- * Your own modules -->
     <!-- * And projects below you -->
     <dependencies>
-      <!-- Import versions from social project -->
+      <!-- Import versions from other projects -->
       <dependency>
         <groupId>io.meeds.social</groupId>
         <artifactId>social</artifactId>
@@ -82,6 +82,13 @@
         <groupId>io.meeds.gamification</groupId>
         <artifactId>gamification</artifactId>
         <version>${addon.meeds.gamification.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.meeds.mcp-server</groupId>
+        <artifactId>mcp-server</artifactId>
+        <version>${addon.meeds.mcp-server.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
