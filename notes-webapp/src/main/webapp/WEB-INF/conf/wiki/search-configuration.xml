@@ -37,6 +37,9 @@
             <field name="name">
               <string>notes</string>
             </field>
+            <field name="contentType">
+              <string>notes</string>
+            </field>
             <field name="uri">
               <string><![CDATA[/portal/rest/notes/contextsearch?limit={limit}&keyword={keyword}]]></string>
             </field>
