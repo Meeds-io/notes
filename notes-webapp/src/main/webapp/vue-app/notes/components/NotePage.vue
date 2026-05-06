@@ -187,12 +187,30 @@
             class="note-summary text-break text-sub-title mt-4 mb-0">
             {{ noteSummary }}
           </p>
+          <extension-registry-components
+            v-if="hasAssociatedEvent && mdAndDown"
+            :params="noteDetailsExtensionsParams"
+            :key="extensionKey"
+            name="ContentDetails"
+            type="content-event-detail"
+            parent-element="div"
+            element="div"
+            class="mx-1" />
         </div>
-        <div class="note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
+        <div class="d-flex align-start note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
             class="text-color">
             <component :is="notesContentProcessor" />
           </div>
+          <extension-registry-components
+            v-if="hasAssociatedEvent && !mdAndDown"
+            :params="noteDetailsExtensionsParams"
+            :key="extensionKey"
+            name="ContentDetails"
+            type="content-event-detail"
+            parent-element="div"
+            element="div"
+            class="position-sticky d-flex me-1 ms-auto" />
         </div>
         <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
           <div v-if="isManager" class="d-flex flex-column justify-center text-center">
@@ -434,6 +452,8 @@ export default {
       ascending: false,
       sortMenu: false,
       sortField: 'lastUpdated',
+      publicationSettings: {},
+      extensionKey: 0
     };
   },
   provide() {
@@ -449,6 +469,21 @@ export default {
         entityId: this.entityId,
         entityType: this.entityType,
       };
+    },
+    publicationParameters() {
+      return this.publicationSettings?.savedSettings?.parameters;
+    },
+    hasAssociatedEvent() {
+      return !!this.publicationParameters?.eventId;
+    },
+    noteDetailsExtensionsParams() {
+      return {
+        eventId: this.publicationParameters?.eventId,
+        customBreakPointThreshold: this.treeViewExpended && 350 || 0
+      };
+    },
+    mdAndDown () {
+      return this.$vuetify.breakpoint.width < this.$vuetify.breakpoint.thresholds.md;
     },
     noteHomeTitle() {
       return this.spaceId ? this.$t('notes.label.noteHome') : this.$t('notes.label.myNotes');
@@ -650,6 +685,12 @@ export default {
     }
   },
   watch: {
+    'note.id': 'loadPublicationSettings',
+    noteDetailsExtensionsParams() {
+      if (this.noteDetailsExtensionsParams?.eventId) {
+        this.extensionKey++;
+      }
+    },
     note() {
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
@@ -761,6 +802,7 @@ export default {
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     this.$root.$on('duplicate-note', this.duplicateNote);
     document.addEventListener('note-published', this.handleNotePublished);
+    document.addEventListener('publication-extensions-updated', this.loadPublicationSettings);
   },
   mounted() {
     this.handleChangePages();
@@ -770,7 +812,14 @@ export default {
     document.removeEventListener('note-published', this.handleNotePublished);
   },
   methods: {
-    publishNote(publicationSettings, note) {
+    loadPublicationSettings() {
+      const extension = extensionRegistry.loadExtensions('Publication', 'note-publication-settings')?.[0];
+      if (!extension) {
+        return null;
+      }
+      this.publicationSettings = structuredClone(extension?.getSettings() || {});
+    },
+    publishNote(publicationSettings, note, extensionsCallback) {
       const scheduleSettings = publicationSettings?.scheduleSettings;
       const noteArticle = structuredClone(note || this.note);
       noteArticle.schedulePostDate = scheduleSettings?.postDate;
@@ -788,7 +837,9 @@ export default {
           document.dispatchEvent(new CustomEvent('publish-note', {
             detail: {
               editPublication: false,
-              article: noteArticle
+              article: noteArticle,
+              scheduleSettings: null,
+              extensionsCallback
             }
           }));
         });
@@ -798,6 +849,7 @@ export default {
             editPublication: true,
             article: noteArticle,
             scheduleSettings: scheduleSettings,
+            extensionsCallback
           }
         }));
       }

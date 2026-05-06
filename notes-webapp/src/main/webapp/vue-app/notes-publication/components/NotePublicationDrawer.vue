@@ -76,6 +76,16 @@
                           :has-featured-image="hasFeaturedImage"
                           :summary-max-length="summaryMaxLength"
                           @properties-updated="propertiesUpdated" />
+                        <template v-for="(component) in publishExtensions">
+                          <extension-registry-component
+                            :key="component.componentOptions.id"
+                            :component="component"
+                            :params="{
+                              spaceId: spaceId,
+                              expanded: expanded,
+                              content: noteObject
+                            }" />
+                        </template>
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -141,7 +151,7 @@
                           v-if="publicationSettings.post"
                           v-model="publicationSettings.selectedCategoryIds" 
                           label-class="font-weight-bold" 
-                          :label="categoryInputLabel"/>
+                          :label="categoryInputLabel" />
                         <note-publish-option
                           v-if="publishAllowed"
                           :allowed-targets="allowedTargets"
@@ -180,6 +190,18 @@
                           }"
                           ref="advancedOption"
                           @update="updateAdvancedSettings" />
+                        <div v-if="editMode">
+                          <template v-for="(component) in publishExtensions">
+                            <extension-registry-component
+                              :key="component.componentOptions.id"
+                              :component="component"
+                              :params="{
+                                spaceId: spaceId,
+                                expanded: expanded,
+                                content: noteObject
+                              }" />
+                          </template>
+                        </div>
                       </div>
                     </v-scroll-y-transition>
                   </div>
@@ -228,7 +250,10 @@ export default {
       advancedSettings: {},
       currentPublicationSettings: {},
       currentScheduleSettings: {},
-      currentAdvancedSettings: {}
+      currentAdvancedSettings: {},
+      publishExtensions: [],
+      extensionsContext: {},
+      extensionsUpdated: false
     };
   },
   props: {
@@ -249,6 +274,16 @@ export default {
       default: null
     }
   },
+  provide() {
+    return {
+      registerExtensionContext: (id, instance) => {
+        this.extensionsContext[id] = instance;
+      },
+      notifyExtensionUpdated: () => {
+        this.extensionsUpdated = true;
+      }
+    };
+  },
   computed: {
     publishAllowed() {
       return this.canPublish && this.allowedTargets?.length;
@@ -257,7 +292,7 @@ export default {
       return this.canSchedule && (!this.editMode || (this.publicationSettings?.publish || this.publicationSettings.post || !!this.noteObject?.schedulePostDate));
     },
     saveEnabled() {
-      return (!this.editMode || this.publicationSettingsUpdated) && this.validPublishSettings;
+      return (!this.editMode || this.publicationSettingsUpdated || this.extensionsUpdated) && this.validPublishSettings;
     },
     validPublishSettings() {
       return !this.publicationSettings?.publish || (this.publicationSettings?.publish && this.publicationSettings?.selectedTargets?.length);
@@ -309,6 +344,8 @@ export default {
     }
   },
   created() {
+    this.loadPublishExtensions();
+    document.addEventListener('content-publication-extensions-updated', this.loadPublishExtensions);
     const lang = eXo.env.portal.language;
     const urls = `/content/i18n/locale.portlet.notes.notesPortlet?lang=${lang}`;
 
@@ -316,7 +353,13 @@ export default {
       .then(() => this.$nextTick())
       .finally(() => this.loading = false);
   },
+  beforeDestroy() {
+    document.removeEventListener('content-publication-extensions-updated', this.loadPublishExtensions);
+  },
   methods: {
+    loadPublishExtensions() {
+      this.publishExtensions = extensionRegistry.loadComponents('ContentPublication');
+    },
     updateAdvancedSettings(settings) {
       this.advancedSettings = structuredClone(settings);
       this.publicationSettings.advancedSettings = this.advancedSettings;
@@ -434,20 +477,76 @@ export default {
       this.publicationSettings = {post: true};
     },
     reset() {
+      this.extensionsUpdated = false;
       setTimeout(() => {
         this.cancelChanges();
+        this.resetExtensions();
       }, 1000);
       this.$emit('closed');
     },
     cancel() {
+      this.resetExtensions();
       this.close();
       setTimeout(() => {
         this.$refs.propertiesForm.cancelChanges();
       }, 1000);
     },
+    extractExtensionsCallBacks() {
+      return this.publishExtensions
+        .filter(ext => typeof ext?.componentOptions?.execute === 'function')
+        .map(ext => ({
+          id: `extension_${ext.componentOptions.id}`,
+          execute: ext.componentOptions.execute,
+        }));
+    },
+    getExtensionsContextMap() {
+      const contextMap = {};
+      Object.keys(this.extensionsContext).forEach(id => {
+        const context = this.extensionsContext[id]?.getContext?.();
+        if (context) {
+          contextMap[id] = context;
+        }
+      });
+      return contextMap;
+    },
+    async executeExtensions(content) {
+      const extensions = this.extractExtensionsCallBacks();
+      const contextMap = this.getExtensionsContextMap();
+      const results = await Promise.all(
+        extensions.map(async (ext) => {
+          const context = contextMap[ext.id];
+          if (!ext?.execute) {
+            return null;
+          }
+          const result = await ext.execute(context, content);
+          return {ext, result};
+        })
+      );
+
+      const metadata = {};
+
+      for (const item of results) {
+        if (!item) {
+          continue;
+        }
+        const {result} = item;
+        if (result?.data) {
+          Object.assign(metadata, result.data);
+        }
+      }
+      return metadata;
+    },
+    resetExtensions() {
+      Object.values(this.extensionsContext).forEach(instance => {
+        instance?.reset?.();
+      });
+    },
     save() {
+      const extensionsCallBack = {
+        executeExtensions: async (content) => await this.executeExtensions(content),
+      };
       if (this.editMode) {
-        this.$emit('publish', this.publicationSettings);
+        this.$emit('publish', this.publicationSettings, null, extensionsCallBack);
         return;
       }
       if (!this.expanded && this.stepper === 1) {
@@ -455,7 +554,7 @@ export default {
         return;
       }
       this.$emit('metadata-updated', this.noteObject.properties);
-      this.$emit('publish', this.publicationSettings, this.noteObject,);
+      this.$emit('publish', this.publicationSettings, this.noteObject, extensionsCallBack);
     },
     updateCurrentNoteObjectProperties(properties) {
       this.noteObject.properties.noteId = Number(properties.noteId);

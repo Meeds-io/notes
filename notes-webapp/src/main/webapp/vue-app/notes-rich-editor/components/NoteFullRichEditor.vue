@@ -35,7 +35,7 @@
       :publish-button-text="publishButtonText"
       :lang-button-tooltip-text="langButtonTooltipText"
       :web-page-url="webPageUrl"
-      :editor-icon="editorIcon"
+      :editor-icon="resolvedEditorIcon"
       :save-button-icon="saveButtonIcon"
       :save-button-disabled="saveNoteButtonDisabled"
       :editor-ready="!!editor"
@@ -53,9 +53,9 @@
                 id="notesTitle"
                 :ref="editorTitleInputRef"
                 v-model="noteObject.title"
-                :placeholder="titlePlaceholder"
-                type="text"
+                :placeholder="editorTitlePlaceHolder"
                 :maxlength="noteTitleMaxLength + 1"
+                type="text"
                 class="title text-color ma-0 pa-0"
                 @input="waitUserTyping()"
                 @keydown.enter.prevent="focusEditor">
@@ -64,7 +64,7 @@
               <textarea
                 :id="editorBodyInputRef"
                 :ref="editorBodyInputRef"
-                :placeholder="bodyPlaceholder"
+                :placeholder="editorBodyPlaceHolder"
                 :name="editorBodyInputRef"
                 class="notesFormInput">
             </textarea>
@@ -117,6 +117,7 @@ export default {
       isPublishing: false,
       contentImageUploadProgress: false,
       pendingEditorContent: null,
+      editorExtensionSettings: {}
     };
   },
   props: {
@@ -265,6 +266,15 @@ export default {
     }
   },
   computed: {
+    editorTitlePlaceHolder() {
+      return this.editorExtensionSettings?.titlePlaceholder || this.titlePlaceholder;
+    },
+    editorBodyPlaceHolder() {
+      return this.editorExtensionSettings?.bodyPlaceholder || this.bodyPlaceholder;
+    },
+    resolvedEditorIcon() {
+      return this.editorExtensionSettings?.icon || this.editorIcon;
+    },
     newEmptyTranslation() {
       return !!this.note?.lang && !this.note?.title?.length && !this.note?.content?.length;
     },
@@ -301,6 +311,7 @@ export default {
     }
   },
   created() {
+    this.loadEditorExtension();
     this.cloneNoteObject();
     this.refreshEditorExtensions();
     this.$root.$on('include-page', this.includePage);
@@ -314,6 +325,15 @@ export default {
     document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
   },
   methods: {
+    loadEditorExtension() {
+      const queryPath = window.location.search;
+      const urlParams = new URLSearchParams(queryPath);
+      if (urlParams.has('extensionType')) {
+        const extensionType = urlParams.get('extensionType');
+        const extension = extensionRegistry.loadExtensions('CustomEditorSetting', extensionType)?.[0];
+        this.editorExtensionSettings = extension?.getSettings();
+      }
+    },
     metadataUpdated(properties) {
       this.updatingProperties = true;
       this.noteObject.properties = properties;
@@ -411,12 +431,12 @@ export default {
       }
       this.postAndPublishNote();
     },
-    postAndPublishNote(publicationSettings, note) {
+    postAndPublishNote(publicationSettings, note, extensionsCallback) {
       if (this.publicationParams) {
         this.noteObject = note;
         this.updateData();
       }
-      this.$emit('post-note', publicationSettings);
+      this.$emit('post-note', publicationSettings, extensionsCallback);
     },
     resetEditorData() {
       this.noteObject.title = null;
