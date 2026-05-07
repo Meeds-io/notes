@@ -124,7 +124,7 @@ public class TermsAndConditionsService {
       String storedLatestVersionId = metadataItem.getProperties().get(PUBLISHED_VERSION_ID);
       metadataItem.setProperties(settings);
       metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
-      eventName = !page.getLatestVersionId().equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
+      eventName = page.getLatestVersionId() != null && !page.getLatestVersionId().equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
     } else {
       MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
       metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));

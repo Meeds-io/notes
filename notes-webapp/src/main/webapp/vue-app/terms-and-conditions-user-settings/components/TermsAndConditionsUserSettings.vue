@@ -52,7 +52,7 @@ export default {
     id: `Settings${parseInt(Math.random() * 10000)
       .toString()
       .toString()}`,
-    language: eXo.env.portal.language,
+    lang: eXo.env.portal.language,
     displayed: true,
     displayDetails: false,
     termsAndConditionsLinkBasePath: `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/settings#terms-and-conditions`,
