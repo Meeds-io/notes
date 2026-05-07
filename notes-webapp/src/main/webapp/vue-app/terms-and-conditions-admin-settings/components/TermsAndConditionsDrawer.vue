@@ -179,7 +179,7 @@ export default {
     },
     updatePublishedSetting() {
       this.loading = true;
-      return this.$termsAndConditionsService.updateTermsAndConditionsSettings(this.published, this.lang)
+      return this.$termsAndConditionsService.updateTermsAndConditionsSettings(this.published, this.note.lang)
         .then(() => this.retrieveTerms())
         .then(() => {
           if (this.published) {

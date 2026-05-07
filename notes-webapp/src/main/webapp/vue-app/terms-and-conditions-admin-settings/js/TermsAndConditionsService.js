@@ -62,7 +62,7 @@ export function saveTermsAndConditions(content, lang) {
 }
 
 export function updateTermsAndConditionsSettings(published, lang) {
-  return fetch(`/notes/rest/terms/settings?published=${published || false}&lang=${lang || 'en'}`, {
+  return fetch(`/notes/rest/terms/settings?published=${published || false}&lang=${lang}`, {
     headers: {
       'Content-Type': 'application/json',
     },
