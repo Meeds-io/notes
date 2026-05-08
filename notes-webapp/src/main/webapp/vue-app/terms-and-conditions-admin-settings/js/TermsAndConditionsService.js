@@ -18,7 +18,13 @@
  */
 
 export function getTermsAndConditions(lang) {
-  return fetch(`/notes/rest/terms?lang=${lang|| 'en'}`, {
+  const formData = new FormData();
+  if (lang) {
+    formData.append('lang', lang);
+  }
+  const urlParams = new URLSearchParams(formData).toString();
+  const params = urlParams.length && `?${decodeURIComponent(urlParams)}` || '';
+  return fetch(`/notes/rest/terms${params}`, {
     method: 'GET',
     credentials: 'include',
   }).then((resp) => {
@@ -56,7 +62,7 @@ export function saveTermsAndConditions(content, lang) {
 }
 
 export function updateTermsAndConditionsSettings(published, lang) {
-  return fetch(`/notes/rest/terms/settings?published=${published || false}&lang=${lang || 'en'}`, {
+  return fetch(`/notes/rest/terms/settings?published=${published || false}&lang=${lang}`, {
     headers: {
       'Content-Type': 'application/json',
     },

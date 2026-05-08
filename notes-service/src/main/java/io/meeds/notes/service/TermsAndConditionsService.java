@@ -124,7 +124,7 @@ public class TermsAndConditionsService {
       String storedLatestVersionId = metadataItem.getProperties().get(PUBLISHED_VERSION_ID);
       metadataItem.setProperties(settings);
       metadataService.updateMetadataItem(metadataItem, Long.parseLong(page.getId()), false);
-      eventName = !page.getLatestVersionId().equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
+      eventName = page.getLatestVersionId() != null && !page.getLatestVersionId().equals(storedLatestVersionId) ? EVENT_NAME_UPDATED : null;
     } else {
       MetadataObject metadataObject = new MetadataObject(TC_METADATA_OBJECT_TYPE, page.getId());
       metadataService.createMetadataItem(metadataObject, TC_METADATA_KEY, settings, Long.parseLong(page.getId()));
@@ -139,11 +139,11 @@ public class TermsAndConditionsService {
   @SneakyThrows
   public TermsAndConditionPage getTermsAndConditions(String lang) {
     Page page = noteService.getNoteOfNoteBookByName(TC_NOTE_TYPE, IdentityConstants.SYSTEM, TC_NOTE_NAME);
-    if (page != null && StringUtils.isNotBlank(lang) && !StringUtils.equals(lang, page.getLang())) {
+    if (page != null && !StringUtils.equals(lang, page.getLang())) {
       Page publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), lang);
       publishedVersion = publishedVersion != null ? publishedVersion
                                                   : noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()),
-                                                                                                   Locale.ENGLISH.getLanguage());
+                                                                                                   lang);
       if (publishedVersion != null) {
         page.setTitle(publishedVersion.getTitle());
         page.setContent(publishedVersion.getContent());
