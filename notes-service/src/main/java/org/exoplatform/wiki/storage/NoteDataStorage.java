@@ -189,7 +189,14 @@ public class NoteDataStorage {
     if (pageEntity.getUpdatedDate() == null) {
       pageEntity.setUpdatedDate(now);
     }
-    pageEntity.setPosition(page.getPosition());
+
+    if (pageEntity.getPosition() == null || pageEntity.getPosition() == 0) {
+      int maxPosition = 0;
+      if (parentPageEntity != null) {
+        maxPosition = pageDAO.getMaxPosition(parentPageEntity.getId());
+      }
+      pageEntity.setPosition(maxPosition + 1);
+    }
     pageEntity.setDeleted(false);
 
     PageEntity createdPageEntity = pageDAO.create(pageEntity);

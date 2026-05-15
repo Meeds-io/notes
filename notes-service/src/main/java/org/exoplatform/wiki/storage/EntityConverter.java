@@ -206,6 +206,7 @@ public class EntityConverter {
       pageEntity.setComment(page.getComment());
       pageEntity.setUrl(page.getUrl());
       pageEntity.setActivityId(page.getActivityId());
+      pageEntity.setPosition(page.getPosition());
     }
     return pageEntity;
   }
