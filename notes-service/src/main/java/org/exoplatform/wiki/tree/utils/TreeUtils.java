@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
@@ -319,12 +320,25 @@ public class TreeUtils {
     if (nodes == null || nodes.isEmpty()) {
       return;
     }
-    Collator collator = Collator.getInstance(locale);
-    collator.setStrength(Collator.PRIMARY);
 
     nodes.sort((a, b) -> {
+      int posA = a.getPosition() != null ? a.getPosition() : 0;
+      int posB = b.getPosition() != null ? b.getPosition() : 0;
+      if (posA != posB) {
+        return Integer.compare(posA, posB);
+      }
       String nameA = a.getName() != null ? a.getName() : "";
       String nameB = b.getName() != null ? b.getName() : "";
+      
+      boolean hasDigitsA = nameA.chars().anyMatch(Character::isDigit);
+      boolean hasDigitsB = nameB.chars().anyMatch(Character::isDigit);
+      
+      if (hasDigitsA || hasDigitsB) {
+        return new NaturalComparator().compare(nameA, nameB);
+      }
+      
+      Collator collator = Collator.getInstance(locale);
+      collator.setStrength(Collator.PRIMARY);
       return collator.compare(nameA, nameB);
     });
   }
