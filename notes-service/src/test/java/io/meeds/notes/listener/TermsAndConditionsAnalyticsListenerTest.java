@@ -30,17 +30,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(classes = { TermsAndConditionsAnalyticsListener.class, })
 @TestPropertySource(properties = { "spring.profiles.active=analytics", })
 class TermsAndConditionsAnalyticsListenerTest {
 
-  @MockBean
+  @MockitoBean
   private ListenerService                     listenerService;
 
-  @MockBean
+  @MockitoBean
   private Event<String, Object>               event;
 
   @Autowired

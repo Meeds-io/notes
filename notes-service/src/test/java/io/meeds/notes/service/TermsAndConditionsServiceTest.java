@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,22 +52,22 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(classes = { TermsAndConditionsService.class, })
 class TermsAndConditionsServiceTest {
 
-  @MockBean
+  @MockitoBean
   private NoteService               noteService;
 
-  @MockBean
+  @MockitoBean
   private WikiService               wikiService;
 
-  @MockBean
+  @MockitoBean
   private SettingService            settingService;
 
-  @MockBean
+  @MockitoBean
   private ListenerService           listenerService;
 
-  @MockBean
+  @MockitoBean
   private MetadataService           metadataService;
 
-  @MockBean
+  @MockitoBean
   private UserACL                   userACL;
 
   @Autowired
