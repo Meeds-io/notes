@@ -21,13 +21,11 @@ package org.exoplatform.wiki.jpa.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.SequenceGenerator;
+import io.meeds.common.persistence.PortableSequence;
 import jakarta.persistence.Table;
 
 @Entity(name = "WikiWikiEntity")
@@ -40,8 +38,7 @@ import jakarta.persistence.Table;
 public class WikiEntity {
   @Id
   @Column(name = "WIKI_ID")
-  @SequenceGenerator(name="SEQ_WIKI_WIKIS_WIKI_ID", sequenceName="SEQ_WIKI_WIKIS_WIKI_ID", allocationSize = 1)
-  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_WIKIS_WIKI_ID")
+  @PortableSequence(name = "SEQ_WIKI_WIKIS_WIKI_ID")
   private long id;
 
   @Column(name = "NAME")
