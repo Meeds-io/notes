@@ -18,10 +18,15 @@
  */
 package org.exoplatform.wiki.jpa.search;
 
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
+
 import org.exoplatform.commons.search.index.IndexingService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageVersion;
+import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
 
@@ -30,9 +35,13 @@ import org.exoplatform.wiki.service.listener.PageWikiListener;
  */
 public class PageIndexingListener extends PageWikiListener {
 
+  private NoteService     noteService;
+
   private IndexingService indexingService;
 
-  public PageIndexingListener(IndexingService indexingService) {
+  public PageIndexingListener(IndexingService indexingService,
+                              NoteService noteService) {
+    this.noteService = noteService;
     this.indexingService = indexingService;
   }
 
@@ -47,8 +56,12 @@ public class PageIndexingListener extends PageWikiListener {
                              String pageId,
                              Page page,
                              PageUpdateType wikiUpdateType) throws WikiException {
-    if (!page.isDraftPage()) {
-      indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, page.getId());
+    if (page != null && !page .isDeleted() && !page.isDraftPage()) {
+      if (wikiUpdateType == PageUpdateType.MOVE_PAGE) {
+        reindexPageTree(page);
+      } else {
+        indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, page.getId());
+      }
     }
   }
 
@@ -67,4 +80,13 @@ public class PageIndexingListener extends PageWikiListener {
     String pageVersionId = pageVersion.getParent().getId() + "-" + pageVersion.getLang();
     indexingService.unindex(NoteVersionLanguageIndexingServiceConnector.TYPE, pageVersionId);
   }
+
+  private void reindexPageTree(Page page) {
+    indexingService.reindex(WikiPageIndexingServiceConnector.TYPE, page.getId());
+    List<Page> children = noteService.getChildrenNoteOf(page, false, false);
+    if (CollectionUtils.isNotEmpty(children)) {
+      children.forEach(this::reindexPageTree);
+    }
+  }
+
 }

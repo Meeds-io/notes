@@ -1905,6 +1905,15 @@ public class NoteServiceImpl implements NoteService {
       throw new IllegalAccessException("User does not have edit the note.");
     }
     dataStorage.updateNotesPosition(noteReorder);
+    Page updatedPage = getNoteById(noteReorder.getPageId());
+    PageUpdateType updateType = StringUtils.equals(existingNote.getParentPageId(),
+                                                   updatedPage.getParentPageId()) ? PageUpdateType.EDIT_PAGE_PROPERTIES :
+                                                                                  PageUpdateType.MOVE_PAGE;
+    postUpdatePage(updatedPage.getWikiType(),
+                   updatedPage.getWikiOwner(),
+                   updatedPage.getName(),
+                   new Page(updatedPage),
+                   updateType);
   }
 
   /******* Private methods *******/
