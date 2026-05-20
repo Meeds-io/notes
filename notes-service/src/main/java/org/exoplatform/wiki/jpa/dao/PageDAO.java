@@ -161,6 +161,13 @@ public class PageDAO extends WikiBaseDAO<PageEntity, Long> {
                                     .getSingleResult();
   }
 
+  public Integer getMaxPosition(Long pageId) {
+    Integer maxPosition = (Integer) getEntityManager().createNamedQuery("wikiPage.getMaxPosition")
+                                                      .setParameter("id", pageId)
+                                                      .getSingleResult();
+    return maxPosition != null ? maxPosition : 0;
+  }
+
   @Override
   public void deleteAll(List<PageEntity> entities) {
     entities = entities.stream().sorted((p1, p2) -> {

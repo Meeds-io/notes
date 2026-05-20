@@ -1097,6 +1097,31 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals(note1.getName(), movedNote1.getMoves().getFirst().getPageName());
   }
 
+  @Test
+  public void testCreatePagePosition() throws WikiException {
+    // Given
+    Wiki wiki = new Wiki();
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner("wikiTestPosition");
+    wiki = storage.createWiki(wiki);
+
+    Page page1 = new Page();
+    page1.setName("page1");
+    page1.setTitle("Page 1");
+
+    Page page2 = new Page();
+    page2.setName("page2");
+    page2.setTitle("Page 2");
+
+    // When
+    Page createdPage1 = storage.createPage(wiki, wiki.getWikiHome(), page1);
+    Page createdPage2 = storage.createPage(wiki, wiki.getWikiHome(), page2);
+
+    // Then
+    assertEquals(Integer.valueOf(1), createdPage1.getPosition());
+    assertEquals(Integer.valueOf(2), createdPage2.getPosition());
+  }
+
   protected void startSessionAs(String user, Collection<MembershipEntry> memberships) {
     Identity identity = new Identity(user, memberships);
     ConversationState state = new ConversationState(identity);
