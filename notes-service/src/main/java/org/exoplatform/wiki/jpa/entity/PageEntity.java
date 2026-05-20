@@ -39,6 +39,7 @@ import lombok.EqualsAndHashCode;
 @NamedQuery(name = "wikiPage.getRelatedPages", query = "SELECT p FROM WikiPageEntity p INNER JOIN p.relatedPages r where r.id = :pageId")
 @NamedQuery(name = "wikiPage.getAllPagesBySyntax", query = "SELECT p FROM WikiPageEntity p WHERE p.syntax = :syntax OR p.syntax IS NULL ORDER BY p.updatedDate DESC")
 @NamedQuery(name = "wikiPage.countPageChildrenById", query = "SELECT COUNT(*) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false")
+@NamedQuery(name = "wikiPage.getMaxPosition", query = "SELECT MAX(p.position) FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class PageEntity extends BasePageEntity {

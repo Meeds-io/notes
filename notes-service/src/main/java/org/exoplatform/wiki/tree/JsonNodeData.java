@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.model.DraftPage;
@@ -32,6 +33,7 @@ import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.tree.utils.TreeUtils;
 
 @Data
+@NoArgsConstructor
 public class JsonNodeData {
 
   protected String           name;
@@ -72,6 +74,8 @@ public class JsonNodeData {
 
   private Boolean            hasDraftDescendant;
 
+  private Integer            position;
+
   private String             url;
 
   private String             lang;
@@ -111,6 +115,7 @@ public class JsonNodeData {
       this.parentPageId = page.getParentPageId();
       this.url = page.getUrl();
       this.lang = page.getLang();
+      this.position = page.getPosition();
       boolean withDrafts = context.containsKey(TreeNode.WITH_DRAFTS) && (boolean) context.get(TreeNode.WITH_DRAFTS);
       if (withDrafts) {
         this.disabled = !this.isDraftPage;
@@ -119,7 +124,9 @@ public class JsonNodeData {
         this.targetPageId = ((DraftPage) page).getTargetPageId();
       }
     } else if (treeNode.getNodeType().equals(TreeNodeType.WIKIHOME)) {
-      this.url = ((WikiHomeTreeNode) treeNode).getWikiHome().getUrl();
+      Page page = ((WikiHomeTreeNode) treeNode).getWikiHome();
+      this.url = page.getUrl();
+      this.position = page.getPosition();
     }
   }
 
