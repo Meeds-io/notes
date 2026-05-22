@@ -80,6 +80,9 @@ export default {
   created() {
     this.currentNoteId = this.getNoteIdFromUrl();
     this.$root.$on('sidebar-tree-view-expend', this.extendTreeView);
+    this.$root.$on('refresh-treeView-items', (note) => {
+      this.currentNoteId = note.id;
+    });
   },
   mounted() {
     window.addEventListener('popstate', this.onPopState);
@@ -89,6 +92,7 @@ export default {
 
   beforeDestroy() {
     this.$root.$off('sidebar-tree-view-expend', this.extendTreeView);
+    this.$root.$off('refresh-treeView-items');
     window.removeEventListener('mousemove', this.resize);
     window.removeEventListener('mouseup', this.stopResize);
     window.removeEventListener('popstate', this.onPopState);
