@@ -38,8 +38,7 @@
       @filter-text-input-end-typing="$emit('keyword-changed', $event)"
       @filter-button-click="$root.$emit('notes-filter-open', filter)"
       @filter-expand="filterExpand = $event"
-      @loading="$emit('loading', $event)">
-    </application-toolbar>
+      @loading="$emit('loading', $event)" />
     <v-tooltip v-if="!filterExpand" bottom>
       <template #activator="{ on, attrs }">
         <v-btn

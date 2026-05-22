@@ -645,19 +645,15 @@ export default {
   },
   created() {
     this.$root.$on('open-note-tree-view-drawer', this.open);
-    this.$root.$on('refresh-treeView-items', (note)=> {
-      if (note.draftPage) {
-        this.getDraftNote(note.id);
-      } else {
-        this.getNoteById(note.id);
-      }
-    });
-    this.$root.$on('close-note-tree-drawer', () => {
-      this.close();
-    });
-    this.$root.$on('display-treeview-items', () => {
-      this.closeAll = true;
-    });
+    this.$root.$on('refresh-treeView-items', this.handleRefreshTreeView);
+    this.$root.$on('close-note-tree-drawer', this.close);
+    this.$root.$on('display-treeview-items', this.handleDisplayTreeViewItems);
+  },
+  beforeDestroy() {
+    this.$root.$off('open-note-tree-view-drawer', this.open);
+    this.$root.$off('refresh-treeView-items', this.handleRefreshTreeView);
+    this.$root.$off('close-note-tree-drawer', this.close);
+    this.$root.$off('display-treeview-items', this.handleDisplayTreeViewItems);
   },
   mounted() {
     this.filterOptions = [
@@ -666,6 +662,16 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
+    handleRefreshTreeView(note) {
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
+    },
+    handleDisplayTreeViewItems() {
+      this.closeAll = true;
+    },
     fetchChildrenInParallel(children, level = 0) {
       if (level >= 2) {
         return;

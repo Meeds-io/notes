@@ -211,13 +211,22 @@ export default {
   created() {
     this.$root.$on('notes-filter-update', this.updateFilter);
     this.$root.$on('note-moved', this.refreshTreeview);
+    this.$root.$on('refresh-treeView-items', this.handleRefreshTreeView);
     this.getNoteById(this.activeNoteId);
   },
   beforeDestroy() {
     this.$root.$off('notes-filter-update', this.updateFilter);
     this.$root.$off('note-moved', this.refreshTreeview);
+    this.$root.$off('refresh-treeView-items', this.handleRefreshTreeView);
   },
   methods: {
+    handleRefreshTreeView(note) {
+      if (note.draftPage) {
+        this.getDraftNote(note.id);
+      } else {
+        this.getNoteById(note.id);
+      }
+    },
     updateFilter(filter) {
       this.filter = filter;
     },
