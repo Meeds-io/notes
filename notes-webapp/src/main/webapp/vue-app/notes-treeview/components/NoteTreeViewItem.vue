@@ -22,7 +22,7 @@
       v-model="hover">
       <v-list-item
         :class="[
-          'tree-item rounded mx-1 my-1',
+          'tree-item rounded mx-1 my-1 pe-0',
           { 'v-list-item--active primary--text': isActive(item) },
           { 'ps-1': level === 0 }
         ]"
@@ -31,16 +31,6 @@
         :href="noteUrl"
         dense
         @click="handleOpenNote($event, item)">
-        <v-list-item-icon
-          v-if="!isDraftFilter && !isHomePage"
-          class="drag-handle my-auto mr-1">
-          <v-icon
-            v-if="hover"
-            small
-            color="grey lighten-1">
-            fas fa-grip-vertical
-          </v-icon>
-        </v-list-item-icon>
         <v-list-item-avatar
           size="30"
           class="my-auto me-0 expand-icon align-center"
@@ -65,6 +55,15 @@
             <span class="text-truncate">{{ name }}</span>
           </v-list-item-title>
         </v-list-item-content>
+        <v-list-item-icon
+          v-if="!isDraftFilter && !isHomePage && hover"
+          class="drag-handle my-auto ml-1">
+          <v-icon
+            small
+            color="grey lighten-1">
+            fas fa-grip-vertical
+          </v-icon>
+        </v-list-item-icon>
       </v-list-item>
     </v-hover>
     <div
