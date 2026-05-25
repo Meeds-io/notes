@@ -83,6 +83,11 @@ export default {
     this.$root.$on('refresh-treeView-items', (note) => {
       this.currentNoteId = note.id;
     });
+    const spaceId = eXo.env.portal.spaceId || 'personal';
+    const expended = localStorage.getItem(`expendedTreeView-${spaceId}`);
+    if (expended !== null) {
+      this.treeViewExpended = expended === 'true';
+    }
   },
   mounted() {
     window.addEventListener('popstate', this.onPopState);
@@ -137,7 +142,8 @@ export default {
     },
     extendTreeView(value) {
       this.treeViewExpended = value;
-      localStorage.setItem('expendedTreeView', value);
+      const spaceId = eXo.env.portal.spaceId || 'personal';
+      localStorage.setItem(`expendedTreeView-${spaceId}`, value);
     },
   }
 };
