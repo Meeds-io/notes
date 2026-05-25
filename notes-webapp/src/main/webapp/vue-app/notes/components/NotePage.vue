@@ -737,9 +737,14 @@ export default {
       }
     },
     noteTitle() {
-      const companyName = eXo.env.portal.companyName;
-      const spaceDisplayName = eXo.env.portal.spaceDisplayName;
-      window.document.title = `Note: ${this.noteTitle} - ${spaceDisplayName} - ${companyName}`;
+      const companyName = eXo.env.portal.companyName || '';
+      const siteLabel = eXo.env.portal.spaceDisplayName || eXo.env.portal.siteLabel;
+      let title = this.noteTitle;
+      if (this.note && !this.note.parentPageId && this.note.title === 'Home') {
+        title = 'Notes';
+      }
+      const parts = [title, siteLabel, companyName].filter(p => !!p);
+      window.document.title = parts.join(' - ');
     }
   },
   created() {

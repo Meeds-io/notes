@@ -28,6 +28,7 @@
         ]"
         :style="{ paddingLeft: `${level * 20 + 8}px` }"
         :ripple="false"
+        :href="noteUrl"
         dense
         @click="handleOpenNote($event, item)">
         <v-list-item-icon
@@ -61,13 +62,6 @@
               'text-truncate d-flex align-center',
               { 'font-weight-medium primary--text': isActive(item) }
             ]">
-            <exo-user-avatar
-              v-if="isHomePage && !spaceNote"
-              :profile-id="noteWikiOwner"
-              :size="24"
-              :popover="false"
-              extra-class="me-2 flex-shrink-0 not-clickable"
-              avatar />
             <span class="text-truncate">{{ name }}</span>
           </v-list-item-title>
         </v-list-item-content>
@@ -156,6 +150,13 @@ export default {
     },
     name() {
       return this.item?.name;
+    },
+    noteUrl() {
+      if (!this.item || !this.item.noteId) {
+        return '#';
+      }
+      const baseUrl = window.location.pathname.split('/notes')[0];
+      return `${baseUrl}/notes/${this.item.noteId}`;
     }
   },
   watch: {
