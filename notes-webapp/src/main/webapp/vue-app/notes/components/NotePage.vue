@@ -212,16 +212,12 @@
             element="div"
             class="position-sticky d-flex me-1 ms-auto" />
         </div>
-        <div v-else-if="!hasChildren || hasDraft && hasEmptyContent">
+        <div class="mt-12" v-else-if="!hasChildren || hasDraft && hasEmptyContent">
           <div v-if="isManager" class="d-flex flex-column justify-center text-center">
-            <v-img
-              :src="emptyNoteNoManager"
-              class="mx-auto mb-4"
-              max-height="150"
-              max-width="250"
-              contain
-              eager />
-            <div>
+            <v-icon size="60" class="tertiary-color">
+               fa-clipboard
+            </v-icon>
+            <div class="mt-5">
               <p class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
@@ -263,14 +259,10 @@
             </div>
           </div>
           <div v-else class="d-flex flex-column justify-center text-center text-color">
-            <v-img
-              :src="emptyNoteWithManager"
-              class="mx-auto mb-4"
-              max-height="150"
-              max-width="250"
-              contain
-              eager />
-            <div>
+            <v-icon size="60" class="tertiary-color">
+               fa-clipboard
+            </v-icon>
+            <div class="mt-5">
               <h4 class="notes-welcome-title font-weight-bold text-color">
                 {{ $t('notes.label.no-content-redactor-title').replace('{0}', spaceDisplayName) }}
               </h4>
