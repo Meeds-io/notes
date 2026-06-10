@@ -221,6 +221,10 @@ export default {
       type: Boolean,
       default: true
     },
+    editMode: {
+      type: Boolean,
+      default: true
+    },
     imagesDownloadFolder: {
       type: String,
       default: 'DRIVE_ROOT_NODE/notes/images'
@@ -297,17 +301,11 @@ export default {
     saveNoteButtonDisabled() {
       return this.updatingProperties || this.saveButtonDisabled || this.isUserTyping;
     },
-    newPageDraft() {
-      return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
-    },
-    editMode() {
-      return this.noteObject?.id && !this.newPageDraft;
+    isContentImagesUploadProgress() {
+      return this.contentImageUploadProgress;
     },
     isTranslation() {
       return !!this.noteObject?.lang;
-    },
-    isContentImagesUploadProgress() {
-      return this.contentImageUploadProgress;
     }
   },
   created() {
