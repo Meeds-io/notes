@@ -221,6 +221,10 @@ export default {
       type: Boolean,
       default: true
     },
+    editMode: {
+      type: Boolean,
+      default: true
+    },
     imagesDownloadFolder: {
       type: String,
       default: 'DRIVE_ROOT_NODE/notes/images'
@@ -299,12 +303,6 @@ export default {
     },
     isContentImagesUploadProgress() {
       return this.contentImageUploadProgress;
-    },
-    newPageDraft() {
-      return !this.noteObject?.id || (this.noteObject?.draftPage && !this.noteObject?.targetPageId);
-    },
-    editMode() {
-      return this.noteObject?.id && !this.newPageDraft;
     },
     isTranslation() {
       return !!this.noteObject?.lang;
