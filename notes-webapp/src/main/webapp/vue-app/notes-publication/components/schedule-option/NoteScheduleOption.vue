@@ -348,10 +348,8 @@ export default {
     handleMultiSelectionUpdate() {
       if (this.isMultipleSelectionOption) {
         this.editScheduleOption = [SCHEDULE_OPTION, PUBLISH_NOW_OPTION];
-      } else if (this.isUntilScheduleType) {
-        this.editScheduleOption = CANCEL_SCHEDULE_OPTION;
       } else {
-        this.editScheduleOption = this.editScheduleOption[0];
+        this.editScheduleOption = this.editScheduleOption && this.editScheduleOption[0];
       }
     },
     handleEditScheduleOptionUpdate() {
