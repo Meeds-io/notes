@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.meeds.notes</groupId>
     <artifactId>notes</artifactId>
-    <version>7.1.3-exo</version>
+    <version>7.1.3-exo-patched</version>
   </parent>
   <artifactId>notes-packaging</artifactId>
   <packaging>pom</packaging>
