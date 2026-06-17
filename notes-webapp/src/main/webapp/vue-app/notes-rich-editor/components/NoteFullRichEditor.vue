@@ -18,85 +18,89 @@
 -->
 
 <template>
-  <div
-    id="notesEditor"
-    class="notesEditor width-full">
-    <note-editor-top-bar
-      :note="note"
-      :languages="languages"
-      :form-title="formTitle"
-      :note-id-param="noteIdParam"
-      :web-page-note="webPageNote"
-      :selected-language="selectedLanguage"
-      :translations="translations"
-      :is-mobile="isMobile"
-      :post-key="postKey + enablePostKeys"
-      :draft-saving-status="draftSavingStatus"
-      :publish-button-text="publishButtonText"
-      :lang-button-tooltip-text="langButtonTooltipText"
-      :web-page-url="webPageUrl"
-      :editor-icon="resolvedEditorIcon"
-      :save-button-icon="saveButtonIcon"
-      :save-button-disabled="saveNoteButtonDisabled"
-      :editor-ready="!!editor"
-      @editor-closed="editorClosed"
-      @post-note="postNote"
-      @open-metadata-drawer="openMetadataDrawer" />
-    <div class="notes-editor-body-section">
-      <div class="notes-editor-body-section-content">
-        <form class="notes-content">
-          <div class="notes-content-form">
-            <div
-              v-show="!webPageNote"
-              class="formInputGroup title notesTitle white px-5 pt-5 ">
-              <input
-                id="notesTitle"
-                :ref="editorTitleInputRef"
-                v-model="noteObject.title"
-                :placeholder="editorTitlePlaceHolder"
-                :maxlength="noteTitleMaxLength + 1"
-                type="text"
-                class="title text-color ma-0 pa-0"
-                @input="waitUserTyping()"
-                @keydown.enter.prevent="focusEditor">
-            </div>
-            <div class="formInputGroup white overflow-auto flex notes-content-wrapper px-5 pb-5">
-              <textarea
-                :id="editorBodyInputRef"
-                :ref="editorBodyInputRef"
-                :placeholder="editorBodyPlaceHolder"
-                :name="editorBodyInputRef"
-                class="notesFormInput">
+  <div v-if="canRedact !== null">
+    <note-restricted-editor v-if="!canRedact" />
+    <div
+      v-else
+      id="notesEditor"
+      class="notesEditor width-full">
+      <note-editor-top-bar
+        :note="note"
+        :languages="languages"
+        :form-title="formTitle"
+        :note-id-param="noteIdParam"
+        :web-page-note="webPageNote"
+        :selected-language="selectedLanguage"
+        :translations="translations"
+        :is-mobile="isMobile"
+        :post-key="postKey + enablePostKeys"
+        :draft-saving-status="draftSavingStatus"
+        :publish-button-text="publishButtonText"
+        :lang-button-tooltip-text="langButtonTooltipText"
+        :web-page-url="webPageUrl"
+        :editor-icon="resolvedEditorIcon"
+        :save-button-icon="saveButtonIcon"
+        :save-button-disabled="saveNoteButtonDisabled"
+        :editor-ready="!!editor"
+        @editor-closed="editorClosed"
+        @post-note="postNote"
+        @open-metadata-drawer="openMetadataDrawer" />
+      <div class="notes-editor-body-section">
+        <div class="notes-editor-body-section-content">
+          <form class="notes-content">
+            <div class="notes-content-form">
+              <div
+                v-show="!webPageNote"
+                class="formInputGroup title notesTitle white px-5 pt-5 ">
+                <input
+                  id="notesTitle"
+                  :ref="editorTitleInputRef"
+                  v-model="noteObject.title"
+                  :placeholder="editorTitlePlaceHolder"
+                  :maxlength="noteTitleMaxLength + 1"
+                  type="text"
+                  class="title text-color ma-0 pa-0"
+                  @input="waitUserTyping()"
+                  @keydown.enter.prevent="focusEditor">
+              </div>
+              <div class="formInputGroup white overflow-auto flex notes-content-wrapper px-5 pb-5">
+                <textarea
+                  :id="editorBodyInputRef"
+                  :ref="editorBodyInputRef"
+                  :placeholder="editorBodyPlaceHolder"
+                  :name="editorBodyInputRef"
+                  class="notesFormInput">
             </textarea>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
+      <extension-registry-components
+        v-if="editorExtensions.length > 0"
+        name="NotesRichEditor"
+        type="notes-editor-extensions"
+        :params="extensionParams" />
+      <note-editor-metadata-drawer
+        ref="editorMetadataDrawer"
+        :has-featured-image="hasFeaturedImage"
+        @metadata-updated="metadataUpdated" />
+      <note-editor-featured-image-drawer
+        ref="featuredImageDrawer"
+        :note="noteObject"
+        :has-featured-image="hasFeaturedImage" />
+      <note-publication-drawer
+        v-if="publicationParams"
+        ref="editorPublicationDrawer"
+        :has-featured-image="hasFeaturedImage"
+        :is-publishing="isPublishing"
+        :params="publicationParams"
+        :edit-mode="editMode"
+        @publish="postAndPublishNote"
+        @metadata-updated="metadataUpdated"
+        @closed="publicationDrawerClosed" />
+      <note-publication-target-drawer />
     </div>
-    <extension-registry-components
-      v-if="editorExtensions.length > 0"
-      name="NotesRichEditor"
-      type="notes-editor-extensions"
-      :params="extensionParams" />
-    <note-editor-metadata-drawer
-      ref="editorMetadataDrawer"
-      :has-featured-image="hasFeaturedImage"
-      @metadata-updated="metadataUpdated" />
-    <note-editor-featured-image-drawer
-      ref="featuredImageDrawer"
-      :note="noteObject"
-      :has-featured-image="hasFeaturedImage" />
-    <note-publication-drawer
-      v-if="publicationParams"
-      ref="editorPublicationDrawer"
-      :has-featured-image="hasFeaturedImage"
-      :is-publishing="isPublishing"
-      :params="publicationParams"
-      :edit-mode="editMode"
-      @publish="postAndPublishNote"
-      @metadata-updated="metadataUpdated"
-      @closed="publicationDrawerClosed" />
-    <note-publication-target-drawer />
   </div>
 </template>
 
@@ -117,7 +121,7 @@ export default {
       isPublishing: false,
       contentImageUploadProgress: false,
       pendingEditorContent: null,
-      editorExtensionSettings: {}
+      editorExtensionSettings: {},
     };
   },
   props: {
@@ -236,6 +240,10 @@ export default {
     targetSpaceId: {
       type: Number,
       default: null
+    },
+    canRedact: {
+      type: Boolean,
+      default: null
     }
   },
   watch: {
@@ -267,7 +275,7 @@ export default {
           this.bindNavigationRemoveListener();
         }, 1000);
       }
-    }
+    },
   },
   computed: {
     editorTitlePlaceHolder() {
@@ -306,7 +314,7 @@ export default {
     },
     isTranslation() {
       return !!this.noteObject?.lang;
-    }
+    },
   },
   created() {
     this.loadEditorExtension();

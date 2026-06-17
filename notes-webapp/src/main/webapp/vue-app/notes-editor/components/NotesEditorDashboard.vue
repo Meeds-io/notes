@@ -46,6 +46,7 @@
       :save-button-disabled="saveOrUpdateDisabled"
       :editor-body-input-ref="'notesContent'"
       :editor-title-input-ref="'noteTitle'"
+      :can-redact="canRedact"
       @open-treeview="openTreeView"
       @post-note="postNote"
       @auto-save="autoSave"
@@ -136,7 +137,8 @@ export default {
       autosaveProcessedFromEditorExtension: false,
       extensionDataUpdated: false,
       wikiDraftObjectType: 'wikiDraft',
-      wikiPageObjectType: 'wikiPage'
+      wikiPageObjectType: 'wikiPage',
+      canRedact: null
     };
   },
   computed: {
@@ -195,9 +197,13 @@ export default {
         this.autoSave();
       }
     },
-  },
-  mounted() {
-    this.init();
+    canRedact(newVal) {
+      if (newVal !== null) {
+        this.$nextTick(() => {
+          this.$refs.editor?.initCKEditor();
+        });
+      }
+    }
   },
   created() {
     this.refreshTranslationExtensions();
@@ -268,11 +274,13 @@ export default {
   },
   methods: {
     getTargetSpaceId(groupId) {
-      if (this.spaceId || !groupId) {
+      if (!groupId) {
+        this.canRedact = true;
         return;
       }
       this.$spaceService.getSpaceByGroupId(groupId).then((space) => {
         this.targetSpaceId = space?.id;
+        this.canRedact = space.canRedactOnSpace;
       });
     },
     processAutoSaveFromEditorExtension(event) {
