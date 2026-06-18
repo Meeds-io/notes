@@ -138,6 +138,8 @@ export default {
       extensionDataUpdated: false,
       wikiDraftObjectType: 'wikiDraft',
       wikiPageObjectType: 'wikiPage',
+      autosaveProcessedFromEditorExtension: false,
+      extensionDataUpdated: false,
       canRedact: null
     };
   },
