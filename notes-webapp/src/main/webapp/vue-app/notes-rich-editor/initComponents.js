@@ -1,6 +1,7 @@
 import TranslationsEditBar from '../notes-rich-editor/components/TranslationsEditBar.vue';
 import NoteEditorTopBar from '../notes-rich-editor/components/NoteEditorTopBar.vue';
 import NoteFullRichEditor from './components/NoteFullRichEditor.vue';
+import RestrictedNoteEditor from './components/RestrictedNoteEditor.vue';
 import NoteEditorMetadataDrawer from './components/note-properties/NoteEditorMetadataDrawer.vue';
 import NoteEditorFeaturedImageDrawer from './components/note-properties/NoteEditorFeaturedImageDrawer.vue';
 import NoteMetadataPropertiesForm from './components/note-properties/NoteMetadataPropertiesForm.vue';
@@ -9,6 +10,7 @@ const components = {
   'note-translation-edit-bar': TranslationsEditBar,
   'note-editor-top-bar': NoteEditorTopBar,
   'note-full-rich-editor': NoteFullRichEditor,
+  'note-restricted-editor': RestrictedNoteEditor,
   'note-editor-metadata-drawer': NoteEditorMetadataDrawer,
   'note-editor-featured-image-drawer': NoteEditorFeaturedImageDrawer,
   'note-metadata-properties-form': NoteMetadataPropertiesForm
