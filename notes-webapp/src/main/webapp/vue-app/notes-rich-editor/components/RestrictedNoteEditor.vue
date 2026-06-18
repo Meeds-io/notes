@@ -1,0 +1,59 @@
+<!--
+ This file is part of the Meeds project (https://meeds.io/).
+
+ Copyright (C) 2026 Meeds Association contact@meeds.io
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 3 of the License, or (at your option) any later version.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public License
+ along with this program; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+-->
+
+<template>
+  <v-app class="application-body">
+    <v-card
+      class="py-12 text-center"
+      color="transparent"
+      flat>
+      <v-card-text>
+        <v-icon color="primary" class="fa-7x">
+          fa-edit
+        </v-icon>
+      </v-card-text>
+      <v-card-text class="text-h5 text-subtitle">
+        {{ $t('notes.editor.restrictedTitle') }}
+      </v-card-text>
+      <v-card-text class="text-h5 text-subtitle">
+        {{ $t('notes.editor.restrictedDescription') }}
+      </v-card-text>
+      <v-card-actions class="justify-center py-5">
+        <v-btn
+          :href="defaultLink"
+          color="primary"
+          class="btn">
+          <span class="text-none">{{ $t('notes.editor.restrictedButton') }}</span>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-app>
+</template>
+<script>
+export default {
+  computed: {
+    defaultLink() {
+      return `${eXo.env.portal.context}`;
+    },
+  },
+  mounted() {
+    this.$root.$applicationLoaded();
+  },
+};
+</script>
