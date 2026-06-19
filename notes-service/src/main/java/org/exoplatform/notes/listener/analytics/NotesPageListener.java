@@ -159,21 +159,21 @@ public class NotesPageListener extends PageWikiListener {
       if (page instanceof PageVersion) {
         contentId = page.getParent().getId();
       }
-      statisticData.addParameter("contentId", contentId);
-      statisticData.addParameter("contentTitle", page.getTitle());
+      statisticData.addKeyword("contentId", contentId);
+      statisticData.addKeyword("contentTitle", page.getTitle());
       if (!operation.equals(WIKI_ADD_PAGE_OPERATION)) {
-        statisticData.addParameter("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
+        statisticData.addKeyword("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
       }
-      statisticData.addParameter("contentCreator", page.getAuthor());
+      statisticData.addKeyword("contentCreator", page.getAuthor());
       String lastModifier = page.getLastUpdater();
       if (lastModifier == null) {
         PageVersion pageVersion = getNoteService().getPublishedVersionByPageIdAndLang(Long.valueOf(page.getId()), page.getLang());
         lastModifier = Objects.requireNonNullElse(pageVersion, page).getAuthor();
       }
-      statisticData.addParameter("contentLastModifier", lastModifier);
-      statisticData.addParameter("contentType", "Note");
-      statisticData.addParameter("contentUpdatedDate", page.getUpdatedDate());
-      statisticData.addParameter("contentCreationDate", page.getCreatedDate());
+      statisticData.addKeyword("contentLastModifier", lastModifier);
+      statisticData.addKeyword("contentType", "Note");
+      statisticData.addDate("contentUpdatedDate", page.getUpdatedDate());
+      statisticData.addDate("contentCreationDate", page.getCreatedDate());
 
       if (StringUtils.isNotBlank(wikiOwner) && StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), wikiType)) {
         Space space = getSpaceService().getSpaceByGroupId(wikiOwner);
