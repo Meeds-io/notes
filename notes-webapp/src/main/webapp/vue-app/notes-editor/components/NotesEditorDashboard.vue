@@ -134,8 +134,6 @@ export default {
       saveButtonIcon: 'fas fa-save',
       translationSwitch: false,
       newTranslation: false,
-      autosaveProcessedFromEditorExtension: false,
-      extensionDataUpdated: false,
       wikiDraftObjectType: 'wikiDraft',
       wikiPageObjectType: 'wikiPage',
       autosaveProcessedFromEditorExtension: false,
