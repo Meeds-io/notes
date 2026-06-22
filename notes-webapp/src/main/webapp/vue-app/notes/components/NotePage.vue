@@ -40,25 +40,21 @@
               sm="8"
               cols="6">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
-                <v-tooltip v-if="!treeViewExpended || isMobile" bottom>
-                  <template #activator="{ on, attrs }">
-                    <v-btn
-                      icon
-                      v-bind="attrs"
-                      v-on="on"
-                      class="pa-0 me-2"
-                      @click.stop.prevent="openSidebarTreeView">
-                      <img
-                        src="/social/images/sidebar.svg"
-                        class="icon-default-color"
-                        height="20px"
-                        width="20px">
-                    </v-btn>
-                  </template>
-                  <span class="caption">
-                    {{ $t('notes.tooltip.open.tree') }}
-                  </span>
-                </v-tooltip>
+                <v-btn
+                  v-if="!treeViewExpended || isMobile"
+                  icon
+                  v-bind="attrs"
+                  v-on="on"
+                  class="pa-0 me-2"
+                  @click.stop.prevent="openSidebarTreeView">
+                  <img
+                    alt=""
+                    :title="$t('notes.tooltip.open.tree')"
+                    src="/social/images/sidebar.svg"
+                    class="icon-default-color"
+                    height="20px"
+                    width="20px">
+                </v-btn>
                 <note-breadcrumb
                   class="my-auto"
                   :note-breadcrumb="notebreadcrumb"
