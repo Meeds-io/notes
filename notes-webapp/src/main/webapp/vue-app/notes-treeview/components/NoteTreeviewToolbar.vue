@@ -39,24 +39,20 @@
       @filter-button-click="$root.$emit('notes-filter-open', filter)"
       @filter-expand="filterExpand = $event"
       @loading="$emit('loading', $event)" />
-    <v-tooltip v-if="!filterExpand" bottom>
-      <template #activator="{ on, attrs }">
-        <v-btn
-          icon
-          v-bind="attrs"
-          v-on="on"
-          @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
-          <img
-            src="/social/images/sidebar.svg"
-            class="icon-default-color"
-            height="20px"
-            width="20px">
-        </v-btn>
-      </template>
-      <span class="caption">
-        {{ $t('notes.tooltip.close.tree') }}
-      </span>
-    </v-tooltip>
+    <v-btn
+      v-if="!filterExpand"
+      icon
+      v-bind="attrs"
+      v-on="on"
+      @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
+      <img
+        alt=""
+        :title="$t('notes.tooltip.close.tree')"
+        src="/social/images/sidebar.svg"
+        class="icon-default-color"
+        height="20px"
+        width="20px">
+    </v-btn>
   </div>
 </template>
 <script>
