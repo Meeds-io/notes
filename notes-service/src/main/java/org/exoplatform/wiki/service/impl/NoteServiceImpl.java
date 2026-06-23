@@ -424,7 +424,7 @@ public class NoteServiceImpl implements NoteService {
 
     Page note = getNoteOfNoteBookByName(wikiType, wikiOwner, noteName);
     if (note == null) {
-      log.error("Can't delete note '" + noteName + "'. This note does not exist.");
+      log.warn("Can't delete note '" + noteName + "'. This note does not exist.");
       throw new EntityNotFoundException("Note to delete not found");
     } else if (userIdentity == null || !canEditNote(note, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit permissions on the note.");
@@ -1352,6 +1352,7 @@ public class NoteServiceImpl implements NoteService {
       Wiki wiki = wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner());
       if (StringUtils.isNotEmpty(conflict) && (conflict.equals("replaceAll"))) {
         List<Page> notesTodelete = getAllNotes(parent);
+        Collections.reverse(notesTodelete);
         for (Page noteTodelete : notesTodelete) {
           if (!NoteConstants.NOTE_HOME_NAME.equals(noteTodelete.getName()) && !noteTodelete.getId().equals(parent.getId())) {
             try {
