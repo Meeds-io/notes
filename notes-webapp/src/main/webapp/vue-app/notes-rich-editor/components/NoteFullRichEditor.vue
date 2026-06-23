@@ -33,6 +33,7 @@
         :selected-language="selectedLanguage"
         :translations="translations"
         :is-mobile="isMobile"
+        :is-posting="isPosting"
         :post-key="postKey + enablePostKeys"
         :draft-saving-status="draftSavingStatus"
         :publish-button-text="publishButtonText"
@@ -244,6 +245,10 @@ export default {
     canRedact: {
       type: Boolean,
       default: null
+    },
+    isPosting: {
+      type: Boolean,
+      default: false
     }
   },
   watch: {
@@ -438,7 +443,7 @@ export default {
       this.postAndPublishNote();
     },
     postAndPublishNote(publicationSettings, note, extensionsCallback) {
-      if (this.publicationParams) {
+      if (this.publicationParams && note) {
         this.noteObject = note;
         this.updateData();
       }
