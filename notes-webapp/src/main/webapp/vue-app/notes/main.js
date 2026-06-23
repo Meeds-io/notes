@@ -43,7 +43,11 @@ export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     // init Vue app when locale ressources are ready
     Vue.createApp({
-      template: `<notes-overview id="${appId}" />`,
+      template: `
+        <v-app id="${appId}">
+          <notes-overview class="application-body" />
+        </v-app>
+      `,
       vuetify: Vue.prototype.vuetifyOptions,
       i18n,
       computed: {
