@@ -85,6 +85,7 @@
           <p class="draftSavingStatus my-auto me-3">{{ draftSavingStatus }}</p>
           <v-btn
             v-if="!isMobile"
+            :loading="isPosting"
             id="notesUpdateAndPost"
             class="btn btn-primary primary px-2 py-0 me-5"
             height="34"
@@ -96,6 +97,7 @@
           </v-btn>
           <div v-else class="d-flex">
             <v-btn
+              :loading="isPosting"
               class="btn btn-primary pa-0"
               width="42"
               height="36"
@@ -214,6 +216,10 @@ export default {
       type: Boolean,
       default: false
     },
+    isPosting: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     editorMetadataDrawerEnabled() {
