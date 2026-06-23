@@ -296,7 +296,12 @@ public class NotesAutoImportService implements Startable {
     space.setPrettyName(prettyName);
     space.setVisibility(Space.HIDDEN);
     space.setRegistration(Space.CLOSED);
-    Optional<SpaceTemplate> communitySpaceTemplate = spaceTemplateService.getSpaceTemplates().stream().filter(template -> template.getLayout().equals("community")).findFirst();
+    List<Long> subspaceTemplateIds = spaceTemplateService.getSubspaceTemplateIds(superUserIdentity.getUserId());
+    Optional<SpaceTemplate> communitySpaceTemplate = spaceTemplateService.getSpaceTemplates()
+                                                                         .stream()
+                                                                         .filter(template -> template.getLayout().equals("community"))
+                                                                         .filter(template -> !subspaceTemplateIds.contains(template.getId()))
+                                                                         .findFirst();
     if (communitySpaceTemplate.isPresent()) {
       space.setTemplateId(communitySpaceTemplate.get().getId());
     } else {
