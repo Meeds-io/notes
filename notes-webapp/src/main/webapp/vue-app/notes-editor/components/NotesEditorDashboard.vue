@@ -47,6 +47,7 @@
       :editor-body-input-ref="'notesContent'"
       :editor-title-input-ref="'noteTitle'"
       :can-redact="canRedact"
+      :is-posting="postingNote"
       @open-treeview="openTreeView"
       @post-note="postNote"
       @auto-save="autoSave"
@@ -143,7 +144,7 @@ export default {
   },
   computed: {
     saveOrUpdateDisabled() {
-      return this.notValidTitle || (this.noteNotModified
+      return this.notValidTitle || this.postingNote || (this.noteNotModified
                                 && !this.propertiesModified && !this.draftNote && !this.note.draftPage) || this.savingDraft;
     },
     notValidTitle() {
