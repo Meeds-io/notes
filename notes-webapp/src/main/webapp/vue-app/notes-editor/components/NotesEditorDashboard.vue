@@ -242,10 +242,10 @@ export default {
       this.parentPageId = parentNoteId === 'null' ? null : parentNoteId;
       this.spaceId = urlParams.get('spaceId');
       this.spaceGroupId  = urlParams.get('spaceGroupId');
-      this.getTargetSpaceId(this.spaceGroupId);
       this.spaceDisplayName  = urlParams.get('spaceName');
       this.note.parentPageId = this.parentPageId;
     }
+    this.retrieveSpaceInformation(this.spaceGroupId);
     if (urlParams.has('owner')) {
       this.note.wikiOwner = urlParams.get('owner');
     }
@@ -274,7 +274,7 @@ export default {
     this.$root.$on('save-draft', this.autoSave);
   },
   methods: {
-    getTargetSpaceId(groupId) {
+    retrieveSpaceInformation(groupId) {
       if (!groupId) {
         this.canRedact = true;
         return;
