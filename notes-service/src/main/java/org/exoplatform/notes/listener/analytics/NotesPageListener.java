@@ -160,6 +160,7 @@ public class NotesPageListener extends PageWikiListener {
         contentId = page.getParent().getId();
       }
       statisticData.addKeyword("contentId", contentId);
+      statisticData.addKeyword("contentCompositeId", String.format("note_%s", contentId));
       statisticData.addKeyword("contentTitle", page.getTitle());
       if (!operation.equals(WIKI_ADD_PAGE_OPERATION)) {
         statisticData.addKeyword("contentLanguage", page.getLang() != null ? page.getLang() : "originalVersion");
