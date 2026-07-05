@@ -31,6 +31,10 @@
         "properties": {
           "note_id": {
             "type": "integer"
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional language/translation to read (e.g. 'fr', 'de'); omit for the note's default content. Use get_note_translations to list which languages exist."
           }
         },
         "required": [
@@ -444,6 +448,28 @@
         "openWorldHint": false
       },
       "require_approval": true
+    },
+    {
+      "name": "get_note_translations",
+      "title": "List a note's translations",
+      "description": "List the language codes a note has translations for (e.g. ['en','fr']). An empty list means the note has only its default content. Use get_note with a 'language' to read a specific translation, and update_note with a 'language' to create/update one.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
     }
   ]
 }
