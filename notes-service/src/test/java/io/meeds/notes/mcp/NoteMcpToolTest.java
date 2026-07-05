@@ -211,7 +211,7 @@ public class NoteMcpToolTest {
   public void getNoteWhenNoteDoesNotExistShouldThrowException() throws Exception { // NOSONAR
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(null);
 
-    tool.getNote(NOTE_ID);
+    tool.getNote(NOTE_ID, null);
   }
 
   @Test(expected = IllegalAccessException.class)
@@ -221,7 +221,7 @@ public class NoteMcpToolTest {
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(false);
 
-    tool.getNote(NOTE_ID);
+    tool.getNote(NOTE_ID, null);
   }
 
   @Test
@@ -232,7 +232,7 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID));
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
 
     assertEquals(NOTE_ID, result.noteId());
     assertEquals("Note", result.title());
@@ -535,6 +535,34 @@ public class NoteMcpToolTest {
     runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, null));
 
     verify(noteService).removeNoteFeaturedImage(eq(NOTE_ID), eq(77L), any(), eq(false), eq(42L));
+  }
+
+  @Test
+  public void getNoteTranslationsShouldReturnLanguages() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("en", "fr"));
+
+    List<String> languages = tool.getNoteTranslations(NOTE_ID);
+
+    assertEquals(List.of("en", "fr"), languages);
+  }
+
+  @Test
+  public void getNoteInLanguageShouldReadRequestedLanguage() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "fr"));
+
+    assertNotNull(result);
+    assertEquals(NOTE_ID, result.noteId());
+    verify(noteService).getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"));
   }
 
   private Page mockPage(String id, String title) {
