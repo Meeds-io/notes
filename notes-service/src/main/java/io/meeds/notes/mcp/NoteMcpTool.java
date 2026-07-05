@@ -220,6 +220,15 @@ public class NoteMcpTool implements McpToolPlugin {
       // Applying the translated content before updateNote (as before) overwrote
       // the default page, making a new translation replace the original note.
       note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
+      // Inherit the default note's metadata (summary + cover) into the
+      // translation: covers are stored per language, so the translation renders
+      // with the default's cover only if we carry note.getProperties() into the
+      // language version - exactly what the native update does. The default's
+      // properties are populated only when fetched with the default (null) lang.
+      Page defaultNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), currentUserAclIdentity, null, null);
+      if (defaultNote != null && defaultNote.getProperties() != null) {
+        note.setProperties(defaultNote.getProperties());
+      }
       note.setLang(language);
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);

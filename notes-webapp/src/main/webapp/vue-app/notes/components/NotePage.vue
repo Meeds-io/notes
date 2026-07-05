@@ -150,6 +150,7 @@
           <v-card flat class="d-sm-grid">
             <v-img
               v-if="hasFeaturedImage"
+              :key="`featured-image-${note.id}-${note.lang || 'default'}`"
               :lazy-src="featuredImageLink"
               :alt="featuredImageAltText"
               :src="featuredImageLink"
@@ -1170,7 +1171,17 @@ export default {
       this.note.content = version?.content;
       this.note.title = version?.title;
       this.noteSummary = version?.properties?.summary;
-      this.note.properties = version?.properties;
+      // Featured images (covers) are stored per note/translation, not per content
+      // version, so a version's properties may not carry a valid featuredImage.
+      // Preserve the note's current featured image (already resolved for the active
+      // language) when the version doesn't provide one, otherwise switching
+      // translation would wipe the per-language cover.
+      this.note.properties = {
+        ...version?.properties,
+        featuredImage: version?.properties?.featuredImage?.id
+          ? version.properties.featuredImage
+          : this.note?.properties?.featuredImage,
+      };
       this.noteTitle = version?.title;
     },
     restoreVersion(version) {
