@@ -155,9 +155,22 @@ public class NoteMcpTool implements McpToolPlugin {
     return toNoteRootTreeModel(rootNote, spaceId);
   }
 
-  public NoteModel getNote(long noteId) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId);
+  public NoteModel getNote(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+    Page note = getNoteById(noteId, language);
     return toNoteModel(note);
+  }
+
+  // Lists the language codes a note has translations for (e.g. ["en", "fr"]).
+  // The default (untranslated) content is what get_note returns without a
+  // language; an empty list means the note has only its default content. Read as
+  // the current user, so the note's ACL is enforced. Read-only.
+  public List<String> getNoteTranslations(long noteId) throws IllegalAccessException, ObjectNotFoundException {
+    getNoteById(noteId); // ACL check: throws if the current user can't view the note
+    try {
+      return noteService.getPageAvailableTranslationLanguages(noteId, false);
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not read the note's translations: " + e.getMessage());
+    }
   }
 
   public NoteModel createSpaceNote(Long spaceId,
@@ -201,6 +214,12 @@ public class NoteMcpTool implements McpToolPlugin {
       }
       note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
     } else {
+      // Create/update a LANGUAGE translation WITHOUT touching the default note:
+      // persist the note first with its default title/content unchanged, then
+      // carry the translated title/content only into the language version below.
+      // Applying the translated content before updateNote (as before) overwrote
+      // the default page, making a new translation replace the original note.
+      note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
       note.setLang(language);
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);
@@ -208,12 +227,11 @@ public class NoteMcpTool implements McpToolPlugin {
       if (StringUtils.isNotBlank(htmlContent)) {
         note.setContent(markdownToHtml(htmlContent));
       }
-      note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
     }
     noteService.createVersionOfNote(note, currentUserAclIdentity.getUserId(), true);
     WikiPageParams noteParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
     noteService.removeDraftOfNote(noteParams, language);
-    return getNote(noteId);
+    return getNote(noteId, null);
   }
 
   @SneakyThrows
@@ -312,7 +330,7 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not restore the note version: " + e.getMessage());
     }
-    return getNote(noteId);
+    return getNote(noteId, null);
   }
 
   private List<PageHistory> versionsHistory(Page note, String language) {
@@ -371,7 +389,7 @@ public class NoteMcpTool implements McpToolPlugin {
       UploadToolUtils.release(uploadService, uploadId);
       throw new IllegalStateException("Could not set the note cover image: " + e.getMessage());
     }
-    return getNote(noteId);
+    return getNote(noteId, null);
   }
 
   // Sets (or replaces) a note's summary — the short excerpt shown on note cards.
@@ -398,7 +416,7 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not set the note summary: " + e.getMessage());
     }
-    return getNote(noteId);
+    return getNote(noteId, null);
   }
 
   // Removes a note's cover ("featured") image. Only a user who can edit the note
@@ -422,7 +440,7 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not remove the note cover image: " + e.getMessage());
     }
-    return getNote(noteId);
+    return getNote(noteId, null);
   }
 
   private long currentUserIdentityId(String username) {
@@ -462,7 +480,7 @@ public class NoteMcpTool implements McpToolPlugin {
                                               currentUserAclIdentity,
                                               false,
                                               true);
-    return getNote(Long.parseLong(createdNote.getId()));
+    return getNote(Long.parseLong(createdNote.getId()), null);
   }
 
   private String sanitizeAndSubstituteMentions(String htmlContent, Locale locale) {
@@ -570,11 +588,15 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   private Page getNoteById(long noteId) throws IllegalAccessException, ObjectNotFoundException {
-    Locale currentUserLocale = getCurrentUserLocale();
+    return getNoteById(noteId, null);
+  }
+
+  private Page getNoteById(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+    String lang = StringUtils.isBlank(language) ? getCurrentUserLocale().getLanguage() : language;
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId),
                                                getCurrentUserAclIdentity(),
                                                null,
-                                               currentUserLocale.getLanguage());
+                                               lang);
     if (note == null) {
       throw new ObjectNotFoundException("Note with id %s doesn't exists".formatted(noteId));
     } else if (!noteService.canViewNote(note, getCurrentUserName())) {
