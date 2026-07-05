@@ -32,6 +32,7 @@ public record NoteModel(
                         @JsonProperty("note_id")
                         long noteId,
                         String title,
+                        String summary,
                         @JsonProperty("html_content")
                         String htmlContent,
                         String url,
