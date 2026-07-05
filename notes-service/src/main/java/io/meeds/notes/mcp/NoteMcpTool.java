@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.container.component.RequestLifeCycle;
@@ -41,6 +42,7 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.attachment.AttachmentService;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.processor.I18NActivityProcessor;
@@ -48,7 +50,9 @@ import org.exoplatform.social.core.profileproperty.ProfilePropertyService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.utils.MentionUtils;
+import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
@@ -62,11 +66,14 @@ import io.meeds.mcp.server.plugin.McpToolPlugin;
 import io.meeds.mcp.server.tool.model.ActivityModel;
 import io.meeds.mcp.server.tool.model.UserModel;
 import io.meeds.mcp.server.tool.util.ActivityToolUtils;
+import io.meeds.mcp.server.tool.util.UploadToolUtils;
 import io.meeds.mcp.server.tool.util.UserToolUtils;
 import io.meeds.notes.mcp.model.NoteBreadcrumbModel;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
 import io.meeds.notes.mcp.model.NoteTreeModel;
+import io.meeds.notes.mcp.model.NoteVersionModel;
+import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.plugin.NotePermanentLinkPlugin;
 import io.meeds.portal.permlink.model.PermanentLinkObject;
@@ -107,6 +114,12 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private PermanentLinkService    permanentLinkService;
 
+  private UploadService           uploadService;
+
+  private AttachmentService       attachmentService;
+
+  private FileService             fileService;
+
   public NoteMcpTool(WikiService wikiService,
                           NoteService noteService,
                           ActivityManager activityManager,
@@ -117,7 +130,10 @@ public class NoteMcpTool implements McpToolPlugin {
                           ProfilePropertyService profilePropertyService,
                           UserACL userAcl,
                           UserPortalConfigService portalConfigService,
-                          PermanentLinkService permanentLinkService) {
+                          PermanentLinkService permanentLinkService,
+                          UploadService uploadService,
+                          AttachmentService attachmentService,
+                          FileService fileService) {
     this.wikiService = wikiService;
     this.noteService = noteService;
     this.activityManager = activityManager;
@@ -129,6 +145,9 @@ public class NoteMcpTool implements McpToolPlugin {
     this.userAcl = userAcl;
     this.portalConfigService = portalConfigService;
     this.permanentLinkService = permanentLinkService;
+    this.uploadService = uploadService;
+    this.attachmentService = attachmentService;
+    this.fileService = fileService;
   }
 
   public NoteRootTreeModel getSpaceNoteTree(long spaceId) throws ObjectNotFoundException, IllegalAccessException {
@@ -261,6 +280,164 @@ public class NoteMcpTool implements McpToolPlugin {
                   .toList();
   }
 
+  // Lists the version history of a note: each version's number, id, title,
+  // content, date and author. Read as the current user, so the note's ACL is
+  // enforced. Read-only.
+  public List<NoteVersionModel> getNoteVersions(long noteId, String language) throws IllegalAccessException,
+                                                                             ObjectNotFoundException {
+    Page note = getNoteById(noteId);
+    return versionsHistory(note, language).stream().map(this::toNoteVersionModel).toList();
+  }
+
+  // Restores a note to a previous version identified by its version_number (from
+  // get_note_versions), creating a new current version from it. Only a user who
+  // can edit the note may restore it.
+  public NoteModel restoreNoteVersion(long noteId,
+                                      long versionNumber,
+                                      String language) throws IllegalAccessException, ObjectNotFoundException {
+    Page note = getNoteById(noteId);
+    if (!noteService.canEditNote(note, getCurrentUserName())) {
+      throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
+    }
+    PageHistory target =
+                       versionsHistory(note, language).stream()
+                                                      .filter(version -> version.getVersionNumber() != null
+                                                          && version.getVersionNumber() == versionNumber)
+                                                      .findFirst()
+                                                      .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no version number %s. "
+                                                          + "Use get_note_versions to list the available versions.").formatted(noteId,
+                                                                                                                               versionNumber)));
+    try {
+      noteService.restoreVersionOfNote(target.getName(), note, getCurrentUserName());
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not restore the note version: " + e.getMessage());
+    }
+    return getNote(noteId);
+  }
+
+  private List<PageHistory> versionsHistory(Page note, String language) {
+    try {
+      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), StringUtils.trimToNull(language));
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not read the note version history: " + e.getMessage());
+    }
+  }
+
+  // Sets a note's cover ("featured") image from exactly one of a public http(s)
+  // URL, base64 bytes, or an ACL-checked reference to an existing platform
+  // attachment. Only a user who can edit the note may set it. The image is wired
+  // into the note metadata so it actually renders on the note.
+  public NoteModel setNoteCover(long noteId,
+                                String imageUrl,
+                                String imageBase64,
+                                String attachmentObjectType,
+                                String attachmentObjectId,
+                                String altText,
+                                String language) throws IllegalAccessException, ObjectNotFoundException {
+    Page note = getNoteById(noteId);
+    String username = getCurrentUserName();
+    if (!noteService.canEditNote(note, username)) {
+      throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
+    }
+    UploadToolUtils.FetchedImage image = UploadToolUtils.resolveImage(attachmentService,
+                                                                      fileService,
+                                                                      getCurrentUserAclIdentity(),
+                                                                      imageUrl,
+                                                                      imageBase64,
+                                                                      attachmentObjectType,
+                                                                      attachmentObjectId,
+                                                                      UploadToolUtils.DEFAULT_MAX_BYTES);
+    String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
+    try {
+      NotePageProperties properties = note.getProperties() != null ? note.getProperties() : new NotePageProperties();
+      NoteFeaturedImage featuredImage = new NoteFeaturedImage();
+      NoteFeaturedImage existing = properties.getFeaturedImage();
+      if (existing != null && existing.getId() != null && existing.getId() > 0) {
+        featuredImage.setId(existing.getId()); // update the existing cover file in place
+      }
+      featuredImage.setUploadId(uploadId);
+      featuredImage.setMimeType(image.mimeType());
+      featuredImage.setFileName(image.fileName());
+      featuredImage.setAltText(altText);
+      properties.setNoteId(noteId);
+      properties.setDraft(false);
+      properties.setFeaturedImage(featuredImage);
+      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+      noteService.saveNoteMetadata(properties, lang, currentUserIdentityId(username));
+      // propagate the metadata onto a new note version, so the cover is resolved
+      // consistently from the published version (as the native update flow does)
+      noteService.createVersionOfNote(note, username, true);
+    } catch (Exception e) {
+      UploadToolUtils.release(uploadService, uploadId);
+      throw new IllegalStateException("Could not set the note cover image: " + e.getMessage());
+    }
+    return getNote(noteId);
+  }
+
+  // Sets (or replaces) a note's summary — the short excerpt shown on note cards.
+  // Only a user who can edit the note may set it; the note's cover image is
+  // preserved.
+  public NoteModel setNoteSummary(long noteId, String summary, String language) throws IllegalAccessException,
+                                                                               ObjectNotFoundException {
+    Page note = getNoteById(noteId);
+    String username = getCurrentUserName();
+    if (!noteService.canEditNote(note, username)) {
+      throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
+    }
+    try {
+      NotePageProperties properties = note.getProperties() != null ? note.getProperties() : new NotePageProperties();
+      properties.setNoteId(noteId);
+      properties.setDraft(false);
+      properties.setSummary(summary);
+      // leave the existing cover untouched (its id stays in the saved metadata)
+      properties.setFeaturedImage(null);
+      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+      noteService.saveNoteMetadata(properties, lang, currentUserIdentityId(username));
+      // propagate the metadata onto a new note version (as the native update flow does)
+      noteService.createVersionOfNote(note, username, true);
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not set the note summary: " + e.getMessage());
+    }
+    return getNote(noteId);
+  }
+
+  // Removes a note's cover ("featured") image. Only a user who can edit the note
+  // may remove it.
+  public NoteModel removeNoteCover(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+    Page note = getNoteById(noteId);
+    String username = getCurrentUserName();
+    if (!noteService.canEditNote(note, username)) {
+      throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
+    }
+    NotePageProperties properties = note.getProperties();
+    NoteFeaturedImage existing = properties == null ? null : properties.getFeaturedImage();
+    if (existing == null || existing.getId() == null || existing.getId() <= 0) {
+      throw new ObjectNotFoundException("Note with id %s has no cover image to remove.".formatted(noteId));
+    }
+    try {
+      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+      noteService.removeNoteFeaturedImage(noteId, existing.getId(), lang, false, currentUserIdentityId(username));
+      // propagate the removal onto a new note version (as the native update flow does)
+      noteService.createVersionOfNote(note, username, true);
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not remove the note cover image: " + e.getMessage());
+    }
+    return getNote(noteId);
+  }
+
+  private long currentUserIdentityId(String username) {
+    return Long.parseLong(identityManager.getOrCreateUserIdentity(username).getId());
+  }
+
+  private NoteVersionModel toNoteVersionModel(PageHistory version) {
+    return new NoteVersionModel(version.getVersionNumber(),
+                                version.getId(),
+                                version.getTitle(),
+                                version.getContent(),
+                                formatDate(version.getUpdatedDate() != null ? version.getUpdatedDate() : version.getCreatedDate()),
+                                toUserModel(version.getAuthor()));
+  }
+
   private NoteModel createNote(Page parentPage, String title, String summary, String htmlContent) throws IllegalAccessException,
                                                                                                   ObjectNotFoundException {
     Identity currentUserAclIdentity = getCurrentUserAclIdentity();
@@ -308,8 +485,10 @@ public class NoteMcpTool implements McpToolPlugin {
     note.setContent(htmlContent);
     String currentUserName = getCurrentUserName();
     boolean canEdit = noteService.canEditNote(note, currentUserName);
+    String summary = note.getProperties() != null ? note.getProperties().getSummary() : null;
     return new NoteModel(Long.parseLong(note.getId()),
                          note.getTitle(),
+                         summary,
                          htmlContent,
                          getUrl(note),
                          formatDate(note.getCreatedDate()),
