@@ -7,9 +7,13 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "space_id": { "type": "integer" }
+          "space_id": {
+            "type": "integer"
+          }
         },
-        "required": ["space_id"]
+        "required": [
+          "space_id"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -25,9 +29,13 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "note_id": { "type": "integer" }
+          "note_id": {
+            "type": "integer"
+          }
         },
-        "required": ["note_id"]
+        "required": [
+          "note_id"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -43,15 +51,25 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "space_id": { "type": "integer" },
-          "title": { "type": "string" },
+          "space_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
           "summary": {
             "type": "string",
             "description": "Text only, no html no markdown summary of the note content"
           },
-          "html_content": { "type": "string" }
+          "html_content": {
+            "type": "string"
+          }
         },
-        "required": ["space_id", "title", "html_content"]
+        "required": [
+          "space_id",
+          "title",
+          "html_content"
+        ]
       },
       "annotations": {
         "readOnlyHint": false,
@@ -68,15 +86,25 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "parent_note_id": { "type": "integer" },
-          "title": { "type": "string" },
+          "parent_note_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
           "summary": {
             "type": "string",
             "description": "Text only, no html no markdown summary of the note content"
           },
-          "html_content": { "type": "string" }
+          "html_content": {
+            "type": "string"
+          }
         },
-        "required": ["parent_note_id", "title", "html_content"]
+        "required": [
+          "parent_note_id",
+          "title",
+          "html_content"
+        ]
       },
       "annotations": {
         "readOnlyHint": false,
@@ -93,17 +121,47 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "note_id": { "type": "integer" },
-          "title": { "type": "string" },
-          "html_content": { "type": "string" },
-          "language": { "type": "string" }
+          "note_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "html_content": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
         },
         "allOf": [
-          { "required": ["note_id"] },
+          {
+            "required": [
+              "note_id"
+            ]
+          },
           {
             "oneOf": [
-              { "required": ["title"], "not": { "required": ["html_content"] } },
-              { "required": ["html_content"], "not": { "required": ["title"] } }
+              {
+                "required": [
+                  "title"
+                ],
+                "not": {
+                  "required": [
+                    "html_content"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "html_content"
+                ],
+                "not": {
+                  "required": [
+                    "title"
+                  ]
+                }
+              }
             ]
           }
         ]
@@ -123,9 +181,13 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "note_id": { "type": "integer" }
+          "note_id": {
+            "type": "integer"
+          }
         },
-        "required": ["note_id"]
+        "required": [
+          "note_id"
+        ]
       },
       "annotations": {
         "readOnlyHint": false,
@@ -142,9 +204,13 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "note_id": { "type": "integer" }
+          "note_id": {
+            "type": "integer"
+          }
         },
-        "required": ["note_id"]
+        "required": [
+          "note_id"
+        ]
       },
       "annotations": {
         "readOnlyHint": false,
@@ -161,10 +227,17 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "note_id": { "type": "integer" },
-          "target_parent_note_id": { "type": "integer" }
+          "note_id": {
+            "type": "integer"
+          },
+          "target_parent_note_id": {
+            "type": "integer"
+          }
         },
-        "required": ["note_id", "target_parent_note_id"]
+        "required": [
+          "note_id",
+          "target_parent_note_id"
+        ]
       },
       "annotations": {
         "readOnlyHint": false,
@@ -181,13 +254,25 @@
       "input_schema": {
         "type": "object",
         "properties": {
-          "query": { "type": "string" },
-          "space_id": { "type": "integer" },
-          "offset": { "type": "integer" },
-          "limit": { "type": "integer" },
-          "is_favorites": { "type": "boolean" }
+          "query": {
+            "type": "string"
+          },
+          "space_id": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "is_favorites": {
+            "type": "boolean"
+          }
         },
-        "required": ["query"]
+        "required": [
+          "query"
+        ]
       },
       "annotations": {
         "readOnlyHint": true,
@@ -195,6 +280,170 @@
         "idempotentHint": true,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "get_note_versions",
+      "title": "Get a note's version history",
+      "description": "List the version history of a note: each version's number, id, title, content, date and author. Use restore_note_version to roll back to one.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "restore_note_version",
+      "title": "Restore a note version",
+      "description": "Restore a note to a previous version identified by its version_number (from get_note_versions). Creates a new current version from the chosen one.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "version_number": {
+            "type": "integer",
+            "description": "The version_number to restore, from get_note_versions."
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+          }
+        },
+        "required": [
+          "note_id",
+          "version_number"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "set_note_cover",
+      "title": "Set a note's cover image",
+      "description": "Set a note's cover (featured) image from a public image URL or base64 bytes. The image is wired into the note so it actually renders as the note's illustration.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "image_url": {
+            "type": "string",
+            "description": "Direct http(s) URL of an image to use as the cover. Provide exactly one image source."
+          },
+          "image_base64": {
+            "type": "string",
+            "description": "Base64-encoded image bytes (png, jpeg, gif or webp), optionally as a data: URI. Provide exactly one image source."
+          },
+          "attachment_object_type": {
+            "type": "string",
+            "description": "Internal: object type of an existing platform attachment to use as the cover (set automatically by the client from the user's attached image — do not fill this yourself). Read as the current user, so its ACL is enforced."
+          },
+          "attachment_object_id": {
+            "type": "string",
+            "description": "Internal: object id of an existing platform attachment to use as the cover (set automatically by the client — do not fill this yourself). Provide exactly one image source: attachment_object_id, image_url or image_base64."
+          },
+          "alt_text": {
+            "type": "string",
+            "description": "Optional accessibility description of the cover image."
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "remove_note_cover",
+      "title": "Remove a note's cover image",
+      "description": "Remove a note's cover (featured) image.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+          }
+        },
+        "required": [
+          "note_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "set_note_summary",
+      "title": "Set a note's summary",
+      "description": "Set (or replace) a note's summary — the short excerpt shown on note cards and previews. The note's cover image is preserved.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "summary": {
+            "type": "string",
+            "description": "The summary text to set. Pass an empty string to clear it."
+          },
+          "language": {
+            "type": "string",
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+          }
+        },
+        "required": [
+          "note_id",
+          "summary"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
     }
   ]
 }

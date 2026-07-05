@@ -45,19 +45,23 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.social.attachment.AttachmentService;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.processor.I18NActivityProcessor;
 import org.exoplatform.social.core.profileproperty.ProfilePropertyService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
@@ -73,6 +77,9 @@ import io.meeds.mcp.server.tool.util.UserToolUtils;
 import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
+import io.meeds.notes.mcp.model.NoteVersionModel;
+import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
 import io.meeds.portal.permlink.service.PermanentLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -86,6 +93,10 @@ public class NoteMcpToolTest {
   private static final String     SUMMARY        = "Summary";
 
   private static final String     TITLE          = "Title";
+
+  // 1x1 transparent PNG
+  private static final String     PNG_1PX        =
+                                           "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
   private static final String     WIKI_TYPE      = "group";
 
@@ -131,6 +142,15 @@ public class NoteMcpToolTest {
 
   @Mock
   private PermanentLinkService    permanentLinkService;
+
+  @Mock
+  private UploadService           uploadService;
+
+  @Mock
+  private AttachmentService       attachmentService;
+
+  @Mock
+  private FileService             fileService;
 
   @Mock
   private Identity                currentIdentity;
@@ -399,6 +419,124 @@ public class NoteMcpToolTest {
     verify(noteService).search(any(WikiSearchData.class));
   }
 
+  @Test
+  public void getNoteVersionsShouldReturnVersionList() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    PageHistory version = mock(PageHistory.class);
+    lenient().when(version.getVersionNumber()).thenReturn(1L);
+    lenient().when(version.getId()).thenReturn("12-v1");
+    lenient().when(version.getTitle()).thenReturn(TITLE);
+    lenient().when(version.getContent()).thenReturn("<p>old</p>");
+    lenient().when(version.getUpdatedDate()).thenReturn(new Date());
+    lenient().when(version.getAuthor()).thenReturn(USER);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
+
+    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null));
+
+    assertEquals(1, result.size());
+    assertEquals(Long.valueOf(1L), result.get(0).versionNumber());
+    assertEquals("12-v1", result.get(0).versionId());
+  }
+
+  @Test
+  public void restoreNoteVersionShouldRestoreMatchingVersion() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    PageHistory version = mock(PageHistory.class);
+    lenient().when(version.getVersionNumber()).thenReturn(2L);
+    lenient().when(version.getName()).thenReturn("v2");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
+
+    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
+
+    verify(noteService).restoreVersionOfNote("v2", note, USER);
+  }
+
+  @Test(expected = ObjectNotFoundException.class)
+  public void restoreNoteVersionWhenVersionMissingShouldThrow() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
+
+    tool.restoreNoteVersion(NOTE_ID, 99L, null);
+  }
+
+  @Test
+  public void setNoteCoverFromBase64ShouldSaveMetadata() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", null));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(42L));
+  }
+
+  @Test
+  public void setNoteSummaryShouldSaveMetadata() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.setNoteSummary(NOTE_ID, "new summary", null));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(42L));
+  }
+
+  @Test(expected = ObjectNotFoundException.class)
+  public void removeNoteCoverWhenNoCoverShouldThrow() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+
+    tool.removeNoteCover(NOTE_ID, null);
+  }
+
+  @Test
+  public void removeNoteCoverShouldRemoveExistingCover() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePageProperties properties = new NotePageProperties();
+    NoteFeaturedImage featuredImage = new NoteFeaturedImage();
+    featuredImage.setId(77L);
+    properties.setFeaturedImage(featuredImage);
+    lenient().when(note.getProperties()).thenReturn(properties);
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, null));
+
+    verify(noteService).removeNoteFeaturedImage(eq(NOTE_ID), eq(77L), any(), eq(false), eq(42L));
+  }
+
   private Page mockPage(String id, String title) {
     Page page = mock(Page.class);
 
@@ -506,7 +644,10 @@ public class NoteMcpToolTest {
             profilePropertyService,
             userAcl,
             portalConfigService,
-            permanentLinkService);
+            permanentLinkService,
+            uploadService,
+            attachmentService,
+            fileService);
     }
 
     @Override
