@@ -37,6 +37,16 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   enabled: () => true,
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
+  id: 'noteProperties',
+  labelKey: 'notes.menu.label.properties',
+  icon: 'fas fa-info-circle',
+  sortable: true,
+  cssClass: 'ps-2 pe-4 action-menu-item',
+  rank: 45,
+  actionEvent: 'open-note-properties',
+  enabled: (note) => note?.canManage,
+});
+extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'movePage',
   labelKey: 'notes.menu.label.movePage',
   icon: 'fas fa-arrows-alt',
