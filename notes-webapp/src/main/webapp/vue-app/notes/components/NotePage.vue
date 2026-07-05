@@ -1170,18 +1170,19 @@ export default {
       this.actualVersion.current = true;
       this.note.content = version?.content;
       this.note.title = version?.title;
-      this.noteSummary = version?.properties?.summary;
-      // Featured images (covers) are stored per note/translation, not per content
-      // version, so a version's properties may not carry a valid featuredImage.
-      // Preserve the note's current featured image (already resolved for the active
-      // language) when the version doesn't provide one, otherwise switching
-      // translation would wipe the per-language cover.
+      // The summary and featured image (cover) are metadata stored per
+      // note/translation, not per content version, so a version's properties may
+      // not carry them. Preserve the note's current metadata (already resolved for
+      // the active language) when the version doesn't provide it, otherwise
+      // switching translation would wipe the per-language cover and summary.
       this.note.properties = {
         ...version?.properties,
         featuredImage: version?.properties?.featuredImage?.id
           ? version.properties.featuredImage
           : this.note?.properties?.featuredImage,
+        summary: version?.properties?.summary ?? this.note?.properties?.summary,
       };
+      this.noteSummary = this.note.properties.summary;
       this.noteTitle = version?.title;
     },
     restoreVersion(version) {
