@@ -470,6 +470,34 @@
         "idempotentHint": true,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "remove_note_translation",
+      "title": "Remove a note's translation",
+      "description": "Remove ONE language's translation of a note, leaving the note's original content and its other translations intact. Use get_note_translations to list existing languages. To delete the whole note (its original content and all translations) use delete_note instead.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          },
+          "language": {
+            "type": "string",
+            "description": "The language code of the translation to remove (e.g. 'fr', 'de'). Must be one of the note's existing translations (see get_note_translations); it cannot be the note's original/default language."
+          }
+        },
+        "required": [
+          "note_id",
+          "language"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
     }
   ]
 }
