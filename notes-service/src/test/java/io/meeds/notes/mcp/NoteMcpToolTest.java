@@ -754,6 +754,66 @@ public class NoteMcpToolTest {
   }
 
   @Test
+  public void removeNoteTranslationShouldRemoveExistingTranslation() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("en", "fr"));
+
+    NoteModel result = runWithStaticMocks(() -> tool.removeNoteTranslation(NOTE_ID, "fr"));
+
+    assertNotNull(result);
+    assertEquals(NOTE_ID, result.noteId());
+    verify(noteService).deleteVersionsByNoteIdAndLang(NOTE_ID, "fr");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void removeNoteTranslationWhenLanguageBlankShouldThrow() throws Exception { // NOSONAR
+    tool.removeNoteTranslation(NOTE_ID, " ");
+  }
+
+  @Test(expected = IllegalAccessException.class)
+  public void removeNoteTranslationWhenUserCannotEditShouldThrow() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(false);
+
+    tool.removeNoteTranslation(NOTE_ID, "fr");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void removeNoteTranslationWhenDefaultLanguageShouldThrow() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(defaultNote.getLang()).thenReturn("en");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+
+    tool.removeNoteTranslation(NOTE_ID, "en");
+  }
+
+  @Test(expected = ObjectNotFoundException.class)
+  public void removeNoteTranslationWhenTranslationMissingShouldThrow() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+
+    tool.removeNoteTranslation(NOTE_ID, "de");
+  }
+
+  @Test
   public void getNoteInLanguageShouldReadRequestedLanguage() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 

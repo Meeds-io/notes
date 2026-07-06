@@ -168,6 +168,54 @@ public class NoteMcpTool implements McpToolPlugin {
    */
   public List<String> getNoteTranslations(long noteId) throws IllegalAccessException, ObjectNotFoundException {
     getNoteById(noteId); // ACL check: throws if the current user can't view the note
+    return availableTranslationLanguages(noteId);
+  }
+
+  // Removes ONE language's translation of a note, leaving the note's original
+  // content and its other translations intact. Only a user who can edit the note
+  // may remove a translation. To delete the whole note (its original content and
+  // every translation) use delete_note instead.
+  public NoteModel removeNoteTranslation(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+    if (StringUtils.isBlank(language)) {
+      throw new IllegalArgumentException(("No translation language was provided for the note with id %s. Pass the language code "
+          + "of the translation to remove (e.g. 'fr'); use get_note_translations to list the note's existing translations. To "
+          + "delete the whole note (its original content and all translations) use delete_note instead.").formatted(noteId));
+    }
+    Page note = getNoteById(noteId);
+    String username = getCurrentUserName();
+    if (!noteService.canEditNote(note, username)) {
+      throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
+    }
+    String lang = StringUtils.trim(language);
+    // The note's original/default content is stored WITHOUT a language and is
+    // never listed as a translation; removing it would erase the note itself, so
+    // guard against it and point the caller to delete_note.
+    Page defaultNote = getDefaultNote(noteId);
+    String defaultLang = defaultNote == null ? null : defaultNote.getLang();
+    if (StringUtils.isNotBlank(defaultLang) && StringUtils.equalsIgnoreCase(defaultLang, lang)) {
+      throw new IllegalArgumentException(("Language '%s' is the original/default language of the note with id %s, not a "
+          + "translation, so it can't be removed on its own. To delete the whole note use delete_note instead.").formatted(lang,
+                                                                                                                           noteId));
+    }
+    List<String> translations = availableTranslationLanguages(noteId);
+    if (translations.stream().noneMatch(l -> StringUtils.equalsIgnoreCase(l, lang))) {
+      throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. Use "
+          + "get_note_translations to list the note's available languages.").formatted(noteId, lang, translations));
+    }
+    try {
+      noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), lang);
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not remove the note translation: " + e.getMessage());
+    }
+    return getNote(noteId, null);
+  }
+
+  @SneakyThrows
+  private Page getDefaultNote(long noteId) {
+    return noteService.getNoteByIdAndLang(Long.valueOf(noteId), getCurrentUserAclIdentity(), null, null);
+  }
+
+  private List<String> availableTranslationLanguages(long noteId) {
     try {
       return noteService.getPageAvailableTranslationLanguages(noteId, false);
     } catch (Exception e) {
