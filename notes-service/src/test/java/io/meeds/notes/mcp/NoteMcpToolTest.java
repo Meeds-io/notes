@@ -40,6 +40,7 @@ import java.util.TimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -352,6 +353,76 @@ public class NoteMcpToolTest {
     verify(noteService).removeDraftOfNote(any(WikiPageParams.class), eq("fr"));
   }
 
+  // Regression for EXO-88373: editing a translation must not clobber that
+  // translation's OWN cover with the default's. The "fr" version already has its
+  // own distinct featured image (600); updating it in "fr" must keep 600, never
+  // copy the default's (500).
+  @Test
+  public void updateNoteWithLanguageShouldPreserveExistingTranslationCover() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    NotePageProperties frProperties = new NotePageProperties();
+    NoteFeaturedImage frCover = new NoteFeaturedImage();
+    frCover.setId(600L);
+    frProperties.setFeaturedImage(frCover);
+    lenient().when(frNote.getProperties()).thenReturn(frProperties);
+
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePageProperties defaultProperties = new NotePageProperties();
+    NoteFeaturedImage defaultCover = new NoteFeaturedImage();
+    defaultCover.setId(500L);
+    defaultProperties.setFeaturedImage(defaultCover);
+    lenient().when(defaultNote.getProperties()).thenReturn(defaultProperties);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                               .thenReturn(note);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, null, "fr"));
+
+    verify(note).setProperties(captor.capture());
+    assertEquals(Long.valueOf(600L), captor.getValue().getFeaturedImage().getId());
+  }
+
+  // A brand-new translation (no per-language properties yet) still inherits the
+  // default's cover (500).
+  @Test
+  public void updateNoteWithLanguageNewTranslationShouldInheritDefaultCover() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getProperties()).thenReturn(null);
+
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePageProperties defaultProperties = new NotePageProperties();
+    NoteFeaturedImage defaultCover = new NoteFeaturedImage();
+    defaultCover.setId(500L);
+    defaultProperties.setFeaturedImage(defaultCover);
+    lenient().when(defaultNote.getProperties()).thenReturn(defaultProperties);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                               .thenReturn(note);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, null, "fr"));
+
+    verify(note).setProperties(captor.capture());
+    assertEquals(Long.valueOf(500L), captor.getValue().getFeaturedImage().getId());
+  }
+
   @Test
   public void publishNoteShouldPublishAndReturnActivity() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
@@ -485,6 +556,39 @@ public class NoteMcpToolTest {
     runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", null));
 
     verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(42L));
+  }
+
+  // Regression for EXO-88373: setting a cover on the "fr" translation must base
+  // the write on the "fr" metadata, so the translation's OWN summary is
+  // preserved rather than overwritten with the default/en one.
+  @Test
+  public void setNoteCoverInLanguageShouldPreserveTranslationSummary() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePageProperties enProperties = new NotePageProperties();
+    enProperties.setSummary("en summary");
+    lenient().when(note.getProperties()).thenReturn(enProperties);
+
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    NotePageProperties frProperties = new NotePageProperties();
+    frProperties.setSummary("fr summary");
+    lenient().when(frNote.getProperties()).thenReturn(frProperties);
+
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr"));
+
+    verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
+    assertEquals("fr summary", captor.getValue().getSummary());
   }
 
   @Test
