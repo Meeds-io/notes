@@ -146,12 +146,6 @@
                               popover />
                           </div>
                         </div>
-                        <category-input
-                          :key="drawer"
-                          v-if="publicationSettings.post"
-                          v-model="publicationSettings.selectedCategoryIds" 
-                          label-class="font-weight-bold" 
-                          :label="categoryInputLabel" />
                         <note-publish-option
                           v-if="publishAllowed"
                           :allowed-targets="allowedTargets"
@@ -181,6 +175,51 @@
                           }"
                           ref="scheduleOption"
                           @updated="updatedScheduleSettings" />
+                        <category-input
+                          :key="drawer"
+                          v-if="publicationSettings.post"
+                          v-model="publicationSettings.selectedCategoryIds"
+                          hide-add-button
+                          hide-categories-list
+                          class="mt-8 mb-6">
+                          <template #label="{ openCategoriesDrawer, hasCategories, categories }">
+                            <div class="d-flex align-center full-width">
+                              <span class="font-weight-bold text-truncate">{{ $t('notes.publication.category.label') }}</span>
+                              <v-spacer />
+                              <div class="d-flex align-center flex-shrink-0">
+                                <category-chip
+                                  v-for="category in categories.slice(0, 2)"
+                                  :key="category.id"
+                                  :category="category"
+                                  chip-class="ms-2"
+                                  small />
+                                <v-btn
+                                  v-if="categories.length > 2"
+                                  :title="$t('categories.remainingCount', {0: categories.length - 2})"
+                                  class="flex-shrink-0 px-0 ms-2"
+                                  height="24"
+                                  width="24"
+                                  icon
+                                  @click="openMoreCategoriesDrawer(categories)">
+                                  <span class="primary--text text-subtitle-font-size">
+                                    {{ $t('categories.remainingCount', {0: categories.length - 2}) }}
+                                  </span>
+                                </v-btn>
+                                <v-btn
+                                  :title="hasCategories && $t('categoryInput.drawer.editCategories') || $t('notes.publication.category.add.label')"
+                                  class="category-input-add-button ms-2"
+                                  icon
+                                  small
+                                  @click="openCategoriesDrawer">
+                                  <v-icon size="16">{{ hasCategories && 'fa-edit' || 'fa-plus' }}</v-icon>
+                                </v-btn>
+                              </div>
+                            </div>
+                          </template>
+                        </category-input>
+                        <categories-list-drawer
+                          v-if="categoriesListDrawerOpened"
+                          ref="categoriesListDrawer" />
                         <note-publication-advanced-option
                           :edit-mode="editMode"
                           :is-publishing="isPublishing"
@@ -253,7 +292,8 @@ export default {
       currentAdvancedSettings: {},
       publishExtensions: [],
       extensionsContext: {},
-      extensionsUpdated: false
+      extensionsUpdated: false,
+      categoriesListDrawerOpened: false
     };
   },
   props: {
@@ -329,9 +369,6 @@ export default {
     isPublishNow() {
       return this.editMode && this.scheduleSettings?.editScheduleAction === 'publish_now';
     },
-    categoryInputLabel() {
-      return this.publicationSettings?.selectedCategoryIds?.length && 'categoryInput.drawer.manageCategories' || 'activityStream.label.addCategories';
-    }
   },
   watch: {
     expanded() {
@@ -573,6 +610,11 @@ export default {
         return;
       }
       this.$root.$emit('close-featured-image-byOverlay');
+    },
+    async openMoreCategoriesDrawer(categories) {
+      this.categoriesListDrawerOpened = true;
+      await this.$nextTick();
+      this.$refs.categoriesListDrawer.open(categories);
     },
   }
 };
