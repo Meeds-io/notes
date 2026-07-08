@@ -17,6 +17,16 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   }
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
+  id: 'manageCategories',
+  labelKey: 'notes.menu.label.manageCategories',
+  icon: 'fa-th-large',
+  sortable: true,
+  cssClass: 'ps-2 pe-4 action-menu-item',
+  rank: 15,
+  actionEvent: 'manage-note-categories',
+  enabled: (note) => note?.canManage,
+});
+extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'exportPdf',
   labelKey: 'notes.menu.label.exportPdf',
   icon: 'fas fa-file-pdf',

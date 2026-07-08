@@ -34,11 +34,11 @@
             no-gutters
             class="mb-5 align-center">
             <v-col
-              xl="9"
-              lg="9"
-              md="9"
-              sm="8"
-              cols="6">
+              xl="6"
+              lg="6"
+              md="6"
+              sm="6"
+              cols="4">
               <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
                 <v-btn
                   v-if="!treeViewExpended || isMobile"
@@ -64,16 +64,48 @@
             </v-col>
             <v-col
               id="note-actions-menu"
-              xl="3"
-              lg="3"
-              md="3"
-              sm="4"
-              cols="6">
+              xl="6"
+              lg="6"
+              md="6"
+              sm="6"
+              cols="8">
               <div
                 v-if="loadData && !hideElementsForSavingPDF"
-                class="notes-header-icons text-right d-flex justify-end">
+                class="notes-header-icons text-right d-flex flex-nowrap justify-end">
                 <div
-                  class="d-inline-flex">
+                  v-if="categoriesCount"
+                  class="d-flex align-center flex-shrink-1 overflow-hidden"
+                  style="min-width: 0;">
+                  <category-chip
+                    v-for="category in displayedCategories"
+                    :key="category.id"
+                    :category="category"
+                    :max-width="60"
+                    chip-class="ms-2 flex-shrink-1"
+                    small />
+                  <v-btn
+                    v-if="remainingCategoriesCount > 0"
+                    :title="$t('categories.remainingCount', {0: remainingCategoriesCount})"
+                    class="flex-shrink-0 px-0 ms-2"
+                    height="24"
+                    width="24"
+                    icon
+                    @click="openCategoriesListDrawer">
+                    <span class="primary--text text-subtitle-font-size">
+                      {{ $t('categories.remainingCount', {0: remainingCategoriesCount}) }}
+                    </span>
+                  </v-btn>
+                </div>
+                <categories-list-drawer
+                  v-if="categoriesListDrawerOpened"
+                  ref="categoriesListDrawer" />
+                <category-input-drawer
+                  :key="note.id"
+                  ref="categoriesDrawer"
+                  :value="note.categoryIds"
+                  @input="updateCategories" />
+                <div
+                  class="d-inline-flex flex-shrink-0">
                   <v-tooltip bottom v-if="!hasDraft && isManager">
                     <template #activator="{ on, attrs }">
                       <v-btn
@@ -93,7 +125,7 @@
                   </v-tooltip>
                 </div>
                 <div
-                  class="d-inline-flex ms-2">
+                  class="d-inline-flex flex-shrink-0 ms-2">
                   <v-tooltip bottom v-if="isManager">
                     <template #activator="{ on, attrs }">
                       <v-btn
@@ -118,14 +150,14 @@
                   type="notes-toolbar"
                   parent-element="div"
                   element="div"
-                  class="d-flex" />
+                  class="d-flex flex-shrink-0" />
                 <note-favorite-action
                   :icon-size="20"
                   :note="note"
                   :activity-id="note.activityId"
-                  class="ms-2" />
+                  class="flex-shrink-0 ms-2" />
                 <div
-                  class="d-inline-flex ms-2">
+                  class="d-inline-flex flex-shrink-0 ms-2">
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
                       <v-btn
@@ -435,7 +467,9 @@ export default {
       sortMenu: false,
       sortField: 'lastUpdated',
       publicationSettings: {},
-      extensionKey: 0
+      extensionKey: 0,
+      categories: [],
+      categoriesListDrawerOpened: false
     };
   },
   provide() {
@@ -446,6 +480,15 @@ export default {
     };
   },
   computed: {
+    displayedCategories() {
+      return this.categories?.slice(0, 2) || [];
+    },
+    categoriesCount() {
+      return this.categories?.length || 0;
+    },
+    remainingCategoriesCount() {
+      return this.categoriesCount - 2;
+    },
     extensionParams() {
       return {
         entityId: this.entityId,
@@ -674,6 +717,7 @@ export default {
       }
     },
     note() {
+      this.refreshCategories();
       if (!this.note.draftPage) {
         this.getNoteVersionByNoteId(this.note.id);
       }
@@ -788,6 +832,7 @@ export default {
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
     this.$root.$on('duplicate-note', this.duplicateNote);
+    this.$root.$on('manage-note-categories', this.openCategoriesDrawer);
     document.addEventListener('note-published', this.handleNotePublished);
     document.addEventListener('publication-extensions-updated', this.loadPublicationSettings);
   },
@@ -848,6 +893,7 @@ export default {
       this.canPublish = publicationParams?.canPublish;
       this.canSchedule = publicationParams?.canSchedule;
       this.note = Object.assign(this.note, savedSettings);
+      this.note.categories = this.note.categoryIds;
       setTimeout(() => {
         this.$refs.publicationDrawer.open(this.note);
       },200);
@@ -864,6 +910,40 @@ export default {
     openImportDrawer() {
       this.$refs.noteImportDrawer.open();
       this.closeMobileActionMenu();
+    },
+    async refreshCategories() {
+      if (this.note?.categoryIds?.length) {
+        const categories = await Promise.all(this.note.categoryIds.map(id => this.$categoryService.getCategory(id).catch(() => null)));
+        this.categories = categories.filter(category => category);
+      } else {
+        this.categories = [];
+      }
+    },
+    openCategoriesDrawer() {
+      this.$refs?.categoriesDrawer?.openDrawer();
+      this.closeMobileActionMenu();
+    },
+    async openCategoriesListDrawer() {
+      this.categoriesListDrawerOpened = true;
+      await this.$nextTick();
+      this.$refs.categoriesListDrawer.open(this.categories);
+    },
+    updateCategories(categoryIds) {
+      const objectType = this.note.activityId ? 'activity' : 'notes';
+      const objectId = this.note.activityId ? this.note.activityId : this.note.id;
+      return this.$categoryLinkService.updateCategories({
+        objectType,
+        objectId,
+        spaceId: this.note.spaceId,
+        oldCategories: this.note.categoryIds || [],
+        newCategories: categoryIds || [],
+        dropExisting: true,
+      }).then(() => {
+        this.note = {...this.note, categoryIds};
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.menu.label.manageCategories.success')});
+      }).catch(() => {
+        this.$root.$emit('show-alert', {type: 'error', message: this.$t('notes.menu.label.manageCategories.error')});
+      });
     },
     updateNoteTitle(title) {
       this.noteTitle = title;
