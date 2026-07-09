@@ -192,7 +192,8 @@
                                   :key="category.id"
                                   :category="category"
                                   chip-class="ms-2"
-                                  small />
+                                  small
+                                  @select="openCategoriesDrawer" />
                                 <v-btn
                                   v-if="categories.length > 2"
                                   :title="$t('categories.remainingCount', {0: categories.length - 2})"
