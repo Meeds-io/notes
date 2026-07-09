@@ -160,10 +160,12 @@ public class NoteMcpTool implements McpToolPlugin {
     return toNoteModel(note);
   }
 
-  // Lists the language codes a note has translations for (e.g. ["en", "fr"]).
-  // The default (untranslated) content is what get_note returns without a
-  // language; an empty list means the note has only its default content. Read as
-  // the current user, so the note's ACL is enforced. Read-only.
+  /**
+   * Lists the language codes a note has translations for (e.g. ["en", "fr"]).
+   * The default (untranslated) content is what get_note returns without a
+   * language; an empty list means the note has only its default content. Read as
+   * the current user, so the note's ACL is enforced. Read-only.
+   */
   public List<String> getNoteTranslations(long noteId) throws IllegalAccessException, ObjectNotFoundException {
     getNoteById(noteId); // ACL check: throws if the current user can't view the note
     try {
@@ -307,18 +309,22 @@ public class NoteMcpTool implements McpToolPlugin {
                   .toList();
   }
 
-  // Lists the version history of a note: each version's number, id, title,
-  // content, date and author. Read as the current user, so the note's ACL is
-  // enforced. Read-only.
+  /**
+   * Lists the version history of a note: each version's number, id, title,
+   * content, date and author. Read as the current user, so the note's ACL is
+   * enforced. Read-only.
+   */
   public List<NoteVersionModel> getNoteVersions(long noteId, String language) throws IllegalAccessException,
                                                                              ObjectNotFoundException {
     Page note = getNoteById(noteId);
     return versionsHistory(note, language).stream().map(this::toNoteVersionModel).toList();
   }
 
-  // Restores a note to a previous version identified by its version_number (from
-  // get_note_versions), creating a new current version from it. Only a user who
-  // can edit the note may restore it.
+  /**
+   * Restores a note to a previous version identified by its version_number (from
+   * get_note_versions), creating a new current version from it. Only a user who
+   * can edit the note may restore it.
+   */
   public NoteModel restoreNoteVersion(long noteId,
                                       long versionNumber,
                                       String language) throws IllegalAccessException, ObjectNotFoundException {
@@ -350,10 +356,12 @@ public class NoteMcpTool implements McpToolPlugin {
     }
   }
 
-  // Sets a note's cover ("featured") image from exactly one of a public http(s)
-  // URL, base64 bytes, or an ACL-checked reference to an existing platform
-  // attachment. Only a user who can edit the note may set it. The image is wired
-  // into the note metadata so it actually renders on the note.
+  /**
+   * Sets a note's cover ("featured") image from exactly one of a public http(s)
+   * URL, base64 bytes, or an ACL-checked reference to an existing platform
+   * attachment. Only a user who can edit the note may set it. The image is wired
+   * into the note metadata so it actually renders on the note.
+   */
   public NoteModel setNoteCover(long noteId,
                                 String imageUrl,
                                 String imageBase64,
@@ -401,9 +409,11 @@ public class NoteMcpTool implements McpToolPlugin {
     return getNote(noteId, null);
   }
 
-  // Sets (or replaces) a note's summary — the short excerpt shown on note cards.
-  // Only a user who can edit the note may set it; the note's cover image is
-  // preserved.
+  /**
+   * Sets (or replaces) a note's summary — the short excerpt shown on note cards.
+   * Only a user who can edit the note may set it; the note's cover image is
+   * preserved.
+   */
   public NoteModel setNoteSummary(long noteId, String summary, String language) throws IllegalAccessException,
                                                                                ObjectNotFoundException {
     Page note = getNoteById(noteId);
@@ -428,8 +438,10 @@ public class NoteMcpTool implements McpToolPlugin {
     return getNote(noteId, null);
   }
 
-  // Removes a note's cover ("featured") image. Only a user who can edit the note
-  // may remove it.
+  /**
+   * Removes a note's cover ("featured") image. Only a user who can edit the note
+   * may remove it.
+   */
   public NoteModel removeNoteCover(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
     Page note = getNoteById(noteId);
     String username = getCurrentUserName();
