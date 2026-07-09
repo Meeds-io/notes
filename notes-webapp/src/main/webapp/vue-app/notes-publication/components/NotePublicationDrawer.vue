@@ -512,7 +512,7 @@ export default {
     initSettings() {
       this.scheduleSettings = {};
       this.advancedSettings = {};
-      this.publicationSettings = {post: true};
+      this.publicationSettings = {post: true, selectedCategoryIds: this.noteObject?.categories || []};
     },
     reset() {
       this.extensionsUpdated = false;
