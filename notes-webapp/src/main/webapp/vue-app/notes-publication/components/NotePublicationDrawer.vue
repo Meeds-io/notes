@@ -184,7 +184,7 @@
                           class="mt-8 mb-6">
                           <template #label="{ openCategoriesDrawer, hasCategories, categories }">
                             <div class="d-flex align-center full-width">
-                              <span class="font-weight-bold text-header text-truncate">{{ $t('notes.publication.category.label') }}</span>
+                              <span class="font-weight-bold text-truncate">{{ $t('notes.publication.category.label') }}</span>
                               <v-spacer />
                               <div class="d-flex align-center flex-shrink-0">
                                 <category-chip
