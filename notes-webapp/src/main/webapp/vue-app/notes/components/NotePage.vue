@@ -39,13 +39,16 @@
               md="6"
               sm="6"
               cols="4">
-              <div v-if="!hideElementsForSavingPDF" class="notes-treeview d-flex flex-grow-1">
+              <div
+                v-if="!hideElementsForSavingPDF"
+                class="notes-treeview d-flex flex-grow-1 overflow-hidden"
+                style="min-width: 0;">
                 <v-btn
                   v-if="!treeViewExpended || isMobile"
                   icon
                   v-bind="attrs"
                   v-on="on"
-                  class="pa-0 me-2"
+                  class="pa-0 me-2 flex-shrink-0"
                   @click.stop.prevent="openSidebarTreeView">
                   <img
                     alt=""
@@ -56,7 +59,8 @@
                     width="20px">
                 </v-btn>
                 <note-breadcrumb
-                  class="my-auto"
+                  class="my-auto flex-shrink-1 overflow-hidden"
+                  style="min-width: 0;"
                   :note-breadcrumb="notebreadcrumb"
                   :actual-note-id="note.id"
                   @open-note="getNoteByName($event, 'breadCrumb', true)" />
