@@ -104,6 +104,7 @@
                   v-if="categoriesListDrawerOpened"
                   ref="categoriesListDrawer" />
                 <category-input-drawer
+                  :key="note.id"
                   ref="categoriesDrawer"
                   :value="note.categoryIds"
                   @input="updateCategories" />
