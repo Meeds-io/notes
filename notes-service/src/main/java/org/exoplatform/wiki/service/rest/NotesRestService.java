@@ -183,8 +183,12 @@ public class NotesRestService implements ResourceContainer {
   }
 
   private void populateCategories(Page note) {
-    note.setSpaceId(NoteCategoryPlugin.getSpaceId(note));
-    note.setCategoryIds(NoteCategoryPlugin.getCategoryIds(note));
+    try {
+      note.setSpaceId(NoteCategoryPlugin.getSpaceId(note));
+      note.setCategoryIds(NoteCategoryPlugin.getCategoryIds(note));
+    } catch (Exception e) {
+      LOG.warn("Error retrieving categories of note {}", note.getId(), e);
+    }
   }
 
   @GET
