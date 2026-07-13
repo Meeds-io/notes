@@ -27,11 +27,15 @@ import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.social.category.model.CategoryEntryItem;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.plugin.CategoryPlugin;
 import io.meeds.social.category.service.CategoryLinkService;
@@ -42,6 +46,10 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class NoteCategoryPlugin implements CategoryPlugin {
 
+  private static final String ICON                 = "fa-clipboard";
+
+  private static final int    SUMMARY_MAX_LENGTH    = 200;
+
   public static final String OBJECT_TYPE          = NotePermanentLinkPlugin.OBJECT_TYPE;
 
   public static final String ACTIVITY_OBJECT_TYPE = "activity";
@@ -51,6 +59,12 @@ public class NoteCategoryPlugin implements CategoryPlugin {
 
   @Autowired
   private NoteService         noteService;
+
+  @Autowired
+  private SpaceService        spaceService;
+
+  @Autowired
+  private IdentityManager     identityManager;
 
   @PostConstruct
   public void init() {
@@ -102,6 +116,42 @@ public class NoteCategoryPlugin implements CategoryPlugin {
       return Collections.emptyList();
     }
     return CommonsUtils.getService(CategoryLinkService.class).getLinkedIds(object);
+  }
+
+  @Override
+  public CategoryEntryItem getEntryItem(String objectId, String username) {
+    Page note = noteService.getNoteById(objectId);
+    if (note == null) {
+      return null;
+    }
+    Space space = StringUtils.isBlank(note.getWikiOwner()) ? null : spaceService.getSpaceByGroupId(note.getWikiOwner());
+    String authorAvatarUrl = null;
+    Identity authorIdentity = StringUtils.isBlank(note.getAuthor()) ? null
+                                                                    : identityManager.getOrCreateUserIdentity(note.getAuthor());
+    if (authorIdentity != null && authorIdentity.getProfile() != null) {
+      authorAvatarUrl = authorIdentity.getProfile().getAvatarUrl();
+    }
+    String summary = note.getProperties() != null ? note.getProperties().getSummary() : null;
+    if (StringUtils.isBlank(summary) && StringUtils.isNotBlank(note.getContent())) {
+      String text = Utils.html2text(note.getContent());
+      summary = text.length() > SUMMARY_MAX_LENGTH ? text.substring(0, SUMMARY_MAX_LENGTH) : text;
+    }
+    return new CategoryEntryItem(note.getId(),
+                                   OBJECT_TYPE,
+                                   ICON,
+                                   note.getTitle(),
+                                   summary,
+                                   null,
+                                   note.getUrl(),
+                                   note.getAuthorFullName(),
+                                   authorAvatarUrl,
+                                   space == null ? null : space.getDisplayName(),
+                                   space == null ? null : space.getAvatarUrl(),
+                                   note.getUpdatedDate(),
+                                   0,
+                                   0,
+                                   0,
+                                   note.getCategoryIds());
   }
 
 }

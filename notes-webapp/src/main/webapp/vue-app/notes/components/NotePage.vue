@@ -86,7 +86,8 @@
                     :category="category"
                     :max-width="60"
                     chip-class="ms-2 flex-shrink-1"
-                    small />
+                    small
+                    @select="openEntryListDrawer" />
                   <v-btn
                     v-if="remainingCategoriesCount > 0"
                     :title="$t('categories.remainingCount', {0: remainingCategoriesCount})"
@@ -102,7 +103,9 @@
                 </div>
                 <categories-list-drawer
                   v-if="categoriesListDrawerOpened"
-                  ref="categoriesListDrawer" />
+                  ref="categoriesListDrawer"
+                  @select="openEntryListDrawer" />
+                <category-entry-drawer ref="entryListDrawer" />
                 <category-input-drawer
                   :key="note.id"
                   ref="categoriesDrawer"
@@ -931,6 +934,9 @@ export default {
       this.categoriesListDrawerOpened = true;
       await this.$nextTick();
       this.$refs.categoriesListDrawer.open(this.categories);
+    },
+    openEntryListDrawer(category) {
+      this.$refs.entryListDrawer.open(category.id, ['news', 'notes']);
     },
     updateCategories(categoryIds) {
       const objectType = this.note.activityId ? 'activity' : 'notes';
