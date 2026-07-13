@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,8 +62,22 @@ import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.application.PortalRequestContext;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.model.Application;
+import org.exoplatform.portal.config.model.ApplicationState;
+import org.exoplatform.portal.config.model.Container;
+import org.exoplatform.portal.config.model.ModelObject;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.config.model.TransientApplicationState;
+import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.portal.mop.SiteType;
+import org.exoplatform.portal.mop.navigation.NavigationContext;
+import org.exoplatform.portal.mop.navigation.NodeContext;
+import org.exoplatform.portal.mop.navigation.NodeModel;
+import org.exoplatform.portal.mop.navigation.NodeState;
+import org.exoplatform.portal.mop.navigation.Scope;
+import org.exoplatform.portal.mop.page.PageKey;
+import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.mop.service.NavigationService;
 import org.exoplatform.portal.webui.util.Util;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
@@ -150,6 +165,14 @@ public class Utils {
 
   public static final Pattern                                    MENTION_PATTERN                  =
                                                                                  Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
+
+  private static final String                                    NOTES_APPLICATION_CONTENT_ID     = "notes/Notes";
+
+  private static final String                                    DEFAULT_NOTES_NODE_URI           = "notes";
+
+  private static final long                                      NOTES_NODE_URI_CACHE_TTL_MS       = 2 * 60 * 1000L;
+
+  private static final Map<SiteKey, NotesNodeUriCacheEntry>      notesNodeUriCache                = new ConcurrentHashMap<>();
 
   public static String normalizeUploadedFilename(String name) {
     name = name.replace("%22", "\"");  // Fix the bug in Chrome which a double quotes is encoded to %22
@@ -568,7 +591,9 @@ public class Utils {
       if (space != null) {
         StringBuilder spaceUrl = new StringBuilder("/portal/s/");
         spaceUrl.append(space.getId());
-        spaceUrl.append("/notes/");
+        spaceUrl.append("/");
+        spaceUrl.append(getNotesNodeUri(SiteKey.group(space.getGroupId())));
+        spaceUrl.append("/");
         if (!StringUtils.isEmpty(page.getId())) {
           spaceUrl.append(page.getId());
         }
@@ -577,6 +602,107 @@ public class Utils {
       return "";
     } catch (Exception e) {
       return "";
+    }
+  }
+
+  /**
+   * Resolves the URI of the navigation node that hosts the Notes application
+   * for the given site, so that links generated for a note ({@link #getPageUrl(Page)}
+   * and permanent links) still resolve when the Notes application has been added
+   * to a navigation node other than the default "notes" one (e.g. a node added
+   * manually from the site navigation editor).
+   * <p>
+   * The default node URI ("notes") is kept whenever it exists, to preserve the
+   * historical behavior of spaces provisioned with the standard Notes node. It is
+   * only replaced by another node's URI when no "notes" node exists in the site
+   * navigation, but a node hosting the Notes application does.
+   *
+   * @param siteKey the site (space or portal) navigation to resolve
+   * @return the node URI to use to build a link to a note in that site
+   */
+  private static String getNotesNodeUri(SiteKey siteKey) {
+    NotesNodeUriCacheEntry cacheEntry = notesNodeUriCache.get(siteKey);
+    if (cacheEntry != null && cacheEntry.expirationTime > System.currentTimeMillis()) {
+      return cacheEntry.nodeUri;
+    }
+    String nodeUri = resolveNotesNodeUri(siteKey);
+    notesNodeUriCache.put(siteKey, new NotesNodeUriCacheEntry(nodeUri, System.currentTimeMillis() + NOTES_NODE_URI_CACHE_TTL_MS));
+    return nodeUri;
+  }
+
+  private static String resolveNotesNodeUri(SiteKey siteKey) {
+    try {
+      NavigationService navigationService = CommonsUtils.getService(NavigationService.class);
+      LayoutService layoutService = CommonsUtils.getService(LayoutService.class);
+      NavigationContext navigationContext = navigationService.loadNavigation(siteKey);
+      if (navigationContext == null) {
+        return DEFAULT_NOTES_NODE_URI;
+      }
+      NodeContext rootNode = navigationService.loadNode(NodeModel.SELF_MODEL, navigationContext, Scope.ALL, null);
+      if (rootNode == null) {
+        return DEFAULT_NOTES_NODE_URI;
+      }
+      String alternateNodeUri = null;
+      boolean defaultNodeExists = false;
+      Deque<NodeContext> nodesToVisit = new ArrayDeque<>(rootNode.getNodes());
+      while (!nodesToVisit.isEmpty()) {
+        NodeContext node = nodesToVisit.poll();
+        if (DEFAULT_NOTES_NODE_URI.equals(node.getName())) {
+          defaultNodeExists = true;
+        }
+        if (alternateNodeUri == null && hostsNotesApplication(node.getState(), layoutService)) {
+          alternateNodeUri = node.getName();
+        }
+        nodesToVisit.addAll(node.getNodes());
+      }
+      if (defaultNodeExists || alternateNodeUri == null) {
+        return DEFAULT_NOTES_NODE_URI;
+      }
+      return alternateNodeUri;
+    } catch (Exception e) {
+      LOG.warn("Error resolving the navigation node hosting the Notes application for site {}, falling back to '{}'",
+               siteKey,
+               DEFAULT_NOTES_NODE_URI,
+               e);
+      return DEFAULT_NOTES_NODE_URI;
+    }
+  }
+
+  private static boolean hostsNotesApplication(NodeState nodeState, LayoutService layoutService) {
+    PageKey pageRef = nodeState == null ? null : nodeState.getPageRef();
+    if (pageRef == null) {
+      return false;
+    }
+    org.exoplatform.portal.config.model.Page pageModel = layoutService.getPage(pageRef);
+    return pageModel != null && containsNotesApplication(pageModel);
+  }
+
+  private static boolean containsNotesApplication(Container container) {
+    if (container.getChildren() == null) {
+      return false;
+    }
+    for (ModelObject child : container.getChildren()) {
+      if (child instanceof Application) {
+        ApplicationState state = ((Application) child).getState();
+        if (state instanceof TransientApplicationState
+            && NOTES_APPLICATION_CONTENT_ID.equalsIgnoreCase(((TransientApplicationState) state).getContentId())) {
+          return true;
+        }
+      } else if (child instanceof Container && containsNotesApplication((Container) child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static class NotesNodeUriCacheEntry {
+    private final String nodeUri;
+
+    private final long   expirationTime;
+
+    NotesNodeUriCacheEntry(String nodeUri, long expirationTime) {
+      this.nodeUri = nodeUri;
+      this.expirationTime = expirationTime;
     }
   }
 

@@ -178,6 +178,9 @@ export default {
     webPageUrl() {
       return this.urlParams?.get?.('webPageUrl');
     },
+    notePageUri() {
+      return this.urlParams?.get?.('notePageUri') || 'dashboard/notes';
+    },
     isMobile() {
       return this.$vuetify.breakpoint.width < 960;
     }
@@ -435,7 +438,7 @@ export default {
       return this.$notesService.updateNoteById(note).then(data => {
         this.note = data;
         if (this.note.wikiType === 'user') {
-          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/dashboard/notes/${this.noteId}`;
+          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${this.notePageUri}/${this.noteId}`;
         }
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {
           detail: {
@@ -482,7 +485,7 @@ export default {
         this.addParamToUrl('noteId', this.noteId);
         this.originalNote = structuredClone(data);
         if (this.note.wikiType === 'user') {
-          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/dashboard/notes/${this.noteId}`;
+          this.note.url = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${this.notePageUri}/${this.noteId}`;
         }
         // delete draft note
         this.deleteDraftNote(draftNote, this.note?.url);
