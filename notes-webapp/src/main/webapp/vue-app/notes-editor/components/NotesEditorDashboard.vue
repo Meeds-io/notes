@@ -644,7 +644,6 @@ export default {
       return draftNote;
     },
     redirectAfterSaveLink(note) {
-      console.log('redirectAfterSaveLink', note);
       if (this.webPageUrl) {
         return this.webPageUrl;
       } else {
