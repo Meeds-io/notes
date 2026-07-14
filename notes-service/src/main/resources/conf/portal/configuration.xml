@@ -335,6 +335,19 @@
         </properties-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>PageContentIndexingConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.wiki.jpa.search.PageContentIndexingServiceConnector</type>
+      <description>Page Content Block ElasticSearch Indexing Connector</description>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index_alias" value="page_content_alias"/>
+          <property name="index_current" value="page_content"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
   <external-component-plugins>
@@ -393,6 +406,26 @@
       <name>social.metadataItem.updated</name>
       <set-method>addListener</set-method>
       <type>org.exoplatform.wiki.service.listener.MetadataItemModified</type>
+    </component-plugin>
+    <component-plugin>
+      <name>layout.page.updated</name>
+      <set-method>addListener</set-method>
+      <type>io.meeds.notes.listener.PageContentBlockIndexingListener</type>
+    </component-plugin>
+    <component-plugin>
+      <name>layout.page.permissions.updated</name>
+      <set-method>addListener</set-method>
+      <type>io.meeds.notes.listener.PageContentBlockIndexingListener</type>
+    </component-plugin>
+    <component-plugin>
+      <name>note.posted</name>
+      <set-method>addListener</set-method>
+      <type>io.meeds.notes.listener.NoteContentIndexingListener</type>
+    </component-plugin>
+    <component-plugin>
+      <name>note.updated</name>
+      <set-method>addListener</set-method>
+      <type>io.meeds.notes.listener.NoteContentIndexingListener</type>
     </component-plugin>
   </external-component-plugins>
 

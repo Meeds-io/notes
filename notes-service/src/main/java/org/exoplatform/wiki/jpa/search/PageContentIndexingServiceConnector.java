@@ -22,25 +22,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.commons.search.domain.Document;
 import org.exoplatform.commons.search.index.impl.ElasticIndexingServiceConnector;
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.commons.utils.ExpressionUtil;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.resources.LocaleConfigService;
-import org.exoplatform.services.resources.LocaleContextInfo;
-import org.exoplatform.services.resources.ResourceBundleManager;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.utils.Utils;
 
@@ -184,29 +178,7 @@ public class PageContentIndexingServiceConnector extends ElasticIndexingServiceC
   private String getSiteDisplayName(PageKey pageKey) {
     PortalConfig site = getLayoutService().getPortalConfig(pageKey.getSite());
     String label = site == null ? null : site.getLabel();
-    if (StringUtils.isBlank(label)) {
-      return pageKey.getSite().getName();
-    }
-    if (ExpressionUtil.isResourceBindingExpression(label)) {
-      String resolved = resolveLabelExpression(pageKey, label);
-      return StringUtils.isNotBlank(resolved) ? resolved : pageKey.getSite().getName();
-    }
-    return label;
-  }
-
-  private String resolveLabelExpression(PageKey pageKey, String label) {
-    try {
-      LocaleConfigService localeConfigService = CommonsUtils.getService(LocaleConfigService.class);
-      Locale locale = localeConfigService.getDefaultLocaleConfig().getLocale();
-      ResourceBundle bundle = CommonsUtils.getService(ResourceBundleManager.class)
-                                          .getNavigationResourceBundle(LocaleContextInfo.getLocaleAsString(locale),
-                                                                       pageKey.getSite().getTypeName(),
-                                                                       pageKey.getSite().getName());
-      return bundle == null ? null : ExpressionUtil.getExpressionValue(bundle, label);
-    } catch (Exception e) {
-      LOGGER.debug("Cannot resolve site label expression {} for site {}", label, pageKey.getSite(), e);
-      return null;
-    }
+    return StringUtils.isNotBlank(label) ? label : pageKey.getSite().getName();
   }
 
   private CMSService getCmsService() {
