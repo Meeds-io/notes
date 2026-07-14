@@ -92,6 +92,7 @@ import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
+import org.exoplatform.wiki.jpa.search.PageSearchConnector;
 import org.exoplatform.wiki.resolver.TitleResolver;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.NotesExportService;
@@ -101,6 +102,7 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.NoteSearchResult;
+import org.exoplatform.wiki.service.search.PageSearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.tree.PageTreeNode;
@@ -1354,6 +1356,31 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(new BeanToJsons(noteSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Error when search notes", e);
+      return Response.serverError().build();
+    }
+  }
+
+  /**
+   * Unified-search endpoint for pages carrying a content block (Single Note
+   * View), used by the "page" search connector.
+   */
+  @GET
+  @Path("pagesearch/")
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  public Response searchPages(@Context UriInfo uriInfo,
+                              @QueryParam("keyword")
+                              String keyword,
+                              @QueryParam("limit")
+                              int limit,
+                              @QueryParam("offset")
+                              int offset) {
+    limit = limit > 0 ? limit : RestUtils.getLimit(uriInfo);
+    try {
+      List<PageSearchResult> results = CommonsUtils.getService(PageSearchConnector.class).search(keyword, offset, limit);
+      return Response.ok(new BeanToJsons(results), MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (Exception e) {
+      LOG.error("Error when searching pages", e);
       return Response.serverError().build();
     }
   }

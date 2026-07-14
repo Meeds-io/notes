@@ -147,6 +147,20 @@
     </init-params>
   </component>
 
+  <component>
+    <type>org.exoplatform.wiki.jpa.search.PageSearchConnector</type>
+    <init-params>
+      <value-param>
+        <name>query.file.path</name>
+        <value>${exo.notes.page.es.query.path:jar:/page-search-query.json}</value>
+      </value-param>
+      <properties-param>
+        <name>constructor.params</name>
+        <property name="index" value="page_content_alias"/>
+      </properties-param>
+    </init-params>
+  </component>
+
   <external-component-plugins>
     <target-component>org.exoplatform.wiki.service.WikiService</target-component>
     <component-plugin profiles="all">

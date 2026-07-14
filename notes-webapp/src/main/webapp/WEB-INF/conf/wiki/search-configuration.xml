@@ -74,6 +74,53 @@
         </object-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>PageSearchConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.core.search.SearchConnectorPlugin</type>
+      <description>Page content block Search connector</description>
+      <init-params>
+        <object-param>
+          <name>PageSearchConnector</name>
+          <description>Search connector for pages carrying a content block</description>
+          <object type="org.exoplatform.social.core.search.SearchConnector">
+            <field name="name">
+              <string>page</string>
+            </field>
+            <field name="contentType">
+              <string>page</string>
+            </field>
+            <field name="uri">
+              <string><![CDATA[/portal/rest/notes/pagesearch?limit={limit}&keyword={keyword}]]></string>
+            </field>
+            <field name="enabled">
+              <boolean>${exo.search.page.enabled:true}</boolean>
+            </field>
+            <field name="jsModule">
+              <string>SHARED/pageSearchCard</string>
+            </field>
+            <field name="i18nBundle">
+              <string>locale.portlet.wiki.WikiPortlet</string>
+            </field>
+            <field name="uiComponent">
+              <string>page-search-card</string>
+            </field>
+            <field name="icon">
+              <string>fas fa-file-alt</string>
+            </field>
+            <field name="favoritesEnabled">
+              <boolean>false</boolean>
+            </field>
+            <field name="tagsEnabled">
+              <boolean>false</boolean>
+            </field>
+            <field name="spaceFilterEnabled">
+              <boolean>true</boolean>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
   <external-component-plugins>
