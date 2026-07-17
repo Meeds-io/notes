@@ -915,7 +915,7 @@ export default {
     },
     addNote() {
       if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
       }
     },
     editNote() {
@@ -923,7 +923,7 @@ export default {
       if (this.selectedTranslation.value){
         translation = `&translation=${this.selectedTranslation.value}`;
       }
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}`, '_blank');
+      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
     },
     deleteNote() {
       if (this.hasDraft) {
@@ -1345,7 +1345,7 @@ export default {
         extensionDataUpdated: false
       };
       this.$notesService.createNote(note).then(duplicated => {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}`, '_blank');
+        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
       }).catch(e => {
         this.$root.$emit('show-alert', {
           type: 'error',
