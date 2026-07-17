@@ -30,6 +30,7 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.portal.permlink.model.PermanentLinkObject;
 import io.meeds.portal.permlink.plugin.PermanentLinkPlugin;
@@ -42,8 +43,6 @@ import lombok.SneakyThrows;
 public class NotePermanentLinkPlugin implements PermanentLinkPlugin {
 
   public static final String   OBJECT_TYPE = "notes";
-
-  public static final String   URL_FORMAT  = "/portal/s/%s/notes/%s";
 
   @Autowired
   private NoteService          noteService;
@@ -88,7 +87,7 @@ public class NotePermanentLinkPlugin implements PermanentLinkPlugin {
     if (space == null) {
       throw new ObjectNotFoundException(String.format("Note with id %s associated space wasn't found", object.getObjectId()));
     }
-    return String.format(URL_FORMAT, space.getId(), object.getObjectId());
+    return Utils.getPageUrl(note);
   }
 
 }
