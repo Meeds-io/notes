@@ -374,7 +374,7 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    UploadToolUtils.FetchedImage image = UploadToolUtils.resolveImage(attachmentService,
+    UploadToolUtils.FetchedContent image = UploadToolUtils.resolveImage(attachmentService,
                                                                       fileService,
                                                                       getCurrentUserAclIdentity(),
                                                                       imageUrl,
