@@ -57,7 +57,7 @@
             :disabled="saveDisabled"
             class="btn btn-primary"
             @click="save">
-            {{ $t('notes.button.publish') }}
+            {{ $t('notes.button.save') }}
           </v-btn>
         </div>
       </template>
