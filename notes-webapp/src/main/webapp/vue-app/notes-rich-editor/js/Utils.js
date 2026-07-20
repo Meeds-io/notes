@@ -34,6 +34,71 @@ export function getContentToEdit(content) {
   return docElement?.children[1].innerHTML;
 }
 
+// Accessibility (#4246): expose emojis to screen readers by wrapping
+// them in a <span role="img" aria-label="..."> once their names are loaded.
+let emojiNameByChar = null;
+let emojiPattern = null;
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildEmojiIndex(emojiBank) {
+  const map = new Map();
+  (emojiBank.categories || []).forEach(category => {
+    (category.emojis || []).forEach(item => {
+      if (item.emoji && item.name && !map.has(item.emoji)) {
+        map.set(item.emoji, item.name);
+      }
+    });
+  });
+  emojiNameByChar = map;
+  const chars = Array.from(map.keys()).sort((a, b) => b.length - a.length);
+  emojiPattern = chars.length && new RegExp(chars.map(escapeRegExp).join('|'), 'g');
+}
+
+fetch('/social/json/emojiBank.json?v=1')
+  .then(resp => resp.ok && resp.json())
+  .then(emojiBank => emojiBank && buildEmojiIndex(emojiBank))
+  .catch(() => {
+    // Emoji names not available yet: rendered emojis will remain unlabeled until a later call.
+  });
+
+function addAccessibleNameToEmojis(docElement) {
+  if (!emojiPattern) {
+    return;
+  }
+  const body = docElement.getElementsByTagName('body')[0];
+  const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    emojiPattern.lastIndex = 0;
+    if (node.parentElement?.getAttribute('role') !== 'img' && emojiPattern.test(node.nodeValue)) {
+      textNodes.push(node);
+    }
+  }
+  textNodes.forEach(textNode => {
+    const fragment = docElement.ownerDocument.createDocumentFragment();
+    let lastIndex = 0;
+    let match;
+    emojiPattern.lastIndex = 0;
+    while ((match = emojiPattern.exec(textNode.nodeValue))) {
+      if (match.index > lastIndex) {
+        fragment.appendChild(docElement.ownerDocument.createTextNode(textNode.nodeValue.slice(lastIndex, match.index)));
+      }
+      const span = docElement.ownerDocument.createElement('span');
+      span.setAttribute('role', 'img');
+      span.setAttribute('aria-label', emojiNameByChar.get(match[0]));
+      span.textContent = match[0];
+      fragment.appendChild(span);
+      lastIndex = match.index + match[0].length;
+    }
+    fragment.appendChild(docElement.ownerDocument.createTextNode(textNode.nodeValue.slice(lastIndex)));
+    textNode.parentNode.replaceChild(fragment, textNode);
+  });
+}
+
 export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner, computeNavigation) {
   const internal = window.location.host + eXo.env.portal.context;
   const domParser = new DOMParser();
@@ -76,6 +141,7 @@ export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner
       }
     }
   }
+  addAccessibleNameToEmojis(docElement);
   return docElement?.children[1].innerHTML;
 }
 
