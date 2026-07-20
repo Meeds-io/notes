@@ -334,7 +334,7 @@ public class NoteMcpTool implements McpToolPlugin {
   public NoteModel restoreNoteVersion(long noteId,
                                       long versionNumber,
                                       String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId);
+    Page note = getNoteById(noteId, language);
     if (!noteService.canEditNote(note, getCurrentUserName())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
@@ -375,7 +375,7 @@ public class NoteMcpTool implements McpToolPlugin {
                                 String attachmentObjectId,
                                 String altText,
                                 String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId);
+    Page note = getNoteById(noteId, language);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
@@ -422,7 +422,7 @@ public class NoteMcpTool implements McpToolPlugin {
    */
   public NoteModel setNoteSummary(long noteId, String summary, String language) throws IllegalAccessException,
                                                                                ObjectNotFoundException {
-    Page note = getNoteById(noteId);
+    Page note = getNoteById(noteId, language);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
@@ -449,7 +449,7 @@ public class NoteMcpTool implements McpToolPlugin {
    * may remove it.
    */
   public NoteModel removeNoteCover(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId);
+    Page note = getNoteById(noteId, language);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
@@ -462,6 +462,12 @@ public class NoteMcpTool implements McpToolPlugin {
     try {
       String lang = StringUtils.isBlank(language) ? note.getLang() : language;
       noteService.removeNoteFeaturedImage(noteId, existing.getId(), lang, false, currentUserIdentityId(username));
+      // clear the in-memory featured image before resaving the version: removeNoteFeaturedImage
+      // already dropped the stored id, and saveNoteMetadata treats a null featuredImage as
+      // "leave it alone" — leaving the stale id-only image here would re-add the just-deleted cover
+      if (note.getProperties() != null) {
+        note.getProperties().setFeaturedImage(null);
+      }
       // propagate the removal onto a new note version (as the native update flow does)
       noteService.createVersionOfNote(note, username, true);
     } catch (Exception e) {
