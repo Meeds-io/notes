@@ -24,8 +24,8 @@
       id="noteTreeviewToolbar"
       :right-text-filter="{
         minCharacters: 3,
-        placeholder: $t('notes.label.filter'),
-        tooltip: $t('notes.label.filter')
+        placeholder: $t('notes.label.filter.placeholder'),
+        ariaLabel: $t('notes.label.filter'),
       }"
       :right-filter-button=" {
         text: $t('notes.advanced.filter.button.title'),
@@ -44,10 +44,11 @@
       icon
       v-bind="attrs"
       v-on="on"
+      :title="$t('notes.tooltip.close.tree')"
+      :aria-label="$t('notes.tooltip.close.tree')"
       @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
       <img
         alt=""
-        :title="$t('notes.tooltip.close.tree')"
         src="/social/images/sidebar.svg"
         class="icon-default-color"
         height="20px"
