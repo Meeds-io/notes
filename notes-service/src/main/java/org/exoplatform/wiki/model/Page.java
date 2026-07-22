@@ -110,6 +110,10 @@ public class Page{
 
   private Integer                         position;
 
+  private List<Long>                      categoryIds;
+
+  private Long                            spaceId;
+
   public Page(String name) {
     this.name = name;
   }
