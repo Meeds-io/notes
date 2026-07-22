@@ -51,7 +51,7 @@
     <addon.meeds.gamification.version>7.3.x-ai-contribution-SNAPSHOT</addon.meeds.gamification.version>
     <addon.meeds.analytics.version>7.3.x-ai-contribution-SNAPSHOT</addon.meeds.analytics.version>
     <addon.meeds.layout.version>7.3.x-ai-contribution-SNAPSHOT</addon.meeds.layout.version>
-    <addon.meeds.mcp-server.version>7.3.x-SNAPSHOT</addon.meeds.mcp-server.version>
+    <addon.meeds.mcp-server.version>7.3.x-ai-contribution-SNAPSHOT</addon.meeds.mcp-server.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
