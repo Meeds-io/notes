@@ -24,8 +24,8 @@
       id="noteTreeviewToolbar"
       :right-text-filter="{
         minCharacters: 3,
-        placeholder: $t('notes.label.filter'),
-        tooltip: $t('notes.label.filter')
+        placeholder: $t('notes.label.filter.placeholder'),
+        ariaLabel: $t('notes.label.filter'),
       }"
       :right-filter-button=" {
         text: $t('notes.advanced.filter.button.title'),

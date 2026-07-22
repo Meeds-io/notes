@@ -53,6 +53,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.meeds.notes.plugin.NoteCategoryPlugin;
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -181,6 +182,15 @@ public class NotesRestService implements ResourceContainer {
     cc.setNoStore(true);
   }
 
+  private void populateCategories(Page note) {
+    try {
+      note.setSpaceId(NoteCategoryPlugin.getSpaceId(note));
+      note.setCategoryIds(NoteCategoryPlugin.getCategoryIds(note));
+    } catch (Exception e) {
+      LOG.warn("Error retrieving categories of note {}", note.getId(), e);
+    }
+  }
+
   @GET
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -261,6 +271,7 @@ public class NotesRestService implements ResourceContainer {
                                                    request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
+      populateCategories(note);
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
@@ -325,6 +336,7 @@ public class NotesRestService implements ResourceContainer {
                                                    request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
+      populateCategories(note);
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}", noteId, e);
