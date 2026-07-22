@@ -609,6 +609,153 @@ public class TestNoteService extends BaseTest {
     assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size(), childern + 3);
   }
 
+  public void testImportNotesReplaceAllWithNestedExistingNotes() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page newNote = noteService.createNote(portalWiki, "Home", new Page("replaceAll_new", "replaceAll_new"), ROOT_IDENTITY);
+
+    String[] notes = new String[] { newNote.getId() };
+    File zipFile = File.createTempFile("notesExportReplaceAll", ".zip");
+    notesExportService.startExportNotes(200234, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200234).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200234);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    Page existingParent = noteService.createNote(userWiki, "Home", new Page("existing_parent", "existing_parent"), ROOT_IDENTITY);
+    Page existingChild =
+                        noteService.createNote(userWiki, existingParent.getName(), new Page("existing_child", "existing_child"), ROOT_IDENTITY);
+
+    // Deleting existingParent cascades to existingChild; the import loop must not
+    // choke when it later reaches existingChild, already removed by that cascade.
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "replaceAll", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", existingParent.getName()));
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", existingChild.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", newNote.getName()));
+  }
+
+  public void testImportNotesReplaceAllWithDeeplyNestedExistingNotes() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page newNote = noteService.createNote(portalWiki, "Home", new Page("replaceAll_new2", "replaceAll_new2"), ROOT_IDENTITY);
+
+    String[] notes = new String[] { newNote.getId() };
+    File zipFile = File.createTempFile("notesExportReplaceAllDeep", ".zip");
+    notesExportService.startExportNotes(200235, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200235).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200235);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    // Build a 3-level tree plus a sibling branch, so the flattened delete list mixes
+    // several already-cascade-deleted descendants with independent ones.
+    Page grandParent = noteService.createNote(userWiki, "Home", new Page("gp", "gp"), ROOT_IDENTITY);
+    Page parent1 = noteService.createNote(userWiki, grandParent.getName(), new Page("p1", "p1"), ROOT_IDENTITY);
+    Page child1 = noteService.createNote(userWiki, parent1.getName(), new Page("c1", "c1"), ROOT_IDENTITY);
+    noteService.createNote(userWiki, child1.getName(), new Page("gc1", "gc1"), ROOT_IDENTITY);
+    Page parent2 = noteService.createNote(userWiki, grandParent.getName(), new Page("p2", "p2"), ROOT_IDENTITY);
+    noteService.createNote(userWiki, parent2.getName(), new Page("c2", "c2"), ROOT_IDENTITY);
+    Page sibling = noteService.createNote(userWiki, "Home", new Page("sibling", "sibling"), ROOT_IDENTITY);
+
+    int childrenBefore = noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size();
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "replaceAll", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", grandParent.getName()));
+    assertNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", sibling.getName()));
+    assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", newNote.getName()));
+    // Only the imported note should remain as a direct child of Home
+    assertEquals(1, noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size());
+    assertTrue(childrenBefore > 1);
+  }
+
+  public void testImportNotesReindexesInsertedNoteLinks() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page target = noteService.createNote(portalWiki, "Home", new Page("insert_target", "insert_target"), ROOT_IDENTITY);
+    Page source = new Page("insert_source", "insert_source");
+    // Note referencing another note through the "insert note" feature (content-link)
+    source.setContent("<content-link class=\"navigationContentLink\">/notes:" + target.getId() + "</content-link>");
+    source = noteService.createNote(portalWiki, "Home", source, ROOT_IDENTITY);
+
+    // Export the whole notebook (exportAll = true)
+    String[] notes = new String[] { target.getId(), source.getId() };
+    File zipFile = File.createTempFile("notesExportInserted", ".zip");
+    notesExportService.startExportNotes(200232, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200232).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200232);
+    assertNotNull(exportedNotes);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    // Import into another notebook
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    Page importedTarget = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", target.getName());
+    Page importedSource = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", source.getName());
+    assertNotNull(importedTarget);
+    assertNotNull(importedSource);
+    // The inserted note link must be reindexed to the imported target note id
+    assertTrue("Inserted note link should be reindexed to the imported note id",
+               importedSource.getContent().contains("/notes:" + importedTarget.getId() + "</content-link>"));
+    // It must no longer point to the old (source environment) note id, which would render as "Content deleted"
+    assertFalse("Inserted note link should not keep the old note id",
+                importedSource.getContent().contains("/notes:" + target.getId() + "</content-link>"));
+  }
+
+  public void testImportReindexesContentLinkAnchors() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page target = noteService.createNote(portalWiki, "Home", new Page("anchor_target", "anchor_target"), ROOT_IDENTITY);
+    Page source = new Page("anchor_source", "anchor_source");
+    // "insert note" link in the anchor format: the note id is carried by the data-object and href attributes
+    source.setContent("<a href=\"/portal/s/1/notes/" + target.getId() + "\" data-object=\"notes:" + target.getId()
+        + "\" contenteditable=\"false\" class=\"content-link\" rel=\"nofollow\">Target</a>");
+    source = noteService.createNote(portalWiki, "Home", source, ROOT_IDENTITY);
+
+    String[] notes = new String[] { target.getId(), source.getId() };
+    File zipFile = File.createTempFile("notesExportAnchor", ".zip");
+    notesExportService.startExportNotes(200233, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200233).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200233);
+    assertNotNull(exportedNotes);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    Page importedTarget = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", target.getName());
+    Page importedSource = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", source.getName());
+    assertNotNull(importedTarget);
+    assertNotNull(importedSource);
+    // The content-link anchor id must be reindexed to the imported target note id
+    assertTrue("content-link anchor data-object should be reindexed to the imported note id",
+               importedSource.getContent().contains("data-object=\"notes:" + importedTarget.getId() + "\""));
+    // It must no longer reference the old (source environment) note id, which would render as "Content has been deleted"
+    assertFalse("content-link anchor should not keep the old note id",
+                importedSource.getContent().contains("data-object=\"notes:" + target.getId() + "\""));
+  }
+
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page toBeImported1NotPage = noteService.createNote(portalWiki,

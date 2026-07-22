@@ -306,7 +306,9 @@
             <div class="flex-grow-1 me-2 d-flex content-box-sizing">
               <v-text-field
                 v-model="search"
-                :placeholder=" $t('notes.label.filter') "
+                :placeholder="$t('notes.label.filter.placeholder')"
+                :aria-label="$t('notes.label.filter')"
+                :title="$t('notes.label.filter')"
                 class="search mt-auto"
                 clearable
                 hide-details
