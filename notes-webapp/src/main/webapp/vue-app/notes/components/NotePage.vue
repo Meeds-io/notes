@@ -190,6 +190,7 @@
           <v-card flat class="d-sm-grid">
             <v-img
               v-if="hasFeaturedImage"
+              :key="`featured-image-${note.id}-${note.lang || 'default'}`"
               :lazy-src="featuredImageLink"
               :alt="featuredImageAltText"
               :src="featuredImageLink"
@@ -384,6 +385,10 @@
       ref="featuredImageDrawer"
       :note="note"
       :has-featured-image="hasFeaturedImage" />
+    <note-editor-metadata-drawer
+      ref="metadataDrawer"
+      :has-featured-image="hasFeaturedImage"
+      @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer
       ref="publicationDrawer"
@@ -836,6 +841,7 @@ export default {
     this.$root.$on('open-note-treeview', this.openNoteTreeView);
     this.$root.$on('note-export-pdf', this.createPDF);
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
+    this.$root.$on('open-note-properties', () => this.$refs.metadataDrawer.open(this.note));
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
@@ -1260,8 +1266,19 @@ export default {
       this.actualVersion.current = true;
       this.note.content = version?.content;
       this.note.title = version?.title;
-      this.noteSummary = version?.properties?.summary;
-      this.note.properties = version?.properties;
+      // The summary and featured image (cover) are metadata stored per
+      // note/translation, not per content version, so a version's properties may
+      // not carry them. Preserve the note's current metadata (already resolved for
+      // the active language) when the version doesn't provide it, otherwise
+      // switching translation would wipe the per-language cover and summary.
+      this.note.properties = {
+        ...version?.properties,
+        featuredImage: version?.properties?.featuredImage?.id
+          ? version.properties.featuredImage
+          : this.note?.properties?.featuredImage,
+        summary: version?.properties?.summary ?? this.note?.properties?.summary,
+      };
+      this.noteSummary = this.note.properties.summary;
       this.noteTitle = version?.title;
     },
     restoreVersion(version) {
@@ -1391,6 +1408,31 @@ export default {
         return this.$nextTick();
       }).catch(e => {
         console.error('Error when getting note', e);
+      });
+    },
+    saveMetadata(properties) {
+      if (!properties) {
+        return;
+      }
+      // The currently viewed language: empty for the original version, else the translation lang.
+      const lang = this.note.lang || this.selectedTranslation?.value || '';
+      // The dedicated /notes/metadata endpoint is not deployed, so we persist through
+      // updateNoteById: sending the note with unchanged title/content routes the backend
+      // into its EDIT_PAGE_PROPERTIES branch, which writes the featured image + summary
+      // for the given lang (empty lang => default version).
+      const notePayload = structuredClone(this.note);
+      notePayload.lang = lang;
+      notePayload.properties = properties;
+      this.$notesService.updateNoteById(notePayload).then(() => {
+        return this.$notesService.getNoteById(this.note.id, lang);
+      }).then(data => {
+        const note = data || {};
+        this.note.properties = note?.properties;
+        this.noteSummary = note?.properties?.summary;
+        this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.propertiesUpdated')});
+      }).catch(e => {
+        console.error('Error when saving note metadata', e);
+        this.$root.$emit('show-alert', {type: 'error', message: this.$t('notes.alert.error.label.propertiesUpdate')});
       });
     },
     viewNoteStatistics() {
