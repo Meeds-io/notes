@@ -70,6 +70,9 @@
         <module>NotesTreeview</module>
       </depends>
       <depends>
+        <module>ContentListShared</module>
+      </depends>
+      <depends>
         <module>imageCropper</module>
       </depends>
       <depends>

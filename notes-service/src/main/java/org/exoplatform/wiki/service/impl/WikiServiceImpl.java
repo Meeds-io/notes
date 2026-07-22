@@ -172,7 +172,25 @@ public class WikiServiceImpl implements WikiService {
     wikiPreferencesSyntax.setDefaultSyntax(getDefaultWikiSyntaxId());
     wikiPreferences.setWikiPreferencesSyntax(wikiPreferencesSyntax);
     wiki.setPreferences(wikiPreferences);
-    return dataStorage.createWiki(wiki);
+    Wiki createdWiki = dataStorage.createWiki(wiki);
+    // The home page is created along with the note book, hence outside of
+    // NoteService#createNote which is what usually broadcasts the page creation.
+    // Without this call the home page never enters the search index, and stays
+    // invisible until it is edited. The other page listeners early-return on
+    // home pages (they are created by the system, not by a user), so only the
+    // indexing one acts on it.
+    Page wikiHome = createdWiki.getWikiHome();
+    if (wikiHome != null) {
+      try {
+        postAddPage(createdWiki.getType(), createdWiki.getOwner(), wikiHome.getName(), wikiHome);
+      } catch (Exception e) {
+        LOG.warn("Cannot broadcast the creation of the home page of note book {}:{}, it will not be searchable until it is edited",
+                 createdWiki.getType(),
+                 createdWiki.getOwner(),
+                 e);
+      }
+    }
+    return createdWiki;
   }
 
   @Override
