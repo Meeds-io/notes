@@ -23,7 +23,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.persistence.*;
+import io.meeds.common.persistence.PortableSequence;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -46,8 +61,7 @@ public class PageEntity extends BasePageEntity {
 
   @Id
   @Column(name = "PAGE_ID")
-  @SequenceGenerator(name="SEQ_WIKI_PAGES_PAGE_ID", sequenceName="SEQ_WIKI_PAGES_PAGE_ID", allocationSize = 1)
-  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_PAGES_PAGE_ID")
+  @PortableSequence(name = "SEQ_WIKI_PAGES_PAGE_ID")
   private long id;
 
   @ManyToOne

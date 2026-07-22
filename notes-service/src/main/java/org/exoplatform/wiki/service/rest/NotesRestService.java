@@ -53,6 +53,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.meeds.notes.plugin.NoteCategoryPlugin;
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -181,6 +182,15 @@ public class NotesRestService implements ResourceContainer {
     cc.setNoStore(true);
   }
 
+  private void populateCategories(Page note) {
+    try {
+      note.setSpaceId(NoteCategoryPlugin.getSpaceId(note));
+      note.setCategoryIds(NoteCategoryPlugin.getCategoryIds(note));
+    } catch (Exception e) {
+      LOG.warn("Error retrieving categories of note {}", note.getId(), e);
+    }
+  }
+
   @GET
   @Path("/note/{noteBookType}/{noteBookOwner:.+}/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -261,6 +271,7 @@ public class NotesRestService implements ResourceContainer {
                                                    request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
+      populateCategories(note);
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}:{}:{}", noteBookType, noteBookOwner, noteId, e);
@@ -325,6 +336,7 @@ public class NotesRestService implements ResourceContainer {
                                                    request.getLocale().getLanguage(),
                                                    identity,
                                                    false));
+      populateCategories(note);
       return Response.ok(note).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}", noteId, e);
@@ -1312,43 +1324,40 @@ public class NotesRestService implements ResourceContainer {
         }
         if (page != null) {
           page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
-          if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
-            PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
-            org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
-            if (pageVersion != null) {
-              poster = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, pageVersion.getAuthor());
-            }
-            IdentityEntity posterIdentity =
-                    poster != null ? EntityBuilder.buildEntityIdentity(poster, uriInfo.getPath(), "all")
-                            : null;
-            IdentityEntity wikiOwnerIdentity =
-                    searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
-                            uriInfo.getPath(),
-                            "all")
-                            : null;
-            NoteSearchResult noteSearchResult = new NoteSearchResult();
-            noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
-            noteSearchResult.setId(page.getId());
-            noteSearchResult.setPageName(page.getName());
-            noteSearchResult.setPageName(page.getName());
-            noteSearchResult.setActivityId(page.getActivityId());
-            if (posterIdentity != null) {
-              noteSearchResult.setPoster(posterIdentity);
-            }
-            noteSearchResult.setWikiOwner(wikiOwnerIdentity);
-            noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
-            noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
-            noteSearchResult.setType(searchResult.getType());
-            noteSearchResult.setUrl(page.getUrl());
-            noteSearchResult.setLang(searchResult.getLang());
-            noteSearchResult.setMetadatas(page.getMetadatas());
-            noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
-            String summary = pageVersion != null
-                && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
-                                                       : page.getProperties() != null ? page.getProperties().getSummary() : null;
-            noteSearchResult.setSummary(summary);
-            noteSearchResults.add(noteSearchResult);
+          PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
+          org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
+          if (pageVersion != null) {
+            poster = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, pageVersion.getAuthor());
           }
+          IdentityEntity posterIdentity =
+                  poster != null ? EntityBuilder.buildEntityIdentity(poster, uriInfo.getPath(), "all")
+                          : null;
+          IdentityEntity wikiOwnerIdentity =
+                  searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
+                          uriInfo.getPath(),
+                          "all")
+                          : null;
+          NoteSearchResult noteSearchResult = new NoteSearchResult();
+          noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
+          noteSearchResult.setId(page.getId());
+          noteSearchResult.setPageName(page.getName());
+          noteSearchResult.setActivityId(page.getActivityId());
+          if (posterIdentity != null) {
+            noteSearchResult.setPoster(posterIdentity);
+          }
+          noteSearchResult.setWikiOwner(wikiOwnerIdentity);
+          noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
+          noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
+          noteSearchResult.setType(searchResult.getType());
+          noteSearchResult.setUrl(page.getUrl());
+          noteSearchResult.setLang(searchResult.getLang());
+          noteSearchResult.setMetadatas(page.getMetadatas());
+          noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
+          String summary = pageVersion != null
+              && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
+                                                     : page.getProperties() != null ? page.getProperties().getSummary() : null;
+          noteSearchResult.setSummary(summary);
+          noteSearchResults.add(noteSearchResult);
         }
       }
       return Response.ok(new BeanToJsons(noteSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();

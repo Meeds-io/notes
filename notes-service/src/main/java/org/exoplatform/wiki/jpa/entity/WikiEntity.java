@@ -21,25 +21,24 @@ package org.exoplatform.wiki.jpa.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.SequenceGenerator;
+import io.meeds.common.persistence.PortableSequence;
 import jakarta.persistence.Table;
 
 @Entity(name = "WikiWikiEntity")
 @Table(name = "WIKI_WIKIS")
 @NamedQuery(name = "wiki.getAllIds", query = "SELECT w.id FROM WikiWikiEntity w ORDER BY w.id")
+@NamedQuery(name = "wiki.getAllHomePageIds",
+            query = "SELECT w.wikiHome.id FROM WikiWikiEntity w WHERE w.wikiHome IS NOT NULL ORDER BY w.wikiHome.id")
 @NamedQuery(name = "wiki.getWikisByType", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type")
 @NamedQuery(name = "wiki.getWikiByTypeAndOwner", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type AND w.owner = :owner")
 public class WikiEntity {
   @Id
   @Column(name = "WIKI_ID")
-  @SequenceGenerator(name="SEQ_WIKI_WIKIS_WIKI_ID", sequenceName="SEQ_WIKI_WIKIS_WIKI_ID", allocationSize = 1)
-  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_WIKIS_WIKI_ID")
+  @PortableSequence(name = "SEQ_WIKI_WIKIS_WIKI_ID")
   private long id;
 
   @Column(name = "NAME")
