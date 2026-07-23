@@ -609,6 +609,45 @@ public class TestNoteService extends BaseTest {
     assertEquals(noteService.getChildrenNoteOf(userWiki.getWikiHome(), false, false).size(), childern + 3);
   }
 
+  public void testImportNotesReindexesInsertedNoteLinks() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page target = noteService.createNote(portalWiki, "Home", new Page("insert_target", "insert_target"), ROOT_IDENTITY);
+    Page source = new Page("insert_source", "insert_source");
+    // Note referencing another note through the "insert note" feature (content-link)
+    source.setContent("<content-link class=\"navigationContentLink\">/notes:" + target.getId() + "</content-link>");
+    source = noteService.createNote(portalWiki, "Home", source, ROOT_IDENTITY);
+
+    // Export the whole notebook (exportAll = true)
+    String[] notes = new String[] { target.getId(), source.getId() };
+    File zipFile = File.createTempFile("notesExportInserted", ".zip");
+    notesExportService.startExportNotes(200232, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200232).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200232);
+    assertNotNull(exportedNotes);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    // Import into another notebook
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    Page importedTarget = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", target.getName());
+    Page importedSource = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", source.getName());
+    assertNotNull(importedTarget);
+    assertNotNull(importedSource);
+    // The inserted note link must be reindexed to the imported target note id
+    assertTrue("Inserted note link should be reindexed to the imported note id",
+               importedSource.getContent().contains("/notes:" + importedTarget.getId() + "</content-link>"));
+    // It must no longer point to the old (source environment) note id, which would render as "Content deleted"
+    assertFalse("Inserted note link should not keep the old note id",
+                importedSource.getContent().contains("/notes:" + target.getId() + "</content-link>"));
+  }
+
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page toBeImported1NotPage = noteService.createNote(portalWiki,

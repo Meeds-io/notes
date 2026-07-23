@@ -1362,16 +1362,18 @@ public class NoteServiceImpl implements NoteService {
           }
         }
       }
+      Map<String, String> importedNotesIdsByName = new HashMap<>();
       for (Page note : notes.getNotes()) {
         importNote(note,
                    parent,
                    featuredImages,
                    wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
                    conflict,
-                   userIdentity);
+                   userIdentity,
+                   importedNotesIdsByName);
       }
       for (Page note : notes.getNotes()) {
-        replaceInsertedNotes(note, wiki, userIdentity);
+        replaceInsertedNotes(note, wiki, userIdentity, importedNotesIdsByName);
         replaceIncludedPages(note, wiki, userIdentity);
       }
       cleanUp(notesFile);
@@ -1958,9 +1960,11 @@ public class NoteServiceImpl implements NoteService {
                           Map<String, String> featuredImages,
                           Wiki wiki,
                           String conflict,
-                          Identity userIdentity) throws Exception {
+                          Identity userIdentity,
+                          Map<String, String> importedNotesIdsByName) throws Exception {
 
     Page targetNote = null;
+    String originalNoteName = note.getName();
     File featuredImageFile = extractNoteFeaturedImageFileToImport(note, featuredImages);
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
@@ -2012,9 +2016,16 @@ public class NoteServiceImpl implements NoteService {
                                 targetNote,
                                 Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
     }
+    Page importedNote = targetNote;
+    if (importedNote == null) {
+      importedNote = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+    }
+    if (importedNote != null && importedNote.getId() != null && StringUtils.isNotEmpty(originalNoteName)) {
+      importedNotesIdsByName.put(originalNoteName, importedNote.getId());
+    }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        importNote(child, note_, featuredImages, wiki, conflict, userIdentity);
+        importNote(child, note_, featuredImages, wiki, conflict, userIdentity, importedNotesIdsByName);
       }
     }
   }
@@ -2146,8 +2157,8 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  private void replaceInsertedNotes(Page note, Wiki wiki, Identity userIdentity) {
-    Page note_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
+  private void replaceInsertedNotes(Page note, Wiki wiki, Identity userIdentity, Map<String, String> importedNotesIdsByName) {
+    Page note_ = resolveImportedNote(note.getName(), wiki, importedNotesIdsByName);
     if (note_ != null) {
       String content = note_.getContent();
       Pattern pattern = Pattern.compile("(<)" + CONTENT_LINK_TAG_REPLACEMENT + "([^>]*?>/notes:)([^<]+)(</)" + CONTENT_LINK_TAG_REPLACEMENT + "(>)");
@@ -2155,7 +2166,7 @@ public class NoteServiceImpl implements NoteService {
       StringBuilder result = new StringBuilder();
       while (matcher.find()) {
         String noteName = matcher.group(3);
-        Page noteToInsert = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), noteName);
+        Page noteToInsert = resolveImportedNote(noteName, wiki, importedNotesIdsByName);
         String noteId = "0";
         if (noteToInsert != null) {
           noteId = matcher.group(1) + CONTENT_LINK_TAG + matcher.group(2)
@@ -2173,9 +2184,23 @@ public class NoteServiceImpl implements NoteService {
     }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        replaceInsertedNotes(child, wiki, userIdentity);
+        replaceInsertedNotes(child, wiki, userIdentity, importedNotesIdsByName);
       }
     }
+  }
+
+  private Page resolveImportedNote(String noteName, Wiki wiki, Map<String, String> importedNotesIdsByName) {
+    if (StringUtils.isEmpty(noteName)) {
+      return null;
+    }
+    String importedId = importedNotesIdsByName == null ? null : importedNotesIdsByName.get(noteName);
+    if (importedId != null) {
+      Page note = getNoteById(importedId);
+      if (note != null) {
+        return note;
+      }
+    }
+    return getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), noteName);
   }
 
   private void addAllNodes(Page note, List<Page> listOfNotes) throws WikiException {
