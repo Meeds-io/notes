@@ -129,6 +129,14 @@ public class NoteServiceImpl implements NoteService {
 
   private static final String                             CONTENT_LINK_TAG_REPLACEMENT           = "--content--link-to-insert";
 
+  // Matches the note id carried by a "content-link" anchor data-object attribute: data-object="notes:12345"
+  private static final Pattern                            DATA_OBJECT_NOTE_ID_PATTERN            =
+                                                                                Pattern.compile("(data-object=\"notes:)(\\d+)");
+
+  // Matches the note id carried by a "content-link" anchor href attribute: href="/portal/.../notes/12345"
+  private static final Pattern                            HREF_NOTE_ID_PATTERN                   =
+                                                                                Pattern.compile("(href=\"[^\"]*?/notes/)(\\d+)");
+
   private static final Pattern                            IMAGES_IMPORT_PATTERN                  =
                                                                                 Pattern.compile("src=\"//-(.*?)-//\"");
 
@@ -1362,7 +1370,10 @@ public class NoteServiceImpl implements NoteService {
           }
         }
       }
+      // Map of imported notes ids, used to reindex inserted note links: by name for the
+      // legacy "content-link" element format, by source id for the "content-link" anchor format.
       Map<String, String> importedNotesIdsByName = new HashMap<>();
+      Map<String, String> importedNotesIdsBySourceId = new HashMap<>();
       for (Page note : notes.getNotes()) {
         importNote(note,
                    parent,
@@ -1370,10 +1381,11 @@ public class NoteServiceImpl implements NoteService {
                    wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner()),
                    conflict,
                    userIdentity,
-                   importedNotesIdsByName);
+                   importedNotesIdsByName,
+                   importedNotesIdsBySourceId);
       }
       for (Page note : notes.getNotes()) {
-        replaceInsertedNotes(note, wiki, userIdentity, importedNotesIdsByName);
+        replaceInsertedNotes(note, wiki, userIdentity, importedNotesIdsByName, importedNotesIdsBySourceId);
         replaceIncludedPages(note, wiki, userIdentity);
       }
       cleanUp(notesFile);
@@ -1961,10 +1973,12 @@ public class NoteServiceImpl implements NoteService {
                           Wiki wiki,
                           String conflict,
                           Identity userIdentity,
-                          Map<String, String> importedNotesIdsByName) throws Exception {
+                          Map<String, String> importedNotesIdsByName,
+                          Map<String, String> importedNotesIdsBySourceId) throws Exception {
 
     Page targetNote = null;
     String originalNoteName = note.getName();
+    String sourceNoteId = note.getId();
     File featuredImageFile = extractNoteFeaturedImageFileToImport(note, featuredImages);
     Page parent_ = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), parent.getName());
     if (parent_ == null) {
@@ -2020,12 +2034,17 @@ public class NoteServiceImpl implements NoteService {
     if (importedNote == null) {
       importedNote = getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), note.getName());
     }
-    if (importedNote != null && importedNote.getId() != null && StringUtils.isNotEmpty(originalNoteName)) {
-      importedNotesIdsByName.put(originalNoteName, importedNote.getId());
+    if (importedNote != null && importedNote.getId() != null) {
+      if (StringUtils.isNotEmpty(originalNoteName)) {
+        importedNotesIdsByName.put(originalNoteName, importedNote.getId());
+      }
+      if (StringUtils.isNotEmpty(sourceNoteId)) {
+        importedNotesIdsBySourceId.put(sourceNoteId, importedNote.getId());
+      }
     }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        importNote(child, note_, featuredImages, wiki, conflict, userIdentity, importedNotesIdsByName);
+        importNote(child, note_, featuredImages, wiki, conflict, userIdentity, importedNotesIdsByName, importedNotesIdsBySourceId);
       }
     }
   }
@@ -2157,10 +2176,18 @@ public class NoteServiceImpl implements NoteService {
     }
   }
 
-  private void replaceInsertedNotes(Page note, Wiki wiki, Identity userIdentity, Map<String, String> importedNotesIdsByName) {
+  private void replaceInsertedNotes(Page note,
+                                    Wiki wiki,
+                                    Identity userIdentity,
+                                    Map<String, String> importedNotesIdsByName,
+                                    Map<String, String> importedNotesIdsBySourceId) {
     Page note_ = resolveImportedNote(note.getName(), wiki, importedNotesIdsByName);
     if (note_ != null) {
-      String content = note_.getContent();
+      String originalContent = note_.getContent();
+      String content = originalContent == null ? "" : originalContent;
+
+      // Legacy "content-link" element format: <--content--link-to-insert ...>/notes:NAME</--...>,
+      // remapped to the imported note id resolved by name.
       Pattern pattern = Pattern.compile("(<)" + CONTENT_LINK_TAG_REPLACEMENT + "([^>]*?>/notes:)([^<]+)(</)" + CONTENT_LINK_TAG_REPLACEMENT + "(>)");
       Matcher matcher = pattern.matcher(content);
       StringBuilder result = new StringBuilder();
@@ -2176,7 +2203,12 @@ public class NoteServiceImpl implements NoteService {
       }
       matcher.appendTail(result);
       content = result.toString();
-      if (!content.equals(note_.getContent())) {
+
+      // "content-link" anchor format: the note id is carried in the data-object="notes:ID"
+      // and href=".../notes/ID" attributes, remapped from the source note id to the imported one.
+      content = remapContentLinkAnchorIds(content, importedNotesIdsBySourceId);
+
+      if (!content.equals(originalContent)) {
         note_.setContent(content);
         updateNote(note_);
         createVersionOfNote(note_, userIdentity.getUserId(), true);
@@ -2184,9 +2216,36 @@ public class NoteServiceImpl implements NoteService {
     }
     if (note.getChildren() != null) {
       for (Page child : note.getChildren()) {
-        replaceInsertedNotes(child, wiki, userIdentity, importedNotesIdsByName);
+        replaceInsertedNotes(child, wiki, userIdentity, importedNotesIdsByName, importedNotesIdsBySourceId);
       }
     }
+  }
+
+  /**
+   * Remaps the note ids carried by "content-link" anchors (data-object="notes:ID" and
+   * href=".../notes/ID") from the source note id to the id of the corresponding imported
+   * note. References to notes that are not part of the current import are left unchanged.
+   */
+  private String remapContentLinkAnchorIds(String content, Map<String, String> importedNotesIdsBySourceId) {
+    if (StringUtils.isEmpty(content) || importedNotesIdsBySourceId == null || importedNotesIdsBySourceId.isEmpty()) {
+      return content;
+    }
+    content = remapNoteReferenceIds(content, DATA_OBJECT_NOTE_ID_PATTERN, importedNotesIdsBySourceId);
+    content = remapNoteReferenceIds(content, HREF_NOTE_ID_PATTERN, importedNotesIdsBySourceId);
+    return content;
+  }
+
+  private String remapNoteReferenceIds(String content, Pattern pattern, Map<String, String> importedNotesIdsBySourceId) {
+    Matcher matcher = pattern.matcher(content);
+    StringBuilder result = new StringBuilder();
+    while (matcher.find()) {
+      String sourceId = matcher.group(2);
+      // References to notes outside the current import are left unchanged.
+      String newId = importedNotesIdsBySourceId.getOrDefault(sourceId, sourceId);
+      matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1) + newId));
+    }
+    matcher.appendTail(result);
+    return result.toString();
   }
 
   private Page resolveImportedNote(String noteName, Wiki wiki, Map<String, String> importedNotesIdsByName) {

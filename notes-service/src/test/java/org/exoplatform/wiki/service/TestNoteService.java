@@ -648,6 +648,44 @@ public class TestNoteService extends BaseTest {
                 importedSource.getContent().contains("/notes:" + target.getId() + "</content-link>"));
   }
 
+  public void testImportReindexesContentLinkAnchors() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page target = noteService.createNote(portalWiki, "Home", new Page("anchor_target", "anchor_target"), ROOT_IDENTITY);
+    Page source = new Page("anchor_source", "anchor_source");
+    // "insert note" link in the anchor format: the note id is carried by the data-object and href attributes
+    source.setContent("<a href=\"/portal/s/1/notes/" + target.getId() + "\" data-object=\"notes:" + target.getId()
+        + "\" contenteditable=\"false\" class=\"content-link\" rel=\"nofollow\">Target</a>");
+    source = noteService.createNote(portalWiki, "Home", source, ROOT_IDENTITY);
+
+    String[] notes = new String[] { target.getId(), source.getId() };
+    File zipFile = File.createTempFile("notesExportAnchor", ".zip");
+    notesExportService.startExportNotes(200233, notes, true, ROOT_IDENTITY);
+    boolean exportDone = false;
+    while (!exportDone) {
+      if (notesExportService.getStatus(200233).getStatus().equals("ZIP_CREATED")) {
+        exportDone = true;
+      }
+    }
+    byte[] exportedNotes = notesExportService.getExportedNotes(200233);
+    assertNotNull(exportedNotes);
+    FileUtils.writeByteArrayToFile(zipFile, exportedNotes);
+
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    noteService.importNotes(zipFile.getPath(), userWiki.getWikiHome(), "update", ROOT_IDENTITY);
+    assertTrue(zipFile.delete());
+
+    Page importedTarget = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", target.getName());
+    Page importedSource = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "root", source.getName());
+    assertNotNull(importedTarget);
+    assertNotNull(importedSource);
+    // The content-link anchor id must be reindexed to the imported target note id
+    assertTrue("content-link anchor data-object should be reindexed to the imported note id",
+               importedSource.getContent().contains("data-object=\"notes:" + importedTarget.getId() + "\""));
+    // It must no longer reference the old (source environment) note id, which would render as "Content has been deleted"
+    assertFalse("content-link anchor should not keep the old note id",
+                importedSource.getContent().contains("data-object=\"notes:" + target.getId() + "\""));
+  }
+
   public void testGetNotesOfWiki() throws WikiException, IllegalAccessException {
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page toBeImported1NotPage = noteService.createNote(portalWiki,
