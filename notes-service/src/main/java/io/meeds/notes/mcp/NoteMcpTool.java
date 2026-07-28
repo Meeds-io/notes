@@ -428,14 +428,15 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
+    UploadToolUtils.ImageSource imageSource = new UploadToolUtils.ImageSource(imageUrl,
+                                                                             imageBase64,
+                                                                             attachmentObjectType,
+                                                                             attachmentObjectId);
     UploadToolUtils.FetchedContent image = UploadToolUtils.resolveImage(attachmentService,
-                                                                      fileService,
-                                                                      getCurrentUserAclIdentity(),
-                                                                      imageUrl,
-                                                                      imageBase64,
-                                                                      attachmentObjectType,
-                                                                      attachmentObjectId,
-                                                                      UploadToolUtils.DEFAULT_MAX_BYTES);
+                                                                       fileService,
+                                                                       getCurrentUserAclIdentity(),
+                                                                       imageSource,
+                                                                       UploadToolUtils.DEFAULT_MAX_BYTES);
     String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
     try {
       NotePageProperties properties = resolveBaseProperties(noteId, note, language);
