@@ -453,6 +453,11 @@ import io.meeds.notes.model.NotePageProperties;
     } catch (Exception e) {
       log.warn("Cannot process notes link for note {}", note.getId());
     }
+    try {
+      note.setContent(processInsertedNotes(note.getContent()));
+    } catch (Exception e) {
+      log.warn("Cannot process inserted notes for note {}", note.getId());
+    }
     ExportResource exportResource = notesExportService.getExportRessourceById(exportId);
     if (exportResource != null) {
       exportResource.setExportedNotesCount(exportResource.getExportedNotesCount() + 1);
