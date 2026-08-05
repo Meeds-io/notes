@@ -46,10 +46,11 @@
                   v-bind="attrs"
                   v-on="on"
                   class="pa-0 me-2"
+                  :title="$t('notes.tooltip.open.tree')"
+                  :aria-label="$t('notes.tooltip.open.tree')"
                   @click.stop.prevent="openSidebarTreeView">
                   <img
                     alt=""
-                    :title="$t('notes.tooltip.open.tree')"
                     src="/social/images/sidebar.svg"
                     class="icon-default-color"
                     height="20px"
