@@ -44,10 +44,11 @@
       icon
       v-bind="attrs"
       v-on="on"
+      :title="$t('notes.tooltip.close.tree')"
+      :aria-label="$t('notes.tooltip.close.tree')"
       @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
       <img
         alt=""
-        :title="$t('notes.tooltip.close.tree')"
         src="/social/images/sidebar.svg"
         class="icon-default-color"
         height="20px"
