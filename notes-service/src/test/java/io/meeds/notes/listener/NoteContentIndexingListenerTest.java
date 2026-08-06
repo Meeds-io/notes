@@ -124,7 +124,10 @@ public class NoteContentIndexingListenerTest {
 
     listener.onEvent(new Event<>("note.updated", "user", note));
 
-    verify(indexingService).reindex(PageContentIndexingConnector.TYPE, STORAGE_ID);
+    verify(indexingService).reindex(PageContentIndexingConnector.TYPE,
+                                    PageContentIndexingConnector.buildBlockId(STORAGE_ID,
+                                                                              NotePageViewService.CMS_CONTENT_TYPE,
+                                                                              NOTE_NAME));
   }
 
 }

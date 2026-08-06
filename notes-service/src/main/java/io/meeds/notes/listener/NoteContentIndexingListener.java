@@ -87,7 +87,10 @@ public class NoteContentIndexingListener implements ListenerBase<String, org.exo
     if (page == null) {
       return;
     }
-    indexingService.reindex(PageContentIndexingConnector.TYPE, page.getStorageId());
+    String blockId = PageContentIndexingConnector.buildBlockId(page.getStorageId(),
+                                                                NotePageViewService.CMS_CONTENT_TYPE,
+                                                                setting.getName());
+    indexingService.reindex(PageContentIndexingConnector.TYPE, blockId);
   }
 
 }
