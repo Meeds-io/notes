@@ -120,7 +120,8 @@
                         v-on="on"
                         v-bind="attrs"
                         class="pa-0 mt-0"
-                        @click="addNote"
+                        :href="addNoteLink"
+                        target="_blank"
                         icon>
                         <v-icon
                           size="20"
@@ -141,7 +142,8 @@
                         v-on="on"
                         v-bind="attrs"
                         class="pa-0 mt-0"
-                        @click="editNote">
+                        :href="editNoteLink"
+                        target="_blank">
                         <v-icon
                           size="20"
                           class="clickable edit-note-click">
@@ -263,7 +265,8 @@
                       icon
                       v-on="on"
                       v-bind="attrs"
-                      @click="editNote">
+                      :href="editNoteLink"
+                      target="_blank">
                       <v-icon
                         size="16"
                         class="clickable edit-note-click">
@@ -280,7 +283,8 @@
                       class="pa-0"
                       v-on="on"
                       v-bind="attrs"
-                      @click="addNote"
+                      :href="addNoteLink"
+                      target="_blank"
                       icon>
                       <v-icon
                         size="16"
@@ -457,7 +461,7 @@ export default {
       childNodes: [],
       exportStatus: '',
       exportId: 0,
-      iframelyOriginRegex: /^https?:\/\/if-cdn.com/,
+      iframelyOriginRegex: /^https?:\/\/if-cdn\.com$/,
       selectedTranslation: { value: null, text: this.$t('notes.label.translation.originalVersion') },
       translations: [],
       languages: [],
@@ -669,6 +673,13 @@ export default {
     hasDraft(){
       return !!this.note?.draftPage;
     },
+    addNoteLink() {
+      return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`;
+    },
+    editNoteLink() {
+      const translation = this.selectedTranslation.value ? `&translation=${this.selectedTranslation.value}` : '';
+      return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`;
+    },
     hasEmptyContent(){
       return !this.note?.content;
     },
@@ -825,10 +836,10 @@ export default {
     this.$root.$on('update-note-summary', this.updateNoteSummary);
     this.$root.$on('update-selected-translation', this.updateSelectedTranslation);
     window.addEventListener('message', (event) => {
-      if (this.iframelyOriginRegex.exec(event.origin)) {
+      if (this.iframelyOriginRegex.test(event.origin)) {
         const data = JSON.parse(event.data);
         if (data.method === 'open-href') {
-          window.open(data.href, '_blank');
+          this.openLink(data.href, true, true);
         }
       }
     });
@@ -1004,17 +1015,22 @@ export default {
     getHomeTitle(title) {
       return title === 'Home' && this.noteHomeTitle || title;
     },
-    addNote() {
-      if (!this.hasDraft) {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?spaceId=${eXo.env.portal.spaceId}&parentNoteId=${this.note.id}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
+    openLink(href, newTab, external) {
+      if (/^\s*(javascript|data|vbscript|file):/i.test(href)) {
+        return;
       }
-    },
-    editNote() {
-      let translation = '';
-      if (this.selectedTranslation.value){
-        translation = `&translation=${this.selectedTranslation.value}`;
+      const link = document.createElement('a');
+      link.href = href;
+      if (newTab) {
+        link.target = '_blank';
       }
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${this.note.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&isDraft=${this.isDraft}&parentNoteId=${this.parentPageId}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
+      if (external) {
+        link.rel = 'noopener noreferrer nofollow';
+      }
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     },
     deleteNote() {
       if (this.hasDraft) {
@@ -1436,7 +1452,7 @@ export default {
         extensionDataUpdated: false
       };
       this.$notesService.createNote(note).then(duplicated => {
-        window.open(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, '_blank');
+        this.openLink(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, true);
       }).catch(e => {
         this.$root.$emit('show-alert', {
           type: 'error',
