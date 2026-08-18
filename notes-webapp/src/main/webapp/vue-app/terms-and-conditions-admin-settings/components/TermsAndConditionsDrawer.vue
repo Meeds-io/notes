@@ -201,8 +201,20 @@ export default {
         formData.append('translation', this.lang);
       }
       const urlParams = new URLSearchParams(formData).toString();
-      window.open(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
-    }
+      this.openLink(`${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/notes-editor?${urlParams}`);
+    },
+    openLink(href) {
+      if (/^\s*(javascript|data|vbscript|file):/i.test(href)) {
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = href;
+      link.target = '_blank';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    },
   },
 };
 </script>
