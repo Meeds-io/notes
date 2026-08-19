@@ -75,6 +75,7 @@ import org.exoplatform.wiki.service.NotesExportService;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
+import org.exoplatform.wiki.service.search.NoteSearchResult;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.utils.NoteConstants;
@@ -439,6 +440,79 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     Response response = notesRestService.searchData(uriInfo, "test", 10, "wikiType", "wikiOwner", true, new ArrayList<>(), null, false, null, null);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  public void testSearchRenamedNoteBookHomePage() throws Exception {
+    UriInfo uriInfo = mock(UriInfo.class);
+    when(uriInfo.getPath()).thenReturn("uriPath");
+    REST_UTILS.when(() -> RestUtils.getLimit(uriInfo)).thenReturn(10);
+    when(identity.getUserId()).thenReturn("1");
+    // The note book home page has no owner, thus the search result has no
+    // poster, and once renamed its name is no more the default home page name
+    SearchResult searchResult = new SearchResult();
+    searchResult.setTitle("renamed home");
+    searchResult.setCreatedDate(Calendar.getInstance());
+    searchResult.setUpdatedDate(Calendar.getInstance());
+    searchResult.setWikiType("group");
+    searchResult.setWikiOwner("spaces/space1");
+    searchResult.setPageName("renamed_home_20260819112324547");
+    // A home page kept with its default name has no poster either
+    SearchResult defaultNameSearchResult = new SearchResult();
+    defaultNameSearchResult.setTitle("Home");
+    defaultNameSearchResult.setCreatedDate(Calendar.getInstance());
+    defaultNameSearchResult.setUpdatedDate(Calendar.getInstance());
+    defaultNameSearchResult.setWikiType("group");
+    defaultNameSearchResult.setWikiOwner("spaces/space2");
+    defaultNameSearchResult.setPageName(NoteConstants.NOTE_HOME_NAME);
+    List<SearchResult> results = new ArrayList<>();
+    results.add(searchResult);
+    results.add(defaultNameSearchResult);
+    PageList<SearchResult> pageList = mock(PageList.class);
+    when(pageList.getAll()).thenReturn(results);
+    when(noteService.search(any())).thenReturn(pageList);
+    Page homePage = new Page();
+    homePage.setId("100");
+    homePage.setName("renamed_home_20260819112324547");
+    homePage.setTitle("renamed home");
+    homePage.setUrl("/space/note/100");
+    when(noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
+                                             searchResult.getWikiOwner(),
+                                             searchResult.getPageName(),
+                                             null,
+                                             identity)).thenReturn(homePage);
+    Page defaultNameHomePage = new Page();
+    defaultNameHomePage.setId("200");
+    defaultNameHomePage.setName(NoteConstants.NOTE_HOME_NAME);
+    defaultNameHomePage.setTitle("Home");
+    defaultNameHomePage.setUrl("/space/note/200");
+    when(noteService.getNoteOfNoteBookByName(defaultNameSearchResult.getWikiType(),
+                                             defaultNameSearchResult.getWikiOwner(),
+                                             defaultNameSearchResult.getPageName(),
+                                             null,
+                                             identity)).thenReturn(defaultNameHomePage);
+
+    Response response = notesRestService.searchData(uriInfo,
+                                                    "renamed",
+                                                    10,
+                                                    "group",
+                                                    "spaces/space1",
+                                                    false,
+                                                    new ArrayList<>(),
+                                                    null,
+                                                    true,
+                                                    null,
+                                                    null);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    BeanToJsons<NoteSearchResult> entity = (BeanToJsons<NoteSearchResult>) response.getEntity();
+    assertEquals(2, entity.getJsonList().size());
+    // the null poster branch is the one exercised here, it must not discard the result
+    assertNull(entity.getJsonList().get(0).getPoster());
+    assertNull(entity.getJsonList().get(1).getPoster());
+    assertEquals("100", entity.getJsonList().get(0).getId());
+    assertEquals("renamed_home_20260819112324547", entity.getJsonList().get(0).getPageName());
+    assertEquals("200", entity.getJsonList().get(1).getId());
+    assertEquals(NoteConstants.NOTE_HOME_NAME, entity.getJsonList().get(1).getPageName());
   }
 
   @Test
