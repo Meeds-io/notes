@@ -1363,7 +1363,11 @@ public class NoteServiceImpl implements NoteService {
         for (Page noteTodelete : notesTodelete) {
           if (!NoteConstants.NOTE_HOME_NAME.equals(noteTodelete.getName()) && !noteTodelete.getId().equals(parent.getId())) {
             try {
-              deleteNote(wiki.getType(), wiki.getOwner(), noteTodelete.getName(), userIdentity);
+              // The note may have already been deleted as part of the cascade deletion of one
+              // of its ancestors processed earlier in this loop.
+              if (getNoteOfNoteBookByName(wiki.getType(), wiki.getOwner(), noteTodelete.getName()) != null) {
+                deleteNote(wiki.getType(), wiki.getOwner(), noteTodelete.getName(), userIdentity);
+              }
             } catch (Exception e) {
               log.warn("Note {} connot be deleted for import", noteTodelete.getName(), e);
             }
