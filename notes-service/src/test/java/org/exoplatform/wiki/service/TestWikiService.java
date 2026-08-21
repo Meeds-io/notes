@@ -61,14 +61,20 @@ public class TestWikiService extends BaseTest {
     Page homePage = listener.addedPages.get(0);
     assertEquals(NoteConstants.NOTE_HOME_NAME, homePage.getName());
     assertNotNull("the home page must carry its id so that it can be indexed", homePage.getId());
+    assertEquals("the broadcast page id must be the home name so that the listeners not concerned by system pages can skip it",
+                 NoteConstants.NOTE_HOME_NAME,
+                 listener.addedPageIds.get(0));
   }
 
   private static class RecordingPageListener extends PageWikiListener {
-    private final List<Page> addedPages = new ArrayList<>();
+    private final List<Page>   addedPages   = new ArrayList<>();
+
+    private final List<String> addedPageIds = new ArrayList<>();
 
     @Override
     public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) {
       addedPages.add(page);
+      addedPageIds.add(pageId);
     }
   }
 

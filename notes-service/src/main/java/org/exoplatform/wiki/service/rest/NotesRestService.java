@@ -1341,7 +1341,6 @@ public class NotesRestService implements ResourceContainer {
           noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
           noteSearchResult.setId(page.getId());
           noteSearchResult.setPageName(page.getName());
-          noteSearchResult.setPageName(page.getName());
           noteSearchResult.setActivityId(page.getActivityId());
           if (posterIdentity != null) {
             noteSearchResult.setPoster(posterIdentity);
