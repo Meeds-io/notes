@@ -31,6 +31,11 @@
       <set-method>addUpgradePlugin</set-method>
       <type>io.meeds.notes.upgrade.NoteHomePageIndexingUpgradePlugin</type>
       <description>Queue the note book home pages for indexing, they used to never be indexed at creation</description>
+      <!-- Neither plugin.upgrade.target.version nor plugin.upgrade.execute.once is declared
+           here: the plugin overrides shouldProceedToUpgrade to gate the execution on a dedicated
+           setting of its own, so that every instance repairs its index once whatever the version
+           it upgrades from. Both params are only read by the overridden base implementation,
+           declaring them would have no effect. -->
       <init-params>
         <value-param>
           <name>product.group.id</name>
@@ -43,21 +48,9 @@
           <value>1</value>
         </value-param>
         <value-param>
-          <name>plugin.upgrade.execute.once</name>
-          <description>Execute this upgrade plugin only once</description>
-          <value>true</value>
-        </value-param>
-        <value-param>
           <name>plugin.upgrade.async.execution</name>
           <description>The plugin will be executed in an asynchronous mode</description>
           <value>true</value>
-        </value-param>
-        <value-param>
-          <name>plugin.upgrade.target.version</name>
-          <description>Target version of the plugin. The execution is actually guarded by a dedicated
-                       setting inside the plugin, so that every instance repairs its index once whatever
-                       the version it upgrades from</description>
-          <value>7.3.0</value>
         </value-param>
       </init-params>
     </component-plugin>
