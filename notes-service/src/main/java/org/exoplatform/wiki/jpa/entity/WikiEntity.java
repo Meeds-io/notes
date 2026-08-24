@@ -33,6 +33,8 @@ import jakarta.persistence.Table;
 @Entity(name = "WikiWikiEntity")
 @Table(name = "WIKI_WIKIS")
 @NamedQuery(name = "wiki.getAllIds", query = "SELECT w.id FROM WikiWikiEntity w ORDER BY w.id")
+@NamedQuery(name = "wiki.getAllHomePageIds",
+            query = "SELECT w.wikiHome.id FROM WikiWikiEntity w WHERE w.wikiHome IS NOT NULL ORDER BY w.wikiHome.id")
 @NamedQuery(name = "wiki.getWikisByType", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type")
 @NamedQuery(name = "wiki.getWikiByTypeAndOwner", query = "SELECT w FROM WikiWikiEntity w WHERE w.type = :type AND w.owner = :owner")
 public class WikiEntity {
