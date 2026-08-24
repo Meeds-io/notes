@@ -44,6 +44,7 @@ import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.listener.PageWikiListener;
+import org.exoplatform.wiki.utils.NoteConstants;
 
 import io.meeds.analytics.model.StatisticData;
 import io.meeds.analytics.utils.AnalyticsUtils;
@@ -77,6 +78,11 @@ public class NotesPageListener extends PageWikiListener {
 
   @Override
   public void postAddPage(String wikiType, String wikiOwner, String pageId, Page page) throws WikiException {
+    if (NoteConstants.NOTE_HOME_NAME.equals(pageId)) {
+      // catch the case of the Wiki Home added as it's created by the system,
+      // not by users.
+      return;
+    }
     computeWikiPageStatistics(page, wikiType, wikiOwner, WIKI_ADD_PAGE_OPERATION);
   }
 

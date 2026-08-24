@@ -1324,43 +1324,40 @@ public class NotesRestService implements ResourceContainer {
         }
         if (page != null) {
           page.setUrl(searchResult.getUrl() != null && !searchResult.getUrl().isBlank() ? searchResult.getUrl() : page.getUrl() + "?translation="+ searchResult.getLang());
-          if (searchResult.getPoster() != null || searchResult.getPageName().equals(WikiPageParams.WIKI_HOME)) {
-            PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
-            org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
-            if (pageVersion != null) {
-              poster = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, pageVersion.getAuthor());
-            }
-            IdentityEntity posterIdentity =
-                    poster != null ? EntityBuilder.buildEntityIdentity(poster, uriInfo.getPath(), "all")
-                            : null;
-            IdentityEntity wikiOwnerIdentity =
-                    searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
-                            uriInfo.getPath(),
-                            "all")
-                            : null;
-            NoteSearchResult noteSearchResult = new NoteSearchResult();
-            noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
-            noteSearchResult.setId(page.getId());
-            noteSearchResult.setPageName(page.getName());
-            noteSearchResult.setPageName(page.getName());
-            noteSearchResult.setActivityId(page.getActivityId());
-            if (posterIdentity != null) {
-              noteSearchResult.setPoster(posterIdentity);
-            }
-            noteSearchResult.setWikiOwner(wikiOwnerIdentity);
-            noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
-            noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
-            noteSearchResult.setType(searchResult.getType());
-            noteSearchResult.setUrl(page.getUrl());
-            noteSearchResult.setLang(searchResult.getLang());
-            noteSearchResult.setMetadatas(page.getMetadatas());
-            noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
-            String summary = pageVersion != null
-                && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
-                                                       : page.getProperties() != null ? page.getProperties().getSummary() : null;
-            noteSearchResult.setSummary(summary);
-            noteSearchResults.add(noteSearchResult);
+          PageVersion pageVersion = noteService.getPublishedVersionByPageIdAndLang(Long.parseLong(page.getId()), null);
+          org.exoplatform.social.core.identity.model.Identity poster = searchResult.getPoster();
+          if (pageVersion != null) {
+            poster = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, pageVersion.getAuthor());
           }
+          IdentityEntity posterIdentity =
+                  poster != null ? EntityBuilder.buildEntityIdentity(poster, uriInfo.getPath(), "all")
+                          : null;
+          IdentityEntity wikiOwnerIdentity =
+                  searchResult.getWikiOwnerIdentity() != null ? EntityBuilder.buildEntityIdentity(searchResult.getWikiOwnerIdentity(),
+                          uriInfo.getPath(),
+                          "all")
+                          : null;
+          NoteSearchResult noteSearchResult = new NoteSearchResult();
+          noteSearchResult.setTitle(HTMLSanitizer.sanitize(searchResult.getTitle()));
+          noteSearchResult.setId(page.getId());
+          noteSearchResult.setPageName(page.getName());
+          noteSearchResult.setActivityId(page.getActivityId());
+          if (posterIdentity != null) {
+            noteSearchResult.setPoster(posterIdentity);
+          }
+          noteSearchResult.setWikiOwner(wikiOwnerIdentity);
+          noteSearchResult.setExcerpt(HtmlUtils.transform(searchResult.getExcerpt(), new HtmlTransformerContext(currentIdentity, LocalizationFilter.getCurrentLocale(), true)));
+          noteSearchResult.setUpdateDate(searchResult.getUpdatedDate().getTimeInMillis());
+          noteSearchResult.setType(searchResult.getType());
+          noteSearchResult.setUrl(page.getUrl());
+          noteSearchResult.setLang(searchResult.getLang());
+          noteSearchResult.setMetadatas(page.getMetadatas());
+          noteSearchResult.setContent(pageVersion != null ? pageVersion.getContent() : page.getContent());
+          String summary = pageVersion != null
+              && pageVersion.getProperties() != null ? pageVersion.getProperties().getSummary()
+                                                     : page.getProperties() != null ? page.getProperties().getSummary() : null;
+          noteSearchResult.setSummary(summary);
+          noteSearchResults.add(noteSearchResult);
         }
       }
       return Response.ok(new BeanToJsons(noteSearchResults), MediaType.APPLICATION_JSON).cacheControl(cc).build();
