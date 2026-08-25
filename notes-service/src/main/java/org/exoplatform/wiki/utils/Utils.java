@@ -174,6 +174,8 @@ public class Utils {
 
   private static final Map<SiteKey, NotesNodeUriCacheEntry>      notesNodeUriCache                = new ConcurrentHashMap<>();
 
+  private static final Map<String, NodeExistenceCacheEntry>      navigationNodeExistenceCache     = new ConcurrentHashMap<>();
+
   public static String normalizeUploadedFilename(String name) {
     name = name.replace("%22", "\"");  // Fix the bug in Chrome which a double quotes is encoded to %22
     name = name.replace("\\\"", "\"");  // Fix the bug in Firefox which a double quotes is escaped to \\"
@@ -668,6 +670,54 @@ public class Utils {
     }
   }
 
+  /**
+   * Checks whether the navigation of the given site contains a node with the
+   * given name, at any depth. The result is cached with the same TTL as the
+   * notes node URI resolution.
+   *
+   * @param siteKey the site navigation to inspect
+   * @param nodeName the navigation node name to look for
+   * @return true when a node with that name exists in the site navigation
+   */
+  public static boolean siteNavigationContainsNode(SiteKey siteKey, String nodeName) {
+    String cacheKey = siteKey.getTypeName() + "::" + siteKey.getName() + "::" + nodeName;
+    NodeExistenceCacheEntry cacheEntry = navigationNodeExistenceCache.get(cacheKey);
+    if (cacheEntry != null && cacheEntry.expirationTime > System.currentTimeMillis()) {
+      return cacheEntry.exists;
+    }
+    boolean exists = resolveNavigationNodeExistence(siteKey, nodeName);
+    navigationNodeExistenceCache.put(cacheKey,
+                                     new NodeExistenceCacheEntry(exists,
+                                                                 System.currentTimeMillis() + NOTES_NODE_URI_CACHE_TTL_MS));
+    return exists;
+  }
+
+  private static boolean resolveNavigationNodeExistence(SiteKey siteKey, String nodeName) {
+    try {
+      NavigationService navigationService = CommonsUtils.getService(NavigationService.class);
+      NavigationContext navigationContext = navigationService.loadNavigation(siteKey);
+      if (navigationContext == null) {
+        return false;
+      }
+      NodeContext rootNode = navigationService.loadNode(NodeModel.SELF_MODEL, navigationContext, Scope.ALL, null);
+      if (rootNode == null) {
+        return false;
+      }
+      Deque<NodeContext> nodesToVisit = new ArrayDeque<>(rootNode.getNodes());
+      while (!nodesToVisit.isEmpty()) {
+        NodeContext node = nodesToVisit.poll();
+        if (nodeName.equals(node.getName())) {
+          return true;
+        }
+        nodesToVisit.addAll(node.getNodes());
+      }
+      return false;
+    } catch (Exception e) {
+      LOG.warn("Error checking existence of navigation node '{}' in site {}", nodeName, siteKey, e);
+      return false;
+    }
+  }
+
   private static boolean hostsNotesApplication(NodeState nodeState, LayoutService layoutService) {
     PageKey pageRef = nodeState == null ? null : nodeState.getPageRef();
     if (pageRef == null) {
@@ -702,6 +752,17 @@ public class Utils {
 
     NotesNodeUriCacheEntry(String nodeUri, long expirationTime) {
       this.nodeUri = nodeUri;
+      this.expirationTime = expirationTime;
+    }
+  }
+
+  private static class NodeExistenceCacheEntry {
+    private final boolean exists;
+
+    private final long    expirationTime;
+
+    NodeExistenceCacheEntry(boolean exists, long expirationTime) {
+      this.exists = exists;
       this.expirationTime = expirationTime;
     }
   }
