@@ -304,7 +304,8 @@
         <properties-param>
           <name>constructor.params</name>
           <property name="index_alias" value="notes_alias"/>
-          <property name="index_current" value="notes_v1"/>
+          <property name="index_current" value="notes_v2"/>
+          <property name="index_previous" value="notes_v1"/>
         </properties-param>
       </init-params>
     </component-plugin>
@@ -317,7 +318,8 @@
         <properties-param>
           <name>constructor.params</name>
           <property name="index_alias" value="notes_alias"/>
-          <property name="index_current" value="notes_v1"/>
+          <property name="index_current" value="notes_v2"/>
+          <property name="index_previous" value="notes_v1"/>
         </properties-param>
       </init-params>
     </component-plugin>
