@@ -42,6 +42,20 @@ public class WikiDAO extends WikiBaseDAO<WikiEntity, Long> {
                              .getResultList();
   }
 
+  /**
+   * Retrieves the identifiers of the home pages of all the note books.
+   *
+   * @param offset offset of the first returned identifier
+   * @param limit maximum number of returned identifiers
+   * @return {@link List} of home page identifiers
+   */
+  public List<Long> findAllHomePageIds(int offset, int limit) {
+    return getEntityManager().createNamedQuery("wiki.getAllHomePageIds", Long.class)
+                             .setFirstResult(offset)
+                             .setMaxResults(limit)
+                             .getResultList();
+  }
+
   public WikiEntity getWikiByTypeAndOwner(String wikiType, String wikiOwner) {
 
     //We need to add the first "/" on the wiki owner if it's  wiki group

@@ -19,6 +19,7 @@
 package org.exoplatform.wiki.jpa.dao;
 
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.After;
@@ -26,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.exoplatform.wiki.jpa.BaseWikiJPAIntegrationTest;
+import org.exoplatform.wiki.jpa.entity.PageEntity;
 import org.exoplatform.wiki.jpa.entity.WikiEntity;
 
 public class WikiDAOTest extends BaseWikiJPAIntegrationTest {
@@ -52,6 +54,33 @@ public class WikiDAOTest extends BaseWikiJPAIntegrationTest {
     List<Long> ids = wikiDAO.findAllIds(0, 10);
     //Then
     assertEquals(2, ids.size());
+  }
+
+  @Test
+  public void testFindAllHomePageIds() {
+    // Given
+    WikiEntity wikiWithHome = wikiDAO.create(new WikiEntity().setName("My wiki #1").setType("portal").setOwner("wiki1"));
+    PageEntity homePage = new PageEntity();
+    homePage.setWiki(wikiWithHome);
+    homePage.setName("Home");
+    homePage.setTitle("Home");
+    homePage.setCreatedDate(new Date());
+    homePage.setUpdatedDate(new Date());
+    homePage = pageDAO.create(homePage);
+    wikiWithHome.setWikiHome(homePage);
+    wikiDAO.update(wikiWithHome);
+    // a note book without any home page must not break the query
+    wikiDAO.create(new WikiEntity().setName("My wiki #2").setType("portal").setOwner("wiki2"));
+
+    // When
+    List<Long> homePageIds = wikiDAO.findAllHomePageIds(0, 10);
+
+    // Then
+    assertEquals(1, homePageIds.size());
+    assertEquals(homePage.getId(), homePageIds.get(0).longValue());
+    // pagination is what the upgrade plugin relies on to stop iterating
+    assertEquals(1, wikiDAO.findAllHomePageIds(0, 1).size());
+    assertTrue(wikiDAO.findAllHomePageIds(1, 10).isEmpty());
   }
 
   @Test
