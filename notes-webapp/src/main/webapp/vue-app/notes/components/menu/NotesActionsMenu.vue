@@ -47,8 +47,8 @@ export default {
     }
   },
   created() {
-    $(document).on('mousedown', () => {
-      if (this.displayActionMenu) {
+    $(document).on('mousedown', event => {
+      if (this.displayActionMenu && !$(event.target).closest('.note-actions-menu').length) {
         window.setTimeout(() => {
           this.displayActionMenu = false;
         }, this.waitTimeUntilCloseMenu);
