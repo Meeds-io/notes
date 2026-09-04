@@ -20,13 +20,11 @@ package org.exoplatform.wiki.jpa.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.SequenceGenerator;
+import io.meeds.common.persistence.PortableSequence;
 import jakarta.persistence.Table;
 
 @Entity(name = "WikiDraftPageEntity")
@@ -43,8 +41,7 @@ import jakarta.persistence.Table;
 public class DraftPageEntity extends BasePageEntity {
 
   @Id
-  @SequenceGenerator(name="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID", sequenceName="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID", allocationSize = 1)
-  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_WIKI_DRAFT_PAGES_DRAFT_ID")
+  @PortableSequence(name = "SEQ_WIKI_DRAFT_PAGES_DRAFT_ID")
   @Column(name = "DRAFT_PAGE_ID")
   private long id;
 

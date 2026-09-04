@@ -27,7 +27,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.ListenerService;
@@ -37,10 +37,10 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = { "spring.profiles.active=gamification", })
 class TermsAndConditionsGamificationListenerTest {
 
-  @MockBean
+  @MockitoBean
   private ListenerService                        listenerService;
 
-  @MockBean
+  @MockitoBean
   private Event<String, Object>                  event;
 
   @Autowired

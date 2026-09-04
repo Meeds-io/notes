@@ -86,7 +86,7 @@ public class AnalyticsAddTagListenerTest {
                                                        new TagObject("notes", note.getId(), note.getParentPageId()),
                                                        tagSet);
     analyticsAddTagListener.onEvent(event);
-    ANALYTICS_UTILS.verify(times(1), () -> AnalyticsUtils.addStatisticData(any()));
+    ANALYTICS_UTILS.verify(() -> AnalyticsUtils.addStatisticData(any()), times(1));
   }
 
   @After
