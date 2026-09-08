@@ -53,13 +53,13 @@
     {
       "name": "create_space_note",
       "title": "Create a note in a space",
-      "description": "Create a new note at the root of a SPACE's notebook. Use it only when the user named a space (or its id is known); for a note nested under an existing note use create_child_note.",
+      "description": "Create a new note at the root of a SPACE's notebook. Use it only when the user named a space (or its id is known); for a note in the user's own personal notebook use create_personal_note instead, and for a note nested under an existing note use create_child_note.",
       "input_schema": {
         "type": "object",
         "properties": {
           "space_id": {
             "type": "integer",
-            "description": "Id of the space (the numeric 'space_id' from get_my_spaces / get_all_spaces / get_space_by_id). This is NOT a space name, a group id, a user id, or a note id, and 0 is never a valid value. Resolve the space name to its id first; if the user did not name a space, ask them which space instead of guessing."
+            "description": "Id of the space (the numeric 'space_id' from get_my_spaces / get_all_spaces / get_space_by_id). This is NOT a space name, a group id, a user id, or a note id, and 0 is never a valid value. Resolve the space name to its id first; if the user did not name a space, ask them which space (or use create_personal_note for a note in their own notebook) instead of guessing."
           },
           "title": {
             "type": "string",
@@ -89,6 +89,39 @@
       "require_approval": true
     },
     {
+      "name": "create_personal_note",
+      "title": "Create a personal note",
+      "description": "Create a new note in the CURRENT USER's own personal notebook (the one private to them, outside any space), at its root. Use it when the user asks for a personal/private note or names no space; the notebook is created on first use. It always targets the calling user's notebook: there is no space, owner or user parameter, and a note for another user cannot be created. For a note in a space use create_space_note; to nest a note under an existing one use create_child_note.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the note, plain text (no HTML, no markdown). Shown in the notes tree and on cards; keep it short. Ask the user for a title if none was given rather than inventing one."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Optional short plain-text summary (excerpt) shown on note cards and previews. Text only: no HTML, no markdown. Stored as note metadata, this is NOT the note body; do not repeat the whole content here."
+          },
+          "html_content": {
+            "type": "string",
+            "description": "The note BODY, as HTML (markdown is also accepted and converted). This is the main content the user reads when opening the note; do not put the summary here, and do not put the title here (it is a separate parameter)."
+          }
+        },
+        "required": [
+          "title",
+          "html_content"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
       "name": "create_child_note",
       "title": "Create a note under another note",
       "description": "Create a new note as a child of an existing note. The child is created in the same notebook (space or personal) as its parent; there is no separate space or owner parameter.",
@@ -97,7 +130,7 @@
         "properties": {
           "parent_note_id": {
             "type": "integer",
-            "description": "Id of the existing note under which the new note is nested (a 'note_id' from get_space_note_tree, get_note, search_notes or a create_* tool). This is NOT a space id: to create a note at the root of a space use create_space_note. If unknown, look it up or ask the user rather than guessing."
+            "description": "Id of the existing note under which the new note is nested (a 'note_id' from get_space_note_tree, get_note, search_notes or a create_* tool). This is NOT a space id: to create a note at the root of a space use create_space_note, and for the user's own notebook use create_personal_note. If unknown, look it up or ask the user rather than guessing."
           },
           "title": {
             "type": "string",
