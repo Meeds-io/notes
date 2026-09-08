@@ -3,12 +3,13 @@
     {
       "name": "get_space_note_tree",
       "title": "Get a space note",
-      "description": "Retrieve the full notes tree for a space.",
+      "description": "Retrieve the full notes tree of a space's notebook: the root (home) note and every nested note with their ids. Use it to find a note id or a parent note id before other note tools.",
       "input_schema": {
         "type": "object",
         "properties": {
           "space_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the space whose notes tree to read (the numeric 'space_id' from get_my_spaces / get_all_spaces). This is NOT a space name, a group id, or a note id. Resolve the name to its id first, or ask the user which space they mean."
           }
         },
         "required": [
@@ -30,7 +31,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "language": {
             "type": "string",
@@ -51,22 +53,25 @@
     {
       "name": "create_space_note",
       "title": "Create a note in a space",
-      "description": "Create a new note inside a space under its root note",
+      "description": "Create a new note at the root of a SPACE's notebook. Use it only when the user named a space (or its id is known); for a note in the user's own personal notebook use create_personal_note instead, and for a note nested under an existing note use create_child_note.",
       "input_schema": {
         "type": "object",
         "properties": {
           "space_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the space (the numeric 'space_id' from get_my_spaces / get_all_spaces / get_space_by_id). This is NOT a space name, a group id, a user id, or a note id, and 0 is never a valid value. Resolve the space name to its id first; if the user did not name a space, ask them which space (or use create_personal_note for a note in their own notebook) instead of guessing."
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "Title of the note, plain text (no HTML, no markdown). Shown in the notes tree and on cards; keep it short. Ask the user for a title if none was given rather than inventing one."
           },
           "summary": {
             "type": "string",
-            "description": "Text only, no html no markdown summary of the note content"
+            "description": "Optional short plain-text summary (excerpt) shown on note cards and previews. Text only: no HTML, no markdown. Stored as note metadata, this is NOT the note body; do not repeat the whole content here."
           },
           "html_content": {
-            "type": "string"
+            "type": "string",
+            "description": "The note BODY, as HTML (markdown is also accepted and converted). This is the main content the user reads when opening the note; do not put the summary here, and do not put the title here (it is a separate parameter)."
           }
         },
         "required": [
@@ -84,24 +89,60 @@
       "require_approval": true
     },
     {
+      "name": "create_personal_note",
+      "title": "Create a personal note",
+      "description": "Create a new note in the CURRENT USER's own personal notebook (the one private to them, outside any space), at its root. Use it when the user asks for a personal/private note or names no space; the notebook is created on first use. It always targets the calling user's notebook: there is no space, owner or user parameter, and a note for another user cannot be created. For a note in a space use create_space_note; to nest a note under an existing one use create_child_note.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the note, plain text (no HTML, no markdown). Shown in the notes tree and on cards; keep it short. Ask the user for a title if none was given rather than inventing one."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Optional short plain-text summary (excerpt) shown on note cards and previews. Text only: no HTML, no markdown. Stored as note metadata, this is NOT the note body; do not repeat the whole content here."
+          },
+          "html_content": {
+            "type": "string",
+            "description": "The note BODY, as HTML (markdown is also accepted and converted). This is the main content the user reads when opening the note; do not put the summary here, and do not put the title here (it is a separate parameter)."
+          }
+        },
+        "required": [
+          "title",
+          "html_content"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
       "name": "create_child_note",
       "title": "Create a note under another note",
-      "description": "Create a new note as a child of another note.",
+      "description": "Create a new note as a child of an existing note. The child is created in the same notebook (space or personal) as its parent; there is no separate space or owner parameter.",
       "input_schema": {
         "type": "object",
         "properties": {
           "parent_note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the existing note under which the new note is nested (a 'note_id' from get_space_note_tree, get_note, search_notes or a create_* tool). This is NOT a space id: to create a note at the root of a space use create_space_note, and for the user's own notebook use create_personal_note. If unknown, look it up or ask the user rather than guessing."
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "Title of the note, plain text (no HTML, no markdown). Shown in the notes tree and on cards; keep it short. Ask the user for a title if none was given rather than inventing one."
           },
           "summary": {
             "type": "string",
-            "description": "Text only, no html no markdown summary of the note content"
+            "description": "Optional short plain-text summary (excerpt) shown on note cards and previews. Text only: no HTML, no markdown. Stored as note metadata, this is NOT the note body; do not repeat the whole content here."
           },
           "html_content": {
-            "type": "string"
+            "type": "string",
+            "description": "The note BODY, as HTML (markdown is also accepted and converted). This is the main content the user reads when opening the note; do not put the summary here, and do not put the title here (it is a separate parameter)."
           }
         },
         "required": [
@@ -121,21 +162,25 @@
     {
       "name": "update_note",
       "title": "Update a note",
-      "description": "Update an existing note with new content or title.",
+      "description": "Update an existing note's title OR its content (one per call, not both). Replaces the previous value entirely; with a 'language' it creates or updates that translation instead of the default content.",
       "input_schema": {
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "New title of the note, plain text. Provide either 'title' or 'html_content' in one call, not both. Omit it when only the content changes."
           },
           "html_content": {
-            "type": "string"
+            "type": "string",
+            "description": "New BODY of the note as HTML (markdown accepted); it REPLACES the whole existing body, so include everything the note must keep. Provide either 'html_content' or 'title' in one call, not both."
           },
           "language": {
-            "type": "string"
+            "type": "string",
+            "description": "Optional language code (e.g. 'en', 'fr') of the translation to create or update; omit to update the note's default content. Use get_note_translations to see which languages exist."
           }
         },
         "allOf": [
@@ -181,12 +226,13 @@
     {
       "name": "publish_note",
       "title": "Publish a note",
-      "description": "Publish a note by its ID.",
+      "description": "Publish a note: posts it as an activity in its space's activity stream so members see it. The note itself already exists; this does not create or change its content.",
       "input_schema": {
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           }
         },
         "required": [
@@ -209,7 +255,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note to delete (a 'note_id' from get_note, search_notes or get_space_note_tree). This deletes the whole note, its translations and its child notes; to remove only one translation use remove_note_translation. Confirm with the user which note is meant if there is any ambiguity."
           }
         },
         "required": [
@@ -232,10 +279,12 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note to move (a 'note_id' from get_note, search_notes or get_space_note_tree). NOT the destination."
           },
           "target_parent_note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note that becomes the new parent (a 'note_id'); the moved note is nested under it. This is NOT a space id: to move a note to the root of a space's notebook, pass the id of that space's root note from get_space_note_tree. Ask the user for the destination if it is unclear."
           }
         },
         "required": [
@@ -254,24 +303,29 @@
     {
       "name": "search_notes",
       "title": "Search for notes",
-      "description": "Search notes with query text and optional filters.",
+      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook), returning matching notes with their ids. Use it to find a note id from words in its title or content.",
       "input_schema": {
         "type": "object",
         "properties": {
           "query": {
-            "type": "string"
+            "type": "string",
+            "description": "Words to search for in note titles and contents. Plain text, not a regular expression and not a note id."
           },
           "space_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Optional id of a space (numeric 'space_id') to restrict the search to that space's notebook. Omit it (do not pass 0) to search everywhere the user can read. NOT a space name or a note id."
           },
           "offset": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Optional number of results to skip, for paging (default 0)."
           },
           "limit": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Optional maximum number of results to return (default 10)."
           },
           "is_favorites": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Optional; true restricts the results to the notes the current user marked as favorites. Omit or false otherwise."
           }
         },
         "required": [
@@ -293,7 +347,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "language": {
             "type": "string",
@@ -319,7 +374,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "version_number": {
             "type": "integer",
@@ -351,7 +407,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "image_url": {
             "type": "string",
@@ -398,7 +455,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "language": {
             "type": "string",
@@ -425,7 +483,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "summary": {
             "type": "string",
@@ -457,7 +516,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           }
         },
         "required": [
@@ -479,7 +539,8 @@
         "type": "object",
         "properties": {
           "note_id": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Id of the note (the numeric 'note_id' returned by get_note, search_notes, get_space_note_tree or a create_* tool). This is NOT a space id, a user id, or a note title. If you only know the note by title or subject, find its id with search_notes or get_space_note_tree first; if that fails, ask the user which note they mean rather than guessing."
           },
           "language": {
             "type": "string",
