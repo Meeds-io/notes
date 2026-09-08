@@ -29,6 +29,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +51,7 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ObjectPageList;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.ConversationState;
@@ -105,6 +107,10 @@ public class NoteMcpToolTest {
   private static final String     GROUP_ID       = "/spaces/test";
 
   private static final String     USER           = "root";
+
+  private static final String     OTHER_USER     = "alice";
+
+  private static final String     USER_WIKI_TYPE = "user";
 
   private static final long       NOTE_ID        = 12L;
 
@@ -277,6 +283,130 @@ public class NoteMcpToolTest {
 
     assertEquals(NOTE_ID, result.noteId());
     verify(noteService).createNote(eq(wiki), eq(name), any(Page.class), eq(currentIdentity), eq(false), eq(true));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void createPersonalNoteWhenTitleBlankShouldThrowException() throws Exception { // NOSONAR
+    tool.createPersonalNote(" ", SUMMARY, CONTENT);
+  }
+
+  @Test(expected = IllegalAccessException.class)
+  public void createPersonalNoteWhenNoAuthenticatedUserShouldThrowException() throws Exception { // NOSONAR
+    NoteMcpTool anonymousTool = new TestableNoteMcpTool() {
+      @Override
+      public String getCurrentUserName() {
+        return null;
+      }
+    };
+
+    anonymousTool.createPersonalNote(TITLE, SUMMARY, CONTENT);
+  }
+
+  @Test
+  public void createPersonalNoteShouldCreateNoteAtRootOfOwnNotebook() throws Exception { // NOSONAR
+    Wiki wiki = mockPersonalWiki(USER);
+    Page root = mockPersonalPage("1", "Root", USER);
+    Page created = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
+
+    when(wikiService.getWikiByTypeAndOwner(USER_WIKI_TYPE, USER)).thenReturn(wiki);
+    when(wiki.getWikiHome()).thenReturn(root);
+    when(noteService.getNoteById("1")).thenReturn(root);
+    when(wikiService.getDefaultWikiSyntaxId()).thenReturn("xhtml/1.0");
+    String rootName = root.getName();
+    when(noteService.createNote(eq(wiki), eq(rootName), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
+                                                                                                                   .thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.canViewNote(created, USER)).thenReturn(true);
+    when(noteService.canEditNote(created, USER)).thenReturn(true);
+
+    NoteModel result = runWithStaticMocks(() -> tool.createPersonalNote(TITLE, SUMMARY, CONTENT));
+
+    assertEquals(NOTE_ID, result.noteId());
+    assertEquals(TITLE, result.title());
+    // No server-side direct URL exists for a personal note: the field is left
+    // out rather than failing the call on the permanent-link plugin
+    assertNull(result.url());
+    ArgumentCaptor<Page> noteCaptor = ArgumentCaptor.forClass(Page.class);
+    verify(noteService).createNote(eq(wiki), eq(rootName), noteCaptor.capture(), eq(currentIdentity), eq(false), eq(true));
+    Page note = noteCaptor.getValue();
+    assertEquals(TITLE, note.getTitle());
+    assertEquals(SUMMARY, note.getProperties().getSummary());
+    assertEquals(USER, note.getAuthor());
+    assertEquals(USER, note.getOwner());
+    assertEquals(USER_WIKI_TYPE, note.getWikiType());
+    assertEquals(USER, note.getWikiOwner());
+    verify(wikiService, never()).createWiki(anyString(), anyString());
+  }
+
+  @Test
+  public void createPersonalNoteShouldCreateNotebookOnFirstUse() throws Exception { // NOSONAR
+    Wiki wiki = mockPersonalWiki(USER);
+    Page root = mockPersonalPage("1", "Root", USER);
+    Page created = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
+
+    // Not found on the first lookup, found once created (the second lookup
+    // happens when the note is written into the notebook)
+    when(wikiService.getWikiByTypeAndOwner(USER_WIKI_TYPE, USER)).thenReturn(null, wiki);
+    when(wikiService.createWiki(USER_WIKI_TYPE, USER)).thenReturn(wiki);
+    when(wiki.getWikiHome()).thenReturn(root);
+    when(noteService.getNoteById("1")).thenReturn(root);
+    when(wikiService.getDefaultWikiSyntaxId()).thenReturn("xhtml/1.0");
+    String rootName = root.getName();
+    when(noteService.createNote(eq(wiki), eq(rootName), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
+                                                                                                                   .thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.canViewNote(created, USER)).thenReturn(true);
+    when(noteService.canEditNote(created, USER)).thenReturn(true);
+
+    NoteModel result;
+    try (MockedStatic<RequestLifeCycle> lifeCycle = mockStatic(RequestLifeCycle.class)) {
+      result = runWithStaticMocks(() -> tool.createPersonalNote(TITLE, SUMMARY, CONTENT));
+      lifeCycle.verify(RequestLifeCycle::restartTransaction);
+    }
+
+    assertEquals(NOTE_ID, result.noteId());
+    verify(wikiService).createWiki(USER_WIKI_TYPE, USER);
+    verify(wikiService, never()).createWiki(eq(USER_WIKI_TYPE), eq(OTHER_USER));
+  }
+
+  /**
+   * ACL pin: the target notebook is the authenticated user's, whatever the
+   * caller passes. Every free-text argument carries another user's name, and
+   * that user's notebook exists: none of the arguments may become the notebook
+   * owner, so that user's notebook is never looked up nor written to.
+   */
+  @Test
+  public void createPersonalNoteShouldNeverTargetAnotherUsersNotebook() throws Exception { // NOSONAR
+    Wiki ownWiki = mockPersonalWiki(USER);
+    Wiki otherWiki = mockPersonalWiki(OTHER_USER);
+    Page ownRoot = mockPersonalPage("1", "Root", USER);
+    Page otherRoot = mockPersonalPage("2", "Root", OTHER_USER);
+    Page created = mockPersonalPage(String.valueOf(NOTE_ID), OTHER_USER, USER);
+
+    when(wikiService.getWikiByTypeAndOwner(USER_WIKI_TYPE, USER)).thenReturn(ownWiki);
+    lenient().when(wikiService.getWikiByTypeAndOwner(USER_WIKI_TYPE, OTHER_USER)).thenReturn(otherWiki);
+    when(ownWiki.getWikiHome()).thenReturn(ownRoot);
+    lenient().when(otherWiki.getWikiHome()).thenReturn(otherRoot);
+    when(noteService.getNoteById("1")).thenReturn(ownRoot);
+    lenient().when(noteService.getNoteById("2")).thenReturn(otherRoot);
+    when(wikiService.getDefaultWikiSyntaxId()).thenReturn("xhtml/1.0");
+    when(noteService.createNote(any(Wiki.class), anyString(), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
+                                                                                                                       .thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.canViewNote(created, USER)).thenReturn(true);
+    when(noteService.canEditNote(created, USER)).thenReturn(true);
+
+    runWithStaticMocks(() -> tool.createPersonalNote(OTHER_USER, OTHER_USER, OTHER_USER));
+
+    verify(wikiService, never()).getWikiByTypeAndOwner(USER_WIKI_TYPE, OTHER_USER);
+    verify(wikiService, never()).createWiki(anyString(), anyString());
+    verify(noteService, never()).createNote(eq(otherWiki), anyString(), any(Page.class), any(), anyBoolean(), anyBoolean());
+    String ownRootName = ownRoot.getName();
+    ArgumentCaptor<Page> noteCaptor = ArgumentCaptor.forClass(Page.class);
+    verify(noteService).createNote(eq(ownWiki), eq(ownRootName), noteCaptor.capture(), eq(currentIdentity), eq(false), eq(true));
+    assertEquals(USER, noteCaptor.getValue().getWikiOwner());
+    assertEquals(USER, noteCaptor.getValue().getOwner());
+    assertEquals(USER, noteCaptor.getValue().getAuthor());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -846,6 +976,21 @@ public class NoteMcpToolTest {
     lenient().when(page.getParentPageId()).thenReturn(null);
 
     return page;
+  }
+
+  private Page mockPersonalPage(String id, String title, String owner) {
+    Page page = mockPage(id, title);
+    lenient().when(page.getWikiType()).thenReturn(USER_WIKI_TYPE);
+    lenient().when(page.getWikiOwner()).thenReturn(owner);
+    return page;
+  }
+
+  private Wiki mockPersonalWiki(String owner) {
+    Wiki wiki = mock(Wiki.class);
+    lenient().when(wiki.getId()).thenReturn("wiki-" + owner);
+    lenient().when(wiki.getOwner()).thenReturn(owner);
+    lenient().when(wiki.getType()).thenReturn(USER_WIKI_TYPE);
+    return wiki;
   }
 
   private Wiki mockWiki() {
