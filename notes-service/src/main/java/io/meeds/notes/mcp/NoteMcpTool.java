@@ -92,6 +92,8 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final String     SPACE_WIKI_TYPE  = WikiType.GROUP.toString().toLowerCase();
 
+  private static final String     USER_WIKI_TYPE   = WikiType.USER.toString().toLowerCase();
+
   private WikiService             wikiService;
 
   private NoteService             noteService;
@@ -223,6 +225,20 @@ public class NoteMcpTool implements McpToolPlugin {
     }
   }
 
+  /**
+   * Creates a note at the root of a space's notebook, as the current user. The
+   * space's notebook is created on first use. The Notes service enforces the
+   * space ACL (the user must be allowed to redact or publish in the space).
+   *
+   * @param spaceId id of the space whose notebook receives the note
+   * @param title title of the note
+   * @param summary optional plain-text summary shown on note cards
+   * @param htmlContent body of the note, HTML or markdown
+   * @return the created note, read back as the current user
+   * @throws IllegalAccessException when the user can't access the space or add
+   *           notes to it
+   * @throws ObjectNotFoundException when the space doesn't exist
+   */
   public NoteModel createSpaceNote(Long spaceId,
                                    String title,
                                    String summary,
@@ -234,6 +250,45 @@ public class NoteMcpTool implements McpToolPlugin {
     return createNote(parentPage, title, summary, markdownToHtml(htmlContent));
   }
 
+  /**
+   * Creates a note in the calling user's own (personal) notebook, at its root.
+   * The notebook is resolved from the authenticated user only, never from the
+   * tool arguments, so a caller can't target someone else's notebook; it is
+   * created on first use, as the Notes REST layer does. The Notes service then
+   * re-checks that the user manages that notebook (a personal notebook is only
+   * managed by its owner).
+   *
+   * @param title title of the note
+   * @param summary optional plain-text summary shown on note cards
+   * @param htmlContent body of the note, HTML or markdown
+   * @return the created note, read back as the current user
+   * @throws IllegalAccessException when there is no authenticated user, or the
+   *           user isn't allowed to add notes to that notebook
+   * @throws ObjectNotFoundException when the notebook has no home note
+   */
+  public NoteModel createPersonalNote(String title,
+                                      String summary,
+                                      String htmlContent) throws IllegalAccessException, ObjectNotFoundException {
+    if (StringUtils.isBlank(title)) {
+      throw new IllegalArgumentException("A title is required to create a personal note. Ask the user for one rather than inventing it.");
+    }
+    Page parentPage = getPersonalParentPage();
+    return createNote(parentPage, title, summary, markdownToHtml(htmlContent));
+  }
+
+  /**
+   * Creates a note as a child of an existing note, in the same notebook (space
+   * or personal) as its parent, as the current user.
+   *
+   * @param parentNoteId id of the note under which the new note is created
+   * @param title title of the note
+   * @param summary optional plain-text summary shown on note cards
+   * @param htmlContent body of the note, HTML or markdown
+   * @return the created note, read back as the current user
+   * @throws IllegalAccessException when the user can't view the parent note or
+   *           add notes to its notebook
+   * @throws ObjectNotFoundException when the parent note doesn't exist
+   */
   public NoteModel createChildNote(Long parentNoteId,
                                    String title,
                                    String summary,
@@ -564,6 +619,20 @@ public class NoteMcpTool implements McpToolPlugin {
                                 toUserModel(version.getAuthor()));
   }
 
+  /**
+   * Creates a note under the given parent, in the parent's notebook, authored
+   * and owned by the current user. The Notes service enforces the notebook's
+   * ACL with the current user's identity.
+   *
+   * @param parentPage parent note; its notebook receives the new note
+   * @param title title of the note
+   * @param summary optional plain-text summary
+   * @param htmlContent HTML body of the note
+   * @return the created note, read back as the current user
+   * @throws IllegalAccessException when the user can't add notes to the
+   *           parent's notebook
+   * @throws ObjectNotFoundException when the created note can't be read back
+   */
   private NoteModel createNote(Page parentPage, String title, String summary, String htmlContent) throws IllegalAccessException,
                                                                                                   ObjectNotFoundException {
     Identity currentUserAclIdentity = getCurrentUserAclIdentity();
@@ -670,6 +739,16 @@ public class NoteMcpTool implements McpToolPlugin {
     }
   }
 
+  /**
+   * Resolves the home note of a space's notebook, creating the notebook on
+   * first use, after checking that the current user can access the space.
+   *
+   * @param spaceId id of the space
+   * @return the home note of the space's notebook
+   * @throws ObjectNotFoundException when the space doesn't exist or its
+   *           notebook has no home note
+   * @throws IllegalAccessException when the current user can't access the space
+   */
   private Page getSpaceParentPage(long spaceId) throws ObjectNotFoundException, IllegalAccessException {
     String currentUsername = getCurrentUserName();
     Space space = spaceService.getSpaceById(spaceId);
@@ -686,6 +765,33 @@ public class NoteMcpTool implements McpToolPlugin {
     Page rootNote = noteService.getNoteById(wiki.getWikiHome().getId());
     if (rootNote == null) {
       throw new ObjectNotFoundException("Space with id %s doesn't have notes yet".formatted(spaceId));
+    }
+    return rootNote;
+  }
+
+  /**
+   * Resolves the home note of the current user's personal notebook, creating
+   * the notebook on first use. A personal notebook is a wiki of type "user"
+   * whose owner is the username; the owner is taken from the authenticated user
+   * only, never from a caller-supplied value.
+   *
+   * @return the home note of the current user's personal notebook
+   * @throws IllegalAccessException when there is no authenticated user
+   * @throws ObjectNotFoundException when the notebook has no home note
+   */
+  private Page getPersonalParentPage() throws IllegalAccessException, ObjectNotFoundException {
+    String currentUsername = getCurrentUserName();
+    if (StringUtils.isBlank(currentUsername)) {
+      throw new IllegalAccessException("A personal note can only be created by an authenticated user.");
+    }
+    Wiki wiki = wikiService.getWikiByTypeAndOwner(USER_WIKI_TYPE, currentUsername);
+    if (wiki == null) {
+      wiki = wikiService.createWiki(USER_WIKI_TYPE, currentUsername);
+      RequestLifeCycle.restartTransaction();
+    }
+    Page rootNote = wiki.getWikiHome() == null ? null : noteService.getNoteById(wiki.getWikiHome().getId());
+    if (rootNote == null) {
+      throw new ObjectNotFoundException("The personal notebook of user '%s' has no home note yet".formatted(currentUsername));
     }
     return rootNote;
   }
@@ -728,8 +834,21 @@ public class NoteMcpTool implements McpToolPlugin {
                                      true);
   }
 
+  /**
+   * Builds the absolute URL of a note. Only space notes have a resolvable
+   * direct-access URL ({@code NotePermanentLinkPlugin} rejects any other
+   * notebook type); a personal note has none server-side, so null is returned
+   * and the field is omitted from the model instead of failing the call.
+   *
+   * @param note the note to link to
+   * @return the note's absolute URL, or null when the note isn't a space note
+   */
   @SneakyThrows
   private String getUrl(Page note) {
+    String wikiType = note.getWikiType();
+    if (StringUtils.isNotBlank(wikiType) && !StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, wikiType)) {
+      return null;
+    }
     return CommonsUtils.getCurrentDomain() +
         permanentLinkService.getLink(new PermanentLinkObject(NotePermanentLinkPlugin.OBJECT_TYPE, note.getId()));
   }
