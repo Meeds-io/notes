@@ -838,15 +838,16 @@ public class NoteMcpTool implements McpToolPlugin {
    * Builds the absolute URL of a note. Only space notes have a resolvable
    * direct-access URL ({@code NotePermanentLinkPlugin} rejects any other
    * notebook type); a personal note has none server-side, so null is returned
-   * and the field is omitted from the model instead of failing the call.
+   * and the field is omitted from the model instead of failing the call. The
+   * test is positive (fail closed): anything not explicitly a space note,
+   * including a blank type, gets no URL.
    *
    * @param note the note to link to
    * @return the note's absolute URL, or null when the note isn't a space note
    */
   @SneakyThrows
   private String getUrl(Page note) {
-    String wikiType = note.getWikiType();
-    if (StringUtils.isNotBlank(wikiType) && !StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, wikiType)) {
+    if (!StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, note.getWikiType())) {
       return null;
     }
     return CommonsUtils.getCurrentDomain() +
