@@ -18,8 +18,6 @@
  */
 package io.meeds.notes.notifications.provider;
 
-import java.io.Writer;
-
 import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 
 import org.exoplatform.commons.api.notification.NotificationContext;
@@ -79,11 +77,5 @@ public class PushTemplateProvider extends TemplateProvider {
       MessageInfo messageInfo = new MessageInfo();
       return messageInfo.subject(subject).body(body).end();
     }
-
-    @Override
-    protected boolean makeDigest(NotificationContext ctx, Writer writer) {
-      return false;
-    }
-
   }
 }
