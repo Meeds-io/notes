@@ -49,7 +49,7 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'noteProperties',
   labelKey: 'notes.menu.label.properties',
-  icon: 'fas fa-info-circle',
+  icon: 'fas fa-th-list',
   sortable: true,
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 45,
