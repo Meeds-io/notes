@@ -18,17 +18,11 @@
  */
 package io.meeds.notes.notifications.provider;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.meeds.notes.notifications.plugin.MentionInNoteNotificationPlugin;
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.gatein.common.text.EntityEncoder;
 
 import org.exoplatform.commons.api.notification.NotificationContext;
 import org.exoplatform.commons.api.notification.annotation.TemplateConfig;
@@ -39,7 +33,6 @@ import org.exoplatform.commons.api.notification.model.MessageInfo;
 import org.exoplatform.commons.api.notification.model.NotificationInfo;
 import org.exoplatform.commons.api.notification.model.PluginKey;
 import org.exoplatform.commons.api.notification.service.template.TemplateContext;
-import org.exoplatform.commons.notification.template.DigestTemplate;
 import org.exoplatform.commons.notification.template.TemplateUtils;
 import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.TimeConvertUtils;
@@ -117,52 +110,6 @@ public class MailTemplateProvider extends TemplateProvider {
       ctx.setException(templateContext.getException());
       MessageInfo messageInfo = new MessageInfo();
       return messageInfo.subject(subject).body(body).end();
-    }
-
-    @Override
-    protected boolean makeDigest(NotificationContext ctx, Writer writer) {
-      EntityEncoder encoder = HTMLEntityEncoder.getInstance();
-      List<NotificationInfo> notifications = ctx.getNotificationInfos();
-      NotificationInfo notificationInfo = notifications.get(0);
-      try {
-        String pluginId = notificationInfo.getKey().getId();
-        if (pluginId.equals(MentionInNoteNotificationPlugin.ID)) {
-          String mentionedIds = notificationInfo.getValueOwnerParameter(MentionInNoteNotificationPlugin.MENTIONED_IDS.getKey());
-          String ids = mentionedIds.substring(1, mentionedIds.length() - 1);
-          List<String> mentionedList = Stream.of(ids.split(",")).map(String::trim).collect(Collectors.toList());
-          if (!mentionedList.contains(notificationInfo.getTo())) {
-            return false;
-          }
-        }
-        String language = getLanguage(notificationInfo);
-        TemplateContext templateContext = new TemplateContext(pluginId, language);
-        //
-        Identity receiver = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, notificationInfo.getTo());
-        templateContext.put("FIRST_NAME", encoder.encode(receiver.getProfile().getProperty(Profile.FIRST_NAME).toString()));
-        templateContext.put("FOOTER_LINK", LinkProviderUtils.getRedirectUrl("notification_settings", receiver.getRemoteId()));
-
-        writer.append(buildDigestMsg(notifications, templateContext));
-      } catch (IOException e) {
-        ctx.setException(e);
-        return false;
-      }
-      return true;
-    }
-
-    protected String buildDigestMsg(List<NotificationInfo> notifications, TemplateContext templateContext) {
-      StringBuilder sb = new StringBuilder();
-      for (NotificationInfo notification : notifications) {
-        templateContext.put(MentionInNoteNotificationPlugin.NOTE_TITLE.getKey(),
-                            notification.getValueOwnerParameter(MentionInNoteNotificationPlugin.NOTE_TITLE.getKey()));
-        templateContext.put("USER", notification.getValueOwnerParameter(MentionInNoteNotificationPlugin.NOTE_AUTHOR.getKey()));
-        templateContext.digestType(DigestTemplate.ElementType.DIGEST_ONE.getValue());
-
-        sb.append("<li style=\"margin: 0 0 13px 14px; font-size: 13px; line-height: 18px; font-family: HelveticaNeue, Helvetica, Arial, sans-serif;\">");
-        String digester = TemplateUtils.processDigest(templateContext);
-        sb.append(digester);
-        sb.append("</div></li>");
-      }
-      return sb.toString();
     }
   }
 }
