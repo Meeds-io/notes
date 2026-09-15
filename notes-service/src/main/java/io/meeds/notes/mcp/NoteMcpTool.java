@@ -425,8 +425,9 @@ public class NoteMcpTool implements McpToolPlugin {
    */
   public List<NoteVersionModel> getNoteVersions(long noteId, String language) throws IllegalAccessException,
                                                                              ObjectNotFoundException {
-    Page note = getNoteById(noteId);
-    return versionsHistory(note, language).stream().map(this::toNoteVersionModel).toList();
+    Page note = getNoteById(noteId, language);
+    String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+    return versionsHistory(note, lang).stream().map(this::toNoteVersionModel).toList();
   }
 
   /**
@@ -441,20 +442,24 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, getCurrentUserName())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
+    String lang = StringUtils.isBlank(language) ? note.getLang() : language;
     PageHistory target =
-                       versionsHistory(note, language).stream()
-                                                      .filter(version -> version.getVersionNumber() != null
-                                                          && version.getVersionNumber() == versionNumber)
-                                                      .findFirst()
-                                                      .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no version number %s. "
-                                                          + "Use get_note_versions to list the available versions.").formatted(noteId,
-                                                                                                                               versionNumber)));
+                       versionsHistory(note, lang).stream()
+                                                  .filter(version -> version.getVersionNumber() != null
+                                                      && version.getVersionNumber() == versionNumber)
+                                                  .findFirst()
+                                                  .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no version number %s. "
+                                                      + "Use get_note_versions to list the available versions.").formatted(noteId,
+                                                                                                                           versionNumber)));
+    // the version the restore publishes is built from this object, as in NotePage.vue#restoreVersion
+    note.setTitle(target.getTitle());
+    note.setContent(target.getContent());
     try {
-      noteService.restoreVersionOfNote(target.getName(), note, getCurrentUserName());
+      noteService.restoreVersionOfNote(String.valueOf(target.getVersionNumber()), note, getCurrentUserName());
     } catch (Exception e) {
       throw new IllegalStateException("Could not restore the note version: " + e.getMessage());
     }
-    return getNote(noteId, null);
+    return getNote(noteId, language);
   }
 
   private List<PageHistory> versionsHistory(Page note, String language) {

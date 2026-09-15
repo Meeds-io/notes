@@ -101,4 +101,32 @@ public class TestVersioning extends BaseTest {
     assertEquals("testCreateVersionHistoryTree-ver2.0", pageVersion.getContent());
 
   }
+
+  public void testRestoreVersionPublishesTheRestoredTitleAndContent() throws Exception {
+    Wiki wiki = getOrCreateWiki(wikiService, WikiType.PORTAL.toString(), "versioning3");
+    Page page = new Page("testRestoreVersion-001", "Title v1");
+    page.setContent("content-v1");
+    page = noteService.createNote(wiki, wiki.getWikiHome(), page);
+    noteService.createVersionOfNote(page, "");
+
+    page.setTitle("Title v2");
+    page.setContent("content-v2");
+    page = noteService.updateNote(page);
+    noteService.createVersionOfNote(page, "");
+
+    List<PageHistory> versions = noteService.getVersionsHistoryOfNote(page);
+    PageHistory target = versions.stream()
+                                 .filter(version -> "content-v1".equals(version.getContent()))
+                                 .findFirst()
+                                 .orElseThrow();
+    assertEquals(page.getName(), target.getName());
+
+    page.setTitle(target.getTitle());
+    page.setContent(target.getContent());
+    noteService.restoreVersionOfNote(String.valueOf(target.getVersionNumber()), page, "");
+
+    Page restored = noteService.getNoteByIdAndLang(Long.valueOf(page.getId()), (String) null);
+    assertEquals("content-v1", restored.getContent());
+    assertEquals("Title v1", restored.getTitle());
+  }
 }

@@ -644,11 +644,9 @@ public class NoteMcpToolTest {
   }
 
   @Test
-  public void restoreNoteVersionShouldRestoreMatchingVersion() throws Exception { // NOSONAR
-    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
-    PageHistory version = mock(PageHistory.class);
-    lenient().when(version.getVersionNumber()).thenReturn(2L);
-    lenient().when(version.getName()).thenReturn("v2");
+  public void restoreNoteVersionShouldPassTheVersionNumberNotThePageName() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
 
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
@@ -657,7 +655,61 @@ public class NoteMcpToolTest {
 
     runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
 
-    verify(noteService).restoreVersionOfNote("v2", note, USER);
+    verify(noteService).restoreVersionOfNote("2", note, USER);
+  }
+
+  @Test
+  public void restoreNoteVersionShouldPublishTheRestoredTitleAndContent() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
+
+    ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
+
+    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
+
+    verify(noteService).restoreVersionOfNote(eq("2"), captor.capture(), eq(USER));
+    assertEquals("Old title", captor.getValue().getTitle());
+    assertEquals("<p>old</p>", captor.getValue().getContent());
+  }
+
+  @Test
+  public void restoreNoteVersionWithoutLanguageShouldUseTheLanguageTheNoteWasReadIn() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    note.setLang("en");
+    PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "en")).thenReturn(List.of(version));
+    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
+
+    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
+
+    verify(noteService).getVersionsHistoryOfNoteByLang(note, USER, "en");
+    verify(noteService).restoreVersionOfNote("2", note, USER);
+  }
+
+  @Test
+  public void getNoteVersionsWithoutLanguageShouldListTheLanguageTheNoteWasReadIn() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    note.setLang("en");
+    PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "en")).thenReturn(List.of(version));
+    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
+
+    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null));
+
+    assertEquals(1, result.size());
+    assertEquals(Long.valueOf(2L), result.get(0).versionNumber());
   }
 
   @Test(expected = ObjectNotFoundException.class)
@@ -851,10 +903,9 @@ public class NoteMcpToolTest {
     lenient().when(frNote.getLang()).thenReturn("fr");
     PageHistory version = mock(PageHistory.class);
     lenient().when(version.getVersionNumber()).thenReturn(2L);
-    lenient().when(version.getName()).thenReturn("v2");
 
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(enNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(enNote);
     when(noteService.canViewNote(frNote, USER)).thenReturn(true);
     when(noteService.canEditNote(frNote, USER)).thenReturn(true);
     lenient().when(noteService.canViewNote(enNote, USER)).thenReturn(true);
@@ -864,10 +915,11 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
 
-    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, "fr"));
+    NoteModel result = runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, "fr"));
 
-    verify(noteService).restoreVersionOfNote(eq("v2"), captor.capture(), eq(USER));
+    verify(noteService).restoreVersionOfNote(eq("2"), captor.capture(), eq(USER));
     assertEquals("fr", captor.getValue().getLang());
+    assertEquals("Note FR", result.title());
   }
 
   @Test
@@ -956,6 +1008,35 @@ public class NoteMcpToolTest {
     assertNotNull(result);
     assertEquals(NOTE_ID, result.noteId());
     verify(noteService).getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"));
+  }
+
+  private Page restorablePage() {
+    Page note = new Page();
+    note.setId(String.valueOf(NOTE_ID));
+    note.setName("3f2504e0-4f89-11d3-9a0c-0305e82c3301");
+    note.setTitle("Current title");
+    note.setContent("<p>current</p>");
+    note.setWikiType(WIKI_TYPE);
+    note.setWikiOwner(GROUP_ID);
+    note.setAuthor(USER);
+    note.setLastUpdater(USER);
+    note.setCreatedDate(new Date());
+    note.setUpdatedDate(new Date());
+    return note;
+  }
+
+  // as EntityConverter#convertPageVersionEntityToPageHistory builds one: the name is the PAGE's name
+  private PageHistory pageHistory(Page note, long versionNumber, String title, String content) {
+    PageHistory version = new PageHistory();
+    version.setId(note.getId() + "-" + versionNumber);
+    version.setVersionNumber(versionNumber);
+    version.setName(note.getName());
+    version.setTitle(title);
+    version.setContent(content);
+    version.setAuthor(USER);
+    version.setCreatedDate(new Date());
+    version.setUpdatedDate(new Date());
+    return version;
   }
 
   private Page mockPage(String id, String title) {
