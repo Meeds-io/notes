@@ -352,7 +352,7 @@
           },
           "language": {
             "type": "string",
-            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit to target the note as the user sees it - their own translation when the note has one in their language, the default note otherwise."
           }
         },
         "required": [
@@ -369,7 +369,7 @@
     {
       "name": "restore_note_version",
       "title": "Restore a note version",
-      "description": "Restore a note to a previous version identified by its version_number (from get_note_versions). Creates a new current version from the chosen one.",
+      "description": "Restore a note to a previous version identified by its version_number (from get_note_versions). Creates a new current version from the chosen one. The title and the content are rolled back; on a translation the summary and the cover image are not.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -383,7 +383,7 @@
           },
           "language": {
             "type": "string",
-            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note."
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit to target the note as the user sees it - their own translation when the note has one in their language, the default note otherwise."
           }
         },
         "required": [
