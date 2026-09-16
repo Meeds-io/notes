@@ -162,7 +162,7 @@
     {
       "name": "update_note",
       "title": "Update a note",
-      "description": "Update an existing note's title OR its content (one per call, not both). Replaces the previous value entirely; with a 'language' it creates or updates that translation instead of the default content.",
+      "description": "Update an existing note's title, its content, or both in the same call. Every value given replaces the previous one entirely; a parameter left out is kept unchanged. With a 'language' it creates or updates THAT translation and leaves the note's default content untouched — pass the translated title and the translated content together in that one call.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -172,45 +172,29 @@
           },
           "title": {
             "type": "string",
-            "description": "New title of the note, plain text. Provide either 'title' or 'html_content' in one call, not both. Omit it when only the content changes."
+            "description": "New title of the note, plain text. Omit it when only the content changes. With a 'language' this is the title of that translation, not of the default note."
           },
           "html_content": {
             "type": "string",
-            "description": "New BODY of the note as HTML (markdown accepted); it REPLACES the whole existing body, so include everything the note must keep. Provide either 'html_content' or 'title' in one call, not both."
+            "description": "New BODY of the note as HTML (markdown accepted); it REPLACES the whole existing body, so include everything the note must keep. With a 'language' this is the body of that translation, not of the default note."
           },
           "language": {
             "type": "string",
-            "description": "Optional language code (e.g. 'en', 'fr') of the translation to create or update; omit to update the note's default content. Use get_note_translations to see which languages exist."
+            "description": "Optional language code (e.g. 'en', 'fr') of the translation to create or update; omit to update the note's default content. The note's default content is never modified when a language is given. Use get_note_translations to see which languages exist."
           }
         },
-        "allOf": [
+        "required": [
+          "note_id"
+        ],
+        "anyOf": [
           {
             "required": [
-              "note_id"
+              "title"
             ]
           },
           {
-            "oneOf": [
-              {
-                "required": [
-                  "title"
-                ],
-                "not": {
-                  "required": [
-                    "html_content"
-                  ]
-                }
-              },
-              {
-                "required": [
-                  "html_content"
-                ],
-                "not": {
-                  "required": [
-                    "title"
-                  ]
-                }
-              }
+            "required": [
+              "html_content"
             ]
           }
         ]
@@ -352,7 +336,7 @@
           },
           "language": {
             "type": "string",
-            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit to target the note as the user sees it - their own translation when the note has one in their language, the default note otherwise."
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note. Use get_note_translations to list which languages exist."
           }
         },
         "required": [
@@ -383,7 +367,7 @@
           },
           "language": {
             "type": "string",
-            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit to target the note as the user sees it - their own translation when the note has one in their language, the default note otherwise."
+            "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note. Use get_note_translations to list which languages exist."
           }
         },
         "required": [
