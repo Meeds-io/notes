@@ -19,10 +19,14 @@
 package io.meeds.notes.mcp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -64,6 +68,7 @@ import org.exoplatform.social.core.profileproperty.ProfilePropertyService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.Wiki;
@@ -217,7 +222,7 @@ public class NoteMcpToolTest {
 
   @Test(expected = ObjectNotFoundException.class)
   public void getNoteWhenNoteDoesNotExistShouldThrowException() throws Exception { // NOSONAR
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(null);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(null);
 
     tool.getNote(NOTE_ID, null);
   }
@@ -226,7 +231,7 @@ public class NoteMcpToolTest {
   public void getNoteWhenUserCannotViewShouldThrowException() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(false);
 
     tool.getNote(NOTE_ID, null);
@@ -236,7 +241,7 @@ public class NoteMcpToolTest {
   public void getNoteShouldReturnNoteModel() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
@@ -275,7 +280,7 @@ public class NoteMcpToolTest {
                                 eq(false),
                                 eq(true)))
                                           .thenReturn(created);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(created);
     when(noteService.canViewNote(created, USER)).thenReturn(true);
     when(noteService.canEditNote(created, USER)).thenReturn(true);
 
@@ -315,7 +320,7 @@ public class NoteMcpToolTest {
     String rootName = root.getName();
     when(noteService.createNote(eq(wiki), eq(rootName), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
                                                                                                                    .thenReturn(created);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(created);
     when(noteService.canViewNote(created, USER)).thenReturn(true);
     when(noteService.canEditNote(created, USER)).thenReturn(true);
 
@@ -354,7 +359,7 @@ public class NoteMcpToolTest {
     String rootName = root.getName();
     when(noteService.createNote(eq(wiki), eq(rootName), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
                                                                                                                    .thenReturn(created);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(created);
     when(noteService.canViewNote(created, USER)).thenReturn(true);
     when(noteService.canEditNote(created, USER)).thenReturn(true);
 
@@ -392,7 +397,7 @@ public class NoteMcpToolTest {
     when(wikiService.getDefaultWikiSyntaxId()).thenReturn("xhtml/1.0");
     when(noteService.createNote(any(Wiki.class), anyString(), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
                                                                                                                        .thenReturn(created);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(created);
     when(noteService.canViewNote(created, USER)).thenReturn(true);
     when(noteService.canEditNote(created, USER)).thenReturn(true);
 
@@ -420,7 +425,7 @@ public class NoteMcpToolTest {
     Page created = mockPage(String.valueOf(NOTE_ID), TITLE);
     Wiki wiki = mockWiki();
 
-    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(parent);
+    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(parent);
     when(noteService.canViewNote(parent, USER)).thenReturn(true);
     when(wikiService.getWikiByTypeAndOwner(parent.getWikiType(), parent.getWikiOwner())).thenReturn(wiki);
     when(wikiService.getDefaultWikiSyntaxId()).thenReturn("xhtml/1.0");
@@ -428,7 +433,7 @@ public class NoteMcpToolTest {
     when(noteService.createNote(eq(wiki), eq(parentName), any(Page.class), eq(currentIdentity), eq(false), eq(true)))
                                                                                                                      .thenReturn(created);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(created);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(created);
     when(noteService.canViewNote(created, USER)).thenReturn(true);
     when(noteService.canEditNote(created, USER)).thenReturn(true);
 
@@ -442,7 +447,7 @@ public class NoteMcpToolTest {
   public void updateNoteWhenUserCannotEditShouldThrowException() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(false);
 
@@ -453,7 +458,7 @@ public class NoteMcpToolTest {
   public void updateNoteShouldUpdateTitleAndContent() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
@@ -472,9 +477,13 @@ public class NoteMcpToolTest {
   public void updateNoteWithLanguageShouldSetLanguage() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(frNote, USER)).thenReturn(true);
     when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
                                                                                                                .thenReturn(note);
 
@@ -490,9 +499,8 @@ public class NoteMcpToolTest {
   // copy the default's (500).
   @Test
   public void updateNoteWithLanguageShouldPreserveExistingTranslationCover() throws Exception { // NOSONAR
-    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
-
     Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
     NotePageProperties frProperties = new NotePageProperties();
     NoteFeaturedImage frCover = new NoteFeaturedImage();
     frCover.setId(600L);
@@ -506,19 +514,19 @@ public class NoteMcpToolTest {
     defaultProperties.setFeaturedImage(defaultCover);
     lenient().when(defaultNote.getProperties()).thenReturn(defaultProperties);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
-    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
-    when(noteService.canViewNote(note, USER)).thenReturn(true);
-    when(noteService.canEditNote(note, USER)).thenReturn(true);
-    when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
-                                                                                                               .thenReturn(note);
+    when(noteService.canViewNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
     runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, null, "fr"));
 
-    verify(note).setProperties(captor.capture());
+    verify(defaultNote).setProperties(captor.capture());
     assertEquals(Long.valueOf(600L), captor.getValue().getFeaturedImage().getId());
   }
 
@@ -526,9 +534,9 @@ public class NoteMcpToolTest {
   // default's cover (500).
   @Test
   public void updateNoteWithLanguageNewTranslationShouldInheritDefaultCover() throws Exception { // NOSONAR
-    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
-
-    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    // no "fr" version yet: getNoteByIdAndLang falls back to the default page and
+    // leaves its lang unset, which is how a brand-new translation is recognised
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note");
     lenient().when(frNote.getProperties()).thenReturn(null);
 
     Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
@@ -538,20 +546,76 @@ public class NoteMcpToolTest {
     defaultProperties.setFeaturedImage(defaultCover);
     lenient().when(defaultNote.getProperties()).thenReturn(defaultProperties);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
-    when(noteService.canViewNote(note, USER)).thenReturn(true);
-    when(noteService.canEditNote(note, USER)).thenReturn(true);
-    when(noteService.updateNote(eq(note), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
-                                                                                                               .thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
     runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, null, "fr"));
 
-    verify(note).setProperties(captor.capture());
+    verify(defaultNote).setProperties(captor.capture());
     assertEquals(Long.valueOf(500L), captor.getValue().getFeaturedImage().getId());
+  }
+
+  // EXO-90294: a blank language is the note's OWN default version. The read
+  // used to fall back to the caller's profile locale, so an update with no
+  // language wrote that translation's text onto the main note.
+  @Test
+  public void updateNoteWithoutLanguageShouldUpdateTheDefaultNoteNotTheCallerLocaleTranslation() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    // the caller's profile locale is "en" and the note has an "en" translation
+    Page localeNote = mockPage(String.valueOf(NOTE_ID), "Note EN");
+    lenient().when(localeNote.getLang()).thenReturn("en");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(localeNote);
+    when(noteService.canViewNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(localeNote, USER)).thenReturn(true);
+    lenient().when(noteService.canEditNote(localeNote, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
+    lenient().when(noteService.updateNote(eq(localeNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                              .thenReturn(localeNote);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, OTHER_TITLE, null, null));
+
+    verify(defaultNote).setTitle(OTHER_TITLE);
+    verify(noteService).updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity));
+    verify(noteService).createVersionOfNote(defaultNote, USER, true);
+    verify(localeNote, never()).setTitle(anyString());
+    verify(noteService, never()).updateNote(eq(localeNote), any(PageUpdateType.class), eq(currentIdentity));
+  }
+
+  // EXO-90294: building a translation can take two calls; the second must start
+  // from the translation the first wrote, not from the default note.
+  @Test
+  public void updateNoteWithLanguageShouldKeepTheTranslationsOwnTitleWhenOnlyTheContentChanges() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Titre FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getContent()).thenReturn("<p>contenu</p>");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, "nouveau contenu", "fr"));
+
+    // the version write carries the translation's own title, and the new content
+    verify(defaultNote).setTitle("Titre FR");
+    verify(defaultNote).setContent("<p>nouveau contenu</p>");
+    verify(defaultNote).setLang("fr");
+    verify(noteService).createVersionOfNote(defaultNote, USER, true);
   }
 
   @Test
@@ -559,7 +623,7 @@ public class NoteMcpToolTest {
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
     ActivityModel activityModel = mock(ActivityModel.class);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.updateNote(eq(note), eq(PageUpdateType.PUBLISH), eq(currentIdentity))).thenReturn(note);
@@ -575,7 +639,7 @@ public class NoteMcpToolTest {
   public void deleteNoteShouldDeleteNote() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
@@ -589,8 +653,8 @@ public class NoteMcpToolTest {
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
     Page target = mockPage(String.valueOf(PARENT_NOTE_ID), "Target");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
-    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(target);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(target);
     when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
     when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
 
@@ -610,7 +674,7 @@ public class NoteMcpToolTest {
     when(wikiSearchResult.getAll()).thenReturn(Collections.singletonList(searchResult));
     when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
@@ -632,7 +696,7 @@ public class NoteMcpToolTest {
     lenient().when(version.getUpdatedDate()).thenReturn(new Date());
     lenient().when(version.getAuthor()).thenReturn(USER);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
 
@@ -648,7 +712,7 @@ public class NoteMcpToolTest {
     Page note = restorablePage();
     PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
@@ -663,7 +727,7 @@ public class NoteMcpToolTest {
     Page note = restorablePage();
     PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
 
-    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "en")).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
@@ -678,33 +742,37 @@ public class NoteMcpToolTest {
   }
 
   @Test
-  public void restoreNoteVersionWithoutLanguageShouldUseTheLanguageTheNoteWasReadIn() throws Exception { // NOSONAR
+  public void restoreNoteVersionWithoutLanguageShouldUseTheDefaultVersion() throws Exception { // NOSONAR
     Page note = restorablePage();
-    note.setLang("en");
+    // a lang carried by the loaded page must not redirect the restore to that
+    // translation: a blank language means the note's own default version
+    note.setLang("fr");
     PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
 
-    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "en")).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
-    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "en")).thenReturn(List.of(version));
-    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
+    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "fr")).thenReturn(Collections.emptyList());
 
     runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
 
-    verify(noteService).getVersionsHistoryOfNoteByLang(note, USER, "en");
+    verify(noteService).getVersionsHistoryOfNoteByLang(note, USER, null);
     verify(noteService).restoreVersionOfNote("2", note, USER);
   }
 
   @Test
-  public void getNoteVersionsWithoutLanguageShouldListTheLanguageTheNoteWasReadIn() throws Exception { // NOSONAR
+  public void getNoteVersionsWithoutLanguageShouldListTheDefaultVersion() throws Exception { // NOSONAR
     Page note = restorablePage();
-    note.setLang("en");
+    // a lang carried by the loaded page must not redirect the listing to that
+    // translation: a blank language means the note's own default version
+    note.setLang("fr");
     PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
 
-    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "en")).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
-    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "en")).thenReturn(List.of(version));
-    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
+    lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "fr")).thenReturn(Collections.emptyList());
 
     List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null));
 
@@ -716,7 +784,7 @@ public class NoteMcpToolTest {
   public void restoreNoteVersionWhenVersionMissingShouldThrow() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(Collections.emptyList());
@@ -731,7 +799,7 @@ public class NoteMcpToolTest {
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
@@ -760,10 +828,9 @@ public class NoteMcpToolTest {
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    // the note is now loaded in the target language ("fr"); "en" backs the final get_note read
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    // the note is loaded, written and read back in the target language ("fr"):
+    // the default version is never read on this path
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
-    lenient().when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canViewNote(frNote, USER)).thenReturn(true);
     when(noteService.canEditNote(frNote, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
@@ -783,7 +850,7 @@ public class NoteMcpToolTest {
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
@@ -793,11 +860,306 @@ public class NoteMcpToolTest {
     verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(42L));
   }
 
+  // EXO-90294: createVersionOfNote re-saves the note's own properties under its
+  // own language, so it must carry the ones just saved -- it used to revert them.
+  @Test
+  public void setNoteSummaryInLanguageShouldNotRevertTheSavedMetadata() throws Exception { // NOSONAR
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    NotePageProperties frProperties = new NotePageProperties();
+    frProperties.setSummary("ancien resume");
+    lenient().when(frNote.getProperties()).thenReturn(frProperties);
+    // the second read returns a distinct Page in production; that aliasing is why
+    // the version write used to revert the summary, so the stub models it
+    Page frReread = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frReread.getLang()).thenReturn("fr");
+    NotePageProperties frRereadProperties = new NotePageProperties();
+    frRereadProperties.setSummary("ancien resume");
+    lenient().when(frReread.getProperties()).thenReturn(frRereadProperties);
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote, frReread);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    lenient().when(noteService.canViewNote(frReread, USER)).thenReturn(true);
+    lenient().when(noteService.canEditNote(frReread, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.setNoteSummary(NOTE_ID, "nouveau resume", "fr"));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(42L));
+    verify(frNote).setProperties(captor.capture());
+    assertEquals("nouveau resume", captor.getValue().getSummary());
+    verify(noteService).createVersionOfNote(frNote, USER, true);
+  }
+
+  // EXO-90294: a cover set on a language with no version yet was written as a
+  // DEFAULT version, overwriting the main note's metadata.
+  @Test
+  public void setNoteCoverOnANewTranslationShouldTagTheVersionWithThatLanguage() throws Exception { // NOSONAR
+    // no "de" version yet: getNoteByIdAndLang returns the default page, lang unset
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("de"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de"));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("de"), eq(42L));
+    verify(note).setLang("de");
+    verify(noteService).createVersionOfNote(note, USER, true);
+  }
+
+  // EXO-90294: a language with no version of its own inherits the default's
+  // cover id; reusing it replaces the default note's binary in place.
+  @Test
+  public void setNoteCoverOnAnInheritedCoverShouldNotReuseTheDefaultsFileId() throws Exception { // NOSONAR
+    // the note has no "de" version, so getNoteByIdAndLang returns the default
+    // page (lang unset) carrying the DEFAULT's cover
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(note.getProperties()).thenReturn(coverProperties(500L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("de"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de"));
+
+    verify(noteService).saveNoteMetadata(captor.capture(), eq("de"), eq(42L));
+    // no id: saveNoteFeaturedImage writes a NEW file for this translation
+    assertNull(captor.getValue().getFeaturedImage().getId());
+  }
+
+  // EXO-90294: a translation may have a version of its OWN and still name the
+  // default's file, so "does a version exist" is the wrong question; the id is.
+  @Test
+  public void setNoteCoverOnATranslationSharingTheDefaultsFileShouldNotReuseTheFileId() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePageProperties defaultProperties = coverProperties(500L);
+    lenient().when(defaultNote.getProperties()).thenReturn(defaultProperties);
+    // the "fr" version exists, but its metadata still points at the default's file
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(500L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr"));
+
+    verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
+    assertNull(captor.getValue().getFeaturedImage().getId());
+  }
+
+  // Same sequence on the removal side: the fr version exists but shares the
+  // default's file, so deleting it would destroy the default note's image.
+  @Test
+  public void removeNoteCoverOnATranslationSharingTheDefaultsFileShouldRefuse() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(defaultNote.getProperties()).thenReturn(coverProperties(500L));
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(500L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    lenient().when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    try {
+      runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, "fr"));
+      fail("removing a cover shared with the default note must not be accepted");
+    } catch (IllegalArgumentException e) {
+      assertTrue(e.getMessage().contains("fr"));
+    }
+    verify(noteService, never()).removeNoteFeaturedImage(anyLong(), anyLong(), anyString(), anyBoolean(), anyLong());
+  }
+
+  // EXO-90294: the code is normalized once at the tool boundary, so the metadata,
+  // the ownership verdict and the write cannot resolve to different languages.
+  @Test
+  public void setNoteCoverWithAPaddedUpperCaseLanguageShouldTargetTheSameTranslation() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(defaultNote.getProperties()).thenReturn(coverProperties(500L));
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(600L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    // decoy answering the RAW code, so dropping the normalization fails on the
+    // assertion below rather than on an unresolvable note
+    Page rawCodeNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(rawCodeNote.getLang()).thenReturn("  FR  ");
+    lenient().when(rawCodeNote.getProperties()).thenReturn(coverProperties(700L));
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("  FR  ")))
+             .thenReturn(rawCodeNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR")))
+             .thenReturn(rawCodeNote);
+    lenient().when(noteService.canViewNote(rawCodeNote, USER)).thenReturn(true);
+    lenient().when(noteService.canEditNote(rawCodeNote, USER)).thenReturn(true);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
+
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  FR  "));
+
+    verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
+    // the translation's OWN file is replaced in place, as for a plain "fr"
+    assertEquals(Long.valueOf(600L), captor.getValue().getFeaturedImage().getId());
+    verify(frNote).setLang("fr");
+  }
+
+  // EXO-90294: without the default's metadata, ownership is unknowable and this
+  // guard's callers delete or replace the file, so a failed read must refuse.
+  @Test
+  public void removeNoteCoverShouldRefuseWhenTheDefaultVersionCannotBeRead() throws Exception { // NOSONAR
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(500L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null)))
+                                                                                              .thenThrow(new WikiException("storage down"));
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    // the destructive path is stubbed so the mutant fails on the deletion
+    lenient().when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    try {
+      runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, "fr"));
+      fail("a cover whose ownership could not be established must not be deleted");
+    } catch (IllegalStateException e) {
+      assertTrue(e.getMessage().contains("fr"));
+      // the message must say what actually happened: the tool could not tell
+      // whose file it is, NOT that the cover belongs to the default note --
+      // and it must not suggest remedies that would fail for the same reason
+      assertTrue(e.getMessage().contains("could not be read"));
+      assertFalse(e.getMessage().contains("set_note_cover"));
+    }
+    verify(noteService, never()).removeNoteFeaturedImage(anyLong(), anyLong(), anyString(), anyBoolean(), anyLong());
+  }
+
+  // EXO-90294: getNoteByIdAndLang returns null for a missing page rather than
+  // throwing, so a null read is as blind as a throw and must refuse too.
+  @Test
+  public void removeNoteCoverShouldRefuseWhenTheDefaultVersionReadsNull() throws Exception { // NOSONAR
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(500L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(null);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    // the destructive path is stubbed so the mutant fails on the deletion
+    lenient().when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    try {
+      runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, "fr"));
+      fail("a cover whose ownership could not be established must not be deleted");
+    } catch (IllegalStateException e) {
+      assertTrue(e.getMessage().contains("could not be read"));
+    }
+    verify(noteService, never()).removeNoteFeaturedImage(anyLong(), anyLong(), anyString(), anyBoolean(), anyLong());
+  }
+
+  // A translation that owns a DISTINCT cover file may of course remove it.
+  @Test
+  public void removeNoteCoverOnATranslationWithItsOwnFileShouldRemoveIt() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(defaultNote.getProperties()).thenReturn(coverProperties(500L));
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(coverProperties(600L));
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, "fr"));
+
+    verify(noteService).removeNoteFeaturedImage(eq(NOTE_ID), eq(600L), eq("fr"), eq(false), eq(42L));
+  }
+
+  // EXO-90294: on the removal side the same inheritance destroys data --
+  // removeNoteFeaturedImage(isDraft=false) deletes the file unconditionally.
+  @Test
+  public void removeNoteCoverOnAnInheritedCoverShouldRefuseInsteadOfDeletingTheDefaultsFile() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(note.getProperties()).thenReturn(coverProperties(500L));
+
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("de"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    // the unguarded path is stubbed so the mutant fails on the deletion
+    lenient().when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    try {
+      runWithStaticMocks(() -> tool.removeNoteCover(NOTE_ID, "de"));
+      fail("removing an inherited cover must not be accepted");
+    } catch (IllegalArgumentException e) {
+      assertTrue(e.getMessage().contains("de"));
+    }
+    verify(noteService, never()).removeNoteFeaturedImage(anyLong(), anyLong(), anyString(), anyBoolean(), anyLong());
+  }
+
   @Test(expected = ObjectNotFoundException.class)
   public void removeNoteCoverWhenNoCoverShouldThrow() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
@@ -816,7 +1178,7 @@ public class NoteMcpToolTest {
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
@@ -842,7 +1204,7 @@ public class NoteMcpToolTest {
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
@@ -857,14 +1219,10 @@ public class NoteMcpToolTest {
   }
 
   // Regression for EXO-88373 (high): the language param must drive the version
-  // write, not just the property save. setNoteCover("fr") while the caller views
-  // "en" must load the "fr" note (getLang()=="fr") so createVersionOfNote tags
-  // the new version under "fr", where get_note_versions(..., "fr") can find it.
+  // write, not just the property save. setNoteCover("fr") must tag the new
+  // version under "fr", where get_note_versions(..., "fr") can find it.
   @Test
   public void setNoteCoverShouldTagVersionWithRequestedLanguage() throws Exception { // NOSONAR
-    // "en" is the caller's current locale; the note must be loaded in the requested "fr"
-    Page enNote = mockPage(String.valueOf(NOTE_ID), "Note EN");
-    lenient().when(enNote.getLang()).thenReturn("en");
     Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
     lenient().when(frNote.getLang()).thenReturn("fr");
     NotePageProperties frProperties = new NotePageProperties();
@@ -875,11 +1233,8 @@ public class NoteMcpToolTest {
     lenient().when(userIdentity.getId()).thenReturn("42");
 
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(enNote);
     when(noteService.canViewNote(frNote, USER)).thenReturn(true);
     when(noteService.canEditNote(frNote, USER)).thenReturn(true);
-    lenient().when(noteService.canViewNote(enNote, USER)).thenReturn(true);
-    lenient().when(noteService.canEditNote(enNote, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
 
     ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
@@ -905,7 +1260,7 @@ public class NoteMcpToolTest {
     lenient().when(version.getVersionNumber()).thenReturn(2L);
 
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
-    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(enNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(enNote);
     when(noteService.canViewNote(frNote, USER)).thenReturn(true);
     when(noteService.canEditNote(frNote, USER)).thenReturn(true);
     lenient().when(noteService.canViewNote(enNote, USER)).thenReturn(true);
@@ -926,7 +1281,7 @@ public class NoteMcpToolTest {
   public void getNoteTranslationsShouldReturnLanguages() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("en", "fr"));
 
@@ -939,10 +1294,9 @@ public class NoteMcpToolTest {
   public void removeNoteTranslationShouldRemoveExistingTranslation() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("en", "fr"));
 
     NoteModel result = runWithStaticMocks(() -> tool.removeNoteTranslation(NOTE_ID, "fr"));
@@ -961,23 +1315,25 @@ public class NoteMcpToolTest {
   public void removeNoteTranslationWhenUserCannotEditShouldThrow() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(false);
 
     tool.removeNoteTranslation(NOTE_ID, "fr");
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void removeNoteTranslationWhenDefaultLanguageShouldThrow() throws Exception { // NOSONAR
-    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+  // The default's own code can never appear in the translation list --
+  // getPageAvailableTranslationLanguages filters `AND p.lang IS NOT NULL`
+  // (PageVersionEntity) -- so it is the membership check that rejects it, and
+  // that is all this pin exercises: there is no default-language branch left.
+  @Test(expected = ObjectNotFoundException.class)
+  public void removeNoteTranslationOfALanguageNotInTheListShouldThrow() throws Exception { // NOSONAR
     Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
-    lenient().when(defaultNote.getLang()).thenReturn("en");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
-    when(noteService.canViewNote(note, USER)).thenReturn(true);
-    when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    when(noteService.canViewNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
 
     tool.removeNoteTranslation(NOTE_ID, "en");
   }
@@ -986,10 +1342,9 @@ public class NoteMcpToolTest {
   public void removeNoteTranslationWhenTranslationMissingShouldThrow() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
 
     tool.removeNoteTranslation(NOTE_ID, "de");
@@ -1037,6 +1392,14 @@ public class NoteMcpToolTest {
     version.setCreatedDate(new Date());
     version.setUpdatedDate(new Date());
     return version;
+  }
+
+  private NotePageProperties coverProperties(long featuredImageId) {
+    NotePageProperties properties = new NotePageProperties();
+    NoteFeaturedImage cover = new NoteFeaturedImage();
+    cover.setId(featuredImageId);
+    properties.setFeaturedImage(cover);
+    return properties;
   }
 
   private Page mockPage(String id, String title) {
