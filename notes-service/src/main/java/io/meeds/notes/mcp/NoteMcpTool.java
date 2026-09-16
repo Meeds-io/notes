@@ -40,6 +40,8 @@ import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.attachment.AttachmentService;
@@ -87,6 +89,8 @@ import lombok.SneakyThrows;
 @Service
 @Profile("mcp-server")
 public class NoteMcpTool implements McpToolPlugin {
+
+  private static final Log        LOG              = ExoLogger.getLogger(NoteMcpTool.class);
 
   private static final String     NOTE_EDIT_DENIED = "User isn't allowed to update the Note with id '%s'";
 
@@ -188,17 +192,9 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = StringUtils.trim(language);
-    // The note's original/default content is stored WITHOUT a language and is
-    // never listed as a translation; removing it would erase the note itself, so
-    // guard against it and point the caller to delete_note.
-    Page defaultNote = getDefaultNote(noteId);
-    String defaultLang = defaultNote == null ? null : defaultNote.getLang();
-    if (StringUtils.isNotBlank(defaultLang) && StringUtils.equalsIgnoreCase(defaultLang, lang)) {
-      throw new IllegalArgumentException(("Language '%s' is the original/default language of the note with id %s, not a "
-          + "translation, so it can't be removed on its own. To delete the whole note use delete_note instead.").formatted(lang,
-                                                                                                                           noteId));
-    }
+    String lang = normalizeLanguage(language);
+    // the default content is stored without a language and never listed as a
+    // translation, so the default's own code falls through to the check below
     List<String> translations = availableTranslationLanguages(noteId);
     if (translations.stream().noneMatch(l -> StringUtils.equalsIgnoreCase(l, lang))) {
       throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. Use "
@@ -210,11 +206,6 @@ public class NoteMcpTool implements McpToolPlugin {
       throw new IllegalStateException("Could not remove the note translation: " + e.getMessage());
     }
     return getNote(noteId, null);
-  }
-
-  @SneakyThrows
-  private Page getDefaultNote(long noteId) {
-    return noteService.getNoteByIdAndLang(Long.valueOf(noteId), getCurrentUserAclIdentity(), null, null);
   }
 
   private List<String> availableTranslationLanguages(long noteId) {
@@ -310,7 +301,8 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
-    if (StringUtils.isBlank(language)) {
+    String lang = normalizeLanguage(language);
+    if (lang == null) {
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);
       }
@@ -319,28 +311,26 @@ public class NoteMcpTool implements McpToolPlugin {
       }
       note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
     } else {
-      // Create/update a LANGUAGE translation WITHOUT touching the default note:
-      // persist the note first with its default title/content unchanged, then
-      // carry the translated title/content only into the language version below.
-      // Applying the translated content before updateNote (as before) overwrote
-      // the default page, making a new translation replace the original note.
+      // persist the DEFAULT page first with its own title/content unchanged, as
+      // NotesRestService#updateNoteById does, then build the version below
       note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, currentUserAclIdentity);
-      // Base the translation's metadata (summary + cover) on THAT language's own
-      // current state, not the default's: covers/summaries are stored per
-      // language, so carrying the default's properties into an EXISTING
-      // translation would clobber the translation's own distinct cover/summary
-      // with the default's. Only a brand-new translation (no per-language
-      // properties yet) inherits the default's, matching the native update.
-      Page langNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), currentUserAclIdentity, null, language);
-      if (langNote != null && langNote.getProperties() != null) {
-        note.setProperties(langNote.getProperties());
+      // on THAT language's own state: title, content, cover and summary are all
+      // per-language, so starting from the default would revert what a previous
+      // call translated. A brand-new translation inherits the default's.
+      Page langNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), currentUserAclIdentity, null, lang);
+      if (langNote != null && StringUtils.equalsIgnoreCase(langNote.getLang(), lang)) {
+        note.setTitle(langNote.getTitle());
+        note.setContent(langNote.getContent());
+        if (langNote.getProperties() != null) {
+          note.setProperties(langNote.getProperties());
+        }
       } else {
         Page defaultNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), currentUserAclIdentity, null, null);
         if (defaultNote != null && defaultNote.getProperties() != null) {
           note.setProperties(defaultNote.getProperties());
         }
       }
-      note.setLang(language);
+      note.setLang(lang);
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);
       }
@@ -350,8 +340,8 @@ public class NoteMcpTool implements McpToolPlugin {
     }
     noteService.createVersionOfNote(note, currentUserAclIdentity.getUserId(), true);
     WikiPageParams noteParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
-    noteService.removeDraftOfNote(noteParams, language);
-    return getNote(noteId, null);
+    noteService.removeDraftOfNote(noteParams, lang);
+    return getNote(noteId, lang); // the version just written, not the default
   }
 
   @SneakyThrows
@@ -426,7 +416,7 @@ public class NoteMcpTool implements McpToolPlugin {
   public List<NoteVersionModel> getNoteVersions(long noteId, String language) throws IllegalAccessException,
                                                                              ObjectNotFoundException {
     Page note = getNoteById(noteId, language);
-    String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+    String lang = normalizeLanguage(language);
     return versionsHistory(note, lang).stream().map(this::toNoteVersionModel).toList();
   }
 
@@ -442,7 +432,7 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, getCurrentUserName())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = StringUtils.isBlank(language) ? note.getLang() : language;
+    String lang = normalizeLanguage(language);
     PageHistory target =
                        versionsHistory(note, lang).stream()
                                                   .filter(version -> version.getVersionNumber() != null
@@ -459,12 +449,12 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not restore the note version: " + e.getMessage());
     }
-    return getNote(noteId, language);
+    return getNote(noteId, lang);
   }
 
   private List<PageHistory> versionsHistory(Page note, String language) {
     try {
-      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), StringUtils.trimToNull(language));
+      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), normalizeLanguage(language));
     } catch (Exception e) {
       throw new IllegalStateException("Could not read the note version history: " + e.getMessage());
     }
@@ -498,12 +488,17 @@ public class NoteMcpTool implements McpToolPlugin {
                                                                        imageSource,
                                                                        UploadToolUtils.DEFAULT_MAX_BYTES);
     String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
+    String lang = normalizeLanguage(language);
     try {
-      NotePageProperties properties = resolveBaseProperties(noteId, note, language);
+      LanguageProperties resolved = resolveProperties(noteId, note, lang);
+      NotePageProperties properties = resolved.properties();
       NoteFeaturedImage featuredImage = new NoteFeaturedImage();
       NoteFeaturedImage existing = properties.getFeaturedImage();
-      if (existing != null && existing.getId() != null && existing.getId() > 0) {
-        featuredImage.setId(existing.getId()); // update the existing cover file in place
+      // Reuse the id only when this language owns the FILE: on a shared id
+      // saveNoteFeaturedImage takes updateFile and replaces the default's own
+      // binary. Leaving it at 0 writes a new file, as the native draft path does.
+      if (resolved.ownsCoverFile() && existing != null && existing.getId() != null && existing.getId() > 0) {
+        featuredImage.setId(existing.getId()); // update this language's own cover file in place
       }
       featuredImage.setUploadId(uploadId);
       featuredImage.setMimeType(image.mimeType());
@@ -512,16 +507,17 @@ public class NoteMcpTool implements McpToolPlugin {
       properties.setNoteId(noteId);
       properties.setDraft(false);
       properties.setFeaturedImage(featuredImage);
-      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
       noteService.saveNoteMetadata(properties, lang, currentUserIdentityId(username));
-      // propagate the metadata onto a new note version, so the cover is resolved
-      // consistently from the published version (as the native update flow does)
+      // createVersionOfNote re-saves the note's own properties under its own
+      // language, so both must be the ones just written or it reverts them
+      note.setProperties(properties);
+      note.setLang(lang);
       noteService.createVersionOfNote(note, username, true);
     } catch (Exception e) {
       UploadToolUtils.release(uploadService, uploadId);
       throw new IllegalStateException("Could not set the note cover image: " + e.getMessage());
     }
-    return getNote(noteId, null);
+    return getNote(noteId, lang);
   }
 
   /**
@@ -536,21 +532,22 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
+    String lang = normalizeLanguage(language);
     try {
-      NotePageProperties properties = resolveBaseProperties(noteId, note, language);
+      NotePageProperties properties = resolveProperties(noteId, note, lang).properties();
       properties.setNoteId(noteId);
       properties.setDraft(false);
       properties.setSummary(summary);
       // leave the existing cover untouched (its id stays in the saved metadata)
       properties.setFeaturedImage(null);
-      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
       noteService.saveNoteMetadata(properties, lang, currentUserIdentityId(username));
-      // propagate the metadata onto a new note version (as the native update flow does)
+      note.setProperties(properties); // see setNoteCover
+      note.setLang(lang);
       noteService.createVersionOfNote(note, username, true);
     } catch (Exception e) {
       throw new IllegalStateException("Could not set the note summary: " + e.getMessage());
     }
-    return getNote(noteId, null);
+    return getNote(noteId, lang);
   }
 
   /**
@@ -563,52 +560,123 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    NotePageProperties properties = resolveBaseProperties(noteId, note, language);
+    String lang = normalizeLanguage(language);
+    LanguageProperties resolved = resolveProperties(noteId, note, lang);
+    NotePageProperties properties = resolved.properties();
     NoteFeaturedImage existing = properties.getFeaturedImage();
     if (existing == null || existing.getId() == null || existing.getId() <= 0) {
       throw new ObjectNotFoundException("Note with id %s has no cover image to remove.".formatted(noteId));
     }
+    // removeNoteFeaturedImage deletes the file unguarded when isDraft=false and
+    // cleans only <pageId>-<lang>, so removing a cover this language does not
+    // own would take the image off the default note and leave a dangling id.
+    if (resolved.coverOwnership() == CoverOwnership.UNDETERMINED) {
+      throw new IllegalStateException(("The default version of the note with id %s could not be read, so it is not known "
+          + "whether the cover shown in language '%s' is that translation's own or the default note's. Nothing was changed; "
+          + "try again.").formatted(noteId, lang));
+    }
+    if (!resolved.ownsCoverFile()) {
+      // not pointing at the no-language removal: it would leave every other
+      // translation sharing this id pointing at a deleted file
+      throw new IllegalArgumentException(("Note with id %s has no cover image of its own in language '%s': it shows the "
+          + "default note's, which other translations may show too. Give '%s' its own cover with set_note_cover to replace "
+          + "it, or remove the note's cover for every language from the note itself.").formatted(noteId, lang, lang));
+    }
     try {
-      String lang = StringUtils.isBlank(language) ? note.getLang() : language;
       noteService.removeNoteFeaturedImage(noteId, existing.getId(), lang, false, currentUserIdentityId(username));
-      // clear the in-memory featured image before resaving the version: removeNoteFeaturedImage
-      // already dropped the stored id, and saveNoteMetadata treats a null featuredImage as
-      // "leave it alone" — leaving the stale id-only image here would re-add the just-deleted cover
-      if (note.getProperties() != null) {
-        note.getProperties().setFeaturedImage(null);
-      }
-      // propagate the removal onto a new note version (as the native update flow does)
+      // saveNoteMetadata treats a null featuredImage as "leave it alone"; a
+      // stale id-only image here would re-add the cover just deleted
+      properties.setFeaturedImage(null);
+      note.setProperties(properties);
+      note.setLang(lang);
       noteService.createVersionOfNote(note, username, true);
     } catch (Exception e) {
       throw new IllegalStateException("Could not remove the note cover image: " + e.getMessage());
     }
-    return getNote(noteId, null);
+    return getNote(noteId, lang);
   }
 
-  // When a language is provided, the base metadata (summary + cover) must come
-  // from THAT language's own current state, not the default's, so that editing
-  // one field of a translation doesn't clobber the translation's own other
-  // fields with the default's. A brand-new translation (no per-language
-  // properties yet) still inherits the default's metadata. The default-language
-  // path (blank language) keeps using the already-loaded note's properties.
-  private NotePageProperties resolveBaseProperties(long noteId, Page note, String language) {
-    if (StringUtils.isBlank(language)) {
-      return note.getProperties() != null ? note.getProperties() : new NotePageProperties();
+  /**
+   * The metadata a language write starts from, plus whether the cover FILE it
+   * names is that language's own. SHARED_WITH_DEFAULT: the default note points
+   * at the same file. UNDETERMINED: the default's metadata could not be read.
+   * Writing or deleting the file must treat both as "not ours".
+   */
+  private record LanguageProperties(NotePageProperties properties, CoverOwnership coverOwnership) {
+    private boolean ownsCoverFile() {
+      return coverOwnership == CoverOwnership.OWN;
+    }
+  }
+
+  private enum CoverOwnership {
+    OWN, SHARED_WITH_DEFAULT, UNDETERMINED
+  }
+
+  /**
+   * Resolves the metadata to write for a language: that language's own state
+   * when it has one, the default's otherwise. Takes an already-normalized
+   * language — resolving with a raw code while judging ownership with a
+   * normalized one would let the two disagree.
+   */
+  private LanguageProperties resolveProperties(long noteId, Page note, String lang) {
+    if (lang == null) {
+      // the default version owns whatever cover it names
+      return new LanguageProperties(note.getProperties() != null ? note.getProperties() : new NotePageProperties(),
+                                    CoverOwnership.OWN); // the default owns what it names
+    }
+    Identity identity = getCurrentUserAclIdentity();
+    NotePageProperties loaded = note.getProperties() != null ? note.getProperties() : new NotePageProperties();
+    NotePageProperties defaultProperties = null;
+    NotePageProperties resolved = null;
+    // caught separately so the verdict can fail CLOSED: without the default's
+    // metadata, ownership is unknowable and its callers delete or overwrite the
+    // file. A null page or null properties is as blind as a throw -- getNoteById
+    // returns null for a missing page rather than throwing -- so neither counts
+    // as read.
+    boolean defaultRead = false;
+    try {
+      Page defaultNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, null, null);
+      defaultProperties = defaultNote == null ? null : defaultNote.getProperties();
+      defaultRead = defaultProperties != null;
+    } catch (Exception e) {
+      LOG.warn("Could not read the default version of note {} while resolving the metadata of language '{}'."
+          + " Treating its cover as shared with the default, so it is neither replaced nor deleted.", noteId, lang, e);
     }
     try {
-      Identity identity = getCurrentUserAclIdentity();
-      Page langNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, null, language);
-      if (langNote != null && langNote.getProperties() != null) {
-        return langNote.getProperties();
-      }
-      Page defaultNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, null, null);
-      if (defaultNote != null && defaultNote.getProperties() != null) {
-        return defaultNote.getProperties();
+      Page langNote = noteService.getNoteByIdAndLang(Long.valueOf(noteId), identity, null, lang);
+      // the lang comes from the published version found, so this is
+      // "that language has a version of its own"
+      if (langNote != null && langNote.getProperties() != null && StringUtils.equalsIgnoreCase(langNote.getLang(), lang)) {
+        resolved = langNote.getProperties();
       }
     } catch (Exception e) {
-      // fall back to the note already loaded for the current locale
+      LOG.warn("Could not read note {} in language '{}'; falling back to the metadata already loaded.", noteId, lang, e);
     }
-    return note.getProperties() != null ? note.getProperties() : new NotePageProperties();
+    if (resolved == null) {
+      resolved = defaultProperties != null ? defaultProperties : loaded;
+    }
+    CoverOwnership ownership;
+    if (!defaultRead) {
+      ownership = CoverOwnership.UNDETERMINED;
+    } else {
+      ownership = sharesCoverFile(resolved, defaultProperties) ? CoverOwnership.SHARED_WITH_DEFAULT : CoverOwnership.OWN;
+    }
+    return new LanguageProperties(resolved, ownership);
+  }
+
+  /**
+   * A translation created by update_note carries the default's cover id into its
+   * own metadata item, so "does this language have a version" is NOT the
+   * question — the file id is. Mirrors NoteServiceImpl#isOriginalFeaturedImage.
+   */
+  private boolean sharesCoverFile(NotePageProperties properties, NotePageProperties defaultProperties) {
+    Long coverId = coverFileId(properties);
+    return coverId != null && coverId.equals(coverFileId(defaultProperties));
+  }
+
+  private Long coverFileId(NotePageProperties properties) {
+    NoteFeaturedImage image = properties == null ? null : properties.getFeaturedImage();
+    return image == null || image.getId() == null || image.getId() <= 0 ? null : image.getId();
   }
 
   private long currentUserIdentityId(String username) {
@@ -810,12 +878,27 @@ public class NoteMcpTool implements McpToolPlugin {
     return getNoteById(noteId, null);
   }
 
+  /**
+   * Blank becomes null (the default version), the rest is trimmed and
+   * lower-cased so "fr", " fr " and "FR" name one translation: the stored lang
+   * is matched with a plain {@code p.lang = :lang}.
+   */
+  private String normalizeLanguage(String language) {
+    String lang = StringUtils.trimToNull(language);
+    // ROOT, not the JVM default: on a Turkish locale "FI" lower-cases to "fı"
+    return lang == null ? null : lang.toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * A blank language means the note's own default version, never the caller's UI
+   * locale: resolving it from the profile locale made getNoteByIdAndLang overlay
+   * whatever translation that user reads in, so every write started from one.
+   */
   private Page getNoteById(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    String lang = StringUtils.isBlank(language) ? getCurrentUserLocale().getLanguage() : language;
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId),
                                                getCurrentUserAclIdentity(),
                                                null,
-                                               lang);
+                                               normalizeLanguage(language));
     if (note == null) {
       throw new ObjectNotFoundException("Note with id %s doesn't exists".formatted(noteId));
     } else if (!noteService.canViewNote(note, getCurrentUserName())) {
