@@ -358,38 +358,28 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Test
   public void testSaveNoteMetadataDoesNotTouchTheNoteItself() throws Exception {
-    Page note = new Page("Note", "Note");
-    note.setId("1");
-    note.setCanManage(true);
-
-    when(identity.getUserId()).thenReturn("userId");
-    when(noteService.getNoteById("1", identity)).thenReturn(note);
-    org.exoplatform.social.core.identity.model.Identity userIdentity =
-                                                                     new org.exoplatform.social.core.identity.model.Identity("2");
-    when(identityManager.getOrCreateUserIdentity("userId")).thenReturn(userIdentity);
-    when(noteService.saveNoteMetadata(any(NotePageProperties.class), any(), eq(2L))).thenReturn(new NotePageProperties());
+    when(noteService.saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(identity))).thenReturn(new NotePageProperties());
 
     PagePropertiesEntity properties = new PagePropertiesEntity();
     properties.setNoteId(1L);
     properties.setSummary("a brand new summary");
 
-    Response response = notesRestService.saveNoteMetadata(properties, null);
+    Response response = notesRestService.saveNoteMetadata(properties, "fr");
 
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(2L));
+    // pins the language the round 1 fix was for: the note's own translation, not the default
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(identity));
     verify(noteService, never()).updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class));
     verify(noteService, never()).createVersionOfNote(any(Page.class), anyString(), anyBoolean());
     verify(noteService, never()).removeDraftOfNote(any(WikiPageParams.class), any());
   }
 
+  // The ACL decision itself now lives in NoteService.saveNoteMetadata(..., Identity) (EXO-90344
+  // round 2); this pins only the REST exception-to-status mapping, per backend-spring.md §5.
   @Test
   public void testSaveNoteMetadataIsForbiddenWithoutManagePermission() throws Exception {
-    Page note = new Page("Note", "Note");
-    note.setId("1");
-    note.setCanManage(false);
-
-    when(identity.getUserId()).thenReturn("userId");
-    when(noteService.getNoteById("1", identity)).thenReturn(note);
+    when(noteService.saveNoteMetadata(any(NotePageProperties.class), any(), eq(identity)))
+                                                                                          .thenThrow(new IllegalAccessException("User does not have edit permissions on the note."));
 
     PagePropertiesEntity properties = new PagePropertiesEntity();
     properties.setNoteId(1L);
@@ -398,7 +388,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.saveNoteMetadata(properties, null);
 
     assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
-    verify(noteService, never()).saveNoteMetadata(any(), any(), any());
   }
 
   @Test

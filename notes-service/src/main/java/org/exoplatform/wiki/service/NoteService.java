@@ -925,6 +925,18 @@ public interface NoteService {
   NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
 
   /**
+   * Save note metadata properties on behalf of an authenticated user, after
+   * checking the user has edit permissions on the note (or its draft)
+   *
+   * @param pageProperties note metadata properties to save
+   * @param lang target version language
+   * @param userIdentity current user's identity
+   * @return {@link NotePageProperties}
+   * @throws IllegalAccessException if the user has no edit permission on the note
+   */
+  NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Identity userIdentity) throws Exception;
+
+  /**
    * Removes note featured image and its related metadata property
    *
    * @param noteId target note id

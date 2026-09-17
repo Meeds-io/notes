@@ -1431,12 +1431,9 @@ export default {
         return;
       }
       const lang = this.note.lang || this.selectedTranslation?.value || '';
-      this.$notesService.saveNoteMetadata(properties, lang).then(() => {
-        return this.$notesService.getNoteById(this.note.id, lang);
-      }).then(data => {
-        const note = data || {};
-        this.note.properties = note?.properties;
-        this.noteSummary = note?.properties?.summary;
+      this.$notesService.saveNoteMetadata(properties, lang).then(savedProperties => {
+        this.note.properties = savedProperties;
+        this.noteSummary = savedProperties?.summary;
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.propertiesUpdated')});
       }).catch(e => {
         console.error('Error when saving note metadata', e);
