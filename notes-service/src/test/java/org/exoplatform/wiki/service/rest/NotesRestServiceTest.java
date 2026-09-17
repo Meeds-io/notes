@@ -391,6 +391,20 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
+  public void testSaveNoteMetadataReturnsNotFoundForAMissingNote() throws Exception {
+    when(noteService.saveNoteMetadata(any(NotePageProperties.class), any(), eq(identity)))
+                                                                                          .thenThrow(new ObjectNotFoundException("note not found"));
+
+    PagePropertiesEntity properties = new PagePropertiesEntity();
+    properties.setNoteId(1L);
+    properties.setSummary("a brand new summary");
+
+    Response response = notesRestService.saveNoteMetadata(properties, null);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+  }
+
+  @Test
   public void testGetFullTreeData() throws Exception {
     Page homePage = new Page("home");
     homePage.setWikiOwner("user");
