@@ -868,20 +868,10 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
-      String noteId = String.valueOf(properties.getNoteId());
-      Page note = properties.isDraft() ? noteService.getDraftNoteById(noteId, identity.getUserId())
-                                       : noteService.getNoteById(noteId, identity);
-      if (note == null) {
-        return Response.status(Response.Status.NOT_FOUND).build();
-      }
-      if (!note.isCanManage()) {
-        return Response.status(Response.Status.FORBIDDEN).build();
-      }
-      long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(identity.getUserId()).getId());
       NotePageProperties savedProperties =
                                          noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(properties),
                                                                       lang,
-                                                                      userIdentityId);
+                                                                      identity);
       return Response.ok(savedProperties).build();
     } catch (ObjectNotFoundException e) {
       return Response.status(Response.Status.NOT_FOUND).build();

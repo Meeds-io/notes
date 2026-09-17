@@ -1810,6 +1810,29 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
+  public NotePageProperties saveNoteMetadata(NotePageProperties pageProperties,
+                                             String lang,
+                                             Identity userIdentity) throws Exception {
+    if (pageProperties == null) {
+      return null;
+    }
+    String noteId = String.valueOf(pageProperties.getNoteId());
+    Page note = pageProperties.isDraft() ? getDraftNoteById(noteId, userIdentity.getUserId())
+                                        : getNoteById(noteId, userIdentity);
+    if (note == null) {
+      throw new ObjectNotFoundException("note not found");
+    }
+    if (!note.isCanManage()) {
+      throw new IllegalAccessException("User does not have edit permissions on the note.");
+    }
+    long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId());
+    return saveNoteMetadata(pageProperties, lang, userIdentityId);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public PageVersion getPageVersionById(Long versionId) {
     if (versionId == null) {
       throw new IllegalArgumentException("version id is mandatory");
