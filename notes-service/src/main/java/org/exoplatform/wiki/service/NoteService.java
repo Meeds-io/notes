@@ -915,12 +915,14 @@ public interface NoteService {
   NoteFeaturedImage getNoteFeaturedImageInfo(Long noteId, String lang, boolean isDraft, String thumbnailSize, long userIdentityId, Long versionNumber) throws Exception;
 
   /**
-   * Save note metadata properties
+   * Save note metadata properties. Performs no permission check - internal
+   * callers only; use the {@link Identity}-taking overload for a
+   * user-initiated write
    *
    * @param pageProperties note metadata properties to save
    * @param lang target version language
    * @param userIdentityId user identity id
-   * @return {@link NotePageProperties}                      
+   * @return {@link NotePageProperties}
    */
   NotePageProperties saveNoteMetadata(NotePageProperties pageProperties, String lang, Long userIdentityId) throws Exception;
 

@@ -1402,6 +1402,33 @@ public class TestNoteService extends BaseTest {
     assertEquals("User does not have edit the note.", accessException.getMessage());
   }
 
+  // Declared last: this class extends junit.framework.TestCase (JUnit 3), whose reflection-based
+  // TestSuite ignores @FixMethodOrder and runs methods in declaration order, so a test creating a
+  // note must not run before testUpdateNotesPosition, which hard-codes page id "10" as
+  // non-existent and breaks if an earlier test shifts the id sequence.
+  public void testSaveNoteMetadataChecksEditPermission() throws Exception {
+    Wiki wiki = new Wiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page note = noteService.createNote(wiki, "Home", new Page("testMetadataAcl", "testMetadataAcl"), ROOT_IDENTITY);
+
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity plainUser = new Identity("plainUser", Arrays.asList(new MembershipEntry(USERS_GROUP, "*")));
+    identityRegistry.register(plainUser);
+
+    // sanity: the plain user can view the note (classic's access permission) but is not its manager
+    assertNotNull(noteService.getNoteById(note.getId(), plainUser));
+
+    NotePageProperties adminProps = new NotePageProperties();
+    adminProps.setNoteId(Long.parseLong(note.getId()));
+    adminProps.setSummary("root's summary");
+    NotePageProperties saved = noteService.saveNoteMetadata(adminProps, null, ROOT_IDENTITY);
+    assertEquals("root's summary", saved.getSummary());
+
+    NotePageProperties userProps = new NotePageProperties();
+    userProps.setNoteId(Long.parseLong(note.getId()));
+    userProps.setSummary("denied");
+    assertThrows(IllegalAccessException.class, () -> noteService.saveNoteMetadata(userProps, null, plainUser));
+  }
+
   private Long getIdentityId(String username) {
     return Long.parseLong(identityManager.getOrCreateUserIdentity(username).getId());
   }
