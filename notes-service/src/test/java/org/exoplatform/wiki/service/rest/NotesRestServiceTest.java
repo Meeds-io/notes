@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -68,10 +69,12 @@ import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.BreadcrumbData;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.NotesExportService;
+import org.exoplatform.wiki.service.PageUpdateType;
 import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.impl.BeanToJsons;
@@ -82,6 +85,10 @@ import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
+import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.rest.model.FeaturedImageEntity;
+import io.meeds.notes.rest.model.PageEntity;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -265,6 +272,87 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
   
+  // a note that never carried a summary nor a featured image has null properties
+  @Test
+  public void testUpdateNoteByIdAddsPropertiesToNoteWithoutProperties() throws Exception {
+    Page storedNote = new Page("Note", "Note");
+    storedNote.setId("1");
+    storedNote.setWikiType("group");
+    storedNote.setWikiOwner("/spaces/team");
+    storedNote.setContent("<p>content</p>");
+    storedNote.setCanManage(true);
+    storedNote.setProperties(null);
+
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("1", identity)).thenReturn(storedNote);
+    when(noteService.updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class)))
+                                                                                                                                  .thenReturn(storedNote);
+
+    PageEntity updateRequest = new PageEntity();
+    updateRequest.setId("1");
+    updateRequest.setName("Note");
+    updateRequest.setTitle("Note");
+    updateRequest.setContent("<p>content</p>");
+    updateRequest.setWikiType("group");
+    updateRequest.setWikiOwner("/spaces/team");
+    PagePropertiesEntity properties = new PagePropertiesEntity();
+    properties.setNoteId(1L);
+    properties.setSummary("a brand new summary");
+    properties.setFeaturedImage(new FeaturedImageEntity(null, null, null, null, null, false));
+    updateRequest.setProperties(properties);
+
+    Response response = notesRestService.updateNoteById("1", updateRequest);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    verify(noteService).updateNote(storedNote, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
+    assertEquals("a brand new summary", storedNote.getProperties().getSummary());
+  }
+
+  // comparing against the original version's properties answers "unchanged" whenever the
+  // translation happens to agree with it
+  @Test
+  public void testUpdateNoteByIdComparesPropertiesOfTheTargetedLanguage() throws Exception {
+    Page storedNote = new Page("Note", "Note");
+    storedNote.setId("1");
+    storedNote.setWikiType("group");
+    storedNote.setWikiOwner("/spaces/team");
+    storedNote.setContent("<p>content</p>");
+    storedNote.setCanManage(true);
+    NotePageProperties originalProperties = new NotePageProperties();
+    originalProperties.setNoteId(1L);
+    originalProperties.setSummary("shared summary");
+    originalProperties.setFeaturedImage(new NoteFeaturedImage(0L, null, null, null, 0L, false));
+    storedNote.setProperties(originalProperties);
+
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("1", identity)).thenReturn(storedNote);
+    // a version exists for "fr" but has no metadata item, so its properties are null
+    when(noteService.getPublishedVersionByPageIdAndLang(1L, "fr")).thenReturn(new PageVersion());
+    when(noteService.updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class)))
+                                                                                                                                  .thenReturn(storedNote);
+
+    PageEntity updateRequest = new PageEntity();
+    updateRequest.setId("1");
+    updateRequest.setName("Note");
+    updateRequest.setTitle("Note");
+    updateRequest.setContent("<p>content</p>");
+    updateRequest.setWikiType("group");
+    updateRequest.setWikiOwner("/spaces/team");
+    updateRequest.setLang("fr");
+    PagePropertiesEntity properties = new PagePropertiesEntity();
+    properties.setNoteId(1L);
+    properties.setSummary("shared summary"); // the one the original already carries
+    properties.setFeaturedImage(new FeaturedImageEntity(null, null, null, null, null, false));
+    updateRequest.setProperties(properties);
+
+    Response response = notesRestService.updateNoteById("1", updateRequest);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    verify(noteService).updateNote(storedNote, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
+    assertEquals("fr", storedNote.getLang());
+    assertEquals("shared summary", storedNote.getProperties().getSummary());
+  }
+
   @Test
   public void testGetFullTreeData() throws Exception {
     Page homePage = new Page("home");

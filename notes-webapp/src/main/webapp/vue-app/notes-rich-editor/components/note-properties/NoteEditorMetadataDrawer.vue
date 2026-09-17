@@ -115,7 +115,8 @@ export default {
       this.closeFeaturedImageDrawerByOverlay();
     },
     open(note) {
-      this.noteObject = note;
+      // a copy: the reset on close would otherwise revert the caller's note after it saved
+      this.noteObject = structuredClone(note);
       this.cloneProperties();
       this.$refs.metadataDrawer.open();
       this.$refs.propertiesForm?.initProperties();
