@@ -43,6 +43,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
@@ -116,6 +117,7 @@ import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.PageEntity;
+import io.meeds.notes.rest.model.PagePropertiesEntity;
 import io.meeds.social.html.model.HtmlTransformerContext;
 import io.meeds.social.html.utils.HtmlUtils;
 
@@ -748,12 +750,7 @@ public class NotesRestService implements ResourceContainer {
       }
       note_.setToBePublished(note.isToBePublished());
       NotePageProperties notePageProperties = io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(note.getProperties());
-      NoteFeaturedImage featuredImage = null;
-      if (notePageProperties != null) {
-        featuredImage = notePageProperties.getFeaturedImage();
-      }
       String newNoteName = note_.getName();
-      NotePageProperties currentNodeProperties = note_.getProperties();
       if (!note_.getTitle().equals(note.getTitle()) && !note_.getContent().equals(note.getContent())) {
         if (StringUtils.isBlank(note.getLang())) {
           note_.setTitle(note.getTitle());
@@ -815,11 +812,7 @@ public class NotesRestService implements ResourceContainer {
           WikiPageParams noteParams = new WikiPageParams(note_.getWikiType(), note_.getWikiOwner(), newNoteName);
           noteService.removeDraftOfNote(noteParams, note.getLang());
         }
-      } else if (featuredImage != null && (featuredImage.isToDelete() || featuredImage.getUploadId() != null)
-                  || !currentNodeProperties.getFeaturedImage().getId().equals(featuredImage.getId())
-                  || !StringUtils.defaultString(currentNodeProperties.getFeaturedImage().getAltText())
-                           .equals(StringUtils.defaultString(featuredImage.getAltText()))
-                  || !currentNodeProperties.getSummary().equals(notePageProperties.getSummary())) {
+      } else if (arePropertiesUpdated(getCurrentNoteProperties(note_, note.getLang()), notePageProperties)) {
         if (StringUtils.isBlank(note.getLang())) {
           note_.setProperties(notePageProperties);
           note_ = noteService.updateNote(note_, PageUpdateType.EDIT_PAGE_PROPERTIES, identity);
@@ -855,6 +848,49 @@ public class NotesRestService implements ResourceContainer {
     } catch (Exception ex) {
       LOG.error("Failed to perform update noteBook note {}:{}:{}", note.getWikiType(), note.getWikiOwner(), note.getId(), ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
+    }
+  }
+
+  @POST
+  @Path("/metadata")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @Operation(summary = "Saves the metadata properties of a note", method = "POST", description = "Saves the summary and the featured image of a note, without creating a version nor removing its draft.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "404", description = "Resource not found") })
+  public Response saveNoteMetadata(@RequestBody(description = "note properties to save", required = true) PagePropertiesEntity properties,
+                                   @Parameter(description = "note content language") @QueryParam("lang") String lang) {
+    if (properties == null) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
+      String noteId = String.valueOf(properties.getNoteId());
+      Page note = properties.isDraft() ? noteService.getDraftNoteById(noteId, identity.getUserId())
+                                       : noteService.getNoteById(noteId, identity);
+      if (note == null) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if (!note.isCanManage()) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+      long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(identity.getUserId()).getId());
+      NotePageProperties savedProperties =
+                                         noteService.saveNoteMetadata(io.meeds.notes.rest.utils.EntityBuilder.toNotePageProperties(properties),
+                                                                      lang,
+                                                                      userIdentityId);
+      return Response.ok(savedProperties).build();
+    } catch (ObjectNotFoundException e) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (IllegalAccessException e) {
+      LOG.debug("User does not have edit permissions on the note {}", properties.getNoteId(), e);
+      return Response.status(Response.Status.FORBIDDEN).build();
+    } catch (Exception e) {
+      LOG.error("Failed to save the metadata of note {}", properties.getNoteId(), e);
+      return Response.serverError().build();
     }
   }
 
@@ -1544,6 +1580,41 @@ public class NotesRestService implements ResourceContainer {
       wikiOwner = wikiOwner.substring(0, wikiOwner.length() - 1);
     }
     return wikiOwner;
+  }
+
+  // mirrors getNoteByIdAndLang: a translation's properties live on its published version, and it
+  // falls back to the original's when that language has no version yet
+  private NotePageProperties getCurrentNoteProperties(Page note, String lang) {
+    if (StringUtils.isBlank(lang)) {
+      return note.getProperties();
+    }
+    PageVersion publishedVersion = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), lang);
+    return publishedVersion == null ? note.getProperties() : publishedVersion.getProperties();
+  }
+
+  // both sides are optional: a note that never had a summary nor a featured image has no properties
+  private boolean arePropertiesUpdated(NotePageProperties currentProperties, NotePageProperties newProperties) {
+    if (newProperties == null) {
+      return false;
+    }
+    NoteFeaturedImage newFeaturedImage = newProperties.getFeaturedImage();
+    if (newFeaturedImage != null && (newFeaturedImage.isToDelete() || newFeaturedImage.getUploadId() != null)) {
+      return true;
+    }
+    NoteFeaturedImage currentFeaturedImage = currentProperties == null ? null : currentProperties.getFeaturedImage();
+    if (featuredImageId(currentFeaturedImage) != featuredImageId(newFeaturedImage)) {
+      return true;
+    }
+    if (!StringUtils.equals(StringUtils.defaultString(currentFeaturedImage == null ? null : currentFeaturedImage.getAltText()),
+                            StringUtils.defaultString(newFeaturedImage == null ? null : newFeaturedImage.getAltText()))) {
+      return true;
+    }
+    return !StringUtils.equals(StringUtils.defaultString(currentProperties == null ? null : currentProperties.getSummary()),
+                               StringUtils.defaultString(newProperties.getSummary()));
+  }
+
+  private long featuredImageId(NoteFeaturedImage featuredImage) {
+    return featuredImage == null || featuredImage.getId() == null ? 0L : featuredImage.getId();
   }
 
   private String sanitizeAndSubstituteMentions(String content, String lang) {

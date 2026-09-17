@@ -1430,16 +1430,8 @@ export default {
       if (!properties) {
         return;
       }
-      // The currently viewed language: empty for the original version, else the translation lang.
       const lang = this.note.lang || this.selectedTranslation?.value || '';
-      // The dedicated /notes/metadata endpoint is not deployed, so we persist through
-      // updateNoteById: sending the note with unchanged title/content routes the backend
-      // into its EDIT_PAGE_PROPERTIES branch, which writes the featured image + summary
-      // for the given lang (empty lang => default version).
-      const notePayload = structuredClone(this.note);
-      notePayload.lang = lang;
-      notePayload.properties = properties;
-      this.$notesService.updateNoteById(notePayload).then(() => {
+      this.$notesService.saveNoteMetadata(properties, lang).then(() => {
         return this.$notesService.getNoteById(this.note.id, lang);
       }).then(data => {
         const note = data || {};

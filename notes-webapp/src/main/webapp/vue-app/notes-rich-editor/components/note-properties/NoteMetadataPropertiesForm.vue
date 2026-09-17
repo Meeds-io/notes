@@ -153,7 +153,7 @@ export default {
       return this.summaryContent?.length > this.summaryMaxLength;
     },
     savedFeaturedImageAltText() {
-      return this.noteObject?.properties.featuredImage?.altText;
+      return this.noteObject?.properties?.featuredImage?.altText;
     },
     canShowFeaturedImagePreview() {
       return this.hasFeaturedImageValue || this.imageData?.length;
@@ -195,7 +195,10 @@ export default {
       this.propertiesUpdated();
     },
     summaryContent() {
-      if (!this.noteObject?.properties) {
+      if (!this.noteObject) {
+        return;
+      }
+      if (!this.noteObject.properties) {
         this.noteObject.properties = {};
       }
       this.noteObject.properties.summary = this.summaryContent;
