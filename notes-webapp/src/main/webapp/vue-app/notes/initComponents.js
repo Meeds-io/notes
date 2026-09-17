@@ -13,7 +13,6 @@ import NotesMobileActionMenu from './components/menu/NotesMobileActionMenu.vue';
 import NoteTreeviewItemPrepend from './components/NoteTreeviewItemPrepend.vue';
 import NoteEditorFeaturedImageDrawer from '../notes-rich-editor/components/note-properties/NoteEditorFeaturedImageDrawer.vue';
 import NoteEditorMetadataDrawer from '../notes-rich-editor/components/note-properties/NoteEditorMetadataDrawer.vue';
-import NoteMetadataPropertiesForm from '../notes-rich-editor/components/note-properties/NoteMetadataPropertiesForm.vue';
 import NotePage from './components/NotePage.vue';
 
 const components = {
@@ -32,8 +31,7 @@ const components = {
   'notes-mobile-action-menu': NotesMobileActionMenu,
   'note-treeview-item-prepend': NoteTreeviewItemPrepend,
   'note-featured-image-drawer': NoteEditorFeaturedImageDrawer,
-  'note-editor-metadata-drawer': NoteEditorMetadataDrawer,
-  'note-metadata-properties-form': NoteMetadataPropertiesForm
+  'note-editor-metadata-drawer': NoteEditorMetadataDrawer
 };
 
 for (const key in components) {
