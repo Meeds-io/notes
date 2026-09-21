@@ -25,6 +25,7 @@
     back-icon="fas fa-arrow-left"
     :src="featuredImageLink"
     :max-file-size="maxFileSize"
+    :max-image-width="maxImageWidth"
     :crop-options="cropOptions"
     use-format
     alt
@@ -37,6 +38,9 @@ export default {
     return {
       uploadId: null,
       maxFileSize: 20971520,
+      // Twice the crop drawer's 1280px default: the cover is rendered at the
+      // full width of a header, so 1280px is upscaled on a HiDPI screen.
+      maxImageWidth: 2560,
       imageData: null,
       featuredImageAltText: null,
       hasFeaturedImageValue: false,
@@ -86,6 +90,7 @@ export default {
       return this.note?.properties.featuredImage?.lastUpdated;
     },
     featuredImageLink() {
+      // Un-sized on purpose: the cropper loads this when `open()` got no `src`.
       return this.imageData || this.hasFeaturedImageValue
                             && `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
     }
