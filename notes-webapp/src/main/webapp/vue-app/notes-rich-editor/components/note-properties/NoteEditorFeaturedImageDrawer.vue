@@ -40,6 +40,8 @@ export default {
       maxFileSize: 20971520,
       // Twice the crop drawer's 1280px default: the cover is rendered at the
       // full width of a header, so 1280px is upscaled on a HiDPI screen.
+      // Bounds a free-form crop to 2560x2560 -- the aspectRatio below never
+      // reaches the cropper, which `open()` sets to the `custom` format.
       maxImageWidth: 2560,
       imageData: null,
       featuredImageAltText: null,
