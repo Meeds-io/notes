@@ -26,7 +26,7 @@
         v-if="!canShowFeaturedImagePreview"
         name="image-area"
         class="btn add-image-area d-flex"
-        height="206"
+        :height="featuredImagePreviewHeight"
         width="100%"
         text
         @click="openFeaturedImageDrawer">
@@ -43,7 +43,7 @@
       </v-btn>
       <v-sheet
         v-else
-        height="206"
+        :height="featuredImagePreviewHeight"
         min-width="48"
         class="card-border-radius image-preview">
         <v-hover v-slot="{ hover }">
@@ -51,9 +51,8 @@
             <v-img
               width="100%"
               contain
-              :lazy-src="featuredImageLink"
               :alt="savedFeaturedImageAltText"
-              :src="featuredImageLink">
+              :src="featuredImagePreviewLink">
               <div
                 v-if="hover && canShowFeaturedImagePreview"
                 class="width-fit-content full-height ms-auto d-flex me-2">
@@ -128,6 +127,8 @@ export default {
       hasFeaturedImageValue: false,
       removeFeaturedImage: false,
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      // Both arms of the featured-image v-if must match, or the form jumps.
+      featuredImagePreviewHeight: 206,
     };
   },
   props: {
@@ -171,8 +172,19 @@ export default {
       return this.noteObject?.properties?.featuredImage?.lastUpdated || 0;
     },
     featuredImageLink() {
+      // Un-sized on purpose: the crop drawer takes this as its source, so
+      // sizing it would make every re-crop start from a downscaled image.
       return this.imageData || this.hasFeaturedImageValue
           && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}` || '';
+    },
+    featuredImagePreviewLink() {
+      // Twice the sheet it is drawn in; un-sized would serve the original.
+      if (this.imageData) {
+        return this.imageData;
+      }
+      const size = 2 * this.featuredImagePreviewHeight;
+      return this.hasFeaturedImageValue
+          && `${this.illustrationBaseUrl}${this.notedId}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x${size}` || '';
     }
   },
   watch: {
