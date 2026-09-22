@@ -153,13 +153,12 @@
           <v-card flat class="d-sm-grid">
             <v-img
               v-if="hasFeaturedImage"
-              :lazy-src="featuredImageLink"
               :alt="featuredImageAltText"
               :src="featuredImageLink"
+              :max-height="featuredImageMaxHeight"
               contain
               class="mb-5"
-              width="100%"
-              max-height="400" />
+              width="100%" />
           </v-card>
           <div class="notes-title">
             <p ref="noteTitle" class="title text-color text-break">
@@ -430,6 +429,7 @@ export default {
       translationsMenu: false,
       originalVersion: { value: '', text: this.$t('notes.label.translation.originalVersion') },
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      featuredImageMaxHeight: 400,
       initialized: false,
       isPublishing: false,
       publishTargets: [],
@@ -502,7 +502,9 @@ export default {
       return this.note?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x400`;
+      // Twice the displayed height, for HiDPI. The server never upscales.
+      const size = 2 * this.featuredImageMaxHeight;
+      return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x${size}`;
     },
     notesContentProcessor() {
       return {

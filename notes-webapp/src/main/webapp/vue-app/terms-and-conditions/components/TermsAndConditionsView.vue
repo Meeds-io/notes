@@ -25,13 +25,12 @@
       <div class="px-4">
         <v-img
           v-if="hasFeaturedImage"
-          :lazy-src="featuredImageLink"
           :alt="featuredImageAltText"
           :src="featuredImageLink"
+          :max-height="featuredImageMaxHeight"
           contain
           class="mb-5 mt-2"
-          width="100%"
-          max-height="400" />
+          width="100%" />
         <v-card-title class="text-h4 font-weight-bold text-color px-0">{{ pageTitle }}</v-card-title>
         <p
           v-if="hasSummary"
@@ -93,6 +92,7 @@ export default {
       initialized: false,
       isPreviewMode: false,
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
+      featuredImageMaxHeight: 400,
     };
   },
   computed: {
@@ -133,7 +133,9 @@ export default {
       return this.page?.properties?.featuredImage?.altText;
     },
     featuredImageLink() {
-      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=${this.noteLang}&size=0x400`;
+      // Twice the displayed height, for HiDPI. The server never upscales.
+      const size = 2 * this.featuredImageMaxHeight;
+      return `${this.illustrationBaseUrl}${this.page?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=false&lang=${this.noteLang}&size=0x${size}`;
     },
   },
   created() {
