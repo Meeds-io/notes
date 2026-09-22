@@ -197,7 +197,7 @@
         </div>
         <div class="d-flex align-start note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
-            class="text-color">
+            class="text-color flex-grow-1 min-width-0">
             <component :is="notesContentProcessor" />
           </div>
           <extension-registry-components
@@ -208,7 +208,7 @@
             type="content-event-detail"
             parent-element="div"
             element="div"
-            class="position-sticky d-flex me-1 ms-auto" />
+            class="position-sticky d-flex flex-shrink-0 me-1 ms-auto" />
         </div>
         <div class="mt-12" v-else-if="noteChildren && !hasChildren || hasDraft && hasEmptyContent">
           <div class="d-flex flex-column justify-center text-center">
