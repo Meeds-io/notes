@@ -108,7 +108,23 @@ export default {
       return this.result?.wikiOwner?.space;
     },
     summary() {
-      return this.result?.summary || this.excerpt || this.result.content;
+      return this.result?.summary || this.excerpt || this.content;
+    },
+    content() {
+      const content = this.result?.content;
+      if (!content || !content.includes('navigation-img-wrapper')) {
+        return content;
+      }
+      // The note content is the fallback of a note without summary whose
+      // search hit produced no excerpt (a match on the title only). Its
+      // navigation macro is sized by the editor stylesheet only, which is
+      // not loaded here: size its images inline.
+      const body = new DOMParser().parseFromString(content, 'text/html').body;
+      body.querySelectorAll('.navigation-img-wrapper img').forEach(img => {
+        img.style.width = '50px';
+        img.style.height = '50px';
+      });
+      return body.innerHTML;
     },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
