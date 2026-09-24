@@ -65,7 +65,7 @@
                 <date-format class="ms-1 my-auto" :value="wikiUpdateDate" />
               </span>
               <div
-                class="pt-2 text-wrap text-body-2 text-color text-break"
+                class="pt-2 text-wrap text-body-2 text-color text-break notes-search-excerpt"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
             </v-list-item-subtitle>
@@ -108,23 +108,7 @@ export default {
       return this.result?.wikiOwner?.space;
     },
     summary() {
-      return this.result?.summary || this.excerpt || this.content;
-    },
-    content() {
-      const content = this.result?.content;
-      if (!content || !content.includes('navigation-img-wrapper')) {
-        return content;
-      }
-      // The note content is the fallback of a note without summary whose
-      // search hit produced no excerpt (a match on the title only). Its
-      // navigation macro is sized by the editor stylesheet only, which is
-      // not loaded here: size its images inline.
-      const body = new DOMParser().parseFromString(content, 'text/html').body;
-      body.querySelectorAll('.navigation-img-wrapper img').forEach(img => {
-        img.style.width = '50px';
-        img.style.height = '50px';
-      });
-      return body.innerHTML;
+      return this.result?.summary || this.excerpt || this.result.content;
     },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
