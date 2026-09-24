@@ -65,7 +65,7 @@
                 <date-format class="ms-1 my-auto" :value="wikiUpdateDate" />
               </span>
               <div
-                class="pt-2 text-wrap text-body-2 text-color text-break"
+                class="pt-2 text-wrap text-body-2 text-color text-break notes-search-excerpt"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
             </v-list-item-subtitle>
