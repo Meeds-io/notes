@@ -87,7 +87,7 @@
                 </div>
               </div>
               <div
-                v-else-if="!loadingNavigation"
+                v-else-if="!loadingNavigation && !hasMediaContent"
                 class="pt-2 text-body-2 text-sub-title text-truncate">
                 {{ $t('notes.search.noContent') }}
               </div>
@@ -100,6 +100,11 @@
 </template>
 
 <script>
+// The current navigation macro and the legacy children widget: the search result carries the stored
+// content unmigrated, so a note book created before the macro still holds the legacy markup
+const NAVIGATION_MACRO_CLASSES = ['navigation-img-wrapper', 'wiki-children-pages'];
+const NAVIGATION_MACRO_SELECTOR = NAVIGATION_MACRO_CLASSES.map(name => `.${name}`).join(', ');
+
 export default {
   props: {
     term: {
@@ -137,17 +142,30 @@ export default {
     summary() {
       return this.result?.summary || this.excerpt;
     },
-    contentText() {
+    contentBody() {
       if (!this.result?.content) {
-        return '';
+        return null;
       }
       // An inert document: the navigation macro's images are not fetched
       const body = new DOMParser().parseFromString(this.result.content, 'text/html').body;
-      body.querySelectorAll('.navigation-img-wrapper').forEach(macro => macro.remove());
-      return body.textContent?.trim() || '';
+      body.querySelectorAll(NAVIGATION_MACRO_SELECTOR).forEach(macro => macro.remove());
+      return body;
+    },
+    contentText() {
+      return this.contentBody?.textContent?.trim() || '';
+    },
+    hasMediaContent() {
+      // A body without text is not empty when it holds an image, a video, an embed or a table
+      return !!this.contentBody?.querySelector('img, video, audio, iframe, object, embed, table');
     },
     hasNavigationMacro() {
-      return this.result?.content?.includes('navigation-img-wrapper') || false;
+      const content = this.result?.content;
+      return !!content && NAVIGATION_MACRO_CLASSES.some(name => content.includes(name));
+    },
+    notePath() {
+      // The same path shape as the note page's tree: type/owner/name, the owner without its leading slash
+      const owner = this.result?.noteBookOwner?.replace(/^\//, '');
+      return owner && `${this.result.noteBookType}/${owner}/${this.result.pageName}` || null;
     },
     restUrl() {
       return `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes`;
@@ -166,32 +184,21 @@ export default {
     }
   },
   created() {
-    if (!this.summary && !this.contentText && this.hasNavigationMacro) {
+    if (!this.summary && !this.contentText && this.hasNavigationMacro && this.notePath) {
       this.retrieveNavigationItems();
     }
   },
   methods: {
     retrieveNavigationItems() {
       this.loadingNavigation = true;
-      return this.retrieveNotePath()
-        .then(path => fetch(`${this.restUrl}/tree/children/notes?path=${encodeURIComponent(path)}`, {
-          credentials: 'include',
-        }))
+      // The note is not read here: the note read endpoints migrate legacy content and save it
+      return fetch(`${this.restUrl}/tree/children/notes?path=${encodeURIComponent(this.notePath)}`, {
+        credentials: 'include',
+      })
         .then(resp => resp?.ok && resp.json() || null)
         .then(data => this.navigationItems = (data?.jsonList || []).map(node => node.name))
         .catch(() => this.navigationItems = [])
         .finally(() => this.loadingNavigation = false);
-    },
-    retrieveNotePath() {
-      // The search result carries the owner identity of space notes only
-      if (this.space?.groupId) {
-        return Promise.resolve(`group${this.space.groupId}/${this.result.pageName}`);
-      }
-      return fetch(`${this.restUrl}/note/${this.result.id}`, {
-        credentials: 'include',
-      })
-        .then(resp => resp?.ok && resp.json() || Promise.reject(new Error('Note not found')))
-        .then(note => `${note.wikiType}/${note.wikiOwner.replace(/^\//, '')}/${note.name}`);
     },
   },
 };
