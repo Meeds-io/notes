@@ -65,9 +65,32 @@
                 <date-format class="ms-1 my-auto" :value="wikiUpdateDate" />
               </span>
               <div
-                class="pt-2 text-wrap text-body-2 text-color text-break notes-search-excerpt"
+                v-if="summary"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
+              <div
+                v-else-if="contentText"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
+                :class="isMobile && 'text-truncate-2' || 'text-truncate-3'">
+                {{ contentText }}
+              </div>
+              <div
+                v-else-if="navigationItems.length"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
+                :class="isMobile && 'text-truncate-2' || 'text-truncate-3'">
+                <div
+                  v-for="(item, index) in navigationItems"
+                  :key="index"
+                  class="text-truncate">
+                  - {{ item }}
+                </div>
+              </div>
+              <div
+                v-else-if="!loadingNavigation && !hasMediaContent"
+                class="pt-2 text-body-2 text-sub-title text-truncate">
+                {{ $t('notes.search.noContent') }}
+              </div>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
@@ -77,6 +100,11 @@
 </template>
 
 <script>
+// The current navigation macro and the legacy children widget: the search result carries the stored
+// content unmigrated, so a note book created before the macro still holds the legacy markup
+const NAVIGATION_MACRO_CLASSES = ['navigation-img-wrapper', 'wiki-children-pages'];
+const NAVIGATION_MACRO_SELECTOR = NAVIGATION_MACRO_CLASSES.map(name => `.${name}`).join(', ');
+
 export default {
   props: {
     term: {
@@ -88,6 +116,10 @@ export default {
       default: null,
     },
   },
+  data: () => ({
+    navigationItems: [],
+    loadingNavigation: false,
+  }),
   computed: {
     wikiUrl() {
       return this.result?.lang && this.result?.url || `${this.result?.url}?translation=original`;
@@ -108,7 +140,35 @@ export default {
       return this.result?.wikiOwner?.space;
     },
     summary() {
-      return this.result?.summary || this.excerpt || this.result.content;
+      return this.result?.summary || this.excerpt;
+    },
+    contentBody() {
+      if (!this.result?.content) {
+        return null;
+      }
+      // An inert document: the navigation macro's images are not fetched
+      const body = new DOMParser().parseFromString(this.result.content, 'text/html').body;
+      body.querySelectorAll(NAVIGATION_MACRO_SELECTOR).forEach(macro => macro.remove());
+      return body;
+    },
+    contentText() {
+      return this.contentBody?.textContent?.trim() || '';
+    },
+    hasMediaContent() {
+      // A body without text is not empty when it holds an image, a video, an embed or a table
+      return !!this.contentBody?.querySelector('img, video, audio, iframe, object, embed, table');
+    },
+    hasNavigationMacro() {
+      const content = this.result?.content;
+      return !!content && NAVIGATION_MACRO_CLASSES.some(name => content.includes(name));
+    },
+    notePath() {
+      // The same path shape as the note page's tree: type/owner/name, the owner without its leading slash
+      const owner = this.result?.noteBookOwner?.replace(/^\//, '');
+      return owner && `${this.result.noteBookType}/${owner}/${this.result.pageName}` || null;
+    },
+    restUrl() {
+      return `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes`;
     },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
@@ -122,6 +182,24 @@ export default {
       }
       return `${eXo.env.portal.context}/s/${this.space?.id}`;
     }
+  },
+  created() {
+    if (!this.summary && !this.contentText && this.hasNavigationMacro && this.notePath) {
+      this.retrieveNavigationItems();
+    }
+  },
+  methods: {
+    retrieveNavigationItems() {
+      this.loadingNavigation = true;
+      // The note is not read here: the note read endpoints migrate legacy content and save it
+      return fetch(`${this.restUrl}/tree/children/notes?path=${encodeURIComponent(this.notePath)}`, {
+        credentials: 'include',
+      })
+        .then(resp => resp?.ok && resp.json() || null)
+        .then(data => this.navigationItems = (data?.jsonList || []).map(node => node.name))
+        .catch(() => this.navigationItems = [])
+        .finally(() => this.loadingNavigation = false);
+    },
   },
 };
 </script>

@@ -53,6 +53,10 @@ public class NoteSearchResult {
 
   private String                          pageName;
 
+  private String                          noteBookType;
+
+  private String                          noteBookOwner;
+
   private String                          summary;
 
   private String                          content;
