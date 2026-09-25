@@ -65,9 +65,32 @@
                 <date-format class="ms-1 my-auto" :value="wikiUpdateDate" />
               </span>
               <div
-                class="pt-2 text-wrap text-body-2 text-color text-break notes-search-excerpt"
+                v-if="summary"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
                 :class="isMobile && 'text-truncate-2' || 'text-truncate-3'"
                 v-sanitized-html="summary"></div>
+              <div
+                v-else-if="contentText"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
+                :class="isMobile && 'text-truncate-2' || 'text-truncate-3'">
+                {{ contentText }}
+              </div>
+              <div
+                v-else-if="navigationItems.length"
+                class="pt-2 text-wrap text-body-2 text-color text-break"
+                :class="isMobile && 'text-truncate-2' || 'text-truncate-3'">
+                <div
+                  v-for="(item, index) in navigationItems"
+                  :key="index"
+                  class="text-truncate">
+                  - {{ item }}
+                </div>
+              </div>
+              <div
+                v-else-if="!loadingNavigation"
+                class="pt-2 text-body-2 text-sub-title text-truncate">
+                {{ $t('notes.search.noContent') }}
+              </div>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
@@ -88,6 +111,10 @@ export default {
       default: null,
     },
   },
+  data: () => ({
+    navigationItems: [],
+    loadingNavigation: false,
+  }),
   computed: {
     wikiUrl() {
       return this.result?.lang && this.result?.url || `${this.result?.url}?translation=original`;
@@ -108,7 +135,22 @@ export default {
       return this.result?.wikiOwner?.space;
     },
     summary() {
-      return this.result?.summary || this.excerpt || this.result.content;
+      return this.result?.summary || this.excerpt;
+    },
+    contentText() {
+      if (!this.result?.content) {
+        return '';
+      }
+      // An inert document: the navigation macro's images are not fetched
+      const body = new DOMParser().parseFromString(this.result.content, 'text/html').body;
+      body.querySelectorAll('.navigation-img-wrapper').forEach(macro => macro.remove());
+      return body.textContent?.trim() || '';
+    },
+    hasNavigationMacro() {
+      return this.result?.content?.includes('navigation-img-wrapper') || false;
+    },
+    restUrl() {
+      return `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes`;
     },
     isMobile() {
       return this.$vuetify?.breakpoint?.smAndDown;
@@ -122,6 +164,35 @@ export default {
       }
       return `${eXo.env.portal.context}/s/${this.space?.id}`;
     }
+  },
+  created() {
+    if (!this.summary && !this.contentText && this.hasNavigationMacro) {
+      this.retrieveNavigationItems();
+    }
+  },
+  methods: {
+    retrieveNavigationItems() {
+      this.loadingNavigation = true;
+      return this.retrieveNotePath()
+        .then(path => fetch(`${this.restUrl}/tree/children/notes?path=${encodeURIComponent(path)}`, {
+          credentials: 'include',
+        }))
+        .then(resp => resp?.ok && resp.json() || null)
+        .then(data => this.navigationItems = (data?.jsonList || []).map(node => node.name))
+        .catch(() => this.navigationItems = [])
+        .finally(() => this.loadingNavigation = false);
+    },
+    retrieveNotePath() {
+      // The search result carries the owner identity of space notes only
+      if (this.space?.groupId) {
+        return Promise.resolve(`group${this.space.groupId}/${this.result.pageName}`);
+      }
+      return fetch(`${this.restUrl}/note/${this.result.id}`, {
+        credentials: 'include',
+      })
+        .then(resp => resp?.ok && resp.json() || Promise.reject(new Error('Note not found')))
+        .then(note => `${note.wikiType}/${note.wikiOwner.replace(/^\//, '')}/${note.name}`);
+    },
   },
 };
 </script>
