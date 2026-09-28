@@ -55,13 +55,6 @@
     <additional-module>Notes</additional-module>
   </portlet-skin>
 
-  <portlet-skin>
-    <application-name>social</application-name>
-    <portlet-name>Search</portlet-name>
-    <skin-name>Enterprise</skin-name>
-    <additional-module>Notes</additional-module>
-  </portlet-skin>
-
   <portlet>
     <name>Notes</name>
     <module>
