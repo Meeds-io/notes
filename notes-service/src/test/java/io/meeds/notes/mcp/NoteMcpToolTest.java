@@ -37,6 +37,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.ObjectProvider;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
@@ -89,6 +91,7 @@ import io.meeds.notes.mcp.model.NoteRootTreeModel;
 import io.meeds.notes.mcp.model.NoteVersionModel;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.plugin.NotePublicationPlugin;
 import io.meeds.portal.permlink.service.PermanentLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -122,6 +125,8 @@ public class NoteMcpToolTest {
   private static final long       PARENT_NOTE_ID = 13L;
 
   private static final long       SPACE_ID       = 33L;
+
+  private static final String     PLUGIN_ACTIVITY_ID = "55";
 
   @Mock
   private WikiService             wikiService;
@@ -171,12 +176,18 @@ public class NoteMcpToolTest {
   @Mock
   private ConversationState       conversationState;
 
+  @Mock
+  private ObjectProvider<NotePublicationPlugin> publicationPlugins;
+
+  private List<NotePublicationPlugin> publicationPluginList = new ArrayList<>();
+
   private NoteMcpTool             tool;
 
   @Before
   public void setUp() throws Exception { // NOSONAR
     lenient().when(currentIdentity.getUserId()).thenReturn(USER);
     lenient().when(permanentLinkService.getLink(any())).thenReturn("/note-link");
+    lenient().when(publicationPlugins.orderedStream()).thenAnswer(invocation -> publicationPluginList.stream());
 
     tool = new TestableNoteMcpTool();
   }
@@ -633,6 +644,78 @@ public class NoteMcpToolTest {
     assertNotNull(result);
     verify(note).setToBePublished(true);
     verify(noteService).updateNote(note, PageUpdateType.PUBLISH, currentIdentity);
+  }
+
+  @Test
+  public void publishNoteShouldDelegateToThePublicationPluginHandlingTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin notHandlingPlugin = mock(NotePublicationPlugin.class);
+    NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(notHandlingPlugin);
+    publicationPluginList.add(handlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(handlingPlugin.publishNote(note, currentIdentity)).thenReturn(PLUGIN_ACTIVITY_ID);
+
+    ActivityModel activityModel = mock(ActivityModel.class);
+    ActivityModel result;
+    try (MockedStatic<ActivityToolUtils> activities = mockStatic(ActivityToolUtils.class)) {
+      activities.when(() -> ActivityToolUtils.toActivityModel(any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              eq(PLUGIN_ACTIVITY_ID),
+                                                              any(),
+                                                              any()))
+                .thenReturn(activityModel);
+      result = runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    }
+
+    assertEquals(activityModel, result);
+    verify(notHandlingPlugin).publishNote(note, currentIdentity);
+    verify(note, never()).setToBePublished(true);
+    verify(noteService, never()).updateNote(any(Page.class), eq(PageUpdateType.PUBLISH), any(Identity.class));
+  }
+
+  @Test
+  public void publishNoteShouldUseLegacyPublicationWhenNoPluginHandlesTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin notHandlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(notHandlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+
+    runWithStaticMocksWithActivity(mock(ActivityModel.class), () -> tool.publishNote(NOTE_ID));
+
+    verify(notHandlingPlugin).publishNote(note, currentIdentity);
+    verify(note).setToBePublished(true);
+    verify(noteService).updateNote(note, PageUpdateType.PUBLISH, currentIdentity);
+  }
+
+  @Test(expected = IllegalAccessException.class)
+  public void publishNoteShouldNotCallPublicationPluginsWhenUserCannotEditTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(handlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(false);
+
+    try {
+      runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    } finally {
+      verify(handlingPlugin, never()).publishNote(any(), any());
+    }
   }
 
   @Test
@@ -1527,7 +1610,8 @@ public class NoteMcpToolTest {
             permanentLinkService,
             uploadService,
             attachmentService,
-            fileService);
+            fileService,
+            publicationPlugins);
     }
 
     @Override
