@@ -29,7 +29,9 @@ import org.exoplatform.wiki.model.Page;
  * <p>
  * Contributions are collected from every Spring context: an implementation
  * must be a non-final {@code @Service} bean. When no contribution handles the
- * note, the caller falls back to the legacy Notes publication.
+ * note, the caller falls back to the legacy Notes publication. An exception
+ * thrown by a contribution is final: the caller doesn't fall back, so a
+ * contribution refusing the publication decides who can publish the note.
  */
 public interface NotePublicationPlugin {
 

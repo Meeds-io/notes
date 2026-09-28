@@ -702,6 +702,25 @@ public class NoteMcpToolTest {
   }
 
   @Test(expected = IllegalAccessException.class)
+  public void publishNoteShouldNotFallBackToLegacyPublicationWhenAPluginRefusesIt() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin refusingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(refusingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(refusingPlugin.publishNote(note, currentIdentity)).thenThrow(new IllegalAccessException("refused"));
+
+    try {
+      runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    } finally {
+      verify(note, never()).setToBePublished(true);
+      verify(noteService, never()).updateNote(any(Page.class), eq(PageUpdateType.PUBLISH), any(Identity.class));
+    }
+  }
+
+  @Test(expected = IllegalAccessException.class)
   public void publishNoteShouldNotCallPublicationPluginsWhenUserCannotEditTheNote() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
     NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
