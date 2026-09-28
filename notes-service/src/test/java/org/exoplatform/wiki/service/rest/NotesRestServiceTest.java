@@ -615,6 +615,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     homePage.setName("renamed_home_20260819112324547");
     homePage.setTitle("renamed home");
     homePage.setUrl("/space/note/100");
+    homePage.setWikiType("group");
+    homePage.setWikiOwner("/spaces/space1");
     when(noteService.getNoteOfNoteBookByName(searchResult.getWikiType(),
                                              searchResult.getWikiOwner(),
                                              searchResult.getPageName(),
@@ -625,6 +627,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     defaultNameHomePage.setName(NoteConstants.NOTE_HOME_NAME);
     defaultNameHomePage.setTitle("Home");
     defaultNameHomePage.setUrl("/space/note/200");
+    defaultNameHomePage.setWikiType("user");
+    defaultNameHomePage.setWikiOwner("john");
     when(noteService.getNoteOfNoteBookByName(defaultNameSearchResult.getWikiType(),
                                              defaultNameSearchResult.getWikiOwner(),
                                              defaultNameSearchResult.getPageName(),
@@ -652,6 +656,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertEquals("renamed_home_20260819112324547", entity.getJsonList().get(0).getPageName());
     assertEquals("200", entity.getJsonList().get(1).getId());
     assertEquals(NoteConstants.NOTE_HOME_NAME, entity.getJsonList().get(1).getPageName());
+    // the note book coordinates let the search card build a tree path without reading the note
+    assertEquals("group", entity.getJsonList().get(0).getNoteBookType());
+    assertEquals("/spaces/space1", entity.getJsonList().get(0).getNoteBookOwner());
+    assertEquals("user", entity.getJsonList().get(1).getNoteBookType());
+    assertEquals("john", entity.getJsonList().get(1).getNoteBookOwner());
   }
 
   @Test
