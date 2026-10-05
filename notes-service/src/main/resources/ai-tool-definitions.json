@@ -1,4 +1,5 @@
 {
+  "icon": "fa-clipboard",
   "tools": [
     {
       "name": "get_space_note_tree",
