@@ -75,7 +75,7 @@
                       <p class="mb-0 text-sub-title text-sub-title body-2">{{ $t('notes.label.importRulesMessage.text') }}</p>
                     </div>
                     <div class="import-alert-message pt-4 d-flex">
-                      <v-icon size="30" class="text-sub-title pe-3">mdi-alert-outline</v-icon>
+                      <v-icon size="30" class="pe-3">mdi-alert-outline</v-icon>
                       <span class="body-2 text-sub-title">{{ $t('notes.label.importRulesAlert.text') }}</span>
                     </div>
                     <v-radio-group

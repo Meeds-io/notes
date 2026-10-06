@@ -52,12 +52,9 @@
                   :title="$t('notes.tooltip.open.tree')"
                   :aria-label="$t('notes.tooltip.open.tree')"
                   @click.stop.prevent="openSidebarTreeView">
-                  <img
-                    alt=""
-                    src="/social/images/sidebar.svg"
-                    class="icon-default-color"
-                    height="20px"
-                    width="20px">
+                  <i
+                    class="icon-sidebar icon-default-color"
+                    aria-hidden="true"></i>
                 </v-btn>
                 <note-breadcrumb
                   class="my-auto flex-shrink-1 overflow-hidden"
