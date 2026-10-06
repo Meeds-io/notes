@@ -59,8 +59,7 @@
           v-if="!isDraftFilter && !isHomePage && hover"
           class="drag-handle my-auto ml-1">
           <v-icon
-            small
-            color="grey lighten-1">
+            small>
             fas fa-grip-vertical
           </v-icon>
         </v-list-item-icon>
