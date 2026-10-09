@@ -34,6 +34,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -369,6 +370,72 @@ public class NoteMcpToolTest {
 
     assertEquals(NOTE_ID, result.noteId());
     assertNull(result.url());
+  }
+
+  /**
+   * A site whose navigation can't be read, or that the user can't access, is
+   * skipped and the next site still links the personal note.
+   */
+  @Test
+  public void getNoteWhenFirstSitesHaveNoNavigationShouldLinkThroughTheNextSite() throws Exception { // NOSONAR
+    Page note = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
+    PortalConfig unreadableSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "dw");
+    PortalConfig inaccessibleSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "global");
+    PortalConfig personalSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "myworkspace");
+    UserNode notesNode = mockUserNode("notes", "dashboard/notes", List.of());
+    UserNode dashboardNode = mockUserNode("dashboard", "dashboard", List.of(notesNode));
+    UserNode personalRoot = mockUserNode("default", null, List.of(dashboardNode));
+
+    when(layoutService.getSites(any())).thenReturn(List.of(unreadableSite, inaccessibleSite, personalSite));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false))
+                                                                                          .thenThrow(new IllegalStateException("navigation unavailable"));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "global", USER, false)).thenReturn(null);
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false)).thenReturn(personalRoot);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+    assertEquals("https://meeds.test/portal/myworkspace/dashboard/notes/" + NOTE_ID, result.url());
+  }
+
+  /**
+   * The page hosting the Notes application depends on the caller, not on the
+   * note: a search over personal notes looks it up once, however many notes
+   * and breadcrumb levels it links.
+   */
+  @Test
+  public void searchNotesWhenPersonalShouldResolveNotesPathOnce() throws Exception { // NOSONAR
+    SearchResult parentResult = mock(SearchResult.class);
+    SearchResult childResult = mock(SearchResult.class);
+    ObjectPageList wikiSearchResult = mock(ObjectPageList.class);
+    Page parent = mockPersonalPage(String.valueOf(NOTE_ID), "Parent", USER);
+    Page child = mockPersonalPage(String.valueOf(NOTE_ID + 1), "Child", USER);
+    lenient().when(child.getParentPageId()).thenReturn(String.valueOf(NOTE_ID));
+    mockPersonalNotesSite();
+
+    when(parentResult.getId()).thenReturn(NOTE_ID);
+    when(childResult.getId()).thenReturn(NOTE_ID + 1);
+    when(wikiSearchResult.getAll()).thenReturn(List.of(parentResult, childResult));
+    when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(parent);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID + 1), eq(currentIdentity), eq(null), eq(null))).thenReturn(child);
+    when(noteService.getNoteById(String.valueOf(NOTE_ID))).thenReturn(parent);
+    when(noteService.canViewNote(parent, USER)).thenReturn(true);
+    when(noteService.canViewNote(child, USER)).thenReturn(true);
+
+    List<NoteModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, null, false));
+
+    String notesUrl = "https://meeds.test/portal/myworkspace/dashboard/notes/";
+    assertEquals(2, result.size());
+    assertEquals(notesUrl + NOTE_ID, result.get(0).url());
+    assertEquals(notesUrl + (NOTE_ID + 1), result.get(1).url());
+    assertEquals(2, result.get(1).breadcrumb().size());
+    assertEquals(notesUrl + NOTE_ID, result.get(1).breadcrumb().get(0).url());
+    // Three notes linked, the two results and the child's parent in its breadcrumb, one navigation lookup
+    verify(layoutService, times(1)).getSites(any());
+    verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false);
+    verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false);
   }
 
   @Test
