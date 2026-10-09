@@ -22,8 +22,10 @@ import static io.meeds.mcp.server.tool.util.McpToolPluginUtils.getInteger;
 import static io.meeds.mcp.server.util.McpToolUtils.formatDate;
 import static io.meeds.mcp.server.util.McpToolUtils.markdownToHtml;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -40,6 +42,11 @@ import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.SiteFilter;
+import org.exoplatform.portal.mop.SiteType;
+import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.mop.user.UserNode;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
@@ -98,6 +105,13 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final String     USER_WIKI_TYPE   = WikiType.USER.toString().toLowerCase();
 
+  private static final String     NOTES_NODE_NAME  = "notes";
+
+  private static final String     PORTAL_URI       = "/portal/";
+
+  /** Displayed portal sites, in the order the site switcher shows them. */
+  private static final SiteFilter PORTAL_SITES     = new SiteFilter(SiteType.PORTAL, null, null, true, true, true, true, 0, 0);
+
   private WikiService             wikiService;
 
   private NoteService             noteService;
@@ -126,6 +140,8 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private FileService             fileService;
 
+  private LayoutService           layoutService;
+
   public NoteMcpTool(WikiService wikiService,
                           NoteService noteService,
                           ActivityManager activityManager,
@@ -139,7 +155,8 @@ public class NoteMcpTool implements McpToolPlugin {
                           PermanentLinkService permanentLinkService,
                           UploadService uploadService,
                           AttachmentService attachmentService,
-                          FileService fileService) {
+                          FileService fileService,
+                          LayoutService layoutService) {
     this.wikiService = wikiService;
     this.noteService = noteService;
     this.activityManager = activityManager;
@@ -154,6 +171,7 @@ public class NoteMcpTool implements McpToolPlugin {
     this.uploadService = uploadService;
     this.attachmentService = attachmentService;
     this.fileService = fileService;
+    this.layoutService = layoutService;
   }
 
   public NoteRootTreeModel getSpaceNoteTree(long spaceId) throws ObjectNotFoundException, IllegalAccessException {
@@ -401,10 +419,11 @@ public class NoteMcpTool implements McpToolPlugin {
       data.setSpaceIds(List.of(String.valueOf(spaceId)));
     }
     List<SearchResult> results = noteService.search(data).getAll();
+    NoteLinks links = new NoteLinks();
     return results.stream()
                   .map(SearchResult::getId)
                   .map(this::getNoteByIdNoException)
-                  .map(this::toNoteModel)
+                  .map(note -> toNoteModel(note, links))
                   .toList();
   }
 
@@ -746,8 +765,12 @@ public class NoteMcpTool implements McpToolPlugin {
     }
   }
 
-  @SneakyThrows
   private NoteModel toNoteModel(Page note) {
+    return toNoteModel(note, new NoteLinks());
+  }
+
+  @SneakyThrows
+  private NoteModel toNoteModel(Page note, NoteLinks links) {
     Locale currentUserLocale = getCurrentUserLocale();
     String htmlContent = sanitizeAndSubstituteMentions(note.getContent(), currentUserLocale);
     note.setContent(htmlContent);
@@ -758,57 +781,58 @@ public class NoteMcpTool implements McpToolPlugin {
                          note.getTitle(),
                          summary,
                          htmlContent,
-                         getUrl(note),
+                         links.getUrl(note),
                          formatDate(note.getCreatedDate()),
                          formatDate(note.getUpdatedDate()),
                          note.isHasChild(),
                          canEdit,
                          toUserModel(note.getAuthor()),
                          toUserModel(note.getLastUpdater()),
-                         toNoteBreadcrumb(note));
+                         toNoteBreadcrumb(note, links));
   }
 
   private NoteRootTreeModel toNoteRootTreeModel(Page rootNote, long spaceId) {
+    NoteLinks links = new NoteLinks();
     NoteRootTreeModel rootTreeModel = new NoteRootTreeModel(Long.parseLong(rootNote.getId()),
                                                             rootNote.getTitle(),
-                                                            getUrl(rootNote),
+                                                            links.getUrl(rootNote),
                                                             null,
                                                             spaceId);
-    addChildren(rootNote, rootTreeModel);
+    addChildren(rootNote, rootTreeModel, links);
     return rootTreeModel;
   }
 
   @SneakyThrows
-  private NoteTreeModel toNoteTreeModel(Page note) {
+  private NoteTreeModel toNoteTreeModel(Page note, NoteLinks links) {
     NoteTreeModel noteTreeModel = new NoteTreeModel(Long.parseLong(note.getId()),
                                                     note.getTitle(),
-                                                    getUrl(note),
+                                                    links.getUrl(note),
                                                     null);
-    addChildren(note, noteTreeModel);
+    addChildren(note, noteTreeModel, links);
     return noteTreeModel;
   }
 
-  private List<NoteBreadcrumbModel> toNoteBreadcrumb(Page note) {
+  private List<NoteBreadcrumbModel> toNoteBreadcrumb(Page note, NoteLinks links) {
     List<NoteBreadcrumbModel> breadcrumb = new ArrayList<>();
-    addNoteBreadcrumb(breadcrumb, note);
+    addNoteBreadcrumb(breadcrumb, note, links);
     return breadcrumb;
   }
 
-  private void addNoteBreadcrumb(List<NoteBreadcrumbModel> breadcrumb, Page note) {
+  private void addNoteBreadcrumb(List<NoteBreadcrumbModel> breadcrumb, Page note, NoteLinks links) {
     breadcrumb.add(0,
                    new NoteBreadcrumbModel(Long.parseLong(note.getId()),
                                            note.getTitle(),
-                                           getUrl(note)));
+                                           links.getUrl(note)));
     if (StringUtils.isNotBlank(note.getParentPageId())) {
       Page parentNote = noteService.getNoteById(note.getParentPageId());
-      addNoteBreadcrumb(breadcrumb, parentNote);
+      addNoteBreadcrumb(breadcrumb, parentNote, links);
     }
   }
 
-  private void addChildren(Page note, NoteTreeModel noteTreeModel) {
+  private void addChildren(Page note, NoteTreeModel noteTreeModel, NoteLinks links) {
     Collection<Page> childNotes = noteService.getChildrenNoteOf(note, false, false);
     if (CollectionUtils.isNotEmpty(childNotes)) {
-      childNotes.stream().map(this::toNoteTreeModel).forEach(noteTreeModel::addChildNote);
+      childNotes.stream().map(child -> toNoteTreeModel(child, links)).forEach(noteTreeModel::addChildNote);
     }
   }
 
@@ -923,23 +947,107 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   /**
-   * Builds the absolute URL of a note. Only space notes have a resolvable
-   * direct-access URL ({@code NotePermanentLinkPlugin} rejects any other
-   * notebook type); a personal note has none server-side, so null is returned
-   * and the field is omitted from the model instead of failing the call. The
-   * test is positive (fail closed): anything not explicitly a space note,
-   * including a blank type, gets no URL.
-   *
-   * @param note the note to link to
-   * @return the note's absolute URL, or null when the note isn't a space note
+   * Links the notes one tool call returns. A space note is linked through its
+   * permanent link. A personal note has no permanent link
+   * ({@code NotePermanentLinkPlugin} only resolves space notes), so it is linked
+   * the way the Notes application opens it: under the navigation node hosting
+   * the Notes application in a portal site of the current user (the personal
+   * workspace, e.g. {@code /portal/myworkspace/dashboard/notes/<id>}). That
+   * path depends on the caller, not on the note, so an instance resolves it at
+   * most once, however many notes and breadcrumb levels the call links: one
+   * instance serves one tool call. Any other notebook type, or a personal note
+   * when no site of the user hosts a notes node, gets no URL: the field is then
+   * omitted from the model instead of failing the call.
    */
-  @SneakyThrows
-  private String getUrl(Page note) {
-    if (!StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, note.getWikiType())) {
+  private class NoteLinks {
+
+    private boolean personalNotesPathResolved;
+
+    private String  personalNotesPath;
+
+    /**
+     * Builds the absolute URL of a note.
+     *
+     * @param note the note to link to
+     * @return the note's absolute URL, or null when it can't be resolved
+     */
+    @SneakyThrows
+    String getUrl(Page note) {
+      if (StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, note.getWikiType())) {
+        return CommonsUtils.getCurrentDomain() +
+            permanentLinkService.getLink(new PermanentLinkObject(NotePermanentLinkPlugin.OBJECT_TYPE, note.getId()));
+      } else if (StringUtils.equalsIgnoreCase(USER_WIKI_TYPE, note.getWikiType())) {
+        String notesPath = getPersonalNotesPath();
+        return notesPath == null ? null : CommonsUtils.getCurrentDomain() + notesPath + "/" + note.getId();
+      } else {
+        return null;
+      }
+    }
+
+    private String getPersonalNotesPath() {
+      if (!personalNotesPathResolved) {
+        personalNotesPath = NoteMcpTool.this.getPersonalNotesPath(getCurrentUserName());
+        personalNotesPathResolved = true;
+      }
+      return personalNotesPath;
+    }
+  }
+
+  /**
+   * Finds the path of the page hosting the Notes application for a personal
+   * notebook: the first displayed portal site, in display order, whose
+   * navigation, as seen by the user, holds a {@code notes} node. Outside a
+   * space the Notes application shows the viewer's personal notebook, so that
+   * node opens any of the user's personal notes by id.
+   *
+   * @param username the user the navigation is loaded for
+   * @return the page path, e.g. {@code /portal/myworkspace/dashboard/notes},
+   *         or null when no site of the user hosts a notes node
+   */
+  private String getPersonalNotesPath(String username) {
+    if (StringUtils.isBlank(username)) {
       return null;
     }
-    return CommonsUtils.getCurrentDomain() +
-        permanentLinkService.getLink(new PermanentLinkObject(NotePermanentLinkPlugin.OBJECT_TYPE, note.getId()));
+    List<PortalConfig> sites = layoutService.getSites(PORTAL_SITES);
+    if (sites == null) {
+      return null;
+    }
+    for (PortalConfig site : sites) {
+      try {
+        UserNode rootNode = portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, site.getName(), username, false);
+        UserNode notesNode = findNotesNode(rootNode);
+        if (notesNode != null) {
+          return PORTAL_URI + site.getName() + "/" + notesNode.getURI();
+        }
+      } catch (Exception e) {
+        LOG.debug("Can't read the navigation of site {} to link a personal note", site.getName(), e);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Searches a navigation tree, breadth first, for the node named
+   * {@code notes}.
+   *
+   * @param rootNode the root node of a site navigation, possibly null
+   * @return the shallowest node named {@code notes}, or null
+   */
+  private UserNode findNotesNode(UserNode rootNode) {
+    if (rootNode == null || rootNode.getChildren() == null) {
+      return null;
+    }
+    Deque<UserNode> nodesToVisit = new ArrayDeque<>(rootNode.getChildren());
+    while (!nodesToVisit.isEmpty()) {
+      UserNode node = nodesToVisit.poll();
+      if (NOTES_NODE_NAME.equals(node.getName())) {
+        return node;
+      }
+      if (node.getChildren() != null) {
+        nodesToVisit.addAll(node.getChildren());
+      }
+    }
+    return null;
   }
 
   private ActivityModel toActivityModel(String activityId) {

@@ -34,6 +34,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +59,9 @@ import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.mop.user.UserNode;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.social.attachment.AttachmentService;
@@ -152,6 +156,9 @@ public class NoteMcpToolTest {
 
   @Mock
   private UserPortalConfigService portalConfigService;
+
+  @Mock
+  private LayoutService           layoutService;
 
   @Mock
   private PermanentLinkService    permanentLinkService;
@@ -310,6 +317,7 @@ public class NoteMcpToolTest {
   @Test
   public void createPersonalNoteShouldCreateNoteAtRootOfOwnNotebook() throws Exception { // NOSONAR
     Wiki wiki = mockPersonalWiki(USER);
+    mockPersonalNotesSite();
     Page root = mockPersonalPage("1", "Root", USER);
     Page created = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
 
@@ -328,9 +336,9 @@ public class NoteMcpToolTest {
 
     assertEquals(NOTE_ID, result.noteId());
     assertEquals(TITLE, result.title());
-    // No server-side direct URL exists for a personal note: the field is left
-    // out rather than failing the call on the permanent-link plugin
-    assertNull(result.url());
+    // A personal note has no permanent link: it is linked under the node
+    // hosting the Notes application in the user's personal workspace
+    assertEquals("https://meeds.test/portal/myworkspace/dashboard/notes/" + NOTE_ID, result.url());
     ArgumentCaptor<Page> noteCaptor = ArgumentCaptor.forClass(Page.class);
     verify(noteService).createNote(eq(wiki), eq(rootName), noteCaptor.capture(), eq(currentIdentity), eq(false), eq(true));
     Page note = noteCaptor.getValue();
@@ -341,6 +349,93 @@ public class NoteMcpToolTest {
     assertEquals(USER_WIKI_TYPE, note.getWikiType());
     assertEquals(USER, note.getWikiOwner());
     verify(wikiService, never()).createWiki(anyString(), anyString());
+  }
+
+  /**
+   * A personal note is linked only when a portal site of the user hosts a
+   * notes node: without one the url is left out instead of failing the call.
+   */
+  @Test
+  public void getNoteWhenPersonalAndNoSiteHostsNotesShouldReturnNoUrl() throws Exception { // NOSONAR
+    Page note = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
+    PortalConfig site = new PortalConfig(PortalConfig.PORTAL_TYPE, "dw");
+    UserNode rootNode = mockUserNode("default", null, List.of(mockUserNode("tasks", "tasks", List.of())));
+
+    when(layoutService.getSites(any())).thenReturn(List.of(site));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false)).thenReturn(rootNode);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+    assertEquals(NOTE_ID, result.noteId());
+    assertNull(result.url());
+  }
+
+  /**
+   * A site whose navigation can't be read, or that the user can't access, is
+   * skipped and the next site still links the personal note.
+   */
+  @Test
+  public void getNoteWhenFirstSitesHaveNoNavigationShouldLinkThroughTheNextSite() throws Exception { // NOSONAR
+    Page note = mockPersonalPage(String.valueOf(NOTE_ID), TITLE, USER);
+    PortalConfig unreadableSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "dw");
+    PortalConfig inaccessibleSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "global");
+    PortalConfig personalSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "myworkspace");
+    UserNode notesNode = mockUserNode("notes", "dashboard/notes", List.of());
+    UserNode dashboardNode = mockUserNode("dashboard", "dashboard", List.of(notesNode));
+    UserNode personalRoot = mockUserNode("default", null, List.of(dashboardNode));
+
+    when(layoutService.getSites(any())).thenReturn(List.of(unreadableSite, inaccessibleSite, personalSite));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false))
+                                                                                          .thenThrow(new IllegalStateException("navigation unavailable"));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "global", USER, false)).thenReturn(null);
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false)).thenReturn(personalRoot);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+    assertEquals("https://meeds.test/portal/myworkspace/dashboard/notes/" + NOTE_ID, result.url());
+  }
+
+  /**
+   * The page hosting the Notes application depends on the caller, not on the
+   * note: a search over personal notes looks it up once, however many notes
+   * and breadcrumb levels it links.
+   */
+  @Test
+  public void searchNotesWhenPersonalShouldResolveNotesPathOnce() throws Exception { // NOSONAR
+    SearchResult parentResult = mock(SearchResult.class);
+    SearchResult childResult = mock(SearchResult.class);
+    ObjectPageList wikiSearchResult = mock(ObjectPageList.class);
+    Page parent = mockPersonalPage(String.valueOf(NOTE_ID), "Parent", USER);
+    Page child = mockPersonalPage(String.valueOf(NOTE_ID + 1), "Child", USER);
+    lenient().when(child.getParentPageId()).thenReturn(String.valueOf(NOTE_ID));
+    mockPersonalNotesSite();
+
+    when(parentResult.getId()).thenReturn(NOTE_ID);
+    when(childResult.getId()).thenReturn(NOTE_ID + 1);
+    when(wikiSearchResult.getAll()).thenReturn(List.of(parentResult, childResult));
+    when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(parent);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID + 1), eq(currentIdentity), eq(null), eq(null))).thenReturn(child);
+    when(noteService.getNoteById(String.valueOf(NOTE_ID))).thenReturn(parent);
+    when(noteService.canViewNote(parent, USER)).thenReturn(true);
+    when(noteService.canViewNote(child, USER)).thenReturn(true);
+
+    List<NoteModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, null, false));
+
+    String notesUrl = "https://meeds.test/portal/myworkspace/dashboard/notes/";
+    assertEquals(2, result.size());
+    assertEquals(notesUrl + NOTE_ID, result.get(0).url());
+    assertEquals(notesUrl + (NOTE_ID + 1), result.get(1).url());
+    assertEquals(2, result.get(1).breadcrumb().size());
+    assertEquals(notesUrl + NOTE_ID, result.get(1).breadcrumb().get(0).url());
+    // Three notes linked, the two results and the child's parent in its breadcrumb, one navigation lookup
+    verify(layoutService, times(1)).getSites(any());
+    verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false);
+    verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false);
   }
 
   @Test
@@ -1422,6 +1517,38 @@ public class NoteMcpToolTest {
     return page;
   }
 
+  /**
+   * Makes the personal workspace the only site hosting a notes node, under its
+   * dashboard node, after a site with no notes node, as on an eXo platform.
+   */
+  private void mockPersonalNotesSite() {
+    PortalConfig metaSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "dw");
+    PortalConfig personalSite = new PortalConfig(PortalConfig.PORTAL_TYPE, "myworkspace");
+    UserNode metaRoot = mockUserNode("default", null, List.of(mockUserNode("tasks", "tasks", List.of())));
+    UserNode notesNode = mockUserNode("notes", "dashboard/notes", List.of());
+    UserNode dashboardNode = mockUserNode("dashboard", "dashboard", List.of(notesNode));
+    UserNode personalRoot = mockUserNode("default", null, List.of(dashboardNode));
+    when(layoutService.getSites(any())).thenReturn(List.of(metaSite, personalSite));
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false)).thenReturn(metaRoot);
+    when(portalConfigService.getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false)).thenReturn(personalRoot);
+  }
+
+  /**
+   * Mocks a navigation node.
+   *
+   * @param name the node name
+   * @param uri the node URI in its site
+   * @param children the node children
+   * @return the mocked node
+   */
+  private UserNode mockUserNode(String name, String uri, List<UserNode> children) {
+    UserNode node = mock(UserNode.class);
+    lenient().when(node.getName()).thenReturn(name);
+    lenient().when(node.getURI()).thenReturn(uri);
+    lenient().when(node.getChildren()).thenReturn(children);
+    return node;
+  }
+
   private Page mockPersonalPage(String id, String title, String owner) {
     Page page = mockPage(id, title);
     lenient().when(page.getWikiType()).thenReturn(USER_WIKI_TYPE);
@@ -1527,7 +1654,8 @@ public class NoteMcpToolTest {
             permanentLinkService,
             uploadService,
             attachmentService,
-            fileService);
+            fileService,
+            layoutService);
     }
 
     @Override
