@@ -23,13 +23,12 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.exoplatform.wiki.service.search.WikiSearchData;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +56,9 @@ import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.social.search.SpaceSearchConnector;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
@@ -180,14 +182,17 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
   }
 
   /**
-   * Runs {@code searchWiki} against a minimal query template and returns the
-   * Elasticsearch statement sent to the client.
+   * Runs {@code searchWiki} against the query template the connector ships,
+   * {@code notes-search-query.json}, and returns the Elasticsearch statement
+   * sent to the client.
    */
-  private String sentStatement(String term, WikiSearchData wikiSearchData) {
+  private String sentStatement(String term, WikiSearchData wikiSearchData) throws Exception {
     when(elasticSearchingClient.sendRequest(anyString(), anyString()))
         .thenReturn("{\"hits\":{\"total\":0,\"hits\":[]}}");
-    this.searchServiceConnector.setSearchQuery("{\"query\":{\"bool\":{\"filter\":[@metadatas_query@{\"terms\":{\"permissions\":[@permissions@]}}]"
-        + "@term_query@@tags_query@}},\"sort\":[@sortQuery@],\"from\":\"@offset@\",\"size\":\"@limit@\"}");
+    try (InputStream template = getClass().getResourceAsStream("/notes-search-query.json")) {
+      assertNotNull("The shipped query template is not on the test classpath", template);
+      this.searchServiceConnector.setSearchQuery(new String(template.readAllBytes(), StandardCharsets.UTF_8));
+    }
     when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
                                                                                   spaceSearchConnector,
                                                                                   "__system",
@@ -204,8 +209,10 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
 
   /**
    * A blank term with the date sort set by the MCP tool produces no term
-   * clause and a {@code lastUpdatedDate desc} sort; the statement is also
-   * parsed as JSON.
+   * clause and a {@code lastUpdatedDate desc} sort. The statement is parsed
+   * by a strict JSON parser, which refuses a trailing comma as Elasticsearch
+   * does; the unit suite runs no Elasticsearch, so the statement's execution
+   * by the engine is checked on a live index, not here.
    */
   @Test
   public void shouldSortByLastUpdatedDateWhenBlankQueryAndDateSort() throws Exception {
@@ -216,9 +223,8 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     data.setLimit(5);
     String statement = sentStatement("", data);
     assertFalse(statement.contains("query_string"));
-    JSONObject json = (JSONObject) new JSONParser().parse(statement);
-    JSONArray sort = (JSONArray) json.get("sort");
-    assertEquals("desc", ((JSONObject) ((JSONObject) sort.get(0)).get("lastUpdatedDate")).get("order"));
+    JsonNode json = JsonMapper.builder().build().readTree(statement);
+    assertEquals("desc", json.path("sort").path(0).path("lastUpdatedDate").path("order").asString());
   }
 
   /**
@@ -230,9 +236,8 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     WikiSearchData data = new WikiSearchData("pricing", "__system");
     data.setNotesTreeFilter(false);
     String statement = sentStatement("pricing", data);
-    JSONObject json = (JSONObject) new JSONParser().parse(statement);
-    JSONArray sort = (JSONArray) json.get("sort");
-    assertTrue(((JSONObject) sort.get(0)).containsKey("_score"));
+    JsonNode json = JsonMapper.builder().build().readTree(statement);
+    assertTrue(json.path("sort").path(0).has("_score"));
   }
 
 }

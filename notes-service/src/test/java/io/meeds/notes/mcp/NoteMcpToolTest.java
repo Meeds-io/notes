@@ -743,8 +743,11 @@ public class NoteMcpToolTest {
   }
 
   /**
-   * A non-blank query keeps the relevance order and is passed as typed, so
-   * that an upper-case OR stays an operator.
+   * A non-blank query keeps the relevance order and is passed as typed. The
+   * connector makes each word a wildcard term, which Elasticsearch normalises
+   * to lower case (Pricing*, pricing* and PRICING* match the same notes on
+   * Elasticsearch 9.4.5); an OR becomes the required word OR*, so the tool
+   * description asks for keywords without boolean syntax.
    */
   @Test
   public void searchNotesWithQueryShouldKeepRelevanceOrderAndCase() throws Exception { // NOSONAR
