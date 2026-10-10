@@ -20,16 +20,21 @@ package org.exoplatform.wiki.jpa.search;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.exoplatform.wiki.service.search.WikiSearchData;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -172,6 +177,62 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     assertEquals(2, searchResults.size());
     assertEquals("", searchResults.get(0).getExcerpt());
     assertEquals("", searchResults.get(1).getExcerpt());
+  }
+
+  /**
+   * Runs {@code searchWiki} against a minimal query template and returns the
+   * Elasticsearch statement sent to the client.
+   */
+  private String sentStatement(String term, WikiSearchData wikiSearchData) {
+    when(elasticSearchingClient.sendRequest(anyString(), anyString()))
+        .thenReturn("{\"hits\":{\"total\":0,\"hits\":[]}}");
+    this.searchServiceConnector.setSearchQuery("{\"query\":{\"bool\":{\"filter\":[@metadatas_query@{\"terms\":{\"permissions\":[@permissions@]}}]"
+        + "@term_query@@tags_query@}},\"sort\":[@sortQuery@],\"from\":\"@offset@\",\"size\":\"@limit@\"}");
+    when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
+                                                                                  spaceSearchConnector,
+                                                                                  "__system",
+                                                                                  SpaceListAccessType.MEMBER));
+    when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
+    when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "__system"))
+        .thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
+    ConversationState.setCurrent(new ConversationState(new Identity(IdentityConstants.SYSTEM)));
+    searchServiceConnector.searchWiki(term, wikiSearchData);
+    ArgumentCaptor<String> query = ArgumentCaptor.forClass(String.class);
+    verify(elasticSearchingClient).sendRequest(query.capture(), anyString());
+    return query.getValue();
+  }
+
+  /**
+   * A blank term with the date sort set by the MCP tool produces no term
+   * clause and a {@code lastUpdatedDate desc} sort; the statement is also
+   * parsed as JSON.
+   */
+  @Test
+  public void shouldSortByLastUpdatedDateWhenBlankQueryAndDateSort() throws Exception {
+    WikiSearchData data = new WikiSearchData("", "__system");
+    data.setSortField("date");
+    data.setSortDirection("desc");
+    data.setNotesTreeFilter(false);
+    data.setLimit(5);
+    String statement = sentStatement("", data);
+    assertFalse(statement.contains("query_string"));
+    JSONObject json = (JSONObject) new JSONParser().parse(statement);
+    JSONArray sort = (JSONArray) json.get("sort");
+    assertEquals("desc", ((JSONObject) ((JSONObject) sort.get(0)).get("lastUpdatedDate")).get("order"));
+  }
+
+  /**
+   * Without a sort field the statement keeps the relevance ({@code _score})
+   * sort.
+   */
+  @Test
+  public void shouldSortByScoreWhenNoSortField() throws Exception {
+    WikiSearchData data = new WikiSearchData("pricing", "__system");
+    data.setNotesTreeFilter(false);
+    String statement = sentStatement("pricing", data);
+    JSONObject json = (JSONObject) new JSONParser().parse(statement);
+    JSONArray sort = (JSONArray) json.get("sort");
+    assertTrue(((JSONObject) sort.get(0)).containsKey("_score"));
   }
 
 }

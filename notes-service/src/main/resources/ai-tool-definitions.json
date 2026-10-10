@@ -288,13 +288,13 @@
     {
       "name": "search_notes",
       "title": "Search for notes",
-      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook), returning matching notes with their ids. Use it to find a note id from words in its title or content.",
+      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook), returning matching notes with their ids. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax.",
       "input_schema": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
-            "description": "Words to search for in note titles and contents. Plain text, not a regular expression and not a note id."
+            "description": "Words to search for in note titles and contents. Plain text, not a regular expression and not a note id. An empty query lists the most recently updated notes first (use it to find the user's last note)."
           },
           "space_id": {
             "type": "integer",
