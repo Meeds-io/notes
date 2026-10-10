@@ -107,6 +107,10 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final String     NOTES_NODE_NAME  = "notes";
 
+  private static final String     SORT_BY_DATE     = "date";
+
+  private static final String     SORT_DESC        = "desc";
+
   private static final String     PORTAL_URI       = "/portal/";
 
   /** Displayed portal sites, in the order the site switcher shows them. */
@@ -402,6 +406,11 @@ public class NoteMcpTool implements McpToolPlugin {
     noteService.moveNote(currentLocationParams, newLocationParams, currentUserAclIdentity);
   }
 
+  /**
+   * Full-text search over the notes the current user can read. A blank query
+   * lists the most recently updated notes first; a non-blank query is passed
+   * as typed and keeps the relevance order.
+   */
   @SneakyThrows
   public List<NoteModel> searchNotes(String query,
                                      Long spaceId,
@@ -409,8 +418,13 @@ public class NoteMcpTool implements McpToolPlugin {
                                      Integer limit,
                                      Boolean isFavorites) {
     Identity currentIdentity = ConversationState.getCurrent().getIdentity();
-    WikiSearchData data = new WikiSearchData(StringUtils.lowerCase(query),
-                                             currentIdentity.getUserId());
+    // The query is passed as typed: the index analyzer lowercases the terms.
+    WikiSearchData data = new WikiSearchData(query, currentIdentity.getUserId());
+    if (StringUtils.isBlank(query)) {
+      // No term means no relevance: list the most recently updated notes first.
+      data.setSortField(SORT_BY_DATE);
+      data.setSortDirection(SORT_DESC);
+    }
     data.setOffset(getInteger(offset, DEFAULT_OFFSET));
     data.setLimit(getInteger(limit, DEFAULT_LIMIT));
     data.setNotesTreeFilter(false);

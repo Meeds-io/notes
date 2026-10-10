@@ -713,6 +713,51 @@ public class NoteMcpToolTest {
     verify(noteService).search(any(WikiSearchData.class));
   }
 
+  /**
+   * Runs {@code searchNotes} with the given query and returns the
+   * {@link WikiSearchData} handed to the note service.
+   */
+  @SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
+  private WikiSearchData searchAndCaptureData(String query) throws Exception { // NOSONAR
+    ObjectPageList wikiSearchResult = mock(ObjectPageList.class);
+    when(wikiSearchResult.getAll()).thenReturn(Collections.emptyList());
+    when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
+    runWithConversationAndStaticMocks(() -> tool.searchNotes(query, null, null, null, null));
+    ArgumentCaptor<WikiSearchData> captor = ArgumentCaptor.forClass(WikiSearchData.class);
+    verify(noteService).search(captor.capture());
+    return captor.getValue();
+  }
+
+  /**
+   * A blank query has no relevance score to rank on: the most recently
+   * updated notes must come first.
+   */
+  @Test
+  public void searchNotesWithBlankQueryShouldSortByDateDescending() throws Exception { // NOSONAR
+    for (String blank : new String[] { "", "   ", null }) {
+      org.mockito.Mockito.clearInvocations(noteService);
+      WikiSearchData data = searchAndCaptureData(blank);
+      assertEquals("date", data.getSortField());
+      assertEquals("desc", data.getSortDirection());
+    }
+  }
+
+  /**
+   * A non-blank query keeps the relevance order and is passed as typed. The
+   * connector makes each word a wildcard term, which Elasticsearch normalises
+   * to lower case (Pricing*, pricing* and PRICING* match the same notes on
+   * Elasticsearch 9.4.5); an OR becomes the required word OR*, so the tool
+   * description asks for keywords without boolean syntax.
+   */
+  @Test
+  public void searchNotesWithQueryShouldKeepRelevanceOrderAndCase() throws Exception { // NOSONAR
+    WikiSearchData data = searchAndCaptureData("Pricing OR Pricing decisions");
+    assertNull(data.getSortField());
+    assertNull(data.getSortDirection());
+    assertEquals("Pricing OR Pricing decisions", data.getContent());
+    assertEquals("Pricing OR Pricing decisions", data.getTitle());
+  }
+
   @Test
   public void getNoteVersionsShouldReturnVersionList() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");

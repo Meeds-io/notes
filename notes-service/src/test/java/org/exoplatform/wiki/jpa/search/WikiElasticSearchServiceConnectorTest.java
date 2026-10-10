@@ -20,8 +20,11 @@ package org.exoplatform.wiki.jpa.search;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +33,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -52,6 +56,9 @@ import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.social.search.SpaceSearchConnector;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
@@ -172,6 +179,65 @@ public class WikiElasticSearchServiceConnectorTest extends AbstractKernelTest {
     assertEquals(2, searchResults.size());
     assertEquals("", searchResults.get(0).getExcerpt());
     assertEquals("", searchResults.get(1).getExcerpt());
+  }
+
+  /**
+   * Runs {@code searchWiki} against the query template the connector ships,
+   * {@code notes-search-query.json}, and returns the Elasticsearch statement
+   * sent to the client.
+   */
+  private String sentStatement(String term, WikiSearchData wikiSearchData) throws Exception {
+    when(elasticSearchingClient.sendRequest(anyString(), anyString()))
+        .thenReturn("{\"hits\":{\"total\":0,\"hits\":[]}}");
+    try (InputStream template = getClass().getResourceAsStream("/notes-search-query.json")) {
+      assertNotNull("The shipped query template is not on the test classpath", template);
+      this.searchServiceConnector.setSearchQuery(new String(template.readAllBytes(), StandardCharsets.UTF_8));
+    }
+    when(spaceService.getMemberSpaces("__system")).thenReturn(new SpaceListAccess(spaceStorage,
+                                                                                  spaceSearchConnector,
+                                                                                  "__system",
+                                                                                  SpaceListAccessType.MEMBER));
+    when(spaceStorage.getMemberSpacesCount("__system")).thenReturn(0);
+    when(identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "__system"))
+        .thenReturn(new org.exoplatform.social.core.identity.model.Identity("1"));
+    ConversationState.setCurrent(new ConversationState(new Identity(IdentityConstants.SYSTEM)));
+    searchServiceConnector.searchWiki(term, wikiSearchData);
+    ArgumentCaptor<String> query = ArgumentCaptor.forClass(String.class);
+    verify(elasticSearchingClient).sendRequest(query.capture(), anyString());
+    return query.getValue();
+  }
+
+  /**
+   * A blank term with the date sort set by the MCP tool produces no term
+   * clause and a {@code lastUpdatedDate desc} sort. The statement is parsed
+   * by a strict JSON parser, which refuses a trailing comma as Elasticsearch
+   * does; the unit suite runs no Elasticsearch, so the statement's execution
+   * by the engine is checked on a live index, not here.
+   */
+  @Test
+  public void shouldSortByLastUpdatedDateWhenBlankQueryAndDateSort() throws Exception {
+    WikiSearchData data = new WikiSearchData("", "__system");
+    data.setSortField("date");
+    data.setSortDirection("desc");
+    data.setNotesTreeFilter(false);
+    data.setLimit(5);
+    String statement = sentStatement("", data);
+    assertFalse(statement.contains("query_string"));
+    JsonNode json = JsonMapper.builder().build().readTree(statement);
+    assertEquals("desc", json.path("sort").path(0).path("lastUpdatedDate").path("order").asString());
+  }
+
+  /**
+   * Without a sort field the statement keeps the relevance ({@code _score})
+   * sort.
+   */
+  @Test
+  public void shouldSortByScoreWhenNoSortField() throws Exception {
+    WikiSearchData data = new WikiSearchData("pricing", "__system");
+    data.setNotesTreeFilter(false);
+    String statement = sentStatement("pricing", data);
+    JsonNode json = JsonMapper.builder().build().readTree(statement);
+    assertTrue(json.path("sort").path(0).has("_score"));
   }
 
 }
