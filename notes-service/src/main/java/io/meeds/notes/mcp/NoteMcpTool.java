@@ -418,7 +418,8 @@ public class NoteMcpTool implements McpToolPlugin {
                                      Integer limit,
                                      Boolean isFavorites) {
     Identity currentIdentity = ConversationState.getCurrent().getIdentity();
-    // The query is passed as typed: the index analyzer lowercases the terms.
+    // The query is passed as typed: the connector makes each word a wildcard term,
+    // which Elasticsearch normalises to lower case at query time.
     WikiSearchData data = new WikiSearchData(query, currentIdentity.getUserId());
     if (StringUtils.isBlank(query)) {
       // No term means no relevance: list the most recently updated notes first.
