@@ -47,12 +47,9 @@
       :title="$t('notes.tooltip.close.tree')"
       :aria-label="$t('notes.tooltip.close.tree')"
       @click.stop.prevent="$root.$emit('sidebar-tree-view-expend', false)">
-      <img
-        alt=""
-        src="/social/images/sidebar.svg"
-        class="icon-default-color"
-        height="20px"
-        width="20px">
+      <i
+        class="icon-sidebar icon-default-color"
+        aria-hidden="true"></i>
     </v-btn>
   </div>
 </template>
