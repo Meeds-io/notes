@@ -20,6 +20,7 @@ package io.meeds.notes.mcp;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import org.exoplatform.services.log.ExoLogger;
@@ -41,6 +42,7 @@ import io.meeds.mcp.server.plugin.SpaceScopeResolver;
  * only.
  */
 @Service("noteSpaceScopeResolver")
+@Profile("mcp-server")
 public class NoteSpaceScopeResolver implements SpaceScopeResolver {
 
   /** The logger. */
