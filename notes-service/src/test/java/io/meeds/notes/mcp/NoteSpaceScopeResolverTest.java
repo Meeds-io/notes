@@ -20,6 +20,7 @@ package io.meeds.notes.mcp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.annotation.Profile;
 
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
@@ -67,6 +69,19 @@ public class NoteSpaceScopeResolverTest {
     lenient().when(alpha.getId()).thenReturn("12");
     lenient().when(spaceService.getSpaceByGroupId("/spaces/alpha")).thenReturn(alpha);
     lenient().when(spaceService.getSpaceByGroupId("/spaces/gone")).thenReturn(null);
+  }
+
+  /**
+   * The resolver is a bean of the profile the notes tools live in, which is
+   * how the space scope finds it. Mutant: the {@code @Profile} annotation
+   * removed.
+   */
+  @Test
+  public void resolverIsABeanOfTheProfileOfTheNotesTools() {
+    assertTrue(NoteSpaceScopeResolver.class.isAnnotationPresent(Profile.class));
+    assertEquals("mcp-server", NoteSpaceScopeResolver.class.getAnnotation(Profile.class).value()[0]);
+    assertEquals(NoteMcpTool.class.getAnnotation(Profile.class).value()[0],
+                 NoteSpaceScopeResolver.class.getAnnotation(Profile.class).value()[0]);
   }
 
   /**
