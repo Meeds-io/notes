@@ -45,11 +45,11 @@ import io.meeds.mcp.server.plugin.SpaceScopeResolver;
 @Profile("mcp-server")
 public class NoteSpaceScopeResolver implements SpaceScopeResolver {
 
-  /** The logger. */
-  private static final Log    LOG           = ExoLogger.getLogger(NoteSpaceScopeResolver.class);
-
   /** The name the notes tools' {@code space_scope.resolver} gives. */
   public static final String NAME          = "note";
+
+  /** The logger. */
+  private static final Log    LOG           = ExoLogger.getLogger(NoteSpaceScopeResolver.class);
 
   /** The prefix of the group id of a space. */
   private static final String SPACES_PREFIX = "/spaces/";
