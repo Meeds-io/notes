@@ -27,7 +27,7 @@
     </div>
     <a
       v-else
-      :href="noteUrl"
+      :href="draftPage ? `${noteId}/draft` : noteId"
       :class="{'text-color': (isDraftFilter && draftPage) || !draftPage}"
       :aria-current="(noteId === activeItem[0] && !draftPage) ? 'page' : null"
       @click.prevent="$emit('open-note', $event, note)">
@@ -68,10 +68,6 @@ export default {
     },
     draftPage() {
       return this.note.draftPage;
-    },
-    noteUrl() {
-      const baseUrl = window.location.pathname.split('/notes')[0];
-      return `${baseUrl}/notes/${this.noteId}${this.draftPage ? '/draft' : ''}`;
     },
     isHomePage() {
       return this.note.nodeType === 'WIKIHOME';
