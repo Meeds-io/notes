@@ -82,20 +82,33 @@ public class NoteSpaceScopeResolver implements SpaceScopeResolver {
       return null;
     }
     try {
-      Page note = noteService.getNoteById(objectId);
-      if (note == null || !WikiType.GROUP.isSame(note.getWikiType())) {
-        return null;
-      }
-      String groupId = note.getWikiOwner();
-      if (groupId == null || !groupId.startsWith(SPACES_PREFIX)) {
-        return null;
-      }
-      Space space = spaceService.getSpaceByGroupId(groupId);
-      return space != null && StringUtils.isNumeric(space.getId()) ? Long.valueOf(space.getId()) : null;
+      return spaceOfNote(noteService.getNoteById(objectId), spaceService);
     } catch (Exception e) {
       LOG.debug("The space of note '{}' couldn't be read", objectId, e);
       return null;
     }
+  }
+
+  /**
+   * Tells the space a note belongs to, by the same rule as
+   * {@link #spaceOf(String)}, for a caller that already holds the note.
+   *
+   * @param note the note, null for a missing one
+   * @param spaceService reads the space of a group
+   * @return the id of the space whose notebook holds the note, or null for a
+   *         missing note, a note of a personal or portal notebook, or a space
+   *         that no longer exists
+   */
+  public static Long spaceOfNote(Page note, SpaceService spaceService) {
+    if (note == null || !WikiType.GROUP.isSame(note.getWikiType())) {
+      return null;
+    }
+    String groupId = note.getWikiOwner();
+    if (groupId == null || !groupId.startsWith(SPACES_PREFIX)) {
+      return null;
+    }
+    Space space = spaceService.getSpaceByGroupId(groupId);
+    return space != null && StringUtils.isNumeric(space.getId()) ? Long.valueOf(space.getId()) : null;
   }
 
 }
