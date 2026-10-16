@@ -290,6 +290,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["target_parent_note_id"] },
       "require_approval": true
     },
     {
