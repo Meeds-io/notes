@@ -341,7 +341,7 @@
                     {{ homeLabel }}</span>
                   <a
                     v-else
-                    :href="home.noteId">
+                    :href="noteUrl(home)">
                     {{ homeLabel }}
                   </a>
                 </v-list-item-title>
