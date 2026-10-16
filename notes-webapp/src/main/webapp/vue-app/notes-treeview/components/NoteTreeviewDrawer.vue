@@ -665,6 +665,9 @@ export default {
   },
   methods: {
     noteUrl(item) {
+      if (!item?.noteId) {
+        return '#';
+      }
       const baseUrl = window.location.pathname.split('/notes')[0];
       return `${baseUrl}/notes/${item.noteId}${item.draftPage ? '/draft' : ''}`;
     },
