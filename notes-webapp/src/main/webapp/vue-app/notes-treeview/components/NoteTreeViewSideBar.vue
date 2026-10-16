@@ -212,7 +212,11 @@ export default {
     this.$root.$on('notes-filter-update', this.updateFilter);
     this.$root.$on('note-moved', this.refreshTreeview);
     this.$root.$on('refresh-treeView-items', this.handleRefreshTreeView);
-    this.getNoteById(this.activeNoteId);
+    if (this.isDraftUrl()) {
+      // the drafts filter is the tree view that lists the opened draft
+      this.filter = 'drafts';
+    }
+    this.loadActiveNote();
   },
   beforeDestroy() {
     this.$root.$off('notes-filter-update', this.updateFilter);
@@ -231,7 +235,18 @@ export default {
       this.filter = filter;
     },
     refreshTreeview() {
-      this.getNoteById(this.activeNoteId);
+      this.loadActiveNote();
+    },
+    isDraftUrl() {
+      // a draft's URL ends with `<draftId>/draft`
+      return String(this.activeNoteId || '').split('/')[1] === 'draft';
+    },
+    loadActiveNote() {
+      if (this.isDraftUrl()) {
+        this.getDraftNote(String(this.activeNoteId).split('/')[0]);
+      } else {
+        this.getNoteById(this.activeNoteId);
+      }
     },
     handleOpenNote(payload) {
       const { event, note } = payload;
