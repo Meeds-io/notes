@@ -996,6 +996,7 @@ export default {
     },
     handlePopstate(event) {
       this.currentPath = window.location.pathname;
+      this.isDraft = this.currentPath.endsWith('/draft');
       if (event?.state?.translation) {
         this.updateSelectedTranslation(event?.state?.translation);
       }

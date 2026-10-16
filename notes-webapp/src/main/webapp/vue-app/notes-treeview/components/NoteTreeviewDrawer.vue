@@ -425,7 +425,7 @@
                   </div>
                   <a
                     v-else
-                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId"
+                    :href="noteUrl(item)"
                     :class="{'text-color': (isDraftFilter && item.draftPage) || !item.draftPage}"
                     :aria-current="(item.noteId === activeItem[0] && !item.draftPage) ? 'page' : null"
                     @click.prevent="openNote($event,item)">
@@ -664,6 +664,10 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
+    noteUrl(item) {
+      const baseUrl = window.location.pathname.split('/notes')[0];
+      return `${baseUrl}/notes/${item.noteId}${item.draftPage ? '/draft' : ''}`;
+    },
     handleRefreshTreeView(note) {
       if (note.draftPage) {
         this.getDraftNote(note.id);
