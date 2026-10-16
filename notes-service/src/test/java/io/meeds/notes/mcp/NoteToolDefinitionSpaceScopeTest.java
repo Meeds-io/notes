@@ -22,7 +22,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.net.URL;
@@ -30,10 +33,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.Test;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.service.NoteService;
+
+import io.meeds.mcp.server.constant.Origin;
+import io.meeds.mcp.server.model.ActingIdentity;
 import io.meeds.mcp.server.model.SimpleToolDefinition;
+import io.meeds.mcp.server.model.SpaceScopeRefusedException;
+import io.meeds.mcp.server.plugin.SpaceScopeResolver;
 import io.meeds.mcp.server.model.SpaceScopeDeclaration;
 import io.meeds.mcp.server.service.McpToolSpaceScopeService;
 import io.meeds.mcp.server.util.McpToolUtils;
@@ -59,7 +74,8 @@ public class NoteToolDefinitionSpaceScopeTest {
                                                                    "restore_note_version",
                                                                    "set_note_summary",
                                                                    "remove_note_cover",
-                                                                   "remove_note_translation");
+                                                                   "remove_note_translation",
+                                                                   "move_note");
 
   private static final Set<String>         WRITES         = Set.of("create_space_note",
                                                                    "create_child_note",
@@ -69,10 +85,11 @@ public class NoteToolDefinitionSpaceScopeTest {
                                                                    "restore_note_version",
                                                                    "set_note_summary",
                                                                    "remove_note_cover",
-                                                                   "remove_note_translation");
+                                                                   "remove_note_translation",
+                                                                   "move_note");
 
   /** Tools that reach other notes or places than the one their object argument names. */
-  private static final Set<String>         LEFT_OUT       = Set.of("create_personal_note", "move_note", "set_note_cover");
+  private static final Set<String>         LEFT_OUT       = Set.of("create_personal_note", "set_note_cover");
 
   private static final Map<String, String> OBJECT_ARGS    = Map.of("create_child_note", "parent_note_id");
 
@@ -102,8 +119,8 @@ public class NoteToolDefinitionSpaceScopeTest {
 
   /**
    * Tools that can reach another space than the one their arguments name stay
-   * undeclared, so a limited call refuses them: the personal notebook, a move
-   * that names a second note, a cover fetched from a URL.
+   * undeclared, so a limited call refuses them: the personal notebook and a
+   * cover fetched from a URL.
    */
   @Test
   public void leftOutToolsStayUndeclared() {
@@ -140,7 +157,9 @@ public class NoteToolDefinitionSpaceScopeTest {
    * The note tools reach their note through the {@value NoteSpaceScopeResolver#NAME}
    * resolver, by the argument that names the note they change or read: the
    * parent for a child note, the note otherwise. Each tool accepts nothing
-   * that names another note or a space.
+   * that names another note or a space, but the move: its new parent is a
+   * second note, which {@code NoteMcpTool#moveNote} accepts in a limited call
+   * only when it belongs to the call's space.
    */
   @Test
   public void noteToolsResolveTheirNote() {
@@ -153,13 +172,15 @@ public class NoteToolDefinitionSpaceScopeTest {
       assertEquals(name, NoteSpaceScopeResolver.NAME, scope.getResolver());
       assertNull(name, scope.getSpaceArg());
       assertTrue(name, scope.getFalseOnlyArgs() == null || scope.getFalseOnlyArgs().isEmpty());
-      allowed(declared.get(name)).forEach(argument -> assertFalse(name + " takes " + argument,
-                                                                  argument.endsWith("_id")));
+      allowed(declared.get(name)).stream()
+                                 .filter(argument -> !("move_note".equals(name) && "target_parent_note_id".equals(argument)))
+                                 .forEach(argument -> assertFalse(name + " takes " + argument, argument.endsWith("_id")));
     });
     assertEquals(List.of("language"), allowed(declared.get("get_note")));
     assertEquals(List.of(), allowed(declared.get("delete_note")));
     assertEquals(List.of(), allowed(declared.get("publish_note")));
     assertEquals(List.of("title", "html_content", "language"), allowed(declared.get("update_note")));
+    assertEquals(List.of("target_parent_note_id"), allowed(declared.get("move_note")));
   }
 
   /**
@@ -179,6 +200,67 @@ public class NoteToolDefinitionSpaceScopeTest {
         scope.getFalseOnlyArgs().forEach(argument -> assertTrue(name + " takes " + argument, properties.has(argument)));
       }
     });
+  }
+
+  /**
+   * Through the real space scope check and the real
+   * {@value NoteSpaceScopeResolver#NAME} resolver, an approved proposal of a
+   * run limited to space 12 moves a note of space 12, naming its new parent;
+   * the move of a note of space 13 or of a personal note is refused, and so
+   * is a call that isn't a proposal or carries an argument the declaration
+   * doesn't accept. The new parent itself is checked by {@code NoteMcpTool}.
+   * Mutants: the declaration dropped, its resolver or object argument
+   * changed, or the new parent left out of the accepted arguments.
+   *
+   * @throws Exception never, the services are mocks
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  public void moveIsEnforcedUnderASpaceScope() throws Exception {
+    NoteService noteService = mock(NoteService.class);
+    SpaceService spaceService = mock(SpaceService.class);
+    NoteSpaceScopeResolver resolver = new NoteSpaceScopeResolver();
+    ReflectionTestUtils.setField(resolver, "noteService", noteService);
+    ReflectionTestUtils.setField(resolver, "spaceService", spaceService);
+    Space alpha = mock(Space.class);
+    when(alpha.getId()).thenReturn("12");
+    Space beta = mock(Space.class);
+    when(beta.getId()).thenReturn("13");
+    when(spaceService.getSpaceByGroupId("/spaces/alpha")).thenReturn(alpha);
+    when(spaceService.getSpaceByGroupId("/spaces/beta")).thenReturn(beta);
+    Page inSpace = note("group", "/spaces/alpha");
+    Page otherSpace = note("group", "/spaces/beta");
+    Page personal = note("user", "root");
+    when(noteService.getNoteById("5")).thenReturn(inSpace);
+    when(noteService.getNoteById("6")).thenReturn(otherSpace);
+    when(noteService.getNoteById("4")).thenReturn(personal);
+    ObjectProvider<SpaceScopeResolver> provider = mock(ObjectProvider.class);
+    when(provider.orderedStream()).thenAnswer(invocation -> Stream.of(resolver));
+    McpToolSpaceScopeService service = new McpToolSpaceScopeService(provider);
+    ActingIdentity proposal = ActingIdentity.agent("support-desk", "SUPPORT_DESK", Origin.PROPOSAL, 12L);
+    ActingIdentity run = ActingIdentity.agent("support-desk", "SUPPORT_DESK", Origin.MENTION, 12L);
+    SimpleToolDefinition tool = declaredTools().get("move_note");
+
+    String move = "{\"note_id\":5,\"target_parent_note_id\":7}";
+    assertEquals(move, service.enforce("move_note", tool, move, proposal));
+    assertThrows(SpaceScopeRefusedException.class, () -> service.enforce("move_note", tool, move, run));
+    for (String refused : List.of("{\"note_id\":6,\"target_parent_note_id\":7}",
+                                  "{\"note_id\":4,\"target_parent_note_id\":7}",
+                                  "{\"note_id\":5,\"target_parent_note_id\":7,\"space_id\":13}")) {
+      assertThrows(refused, SpaceScopeRefusedException.class, () -> service.enforce("move_note", tool, refused, proposal));
+    }
+  }
+
+  /**
+   * @param wikiType the type of the note's notebook
+   * @param owner its owner, a group id for a space
+   * @return a note of that notebook
+   */
+  private static Page note(String wikiType, String owner) {
+    Page note = mock(Page.class);
+    when(note.getWikiType()).thenReturn(wikiType);
+    when(note.getWikiOwner()).thenReturn(owner);
+    return note;
   }
 
   /**
