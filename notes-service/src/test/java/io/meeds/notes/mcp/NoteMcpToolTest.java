@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -84,6 +85,7 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
+import io.meeds.mcp.server.model.ActingIdentity;
 import io.meeds.mcp.server.tool.model.ActivityModel;
 import io.meeds.mcp.server.tool.model.UserModel;
 import io.meeds.mcp.server.tool.util.ActivityToolUtils;
@@ -178,6 +180,10 @@ public class NoteMcpToolTest {
 
   @Mock
   private ConversationState       conversationState;
+
+  private Long                    currentScopeSpaceId;
+
+  private boolean                 scopeUnreadable;
 
   private NoteMcpTool             tool;
 
@@ -742,6 +748,142 @@ public class NoteMcpToolTest {
     tool.deleteNote(NOTE_ID);
 
     verify(noteService).deleteNote(String.valueOf(NOTE_ID));
+  }
+
+  /**
+   * A note moves neither under itself nor under one of its sub-notes, at any
+   * depth, on any call: the storage would
+   * re-parent it into a cycle. A tree that already holds a cycle above the
+   * new parent ends the walk. A new parent outside the note's subtree is
+   * accepted.
+   * Mutants: the check removed, the walk stopped at the new parent, or the
+   * visited set removed (the cyclic tree never ends).
+   *
+   * @throws Exception never
+   */
+  @Test(timeout = 10000)
+  public void aNoteNeverMovesUnderItselfOrItsSubNotes() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page child = mockPage("20", "Child");
+    lenient().when(child.getParentPageId()).thenReturn(String.valueOf(NOTE_ID));
+    Page grandChild = mockPage("21", "Grand child");
+    lenient().when(grandChild.getParentPageId()).thenReturn("20");
+    Page loopA = mockPage("22", "Loop A");
+    lenient().when(loopA.getParentPageId()).thenReturn("23");
+    Page loopB = mockPage("23", "Loop B");
+    lenient().when(loopB.getParentPageId()).thenReturn("22");
+    Page sibling = mockPage(String.valueOf(PARENT_NOTE_ID), "Sibling");
+    lenient().when(sibling.getParentPageId()).thenReturn("1");
+    Page root = mockPage("1", "Root");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(20L), eq(currentIdentity), eq(null), eq(null))).thenReturn(child);
+    when(noteService.getNoteByIdAndLang(eq(21L), eq(currentIdentity), eq(null), eq(null))).thenReturn(grandChild);
+    when(noteService.getNoteByIdAndLang(eq(22L), eq(currentIdentity), eq(null), eq(null))).thenReturn(loopA);
+    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(sibling);
+    lenient().when(noteService.getNoteById(String.valueOf(NOTE_ID))).thenReturn(note);
+    lenient().when(noteService.getNoteById("20")).thenReturn(child);
+    lenient().when(noteService.getNoteById("22")).thenReturn(loopA);
+    lenient().when(noteService.getNoteById("23")).thenReturn(loopB);
+    lenient().when(noteService.getNoteById("1")).thenReturn(root);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+
+    for (long target : new long[] { NOTE_ID, 20L, 21L }) {
+      assertThrows(String.valueOf(target), IllegalArgumentException.class, () -> tool.moveNote(NOTE_ID, target));
+    }
+    verify(noteService, never()).moveNote(any(WikiPageParams.class), any(WikiPageParams.class), any());
+
+    tool.moveNote(NOTE_ID, 22L);
+    tool.moveNote(NOTE_ID, PARENT_NOTE_ID);
+    verify(noteService, times(2)).moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(currentIdentity));
+  }
+
+  /**
+   * The space a call is limited to is the one its acting identity carries,
+   * none for an identity without a scope or no identity, and an identity that
+   * can't be read fails the read rather than passing for an unlimited call.
+   * Runs the real {@code getScopeSpaceId}, which the other tests stub.
+   * Mutants: the scope not read, or the read failure swallowed.
+   */
+  @Test
+  public void theScopeSpaceIsTheOneTheActingIdentityCarries() { // NOSONAR
+    NoteMcpTool realTool = new NoteMcpTool(wikiService,
+                                           noteService,
+                                           activityManager,
+                                           identityManager,
+                                           i18NActivityProcessor,
+                                           spaceService,
+                                           translationService,
+                                           profilePropertyService,
+                                           userAcl,
+                                           portalConfigService,
+                                           permanentLinkService,
+                                           uploadService,
+                                           attachmentService,
+                                           fileService,
+                                           layoutService);
+    ActingIdentity limited = mock(ActingIdentity.class);
+    when(limited.spaceScope()).thenReturn(7L);
+    ActingIdentity unlimited = mock(ActingIdentity.class);
+    when(unlimited.spaceScope()).thenReturn(null);
+    try (MockedStatic<McpToolUtils> mocked = mockStatic(McpToolUtils.class)) {
+      mocked.when(McpToolUtils::getCurrentActingIdentity).thenReturn(limited);
+      assertEquals(Long.valueOf(7L), realTool.getScopeSpaceId());
+      mocked.when(McpToolUtils::getCurrentActingIdentity).thenReturn(unlimited);
+      assertNull(realTool.getScopeSpaceId());
+      mocked.when(McpToolUtils::getCurrentActingIdentity).thenReturn(null);
+      assertNull(realTool.getScopeSpaceId());
+      mocked.when(McpToolUtils::getCurrentActingIdentity).thenThrow(new IllegalStateException("refused"));
+      assertThrows(IllegalStateException.class, realTool::getScopeSpaceId);
+    }
+  }
+
+  /**
+   * In a call limited to a space, a note moves only under a new parent of
+   * that space: a parent in another space's notebook or in a personal one is
+   * refused, and so is any move when the call's identity can't be read. A
+   * call that isn't limited moves the note wherever the user can edit.
+   * Mutants: the check removed, the comparison inverted, an unreadable
+   * identity taken as unlimited, or an unlimited call checked.
+   *
+   * @throws Exception never
+   */
+  @Test
+  public void aMoveLimitedToASpaceKeepsTheNoteInIt() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page inSpace = mockPage(String.valueOf(PARENT_NOTE_ID), "Target");
+    Page otherSpace = mockPage("14", "Elsewhere");
+    lenient().when(otherSpace.getWikiOwner()).thenReturn("/spaces/other");
+    Page personal = mockPage("15", "Mine");
+    lenient().when(personal.getWikiType()).thenReturn(USER_WIKI_TYPE);
+    lenient().when(personal.getWikiOwner()).thenReturn(USER);
+    Space space = mock(Space.class);
+    when(space.getId()).thenReturn(String.valueOf(SPACE_ID));
+    Space other = mock(Space.class);
+    when(other.getId()).thenReturn("34");
+    when(spaceService.getSpaceByGroupId(GROUP_ID)).thenReturn(space);
+    when(spaceService.getSpaceByGroupId("/spaces/other")).thenReturn(other);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(PARENT_NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(inSpace);
+    when(noteService.getNoteByIdAndLang(eq(14L), eq(currentIdentity), eq(null), eq(null))).thenReturn(otherSpace);
+    when(noteService.getNoteByIdAndLang(eq(15L), eq(currentIdentity), eq(null), eq(null))).thenReturn(personal);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+
+    currentScopeSpaceId = SPACE_ID;
+    assertThrows(IllegalAccessException.class, () -> tool.moveNote(NOTE_ID, 14L));
+    assertThrows(IllegalAccessException.class, () -> tool.moveNote(NOTE_ID, 15L));
+    scopeUnreadable = true;
+    assertThrows(IllegalAccessException.class, () -> tool.moveNote(NOTE_ID, PARENT_NOTE_ID));
+    verify(noteService, never()).moveNote(any(WikiPageParams.class), any(WikiPageParams.class), any());
+
+    scopeUnreadable = false;
+    tool.moveNote(NOTE_ID, PARENT_NOTE_ID);
+    verify(noteService, times(1)).moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(currentIdentity));
+
+    currentScopeSpaceId = null;
+    tool.moveNote(NOTE_ID, 14L);
+    verify(noteService, times(2)).moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(currentIdentity));
   }
 
   @Test
@@ -1707,6 +1849,14 @@ public class NoteMcpToolTest {
     @Override
     public Identity getCurrentUserAclIdentity() {
       return currentIdentity;
+    }
+
+    @Override
+    protected Long getScopeSpaceId() {
+      if (scopeUnreadable) {
+        throw new IllegalStateException("No acting identity");
+      }
+      return currentScopeSpaceId;
     }
 
     @Override

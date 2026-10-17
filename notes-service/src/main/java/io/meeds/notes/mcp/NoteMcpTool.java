@@ -26,8 +26,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -71,12 +73,14 @@ import org.exoplatform.wiki.service.WikiService;
 import org.exoplatform.wiki.service.search.SearchResult;
 import org.exoplatform.wiki.service.search.WikiSearchData;
 
+import io.meeds.mcp.server.model.ActingIdentity;
 import io.meeds.mcp.server.plugin.McpToolPlugin;
 import io.meeds.mcp.server.tool.model.ActivityModel;
 import io.meeds.mcp.server.tool.model.UserModel;
 import io.meeds.mcp.server.tool.util.ActivityToolUtils;
 import io.meeds.mcp.server.tool.util.UploadToolUtils;
 import io.meeds.mcp.server.tool.util.UserToolUtils;
+import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteBreadcrumbModel;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
@@ -99,7 +103,15 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final Log        LOG              = ExoLogger.getLogger(NoteMcpTool.class);
 
-  private static final String     NOTE_EDIT_DENIED = "User isn't allowed to update the Note with id '%s'";
+  private static final String     NOTE_EDIT_DENIED     = "User isn't allowed to update the Note with id '%s'";
+
+  private static final String     TARGET_OUTSIDE_SCOPE = "Note '%s' isn't in the space this call is limited to";
+
+  private static final String     TARGET_UNDER_NOTE    =
+                                                   "Note '%s' can't move under itself or one of its own sub-notes";
+
+  private static final String     SCOPE_UNREADABLE     =
+                                                   "The space this call is limited to can't be read, so it can't move a note";
 
   private static final String     SPACE_WIKI_TYPE  = WikiType.GROUP.toString().toLowerCase();
 
@@ -176,6 +188,66 @@ public class NoteMcpTool implements McpToolPlugin {
     this.attachmentService = attachmentService;
     this.fileService = fileService;
     this.layoutService = layoutService;
+  }
+
+  /**
+   * @return the space the current call is limited to, null when it isn't
+   * @throws IllegalStateException when the call's identity can't be read
+   */
+  protected Long getScopeSpaceId() {
+    ActingIdentity identity = McpToolUtils.getCurrentActingIdentity();
+    return identity == null ? null : identity.spaceScope();
+  }
+
+  /**
+   * Checks a note a call limited to a space names besides its object belongs
+   * to that space, by the rule of {@link NoteSpaceScopeResolver}. A call that
+   * isn't limited is not checked; one whose identity can't be read is
+   * refused. The MCP server refuses such a call before the tool runs, so that
+   * branch is defence in depth: it keeps the tool fail-closed should it be
+   * reached another way.
+   *
+   * @param note the note
+   * @param noteId its id, for the message
+   * @throws IllegalAccessException when the call is limited to a space the
+   *           note isn't in, or its identity can't be read
+   */
+  private void checkInScopeSpace(Page note, long noteId) throws IllegalAccessException {
+    Long spaceId;
+    try {
+      spaceId = getScopeSpaceId();
+    } catch (IllegalStateException e) {
+      throw new IllegalAccessException(SCOPE_UNREADABLE);
+    }
+    if (spaceId != null && !spaceId.equals(NoteSpaceScopeResolver.spaceOfNote(note, spaceService))) {
+      throw new IllegalAccessException(TARGET_OUTSIDE_SCOPE.formatted(noteId));
+    }
+  }
+
+  /**
+   * Checks a note doesn't move under itself or one of its own sub-notes, by
+   * walking the new parent's ancestors up to the root. The note storage
+   * re-parents a note without that check, and a move into its own subtree
+   * would cut the subtree off its notebook in a cycle. An ancestor seen twice
+   * ends the walk, so a tree that already holds a cycle can't loop it.
+   *
+   * @param note the note to move
+   * @param target the note that would become its parent
+   * @param noteId the note's id, for the message
+   * @throws IllegalArgumentException when the target is the note or one of
+   *           its sub-notes
+   */
+  @SneakyThrows
+  private void checkNotUnderItself(Page note, Page target, long noteId) {
+    Set<String> visited = new HashSet<>();
+    Page ancestor = target;
+    while (ancestor != null && visited.add(ancestor.getId())) {
+      if (StringUtils.equals(ancestor.getId(), note.getId())) {
+        throw new IllegalArgumentException(TARGET_UNDER_NOTE.formatted(noteId));
+      }
+      String parentId = ancestor.getParentPageId();
+      ancestor = StringUtils.isBlank(parentId) ? null : noteService.getNoteById(parentId);
+    }
   }
 
   public NoteRootTreeModel getSpaceNoteTree(long spaceId) throws ObjectNotFoundException, IllegalAccessException {
@@ -388,6 +460,21 @@ public class NoteMcpTool implements McpToolPlugin {
     noteService.deleteNote(String.valueOf(noteId));
   }
 
+  /**
+   * Moves a note under another note, both editable by the current user. In a
+   * call limited to a space, the new parent must belong to that space: the
+   * space scope checks the moved note only, and the new parent would
+   * otherwise carry the note to another space's notebook or a personal one.
+   *
+   * @param noteId the note to move
+   * @param targetParentNoteId the note that becomes its parent
+   * @throws IllegalAccessException when the current user can't edit either
+   *           note, or, in a call limited to a space, the new parent belongs
+   *           to another space or none, or the call's identity can't be read
+   * @throws ObjectNotFoundException when either note doesn't exist
+   * @throws IllegalArgumentException when the new parent is the note itself
+   *           or one of its sub-notes
+   */
   public void moveNote(long noteId,
                        long targetParentNoteId) throws IllegalAccessException, ObjectNotFoundException {
     Identity currentUserAclIdentity = getCurrentUserAclIdentity();
@@ -399,6 +486,8 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(targetNote, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
+    checkInScopeSpace(targetNote, targetParentNoteId);
+    checkNotUnderItself(note, targetNote, noteId);
     WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
     WikiPageParams newLocationParams = new WikiPageParams(targetNote.getWikiType(),
                                                           targetNote.getWikiOwner(),
