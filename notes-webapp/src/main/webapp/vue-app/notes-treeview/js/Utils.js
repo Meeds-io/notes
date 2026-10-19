@@ -17,11 +17,24 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-// the absolute URL of a note, or of a draft with its trailing `/draft`, under the notes page:
-// on the notes editor page, the notes page is the one the editor names (NotesEditorDashboard#notePageUri)
+// the absolute URL of a note, or of a draft with its trailing `/draft`, under the notes page
 export function getNoteUrl(noteId, isDraft) {
-  const isEditorPage = eXo.env.portal.selectedNodeUri === 'notes-editor';
-  const editorNotePageUri = isEditorPage && (new URLSearchParams(window.location.search).get('notePageUri') || 'dashboard/notes');
-  const notePageUri = editorNotePageUri || eXo.env.portal.selectedNodeUri;
-  return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${notePageUri}/${noteId}${isDraft ? '/draft' : ''}`;
+  const notePath = `/${noteId}${isDraft ? '/draft' : ''}`;
+  const nodeUri = eXo.env.portal.selectedNodeUri;
+  if (nodeUri === 'notes-editor') {
+    // the notes page the editor names, as NotesEditorDashboard#notePageUri reads it
+    // a notePageUri sent from a space's notes page is a node of that space's site
+    const urlParams = new URLSearchParams(window.location.search);
+    const notePageUri = urlParams.get('notePageUri');
+    const spaceGroupId = urlParams.get('spaceGroupId');
+    if (notePageUri && spaceGroupId) {
+      return `${eXo.env.portal.context}/g/:spaces:${spaceGroupId}/${notePageUri}${notePath}`;
+    }
+    return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${notePageUri || 'dashboard/notes'}${notePath}`;
+  }
+  // the notes page URL is <site path>/<selectedNodeUri>[/<noteId>[/draft]], on a portal site as on a space site
+  const path = `${window.location.pathname}/`;
+  const pageIndex = path.lastIndexOf(`/${nodeUri}/`);
+  const sitePath = pageIndex >= 0 ? path.substring(0, pageIndex) : `${eXo.env.portal.context}/${eXo.env.portal.portalName}`;
+  return `${sitePath}/${nodeUri}${notePath}`;
 }
