@@ -670,7 +670,7 @@ export default {
       if (!item?.noteId) {
         return '#';
       }
-      return getNoteUrl(item.noteId, item.draftPage);
+      return getNoteUrl(item.noteId, item.draftPage, this.note?.url);
     },
     handleRefreshTreeView(note) {
       if (note.draftPage) {

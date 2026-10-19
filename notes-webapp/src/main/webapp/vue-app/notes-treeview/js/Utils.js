@@ -18,16 +18,21 @@
  */
 
 // the absolute URL of a note, or of a draft with its trailing `/draft`, under the notes page
-export function getNoteUrl(noteId, isDraft) {
+// noteBookUrl: the server-built URL of a page of the same note book, when the caller holds one
+export function getNoteUrl(noteId, isDraft, noteBookUrl) {
   const notePath = `/${noteId}${isDraft ? '/draft' : ''}`;
   const nodeUri = eXo.env.portal.selectedNodeUri;
   if (nodeUri === 'notes-editor') {
-    // the notes page the editor names, as NotesEditorDashboard#notePageUri reads it
-    // a notePageUri sent from a space's notes page is a node of that space's site
+    if (noteBookUrl) {
+      // a space note's URL, /portal/s/<spaceId>/<notes node>/<noteId> (Utils#getPageUrl), whoever opened the editor
+      return `${noteBookUrl.substring(0, noteBookUrl.lastIndexOf('/'))}${notePath}`;
+    }
+    // the notes page the editor names, as NotesEditorDashboard#notePageUri reads it:
+    // opened from a space's notes page, spaceGroupId is the group id without `/spaces/` and notePageUri a node of that space's site
     const urlParams = new URLSearchParams(window.location.search);
     const notePageUri = urlParams.get('notePageUri');
     const spaceGroupId = urlParams.get('spaceGroupId');
-    if (notePageUri && spaceGroupId) {
+    if (notePageUri && spaceGroupId && !spaceGroupId.includes('/')) {
       return `${eXo.env.portal.context}/g/:spaces:${spaceGroupId}/${notePageUri}${notePath}`;
     }
     return `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${notePageUri || 'dashboard/notes'}${notePath}`;
