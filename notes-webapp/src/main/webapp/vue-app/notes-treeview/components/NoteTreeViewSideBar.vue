@@ -134,7 +134,8 @@ export default {
     currentPath: window.location.pathname,
     lang: eXo.env.portal.language,
     dragTimer: null,
-    dndPayload: null
+    dndPayload: null,
+    historyFilter: null
   }),
   computed: {
     homeLabel() {
@@ -212,6 +213,7 @@ export default {
     this.$root.$on('notes-filter-update', this.updateFilter);
     this.$root.$on('note-moved', this.refreshTreeview);
     this.$root.$on('refresh-treeView-items', this.handleRefreshTreeView);
+    window.addEventListener('popstate', this.handlePopstate);
     if (this.isDraftUrl()) {
       // the drafts filter is the tree view that lists the opened draft
       this.filter = 'drafts';
@@ -222,10 +224,22 @@ export default {
     this.$root.$off('notes-filter-update', this.updateFilter);
     this.$root.$off('note-moved', this.refreshTreeview);
     this.$root.$off('refresh-treeView-items', this.handleRefreshTreeView);
+    window.removeEventListener('popstate', this.handlePopstate);
   },
   methods: {
+    handlePopstate() {
+      // like a page load, a history navigation shows the tree under the filter of its URL,
+      // applied once the note page has loaded the URL's note and emitted refresh-treeView-items
+      this.historyFilter = window.location.pathname.endsWith('/draft') ? 'drafts' : 'published';
+    },
     handleRefreshTreeView(note) {
-      if (note.draftPage) {
+      const historyFilter = this.historyFilter;
+      this.historyFilter = null;
+      if (historyFilter && historyFilter !== this.filter) {
+        // the filter watcher loads the tree of this note
+        this.note = note;
+        this.filter = historyFilter;
+      } else if (note.draftPage) {
         this.getDraftNote(note.id);
       } else {
         this.getNoteById(note.id);
