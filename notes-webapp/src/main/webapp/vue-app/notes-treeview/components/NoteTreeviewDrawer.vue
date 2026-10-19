@@ -490,6 +490,8 @@
 </template>
 
 <script>
+import { getNoteUrl } from '../js/Utils.js';
+
 export default {
   data: () => ({
     note: {},
@@ -668,8 +670,7 @@ export default {
       if (!item?.noteId) {
         return '#';
       }
-      const baseUrl = window.location.pathname.split('/notes')[0];
-      return `${baseUrl}/notes/${item.noteId}${item.draftPage ? '/draft' : ''}`;
+      return getNoteUrl(item.noteId, item.draftPage);
     },
     handleRefreshTreeView(note) {
       if (note.draftPage) {
