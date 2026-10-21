@@ -398,7 +398,7 @@
     {
       "name": "set_note_cover",
       "title": "Set a note's cover image",
-      "description": "Set a note's cover (featured) image from a public image URL or base64 bytes. The image is wired into the note so it actually renders as the note's illustration.",
+      "description": "Set a note's cover (featured) image from an image (png, jpeg, gif or webp, up to 10 MB). The image comes from exactly one source, in order of choice: an image already attached in the platform (attachment_object_type + attachment_object_id); a public URL that serves it (image_url); an image on your machine, sent with start_upload and its curl command, then passed as upload_id; a small image as image_base64 only when you have no shell. The image is wired into the note so it actually renders as the note's illustration.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -408,19 +408,23 @@
           },
           "image_url": {
             "type": "string",
-            "description": "Direct http(s) URL of an image to use as the cover. Provide exactly one image source."
+            "description": "Direct http(s) URL where the image is publicly served, fetched by the server. Use it only for a URL that really serves the image: never guess or invent one. One image source per call: attachment_object_id, image_url, upload_id or image_base64."
           },
           "image_base64": {
             "type": "string",
-            "description": "Base64-encoded image bytes (png, jpeg, gif or webp), optionally as a data: URI. Provide exactly one image source."
+            "description": "Base64-encoded image bytes (png, jpeg, gif or webp), optionally as a data: URI. Last resort, for a small image when you have no shell to run start_upload's curl command or curl cannot reach the platform: every byte goes through the conversation. One image source per call."
           },
           "attachment_object_type": {
             "type": "string",
-            "description": "Internal: object type of an existing platform attachment to use as the cover (set automatically by the client from the user's attached image — do not fill this yourself). Read as the current user, so its ACL is enforced."
+            "description": "Type of the platform object holding an image already attached in the platform (e.g. 'activity'), read as the current user, so its ACL is enforced. Set automatically by the in-platform assistant from the image the user attached; otherwise set it only to reuse an attachment of an object you can read, never an invented one. Goes with attachment_object_id."
           },
           "attachment_object_id": {
             "type": "string",
-            "description": "Internal: object id of an existing platform attachment to use as the cover (set automatically by the client — do not fill this yourself). Provide exactly one image source: attachment_object_id, image_url or image_base64."
+            "description": "Id of the platform object holding that image (its first attached file is used). The first choice when the image is already in the platform. One image source per call: attachment_object_id, image_url, upload_id or image_base64."
+          },
+          "upload_id": {
+            "type": "string",
+            "description": "The upload_id start_upload returned, once its curl command answered {\"status\":\"uploaded\"}: the way to send an image that is on your machine (png, jpeg, gif or webp, up to 10 MB). Only your own uploads are accepted; this call consumes it. One image source per call."
           },
           "alt_text": {
             "type": "string",
