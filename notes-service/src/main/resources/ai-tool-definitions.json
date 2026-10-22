@@ -28,7 +28,7 @@
     {
       "name": "get_note",
       "title": "Get a note",
-      "description": "Get a single note by its ID, with its HTML content (html_content). A long note is read part by part: pass offset (0 first) or max_chars; while next_offset is present, call again with offset=next_offset.",
+      "description": "Get a single note by its ID, with its HTML content (html_content). A long note is read part by part: pass offset (0 first) or max_chars; while next_offset is present, call again with offset=next_offset and the version_number the first part gave, so every part comes from the same version.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -348,7 +348,7 @@
     {
       "name": "get_note_versions",
       "title": "Get a note's version history",
-      "description": "List the version history of a note: each version's version_number, id, title, date and author, without content (get_note with version_number reads it). While has_more, call again with offset=next_offset. Use restore_note_version to roll back to one.",
+      "description": "List the version history of a note, newest first: each version's version_number, id, title, date and author, without content (get_note with version_number reads it). While has_more, call again with offset=next_offset. Use restore_note_version to roll back to one.",
       "input_schema": {
         "type": "object",
         "properties": {

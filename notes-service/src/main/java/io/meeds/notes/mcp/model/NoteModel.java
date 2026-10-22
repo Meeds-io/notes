@@ -45,8 +45,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param lastUpdater the last user who updated the note, or the version's
  *          author
  * @param breadcrumb the note's ancestors, from the notebook's home note
- * @param versionNumber the number of the version read, null for the current
- *          note
+ * @param versionNumber the number of the version read; on a part of the
+ *          current note, the published version it was cut from; null for the
+ *          whole current note
  * @param offset the character of the HTML content the part starts at, null
  *          when the whole content is returned
  * @param endOffset the character after the part's last one, null when the

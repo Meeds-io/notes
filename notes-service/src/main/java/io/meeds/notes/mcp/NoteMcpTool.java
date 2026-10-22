@@ -25,6 +25,7 @@ import static io.meeds.mcp.server.util.McpToolUtils.markdownToHtml;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +67,7 @@ import org.exoplatform.social.core.utils.MentionUtils;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
@@ -115,6 +117,13 @@ public class NoteMcpTool implements McpToolPlugin {
 
   /** The most characters {@code get_note} returns in one part. */
   static final int                MAX_PART_CHARS       = 200_000;
+
+  /**
+   * The most hits {@code search_notes} pages through: Elasticsearch's default
+   * {@code index.max_result_window}, which refuses a search whose from + size
+   * goes beyond it.
+   */
+  static final int                MAX_SEARCH_WINDOW    = 10_000;
 
   private static final Log        LOG              = ExoLogger.getLogger(NoteMcpTool.class);
 
@@ -285,7 +294,16 @@ public class NoteMcpTool implements McpToolPlugin {
    * HTML content is returned. With either, at most max_chars characters of the
    * HTML content are returned from offset, cut where no tag, character
    * reference or surrogate pair is split, with the content's total length and
-   * where the next part starts.
+   * where the next part starts. A part of the current note also carries the
+   * number of the published version it was cut from, when that version is the
+   * one read: passed back as versionNumber, it pins the next parts to that
+   * version even if the note is edited between two calls.
+   * <p>
+   * A version read returns the version's title, content, update date and last
+   * updater, with the current note's summary, url, breadcrumb and can_edit. The version is
+   * found in the history of {@code getVersionsHistoryOfNoteByLang}, which, on a
+   * note's default language with no history yet, records the current note as
+   * its first version.
    *
    * @param noteId the note id
    * @param language the translation to read, null or blank for the default
@@ -314,8 +332,31 @@ public class NoteMcpTool implements McpToolPlugin {
       note.setUpdatedDate(version.getUpdatedDate() != null ? version.getUpdatedDate() : version.getCreatedDate());
       note.setLastUpdater(version.getAuthor());
     }
-    NoteModel model = toNoteModel(note, versionNumber);
-    return offset == null && maxChars == null ? model : toNotePart(model, offset, maxChars);
+    if (offset == null && maxChars == null) {
+      return toNoteModel(note, versionNumber);
+    }
+    Long readVersionNumber = versionNumber != null ? versionNumber : publishedVersionNumber(note, normalizeLanguage(language));
+    return toNotePart(toNoteModel(note, readVersionNumber), offset, maxChars);
+  }
+
+  /**
+   * Finds the number of the published version a current-note read returned:
+   * the note's latest version in that language, when it is the one the read
+   * overlaid on the note. A note read with a language it has no version in
+   * holds the default content, and a version published between the read and
+   * this lookup is another one: neither has a number to give.
+   *
+   * @param note the note as read, with its latest version id
+   * @param lang the normalized language read, null for the default
+   * @return the version's number, null when none matches the read
+   */
+  private Long publishedVersionNumber(Page note, String lang) {
+    PageVersion published = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), lang);
+    if (published == null || published.getId() == null || !published.getId().equals(note.getLatestVersionId())
+        || !StringUtils.isNumeric(published.getName())) {
+      return null;
+    }
+    return Long.valueOf(published.getName());
   }
 
   /**
@@ -370,12 +411,15 @@ public class NoteMcpTool implements McpToolPlugin {
     // the default content is stored without a language and never listed as a
     // translation, so the default's own code falls through to the check below
     List<String> translations = availableTranslationLanguages(noteId);
-    if (translations.stream().noneMatch(l -> StringUtils.equalsIgnoreCase(l, lang))) {
-      throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. Use "
-          + "get_note_translations to list the note's available languages.").formatted(noteId, lang, translations));
-    }
+    // the code is deleted as stored, which a case variant matched here would miss
+    String storedLang = translations.stream()
+                                    .filter(l -> StringUtils.equalsIgnoreCase(l, lang))
+                                    .findFirst()
+                                    .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no translation for language "
+                                        + "'%s'. Existing translations: %s. Use get_note_translations to list the note's available "
+                                        + "languages.").formatted(noteId, lang, translations)));
     try {
-      noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), lang);
+      noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), storedLang);
     } catch (Exception e) {
       throw new IllegalStateException("Could not remove the note translation: " + e.getMessage());
     }
@@ -592,12 +636,16 @@ public class NoteMcpTool implements McpToolPlugin {
    * lists the most recently updated notes first; a non-blank query is passed
    * as typed and keeps the relevance order. Each hit is compact, without the
    * note's content: get_note reads it. One more hit than the limit is asked
-   * for, to tell whether another page follows.
+   * for, to tell whether another page follows. Paging stops at the first
+   * {@value #MAX_SEARCH_WINDOW} hits, the most the search engine pages
+   * through: the offset is clamped so that the page ends within them, and no
+   * next page is offered past them.
    *
    * @param query the words to search for, blank to list the latest notes
    * @param spaceId the space whose notebook to search, null to search
    *          everywhere
-   * @param offset the hits to skip, 0 when null
+   * @param offset the hits to skip, 0 when null, clamped to 0 and
+   *          {@value #MAX_SEARCH_WINDOW} minus the limit and one
    * @param limit the most hits, {@value McpToolPlugin#DEFAULT_LIMIT} when null
    *          or 0, clamped to 1 and {@value #MAX_LIMIT}
    * @param isFavorites true to search the current user's favorite notes only
@@ -618,8 +666,10 @@ public class NoteMcpTool implements McpToolPlugin {
       data.setSortField(SORT_BY_DATE);
       data.setSortDirection(SORT_DESC);
     }
-    int usedOffset = Math.max(0, getInteger(offset, DEFAULT_OFFSET));
     int usedLimit = clampLimit(limit);
+    // one more hit than the limit is asked for, so the last offset leaves room for it
+    int maxOffset = MAX_SEARCH_WINDOW - usedLimit - 1;
+    int usedOffset = Math.clamp(getInteger(offset, DEFAULT_OFFSET), 0, maxOffset);
     data.setOffset(usedOffset);
     data.setLimit(usedLimit + 1);
     data.setNotesTreeFilter(false);
@@ -628,7 +678,8 @@ public class NoteMcpTool implements McpToolPlugin {
       data.setSpaceIds(List.of(String.valueOf(spaceId)));
     }
     List<SearchResult> results = noteService.search(data).getAll();
-    boolean hasMore = results.size() > usedLimit;
+    int nextOffset = usedOffset + usedLimit;
+    boolean hasMore = results.size() > usedLimit && nextOffset <= maxOffset;
     NoteLinks links = new NoteLinks();
     Map<String, NoteSpaceModel> spaces = new HashMap<>();
     List<NoteSearchHitModel> notes = results.stream()
@@ -637,14 +688,16 @@ public class NoteMcpTool implements McpToolPlugin {
                                             .map(this::getNoteByIdNoException)
                                             .map(note -> toNoteSearchHitModel(note, links, spaces))
                                             .toList();
-    return new NoteSearchCollectionModel(notes, usedLimit, hasMore, hasMore ? usedOffset + usedLimit : null);
+    return new NoteSearchCollectionModel(notes, usedLimit, hasMore, hasMore ? nextOffset : null);
   }
 
   /**
-   * Lists a page of the version history of a note: each version's number, id,
-   * title, date and author, without its content, which get_note reads with the
-   * version's number. Read as the current user, so the note's ACL is enforced.
-   * Read-only.
+   * Lists a page of the version history of a note, newest first: each
+   * version's number, id, title, date and author, without its content, which
+   * get_note reads with the version's number. The history is sorted by version
+   * number here, since the service returns it in no stated order, so the pages
+   * neither skip nor repeat a version. Read as the current user, so the note's
+   * ACL is enforced. Read-only.
    *
    * @param noteId the note id
    * @param language the translation whose history to list, null or blank for
@@ -662,18 +715,32 @@ public class NoteMcpTool implements McpToolPlugin {
                                                     Integer limit) throws IllegalAccessException, ObjectNotFoundException {
     Page note = getNoteById(noteId, language);
     String lang = normalizeLanguage(language);
-    List<PageHistory> history = versionsHistory(note, lang);
-    int size = history == null ? 0 : history.size();
+    List<PageHistory> history = newestFirst(versionsHistory(note, lang));
+    int size = history.size();
     int usedOffset = Math.clamp(getInteger(offset, DEFAULT_OFFSET), 0, size);
     int usedLimit = clampLimit(limit);
     int end = Math.min(size, usedOffset + usedLimit);
     boolean hasMore = end < size;
-    List<NoteVersionModel> versions = size == 0 ? List.of() :
-                                                history.subList(usedOffset, end)
-                                                       .stream()
-                                                       .map(this::toNoteVersionModel)
-                                                       .toList();
+    List<NoteVersionModel> versions = history.subList(usedOffset, end)
+                                             .stream()
+                                             .map(this::toNoteVersionModel)
+                                             .toList();
     return new NoteVersionCollectionModel(versions, usedLimit, hasMore, hasMore ? end : null);
+  }
+
+  /**
+   * Sorts a version history by version number, highest first, a version
+   * without a number last.
+   *
+   * @param history the history, in any order, or null
+   * @return a sorted copy, empty when the history is null
+   */
+  private static List<PageHistory> newestFirst(List<PageHistory> history) {
+    return history == null ? List.of() :
+                           history.stream()
+                                  .sorted(Comparator.comparing(PageHistory::getVersionNumber,
+                                                               Comparator.nullsLast(Comparator.reverseOrder())))
+                                  .toList();
   }
 
   /**
@@ -1368,14 +1435,17 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   /**
-   * Blank becomes null (the default version), the rest is trimmed and
-   * lower-cased so "fr", " fr " and "FR" name one translation: the stored lang
-   * is matched with a plain {@code p.lang = :lang}.
+   * Derives the language a note call reads or writes: blank becomes null (the
+   * default version), the rest is trimmed and keeps its case. A translation's
+   * code is stored as {@code Locale.toString()} ("fr", "es_ES") and matched
+   * with a plain {@code p.lang = :lang}, case-sensitive on PostgreSQL and
+   * HSQLDB, so folding the case would miss every region-qualified code.
+   *
+   * @param language the language as the caller gave it
+   * @return the trimmed code, null for the default version
    */
   private String normalizeLanguage(String language) {
-    String lang = StringUtils.trimToNull(language);
-    // ROOT, not the JVM default: on a Turkish locale "FI" lower-cases to "fı"
-    return lang == null ? null : lang.toLowerCase(Locale.ROOT);
+    return StringUtils.trimToNull(language);
   }
 
   /**
