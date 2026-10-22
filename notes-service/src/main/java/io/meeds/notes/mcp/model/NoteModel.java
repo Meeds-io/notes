@@ -27,6 +27,35 @@ import io.meeds.mcp.server.tool.model.UserModel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * A note, as {@code get_note} and the note writes return it. A part of a long
+ * note carries the part's bounds in its HTML content; a version of the note
+ * carries the version's number.
+ *
+ * @param noteId the note id
+ * @param title the note title
+ * @param summary the note summary
+ * @param htmlContent the note's HTML content, or the part of it read
+ * @param url the note's absolute URL
+ * @param createdDate the date the note was created
+ * @param updatedDate the date the note, or the version read, was updated
+ * @param hasChildNotes whether the note has sub-notes
+ * @param canEdit whether the current user can edit the note
+ * @param author the note author
+ * @param lastUpdater the last user who updated the note, or the version's
+ *          author
+ * @param breadcrumb the note's ancestors, from the notebook's home note
+ * @param versionNumber the number of the version read, null for the current
+ *          note
+ * @param offset the character of the HTML content the part starts at, null
+ *          when the whole content is returned
+ * @param endOffset the character after the part's last one, null when the
+ *          whole content is returned
+ * @param totalChars the length of the whole HTML content, null when the whole
+ *          content is returned
+ * @param nextOffset where the next part starts, null when this part ends the
+ *          content or the whole content is returned
+ */
 @JsonInclude(value = Include.NON_EMPTY)
 public record NoteModel(
                         @JsonProperty("note_id")
@@ -47,5 +76,14 @@ public record NoteModel(
                         UserModel author,
                         @JsonProperty("last_updater")
                         UserModel lastUpdater,
-                        List<NoteBreadcrumbModel> breadcrumb) {
+                        List<NoteBreadcrumbModel> breadcrumb,
+                        @JsonProperty("version_number")
+                        Long versionNumber,
+                        Integer offset,
+                        @JsonProperty("end_offset")
+                        Integer endOffset,
+                        @JsonProperty("total_chars")
+                        Integer totalChars,
+                        @JsonProperty("next_offset")
+                        Integer nextOffset) {
 }
