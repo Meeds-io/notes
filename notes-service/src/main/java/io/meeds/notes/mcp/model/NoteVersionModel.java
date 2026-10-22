@@ -24,6 +24,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.meeds.mcp.server.tool.model.UserModel;
 
+/**
+ * A version of a note, as {@code get_note_versions} lists it: without its
+ * content, which {@code get_note} reads with the version's number.
+ *
+ * @param versionNumber the version number
+ * @param versionId the version id
+ * @param title the note title in that version
+ * @param updatedDate the date the version was written
+ * @param author the user who wrote the version
+ */
 @JsonInclude(value = Include.NON_EMPTY)
 public record NoteVersionModel(
                                @JsonProperty("version_number")
@@ -31,7 +41,6 @@ public record NoteVersionModel(
                                @JsonProperty("version_id")
                                String versionId,
                                String title,
-                               String content,
                                @JsonProperty("updated_date")
                                String updatedDate,
                                UserModel author) {
