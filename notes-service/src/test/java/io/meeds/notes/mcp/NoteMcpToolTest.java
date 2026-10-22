@@ -1681,7 +1681,7 @@ public class NoteMcpToolTest {
     properties.setSummary(SUMMARY);
     when(note.getProperties()).thenReturn(properties);
     mockSearchResults(List.of(NOTE_ID));
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     Space space = mockSpace();
     when(spaceService.getSpaceByGroupId(GROUP_ID)).thenReturn(space);
@@ -1800,10 +1800,10 @@ public class NoteMcpToolTest {
     while (next != null) {
       long from = next;
       NoteModel part = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, from, 10, null));
-      assertEquals(Integer.valueOf(next), part.offset());
+      assertEquals(next, part.offset());
       // longer only when a single tag is, which is returned whole
       assertTrue(part.htmlContent(), part.htmlContent().length() <= 10 || part.htmlContent().matches("<[^>]*>"));
-      assertFalse(part.htmlContent(), part.htmlContent().matches("(?s).*<[^>]*"));
+      assertFalse(part.htmlContent(), part.htmlContent().lastIndexOf('<') > part.htmlContent().lastIndexOf('>'));
       whole.append(part.htmlContent());
       next = part.nextOffset();
       parts++;
@@ -2007,7 +2007,7 @@ public class NoteMcpToolTest {
     List<Long> ids = new java.util.ArrayList<>();
     for (long id = NOTE_ID; id < NOTE_ID + count; id++) {
       Page page = mockPage(String.valueOf(id), "Note " + id);
-      lenient().when(noteService.getNoteByIdAndLang(eq(id), eq(currentIdentity), eq(null), eq(null))).thenReturn(page);
+      lenient().when(noteService.getNoteByIdAndLang(id, currentIdentity, null, null)).thenReturn(page);
       lenient().when(noteService.canViewNote(page, USER)).thenReturn(true);
       ids.add(id);
     }
