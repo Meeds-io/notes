@@ -324,9 +324,10 @@ public class NoteMcpTool implements McpToolPlugin {
                            Long offset,
                            Integer maxChars,
                            Long versionNumber) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     if (versionNumber != null) {
-      PageHistory version = getVersion(note, normalizeLanguage(language), noteId, versionNumber);
+      PageHistory version = getVersion(note, lang, noteId, versionNumber);
       note.setTitle(version.getTitle());
       note.setContent(version.getContent());
       note.setUpdatedDate(version.getUpdatedDate() != null ? version.getUpdatedDate() : version.getCreatedDate());
@@ -335,7 +336,7 @@ public class NoteMcpTool implements McpToolPlugin {
     if (offset == null && maxChars == null) {
       return toNoteModel(note, versionNumber);
     }
-    Long readVersionNumber = versionNumber != null ? versionNumber : publishedVersionNumber(note, normalizeLanguage(language));
+    Long readVersionNumber = versionNumber != null ? versionNumber : publishedVersionNumber(note, lang);
     return toNotePart(toNoteModel(note, readVersionNumber), offset, maxChars);
   }
 
@@ -363,13 +364,14 @@ public class NoteMcpTool implements McpToolPlugin {
    * Reads a note's current content, whole, as the current user.
    *
    * @param noteId the note id
-   * @param language the translation to read, null or blank for the default
+   * @param lang the translation to read, as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
    * @return the note
    * @throws IllegalAccessException when the user can't view the note
    * @throws ObjectNotFoundException when the note doesn't exist
    */
-  private NoteModel readNote(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    return toNoteModel(getNoteById(noteId, language));
+  private NoteModel readNote(long noteId, String lang) throws IllegalAccessException, ObjectNotFoundException {
+    return toNoteModel(getNoteById(noteId, lang));
   }
 
   /**
@@ -407,17 +409,17 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
+    String lang = StringUtils.trim(language);
     // the default content is stored without a language and never listed as a
     // translation, so the default's own code falls through to the check below
     List<String> translations = availableTranslationLanguages(noteId);
-    // the code is deleted as stored, which a case variant matched here would miss
-    String storedLang = translations.stream()
-                                    .filter(l -> StringUtils.equalsIgnoreCase(l, lang))
-                                    .findFirst()
-                                    .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no translation for language "
-                                        + "'%s'. Existing translations: %s. Use get_note_translations to list the note's available "
-                                        + "languages.").formatted(noteId, lang, translations)));
+    // the code is deleted as stored, exact match first: with both "fr" and "FR"
+    // stored, "fr" deletes "fr"
+    String storedLang = matchStoredLanguage(lang, translations);
+    if (!translations.contains(storedLang)) {
+      throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. "
+          + "Use get_note_translations to list the note's available languages.").formatted(noteId, lang, translations));
+    }
     try {
       noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), storedLang);
     } catch (Exception e) {
@@ -426,6 +428,13 @@ public class NoteMcpTool implements McpToolPlugin {
     return readNote(noteId, null);
   }
 
+  /**
+   * Lists the codes a note's translations are stored under, as a distinct list
+   * in no order, without the default (stored with no language).
+   *
+   * @param noteId the note id
+   * @return the stored translation codes
+   */
   private List<String> availableTranslationLanguages(long noteId) {
     try {
       return noteService.getPageAvailableTranslationLanguages(noteId, false);
@@ -531,7 +540,7 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
-    String lang = normalizeLanguage(language);
+    String lang = resolveLanguage(noteId, language);
     if (lang == null) {
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);
@@ -713,8 +722,8 @@ public class NoteMcpTool implements McpToolPlugin {
                                                     String language,
                                                     Integer offset,
                                                     Integer limit) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
-    String lang = normalizeLanguage(language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     List<PageHistory> history = newestFirst(versionsHistory(note, lang));
     int size = history.size();
     int usedOffset = Math.clamp(getInteger(offset, DEFAULT_OFFSET), 0, size);
@@ -751,11 +760,11 @@ public class NoteMcpTool implements McpToolPlugin {
   public NoteModel restoreNoteVersion(long noteId,
                                       long versionNumber,
                                       String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     if (!noteService.canEditNote(note, getCurrentUserName())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
     PageHistory target = getVersion(note, lang, noteId, versionNumber);
     // the version the restore publishes is built from this object, as in NotePage.vue#restoreVersion
     note.setTitle(target.getTitle());
@@ -790,9 +799,17 @@ public class NoteMcpTool implements McpToolPlugin {
                                                                                                                                          versionNumber)));
   }
 
-  private List<PageHistory> versionsHistory(Page note, String language) {
+  /**
+   * Lists a note's version history in a language, as the current user.
+   *
+   * @param note the note
+   * @param lang the language as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
+   * @return the history, in the service's order
+   */
+  private List<PageHistory> versionsHistory(Page note, String lang) {
     try {
-      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), normalizeLanguage(language));
+      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), lang);
     } catch (Exception e) {
       throw new IllegalStateException("Could not read the note version history: " + e.getMessage());
     }
@@ -811,7 +828,8 @@ public class NoteMcpTool implements McpToolPlugin {
                                 String attachmentObjectId,
                                 String altText,
                                 String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
@@ -826,7 +844,6 @@ public class NoteMcpTool implements McpToolPlugin {
                                                                        imageSource,
                                                                        UploadToolUtils.DEFAULT_MAX_BYTES);
     String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
-    String lang = normalizeLanguage(language);
     try {
       LanguageProperties resolved = resolveProperties(noteId, note, lang);
       NotePageProperties properties = resolved.properties();
@@ -865,12 +882,12 @@ public class NoteMcpTool implements McpToolPlugin {
    */
   public NoteModel setNoteSummary(long noteId, String summary, String language) throws IllegalAccessException,
                                                                                ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
     try {
       NotePageProperties properties = resolveProperties(noteId, note, lang).properties();
       properties.setNoteId(noteId);
@@ -893,12 +910,12 @@ public class NoteMcpTool implements McpToolPlugin {
    * may remove it.
    */
   public NoteModel removeNoteCover(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
     LanguageProperties resolved = resolveProperties(noteId, note, lang);
     NotePageProperties properties = resolved.properties();
     NoteFeaturedImage existing = properties.getFeaturedImage();
@@ -1435,29 +1452,65 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   /**
-   * Derives the language a note call reads or writes: blank becomes null (the
-   * default version), the rest is trimmed and keeps its case. A translation's
-   * code is stored as {@code Locale.toString()} ("fr", "es_ES") and matched
-   * with a plain {@code p.lang = :lang}, case-sensitive on PostgreSQL and
-   * HSQLDB, so folding the case would miss every region-qualified code.
+   * Resolves, once per call, the language a note call reads or writes, to be
+   * used for the note read, its history, its metadata and its write alike. A
+   * blank language is null, the default version, with no lookup. Otherwise the
+   * trimmed code is matched against the codes the note's translations are
+   * stored under ({@code Locale.toString()}: "fr", "es_ES"), because the version
+   * queries compare {@code p.lang = :lang} exactly, case-sensitive on PostgreSQL
+   * and HSQLDB: a wrong-case "FR" would otherwise read the default and write a
+   * second translation next to "fr".
    *
+   * @param noteId the note id, whose stored translation codes are listed
    * @param language the language as the caller gave it
-   * @return the trimmed code, null for the default version
+   * @return the stored code it matches, the trimmed code when none does (a new
+   *         translation), null for the default version
    */
-  private String normalizeLanguage(String language) {
-    return StringUtils.trimToNull(language);
+  private String resolveLanguage(long noteId, String language) {
+    String lang = StringUtils.trimToNull(language);
+    return lang == null ? null : matchStoredLanguage(lang, availableTranslationLanguages(noteId));
   }
 
   /**
-   * A blank language means the note's own default version, never the caller's UI
-   * locale: resolving it from the profile locale made getNoteByIdAndLang overlay
-   * whatever translation that user reads in, so every write started from one.
+   * Matches a trimmed language code to the note's stored translation codes:
+   * the code itself when it is stored, else the stored code equal to it
+   * ignoring case, else the code as given. The stored codes come as a distinct
+   * list in no order, so a case-insensitive match is taken in sorted order to
+   * stay the same from one call to the next.
+   *
+   * @param lang the trimmed, non-blank code
+   * @param storedLanguages the note's stored translation codes, or null
+   * @return the matched stored code, or {@code lang}
    */
-  private Page getNoteById(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+  private static String matchStoredLanguage(String lang, List<String> storedLanguages) {
+    if (storedLanguages == null || storedLanguages.contains(lang)) {
+      return lang;
+    }
+    return storedLanguages.stream()
+                          .filter(stored -> StringUtils.equalsIgnoreCase(stored, lang))
+                          .sorted()
+                          .findFirst()
+                          .orElse(lang);
+  }
+
+  /**
+   * Reads a note in a language, as the current user. A null language means
+   * the note's own default version, never the caller's UI locale: resolving it
+   * from the profile locale made getNoteByIdAndLang overlay whatever
+   * translation that user reads in, so every write started from one.
+   *
+   * @param noteId the note id
+   * @param lang the language as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
+   * @return the note
+   * @throws IllegalAccessException when the user can't view the note
+   * @throws ObjectNotFoundException when the note doesn't exist
+   */
+  private Page getNoteById(long noteId, String lang) throws IllegalAccessException, ObjectNotFoundException {
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId),
                                                getCurrentUserAclIdentity(),
                                                null,
-                                               normalizeLanguage(language));
+                                               lang);
     if (note == null) {
       throw new ObjectNotFoundException("Note with id %s doesn't exists".formatted(noteId));
     } else if (!noteService.canViewNote(note, getCurrentUserName())) {

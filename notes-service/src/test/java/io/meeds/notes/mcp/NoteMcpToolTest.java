@@ -2153,6 +2153,141 @@ public class NoteMcpToolTest {
   }
 
   /**
+   * A language given in the wrong case is resolved to the code the
+   * translation is stored under, so "FR" reads the "fr" translation and its
+   * history, not the default content and an empty history: the version
+   * queries compare the code exactly.
+   */
+  @Test
+  public void getNoteWithAWrongCaseLanguageShouldReadTheStoredTranslation() throws Exception { // NOSONAR
+    Page frNote = restorablePage();
+    frNote.setTitle("Titre");
+    frNote.setLang("fr");
+    Page defaultNote = restorablePage();
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "FR")).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "fr")).thenReturn(frNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(noteService.getVersionsHistoryOfNoteByLang(frNote, USER, "fr")).thenReturn(List.of(pageHistory(frNote,
+                                                                                                        2L,
+                                                                                                        "Ancien titre",
+                                                                                                        "<p>ancien</p>")));
+
+    NoteModel current = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "FR", null, null, null));
+    NoteModel version = runWithStaticMocks(() -> tool.getNote(NOTE_ID, " FR ", null, null, 2L));
+    NoteVersionCollectionModel versions = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, "FR", null, null));
+
+    assertEquals("Titre", current.title());
+    assertEquals("Ancien titre", version.title());
+    assertEquals(1, versions.versions().size());
+  }
+
+  /**
+   * An update in a wrong-case language writes the existing translation, from
+   * its own state and under its stored code, never a second translation next
+   * to it.
+   */
+  @Test
+  public void updateNoteWithAWrongCaseLanguageShouldWriteTheStoredTranslation() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Titre FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR"))).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, "nouveau contenu", "FR"));
+
+    verify(defaultNote).setTitle("Titre FR");
+    verify(defaultNote).setLang("fr");
+    verify(defaultNote, never()).setLang("FR");
+    verify(noteService).removeDraftOfNote(any(WikiPageParams.class), eq("fr"));
+  }
+
+  /**
+   * A summary set in a wrong-case language goes into the stored translation's
+   * metadata, keyed {@code <id>-fr}, not into a new {@code <id>-FR} no version
+   * reads.
+   */
+  @Test
+  public void setNoteSummaryWithAWrongCaseLanguageShouldWriteTheStoredTranslationsMetadata() throws Exception { // NOSONAR
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(new NotePageProperties());
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.setNoteSummary(NOTE_ID, "nouveau resume", "FR"));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(42L));
+    verify(noteService, never()).saveNoteMetadata(any(NotePageProperties.class), eq("FR"), anyLong());
+    verify(frNote).setLang("fr");
+  }
+
+  /**
+   * A code stored exactly as given is used over a stored case variant of it,
+   * and a code no translation is stored under is used as given, a new
+   * translation.
+   */
+  @Test
+  public void aLanguageShouldMatchItsExactStoredCodeFirstAndANewCodeAsGiven() throws Exception { // NOSONAR
+    Page esNote = restorablePage();
+    esNote.setTitle("Título");
+    esNote.setLang("es_ES");
+    Page decoy = restorablePage();
+    decoy.setTitle("Decoy");
+    Page defaultNote = restorablePage();
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "ES_es")).thenReturn(decoy);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "es_ES")).thenReturn(esNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    // "ES_es" sorts first, so only an exact match first reads "es_ES"
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("ES_es", "es_ES"));
+
+    NoteModel es = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "es_ES", null, null, null));
+    assertEquals("Título", es.title());
+
+    Page deNote = restorablePage();
+    deNote.setTitle("Titel");
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "de")).thenReturn(deNote);
+    NoteModel de = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "de", null, null, null));
+    assertEquals("Titel", de.title());
+  }
+
+  /**
+   * With both "fr" and "FR" stored, "fr" removes "fr": the exact code first,
+   * not the first case-insensitive match of a list in no order.
+   */
+  @Test
+  public void removeNoteTranslationShouldPreferTheExactStoredCode() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("FR", "fr"));
+
+    runWithStaticMocks(() -> tool.removeNoteTranslation(NOTE_ID, "fr"));
+
+    verify(noteService).deleteVersionsByNoteIdAndLang(NOTE_ID, "fr");
+    verify(noteService, never()).deleteVersionsByNoteIdAndLang(NOTE_ID, "FR");
+  }
+
+  /**
    * The search pages through the first 10,000 hits at most, the search
    * engine's result window: an offset past it is clamped so that the page,
    * and the one extra hit asked for, end within it, and no next page is
