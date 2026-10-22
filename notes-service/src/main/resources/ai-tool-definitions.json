@@ -28,7 +28,7 @@
     {
       "name": "get_note",
       "title": "Get a note",
-      "description": "Get a single note by its ID, with its whole HTML content (html_content), title, summary, author and breadcrumb. search_notes returns compact hits without the content: read a hit's content here. A long note is read part by part: pass offset (0 for the first part) or max_chars, and the answer holds that part in html_content, cut so that no tag is split, with offset and end_offset (the part's bounds), total_chars (the length of the whole HTML content) and next_offset, where the next part starts, left out at the end of the content: call get_note again with offset=next_offset to read on. Without offset and max_chars the whole content is returned. Pass version_number (from get_note_versions) to read that version's title and content instead of the current ones; it combines with offset and max_chars.",
+      "description": "Get a single note by its ID, with its HTML content (html_content). A long note is read part by part: pass offset (0 first) or max_chars; while next_offset is present, call again with offset=next_offset.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -42,15 +42,15 @@
           },
           "offset": {
             "type": "integer",
-            "description": "Optional first character of the HTML content to read, from 0, as next_offset gives it. Reads the note part by part with max_chars: 0 for the first part. An offset inside a tag starts at that tag."
+            "description": "Optional first character of the HTML content to read."
           },
           "max_chars": {
             "type": "integer",
-            "description": "Optional most characters of the HTML content to return in one part: 40000 when left out while offset is given, 200000 at most. A part may end a few characters earlier, so that no tag is split."
+            "description": "Optional part size: default 40000 with offset, max 200000."
           },
           "version_number": {
             "type": "integer",
-            "description": "Optional version_number, from get_note_versions, of the version to read instead of the current note."
+            "description": "Optional version to read, from get_note_versions."
           }
         },
         "required": [
@@ -308,7 +308,7 @@
     {
       "name": "search_notes",
       "title": "Search for notes",
-      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook). Each hit is compact: note_id, title, summary, url, updated_date and the space whose notebook holds it (space_id and name; left out for a personal note), without the note's content: read a note's content with get_note. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax. 10 hits by default, 100 at most (used_limit says the limit applied); has_more says whether more hits follow, and next_offset, left out when has_more is false, is the offset of the next page.",
+      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook). Compact hits without content: read it with get_note. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax. While has_more, call again with offset=next_offset.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -322,11 +322,11 @@
           },
           "offset": {
             "type": "integer",
-            "description": "Optional number of results to skip, for paging (default 0): pass the previous answer's next_offset to read the next page."
+            "description": "Optional number of results to skip, for paging (default 0)."
           },
           "limit": {
             "type": "integer",
-            "description": "Optional maximum number of results to return: 10 by default, 100 at most."
+            "description": "Optional maximum number of results to return (default 10, max 100)."
           },
           "is_favorites": {
             "type": "boolean",
@@ -348,7 +348,7 @@
     {
       "name": "get_note_versions",
       "title": "Get a note's version history",
-      "description": "List the version history of a note, a page at a time: each version's version_number, id, title, date and author, without its content. Read a version's content with get_note and its version_number. 10 versions by default, 100 at most (used_limit says the limit applied); has_more says whether more versions follow, and next_offset, left out when has_more is false, is the offset of the next page. Use restore_note_version to roll back to one.",
+      "description": "List the version history of a note: each version's version_number, id, title, date and author, without content (get_note with version_number reads it). While has_more, call again with offset=next_offset. Use restore_note_version to roll back to one.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -362,11 +362,11 @@
           },
           "offset": {
             "type": "integer",
-            "description": "Optional number of versions to skip, for paging (default 0): pass the previous answer's next_offset to read the next page."
+            "description": "Optional number of versions to skip (default 0)."
           },
           "limit": {
             "type": "integer",
-            "description": "Optional maximum number of versions to return: 10 by default, 100 at most."
+            "description": "Optional maximum number of versions to return (default 10, max 100)."
           }
         },
         "required": [
