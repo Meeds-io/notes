@@ -407,7 +407,6 @@
 <script>
 
 import {notesConstants} from '../../../javascript/eXo/wiki/notesConstants.js';
-import html2canvas from 'html2canvas';
 import JSPDF from 'jspdf';
 
 export default {
@@ -1226,7 +1225,7 @@ export default {
         this.$nextTick(() => {
           const element = this.$refs.content;
           this.hideElementsForSavingPDF = false;
-          html2canvas(element, {
+          window.html2canvas(element, {
             useCORS: true
           }).then(function (canvas) {
             if (note.title !== title) {
