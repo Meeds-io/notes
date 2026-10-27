@@ -25,10 +25,13 @@ import static io.meeds.mcp.server.util.McpToolUtils.markdownToHtml;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -65,6 +68,7 @@ import org.exoplatform.social.core.utils.MentionUtils;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.model.WikiType;
 import org.exoplatform.wiki.service.NoteService;
@@ -85,7 +89,11 @@ import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteBreadcrumbModel;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
+import io.meeds.notes.mcp.model.NoteSearchCollectionModel;
+import io.meeds.notes.mcp.model.NoteSearchHitModel;
+import io.meeds.notes.mcp.model.NoteSpaceModel;
 import io.meeds.notes.mcp.model.NoteTreeModel;
+import io.meeds.notes.mcp.model.NoteVersionCollectionModel;
 import io.meeds.notes.mcp.model.NoteVersionModel;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
@@ -103,7 +111,32 @@ import lombok.SneakyThrows;
 @Profile("mcp-server")
 public class NoteMcpTool implements McpToolPlugin {
 
+  /** The most items a list tool returns in one call. */
+  static final int                MAX_LIMIT            = 100;
+
+  /** The characters {@code get_note} returns in a part when the caller sets no number. */
+  static final int                DEFAULT_PART_CHARS   = 40_000;
+
+  /** The most characters {@code get_note} returns in one part. */
+  static final int                MAX_PART_CHARS       = 200_000;
+
+  /**
+   * The most hits {@code search_notes} pages through: Elasticsearch's default
+   * {@code index.max_result_window}, which refuses a search whose from + size
+   * goes beyond it.
+   */
+  static final int                MAX_SEARCH_WINDOW    = 10_000;
+
   private static final Log        LOG              = ExoLogger.getLogger(NoteMcpTool.class);
+
+  /**
+   * The longest HTML character reference, {@code &CounterClockwiseContourIntegral;}:
+   * an ampersand further back than this from a cut can't open a reference the
+   * cut would split.
+   */
+  private static final int        MAX_ENTITY_LENGTH    = 33;
+
+  private static final String     SPACES_PREFIX        = "/spaces/";
 
   private static final String     NOTE_EDIT_DENIED     = "User isn't allowed to update the Note with id '%s'";
 
@@ -261,9 +294,90 @@ public class NoteMcpTool implements McpToolPlugin {
     return toNoteRootTreeModel(rootNote, spaceId);
   }
 
-  public NoteModel getNote(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
-    return toNoteModel(note);
+  /**
+   * Reads a note as the current user: its current content, or one version of
+   * its history, whole or part by part. Without offset nor max_chars the whole
+   * HTML content is returned. With either, at most max_chars characters of the
+   * HTML content are returned from offset, cut where no tag, character
+   * reference or surrogate pair is split, with the content's total length and
+   * where the next part starts. A part of the current note also carries the
+   * number of the published version it was cut from, when that version is the
+   * one read: passed back as versionNumber, it pins the next parts to that
+   * version even if the note is edited between two calls.
+   * <p>
+   * A version read returns the version's title, content, update date and last
+   * updater, with the current note's summary, url, breadcrumb and can_edit. The version is
+   * found in the history of {@code getVersionsHistoryOfNoteByLang}, which, on a
+   * note's default language with no history yet, records the current note as
+   * its first version.
+   *
+   * @param noteId the note id
+   * @param language the translation to read, null or blank for the default
+   * @param offset the first character of the HTML content to read, from 0, as
+   *          next_offset gives it; null to read from the start
+   * @param maxChars the most characters of the part, {@value #DEFAULT_PART_CHARS}
+   *          when null, clamped to 1 and {@value #MAX_PART_CHARS}; null with a
+   *          null offset to read the whole content
+   * @param versionNumber the number of the version to read, from
+   *          get_note_versions; null for the current note
+   * @return the note, or the part of it read
+   * @throws IllegalAccessException when the user can't view the note
+   * @throws ObjectNotFoundException when the note, or the version, doesn't
+   *           exist
+   */
+  public NoteModel getNote(long noteId,
+                           String language,
+                           Long offset,
+                           Integer maxChars,
+                           Long versionNumber) throws IllegalAccessException, ObjectNotFoundException {
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
+    if (versionNumber != null) {
+      PageHistory version = getVersion(note, lang, noteId, versionNumber);
+      note.setTitle(version.getTitle());
+      note.setContent(version.getContent());
+      note.setUpdatedDate(version.getUpdatedDate() != null ? version.getUpdatedDate() : version.getCreatedDate());
+      note.setLastUpdater(version.getAuthor());
+    }
+    if (offset == null && maxChars == null) {
+      return toNoteModel(note, versionNumber);
+    }
+    Long readVersionNumber = versionNumber != null ? versionNumber : publishedVersionNumber(note, lang);
+    return toNotePart(toNoteModel(note, readVersionNumber), offset, maxChars);
+  }
+
+  /**
+   * Finds the number of the published version a current-note read returned:
+   * the note's latest version in that language, when it is the one the read
+   * overlaid on the note. A note read with a language it has no version in
+   * holds the default content, and a version published between the read and
+   * this lookup is another one: neither has a number to give.
+   *
+   * @param note the note as read, with its latest version id
+   * @param lang the normalized language read, null for the default
+   * @return the version's number, null when none matches the read
+   */
+  private Long publishedVersionNumber(Page note, String lang) {
+    PageVersion published = noteService.getPublishedVersionByPageIdAndLang(Long.valueOf(note.getId()), lang);
+    if (published == null || published.getId() == null || !published.getId().equals(note.getLatestVersionId())
+        || !StringUtils.isNumeric(published.getName())) {
+      return null;
+    }
+    return Long.valueOf(published.getName());
+  }
+
+  /**
+   * Reads a note's current content, whole, as the current user.
+   *
+   * @param noteId the note id
+   * @param lang the translation to read, as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
+   * @return the note
+   * @throws IllegalAccessException when the user can't view the note
+   * @throws ObjectNotFoundException when the note doesn't exist
+   */
+  private NoteModel readNote(long noteId, String lang) throws IllegalAccessException, ObjectNotFoundException {
+    return toNoteModel(getNoteById(noteId, lang));
   }
 
   /**
@@ -277,10 +391,19 @@ public class NoteMcpTool implements McpToolPlugin {
     return availableTranslationLanguages(noteId);
   }
 
-  // Removes ONE language's translation of a note, leaving the note's original
-  // content and its other translations intact. Only a user who can edit the note
-  // may remove a translation. To delete the whole note (its original content and
-  // every translation) use delete_note instead.
+  /**
+   * Removes ONE language's translation of a note, leaving the note's original
+   * content and its other translations intact. Only a user who can edit the
+   * note may remove a translation. To delete the whole note (its original
+   * content and every translation) use delete_note instead.
+   *
+   * @param noteId the note id
+   * @param language the language of the translation to remove
+   * @return the note's default version, read back as the current user
+   * @throws IllegalAccessException when the user can't edit the note
+   * @throws ObjectNotFoundException when the note, or that translation,
+   *           doesn't exist
+   */
   public NoteModel removeNoteTranslation(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
     if (StringUtils.isBlank(language)) {
       throw new IllegalArgumentException(("No translation language was provided for the note with id %s. Pass the language code "
@@ -292,22 +415,32 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
+    String lang = StringUtils.trim(language);
     // the default content is stored without a language and never listed as a
     // translation, so the default's own code falls through to the check below
     List<String> translations = availableTranslationLanguages(noteId);
-    if (translations.stream().noneMatch(l -> StringUtils.equalsIgnoreCase(l, lang))) {
-      throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. Use "
-          + "get_note_translations to list the note's available languages.").formatted(noteId, lang, translations));
+    // the code is deleted as stored, exact match first: with both "fr" and "FR"
+    // stored, "fr" deletes "fr"
+    String storedLang = matchStoredLanguage(lang, translations);
+    if (!translations.contains(storedLang)) {
+      throw new ObjectNotFoundException(("Note with id %s has no translation for language '%s'. Existing translations: %s. "
+          + "Use get_note_translations to list the note's available languages.").formatted(noteId, lang, translations));
     }
     try {
-      noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), lang);
+      noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(noteId), storedLang);
     } catch (Exception e) {
       throw new IllegalStateException("Could not remove the note translation: " + e.getMessage());
     }
-    return getNote(noteId, null);
+    return readNote(noteId, null);
   }
 
+  /**
+   * Lists the codes a note's translations are stored under, as a distinct list
+   * in no order, without the default (stored with no language).
+   *
+   * @param noteId the note id
+   * @return the stored translation codes
+   */
   private List<String> availableTranslationLanguages(long noteId) {
     try {
       return noteService.getPageAvailableTranslationLanguages(noteId, false);
@@ -391,6 +524,18 @@ public class NoteMcpTool implements McpToolPlugin {
     return createNote(parentPage, title, summary, markdownToHtml(htmlContent));
   }
 
+  /**
+   * Updates a note's title and content, or one translation's, as the current
+   * user, and publishes the result as a new version.
+   *
+   * @param noteId the note id
+   * @param title the new title, blank to keep it
+   * @param htmlContent the new content, HTML or markdown, blank to keep it
+   * @param language the translation to write, null or blank for the default
+   * @return the version just written, read back as the current user
+   * @throws IllegalAccessException when the user can't edit the note
+   * @throws ObjectNotFoundException when the note doesn't exist
+   */
   @SneakyThrows
   public NoteModel updateNote(long noteId,
                               String title,
@@ -401,7 +546,7 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
-    String lang = normalizeLanguage(language);
+    String lang = resolveLanguage(noteId, language);
     if (lang == null) {
       if (StringUtils.isNotBlank(title)) {
         note.setTitle(title);
@@ -441,7 +586,7 @@ public class NoteMcpTool implements McpToolPlugin {
     noteService.createVersionOfNote(note, currentUserAclIdentity.getUserId(), true);
     WikiPageParams noteParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
     noteService.removeDraftOfNote(noteParams, lang);
-    return getNote(noteId, lang); // the version just written, not the default
+    return readNote(noteId, lang); // the version just written, not the default
   }
 
   @SneakyThrows
@@ -507,14 +652,29 @@ public class NoteMcpTool implements McpToolPlugin {
   /**
    * Full-text search over the notes the current user can read. A blank query
    * lists the most recently updated notes first; a non-blank query is passed
-   * as typed and keeps the relevance order.
+   * as typed and keeps the relevance order. Each hit is compact, without the
+   * note's content: get_note reads it. One more hit than the limit is asked
+   * for, to tell whether another page follows. Paging stops at the first
+   * {@value #MAX_SEARCH_WINDOW} hits, the most the search engine pages
+   * through: the offset is clamped so that the page ends within them, and no
+   * next page is offered past them.
+   *
+   * @param query the words to search for, blank to list the latest notes
+   * @param spaceId the space whose notebook to search, null to search
+   *          everywhere
+   * @param offset the hits to skip, 0 when null, clamped to 0 and
+   *          {@value #MAX_SEARCH_WINDOW} minus the limit and one
+   * @param limit the most hits, {@value McpToolPlugin#DEFAULT_LIMIT} when null
+   *          or 0, clamped to 1 and {@value #MAX_LIMIT}
+   * @param isFavorites true to search the current user's favorite notes only
+   * @return the page of hits, with whether more follow and where
    */
   @SneakyThrows
-  public List<NoteModel> searchNotes(String query,
-                                     Long spaceId,
-                                     Integer offset,
-                                     Integer limit,
-                                     Boolean isFavorites) {
+  public NoteSearchCollectionModel searchNotes(String query,
+                                               Long spaceId,
+                                               Integer offset,
+                                               Integer limit,
+                                               Boolean isFavorites) {
     Identity currentIdentity = ConversationState.getCurrent().getIdentity();
     // The query is passed as typed: the connector makes each word a wildcard term,
     // which Elasticsearch normalises to lower case at query time.
@@ -524,32 +684,81 @@ public class NoteMcpTool implements McpToolPlugin {
       data.setSortField(SORT_BY_DATE);
       data.setSortDirection(SORT_DESC);
     }
-    data.setOffset(getInteger(offset, DEFAULT_OFFSET));
-    data.setLimit(getInteger(limit, DEFAULT_LIMIT));
+    int usedLimit = clampLimit(limit);
+    // one more hit than the limit is asked for, so the last offset leaves room for it
+    int maxOffset = MAX_SEARCH_WINDOW - usedLimit - 1;
+    int usedOffset = Math.clamp(getInteger(offset, DEFAULT_OFFSET), 0, maxOffset);
+    data.setOffset(usedOffset);
+    data.setLimit(usedLimit + 1);
     data.setNotesTreeFilter(false);
     data.setFavorites(isFavorites != null && isFavorites.booleanValue());
     if (spaceId != null && spaceId > 0) {
       data.setSpaceIds(List.of(String.valueOf(spaceId)));
     }
     List<SearchResult> results = noteService.search(data).getAll();
+    int nextOffset = usedOffset + usedLimit;
+    boolean hasMore = results.size() > usedLimit && nextOffset <= maxOffset;
     NoteLinks links = new NoteLinks();
-    return results.stream()
-                  .map(SearchResult::getId)
-                  .map(this::getNoteByIdNoException)
-                  .map(note -> toNoteModel(note, links))
-                  .toList();
+    Map<String, NoteSpaceModel> spaces = new HashMap<>();
+    List<NoteSearchHitModel> notes = results.stream()
+                                            .limit(usedLimit)
+                                            .map(SearchResult::getId)
+                                            .map(this::getNoteByIdNoException)
+                                            .map(note -> toNoteSearchHitModel(note, links, spaces))
+                                            .toList();
+    return new NoteSearchCollectionModel(notes, usedLimit, hasMore, hasMore ? nextOffset : null);
   }
 
   /**
-   * Lists the version history of a note: each version's number, id, title,
-   * content, date and author. Read as the current user, so the note's ACL is
-   * enforced. Read-only.
+   * Lists a page of the version history of a note, newest first: each
+   * version's number, id, title, date and author, without its content, which
+   * get_note reads with the version's number. The history is sorted by version
+   * number here, since the service returns it in no stated order, so the pages
+   * neither skip nor repeat a version. Read as the current user, so the note's
+   * ACL is enforced. Read-only.
+   *
+   * @param noteId the note id
+   * @param language the translation whose history to list, null or blank for
+   *          the default
+   * @param offset the versions to skip, 0 when null
+   * @param limit the most versions, {@value McpToolPlugin#DEFAULT_LIMIT} when
+   *          null or 0, clamped to 1 and {@value #MAX_LIMIT}
+   * @return the page of versions, with whether more follow and where
+   * @throws IllegalAccessException when the user can't view the note
+   * @throws ObjectNotFoundException when the note doesn't exist
    */
-  public List<NoteVersionModel> getNoteVersions(long noteId, String language) throws IllegalAccessException,
-                                                                             ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
-    String lang = normalizeLanguage(language);
-    return versionsHistory(note, lang).stream().map(this::toNoteVersionModel).toList();
+  public NoteVersionCollectionModel getNoteVersions(long noteId,
+                                                    String language,
+                                                    Integer offset,
+                                                    Integer limit) throws IllegalAccessException, ObjectNotFoundException {
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
+    List<PageHistory> history = newestFirst(versionsHistory(note, lang));
+    int size = history.size();
+    int usedOffset = Math.clamp(getInteger(offset, DEFAULT_OFFSET), 0, size);
+    int usedLimit = clampLimit(limit);
+    int end = Math.min(size, usedOffset + usedLimit);
+    boolean hasMore = end < size;
+    List<NoteVersionModel> versions = history.subList(usedOffset, end)
+                                             .stream()
+                                             .map(this::toNoteVersionModel)
+                                             .toList();
+    return new NoteVersionCollectionModel(versions, usedLimit, hasMore, hasMore ? end : null);
+  }
+
+  /**
+   * Sorts a version history by version number, highest first, a version
+   * without a number last.
+   *
+   * @param history the history, in any order, or null
+   * @return a sorted copy, empty when the history is null
+   */
+  private static List<PageHistory> newestFirst(List<PageHistory> history) {
+    return history == null ? List.of() :
+                           history.stream()
+                                  .sorted(Comparator.comparing(PageHistory::getVersionNumber,
+                                                               Comparator.nullsLast(Comparator.reverseOrder())))
+                                  .toList();
   }
 
   /**
@@ -560,19 +769,12 @@ public class NoteMcpTool implements McpToolPlugin {
   public NoteModel restoreNoteVersion(long noteId,
                                       long versionNumber,
                                       String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     if (!noteService.canEditNote(note, getCurrentUserName())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
-    PageHistory target =
-                       versionsHistory(note, lang).stream()
-                                                  .filter(version -> version.getVersionNumber() != null
-                                                      && version.getVersionNumber() == versionNumber)
-                                                  .findFirst()
-                                                  .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no version number %s. "
-                                                      + "Use get_note_versions to list the available versions.").formatted(noteId,
-                                                                                                                           versionNumber)));
+    PageHistory target = getVersion(note, lang, noteId, versionNumber);
     // the version the restore publishes is built from this object, as in NotePage.vue#restoreVersion
     note.setTitle(target.getTitle());
     note.setContent(target.getContent());
@@ -581,12 +783,42 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not restore the note version: " + e.getMessage());
     }
-    return getNote(noteId, lang);
+    return readNote(noteId, lang);
   }
 
-  private List<PageHistory> versionsHistory(Page note, String language) {
+  /**
+   * Finds a version of a note's history by its number.
+   *
+   * @param note the note
+   * @param lang the normalized language whose history to search, null for the
+   *          default
+   * @param noteId the note id, for the message
+   * @param versionNumber the version number
+   * @return the version
+   * @throws ObjectNotFoundException when the history has no such version
+   */
+  private PageHistory getVersion(Page note, String lang, long noteId, long versionNumber) throws ObjectNotFoundException {
+    List<PageHistory> history = versionsHistory(note, lang);
+    return (history == null ? List.<PageHistory> of() : history).stream()
+                                                                .filter(version -> version.getVersionNumber() != null
+                                                                    && version.getVersionNumber() == versionNumber)
+                                                                .findFirst()
+                                                                .orElseThrow(() -> new ObjectNotFoundException(("Note with id %s has no version number %s. "
+                                                                    + "Use get_note_versions to list the available versions.").formatted(noteId,
+                                                                                                                                         versionNumber)));
+  }
+
+  /**
+   * Lists a note's version history in a language, as the current user.
+   *
+   * @param note the note
+   * @param lang the language as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
+   * @return the history, in the service's order
+   */
+  private List<PageHistory> versionsHistory(Page note, String lang) {
     try {
-      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), normalizeLanguage(language));
+      return noteService.getVersionsHistoryOfNoteByLang(note, getCurrentUserName(), lang);
     } catch (Exception e) {
       throw new IllegalStateException("Could not read the note version history: " + e.getMessage());
     }
@@ -605,7 +837,8 @@ public class NoteMcpTool implements McpToolPlugin {
                                 String attachmentObjectId,
                                 String altText,
                                 String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
@@ -620,7 +853,6 @@ public class NoteMcpTool implements McpToolPlugin {
                                                                        imageSource,
                                                                        UploadToolUtils.DEFAULT_MAX_BYTES);
     String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
-    String lang = normalizeLanguage(language);
     try {
       LanguageProperties resolved = resolveProperties(noteId, note, lang);
       NotePageProperties properties = resolved.properties();
@@ -649,7 +881,7 @@ public class NoteMcpTool implements McpToolPlugin {
       UploadToolUtils.release(uploadService, uploadId);
       throw new IllegalStateException("Could not set the note cover image: " + e.getMessage());
     }
-    return getNote(noteId, lang);
+    return readNote(noteId, lang);
   }
 
   /**
@@ -659,12 +891,12 @@ public class NoteMcpTool implements McpToolPlugin {
    */
   public NoteModel setNoteSummary(long noteId, String summary, String language) throws IllegalAccessException,
                                                                                ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
     try {
       NotePageProperties properties = resolveProperties(noteId, note, lang).properties();
       properties.setNoteId(noteId);
@@ -679,7 +911,7 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not set the note summary: " + e.getMessage());
     }
-    return getNote(noteId, lang);
+    return readNote(noteId, lang);
   }
 
   /**
@@ -687,12 +919,12 @@ public class NoteMcpTool implements McpToolPlugin {
    * may remove it.
    */
   public NoteModel removeNoteCover(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
-    Page note = getNoteById(noteId, language);
+    String lang = resolveLanguage(noteId, language);
+    Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
     if (!noteService.canEditNote(note, username)) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED.formatted(noteId));
     }
-    String lang = normalizeLanguage(language);
     LanguageProperties resolved = resolveProperties(noteId, note, lang);
     NotePageProperties properties = resolved.properties();
     NoteFeaturedImage existing = properties.getFeaturedImage();
@@ -725,7 +957,7 @@ public class NoteMcpTool implements McpToolPlugin {
     } catch (Exception e) {
       throw new IllegalStateException("Could not remove the note cover image: " + e.getMessage());
     }
-    return getNote(noteId, lang);
+    return readNote(noteId, lang);
   }
 
   /**
@@ -815,11 +1047,17 @@ public class NoteMcpTool implements McpToolPlugin {
     return Long.parseLong(identityManager.getOrCreateUserIdentity(username).getId());
   }
 
+  /**
+   * Maps a version of a note to the model get_note_versions lists, without its
+   * content.
+   *
+   * @param version the version
+   * @return the version model
+   */
   private NoteVersionModel toNoteVersionModel(PageHistory version) {
     return new NoteVersionModel(version.getVersionNumber(),
                                 version.getId(),
                                 version.getTitle(),
-                                version.getContent(),
                                 formatDate(version.getUpdatedDate() != null ? version.getUpdatedDate() : version.getCreatedDate()),
                                 toUserModel(version.getAuthor()));
   }
@@ -862,7 +1100,7 @@ public class NoteMcpTool implements McpToolPlugin {
                                               currentUserAclIdentity,
                                               false,
                                               true);
-    return getNote(Long.parseLong(createdNote.getId()), null);
+    return readNote(Long.parseLong(createdNote.getId()), null);
   }
 
   private String sanitizeAndSubstituteMentions(String htmlContent, Locale locale) {
@@ -878,12 +1116,30 @@ public class NoteMcpTool implements McpToolPlugin {
     }
   }
 
+  /**
+   * Maps a note to the model the note tools return, its whole content
+   * sanitized.
+   *
+   * @param note the note
+   * @return the note model
+   */
   private NoteModel toNoteModel(Page note) {
-    return toNoteModel(note, new NoteLinks());
+    return toNoteModel(note, null);
   }
 
+  /**
+   * Maps a note to the model the note tools return, its whole content
+   * sanitized.
+   *
+   * @param note the note, holding the version's title and content when one is
+   *          read
+   * @param versionNumber the number of the version read, null for the current
+   *          note
+   * @return the note model
+   */
   @SneakyThrows
-  private NoteModel toNoteModel(Page note, NoteLinks links) {
+  private NoteModel toNoteModel(Page note, Long versionNumber) {
+    NoteLinks links = new NoteLinks();
     Locale currentUserLocale = getCurrentUserLocale();
     String htmlContent = sanitizeAndSubstituteMentions(note.getContent(), currentUserLocale);
     note.setContent(htmlContent);
@@ -901,7 +1157,196 @@ public class NoteMcpTool implements McpToolPlugin {
                          canEdit,
                          toUserModel(note.getAuthor()),
                          toUserModel(note.getLastUpdater()),
-                         toNoteBreadcrumb(note, links));
+                         toNoteBreadcrumb(note, links),
+                         versionNumber,
+                         null,
+                         null,
+                         null,
+                         null);
+  }
+
+  /**
+   * Cuts a part of a note's HTML content. The part starts at the offset, moved
+   * back to the start of the tag, character reference or surrogate pair it
+   * falls in, and ends at most maxChars characters further, moved back the
+   * same way, so that no tag is split and the parts, read one after the other
+   * from next_offset, join into the whole content. A part that can't end
+   * before its first tag, reference or pair ends there, so a single tag
+   * longer than maxChars is returned whole rather than reading nothing.
+   *
+   * @param model the note, with its whole HTML content
+   * @param offset the first character, 0 when null
+   * @param maxChars the most characters, {@value #DEFAULT_PART_CHARS} when null,
+   *          clamped to 1 and {@value #MAX_PART_CHARS}
+   * @return the note holding the part, its bounds, the whole content's length
+   *         and where the next part starts
+   */
+  private NoteModel toNotePart(NoteModel model, Long offset, Integer maxChars) {
+    String html = StringUtils.defaultString(model.htmlContent());
+    int total = html.length();
+    int size = Math.clamp(maxChars == null ? DEFAULT_PART_CHARS : maxChars, 1, MAX_PART_CHARS);
+    int start = safeBoundary(html, Math.clamp(offset == null ? 0 : offset, 0, total));
+    int end = safeBoundary(html, (int) Math.min((long) start + size, total));
+    if (end <= start && start < total) {
+      end = boundaryAfter(html, start);
+    }
+    return new NoteModel(model.noteId(),
+                         model.title(),
+                         model.summary(),
+                         html.substring(start, end),
+                         model.url(),
+                         model.createdDate(),
+                         model.updatedDate(),
+                         model.hasChildNotes(),
+                         model.canEdit(),
+                         model.author(),
+                         model.lastUpdater(),
+                         model.breadcrumb(),
+                         model.versionNumber(),
+                         start,
+                         end,
+                         total,
+                         end < total ? end : null);
+  }
+
+  /**
+   * Moves a cut position of an HTML text back to where it splits nothing: to
+   * the start of the tag or comment it falls in, of the character reference
+   * it falls in, or of the surrogate pair it falls in. A quoted attribute value
+   * holding a {@code >} doesn't end its tag.
+   *
+   * @param html the HTML text
+   * @param position the cut position
+   * @return the position, or the start of what it would split, between 0 and
+   *         the text's length
+   */
+  static int safeBoundary(String html, int position) {
+    if (position <= 0) {
+      return 0;
+    } else if (position >= html.length()) {
+      return html.length();
+    }
+    int index = 0;
+    while (index < position) {
+      if (html.charAt(index) == '<') {
+        int tagEnd = tagEnd(html, index);
+        if (tagEnd > position) {
+          return index;
+        }
+        index = tagEnd;
+      } else {
+        index++;
+      }
+    }
+    for (int i = position - 1; i >= Math.max(0, position - MAX_ENTITY_LENGTH); i--) {
+      char c = html.charAt(i);
+      if (c == '&') {
+        return i;
+      } else if (c == ';' || c == '>' || Character.isWhitespace(c)) {
+        break;
+      }
+    }
+    return Character.isHighSurrogate(html.charAt(position - 1)) ? position - 1 : position;
+  }
+
+  /**
+   * Finds the end of the tag, comment, character reference or surrogate pair
+   * that starts at a position of an HTML text, or the next character.
+   *
+   * @param html the HTML text
+   * @param start the position
+   * @return the position after what starts there
+   */
+  static int boundaryAfter(String html, int start) {
+    char c = html.charAt(start);
+    if (c == '<') {
+      return tagEnd(html, start);
+    } else if (c == '&') {
+      int semicolon = html.indexOf(';', start);
+      return semicolon > start && semicolon - start < MAX_ENTITY_LENGTH ? semicolon + 1 : start + 1;
+    } else if (Character.isHighSurrogate(c) && start + 1 < html.length()) {
+      return start + 2;
+    } else {
+      return start + 1;
+    }
+  }
+
+  /**
+   * Finds the end of the tag or comment that starts at a position of an HTML
+   * text. A {@code >} inside a quoted attribute value doesn't end the tag.
+   *
+   * @param html the HTML text
+   * @param tagStart the position of the tag's {@code <}
+   * @return the position after the tag's {@code >}, or the text's length
+   *         when the tag isn't closed
+   */
+  private static int tagEnd(String html, int tagStart) {
+    if (html.startsWith("<!--", tagStart)) {
+      int close = html.indexOf("-->", tagStart + 4);
+      return close < 0 ? html.length() : close + 3;
+    }
+    char quote = 0;
+    for (int i = tagStart + 1; i < html.length(); i++) {
+      char c = html.charAt(i);
+      if (quote != 0) {
+        if (c == quote) {
+          quote = 0;
+        }
+      } else if (c == '"' || c == '\'') {
+        quote = c;
+      } else if (c == '>') {
+        return i + 1;
+      }
+    }
+    return html.length();
+  }
+
+  /**
+   * Clamps the limit a list tool is called with.
+   *
+   * @param limit the requested limit
+   * @return {@value McpToolPlugin#DEFAULT_LIMIT} when null or 0, otherwise the
+   *         limit between 1 and {@value #MAX_LIMIT}
+   */
+  private static int clampLimit(Integer limit) {
+    return Math.clamp(getInteger(limit, DEFAULT_LIMIT), 1, MAX_LIMIT);
+  }
+
+  /**
+   * Maps a note found by a search to a compact hit, without its content.
+   *
+   * @param note the note
+   * @param links the links of the notes the call returns
+   * @param spaces the spaces already resolved in the call, by group id
+   * @return the hit
+   */
+  private NoteSearchHitModel toNoteSearchHitModel(Page note, NoteLinks links, Map<String, NoteSpaceModel> spaces) {
+    String summary = note.getProperties() != null ? note.getProperties().getSummary() : null;
+    return new NoteSearchHitModel(Long.parseLong(note.getId()),
+                                  note.getTitle(),
+                                  summary,
+                                  links.getUrl(note),
+                                  formatDate(note.getUpdatedDate()),
+                                  toNoteSpaceModel(note, spaces));
+  }
+
+  /**
+   * Resolves the space whose notebook holds a note.
+   *
+   * @param note the note
+   * @param spaces the spaces already resolved in the call, by group id
+   * @return the space, null for a note outside a space notebook
+   */
+  private NoteSpaceModel toNoteSpaceModel(Page note, Map<String, NoteSpaceModel> spaces) {
+    String groupId = note.getWikiOwner();
+    if (!StringUtils.equalsIgnoreCase(SPACE_WIKI_TYPE, note.getWikiType()) || groupId == null
+        || !groupId.startsWith(SPACES_PREFIX)) {
+      return null;
+    }
+    return spaces.computeIfAbsent(groupId, id -> {
+      Space space = spaceService.getSpaceByGroupId(id);
+      return space == null ? null : new NoteSpaceModel(space.getSpaceId(), space.getDisplayName());
+    });
   }
 
   private NoteRootTreeModel toNoteRootTreeModel(Page rootNote, long spaceId) {
@@ -1016,26 +1461,65 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   /**
-   * Blank becomes null (the default version), the rest is trimmed and
-   * lower-cased so "fr", " fr " and "FR" name one translation: the stored lang
-   * is matched with a plain {@code p.lang = :lang}.
+   * Resolves, once per call, the language a note call reads or writes, to be
+   * used for the note read, its history, its metadata and its write alike. A
+   * blank language is null, the default version, with no lookup. Otherwise the
+   * trimmed code is matched against the codes the note's translations are
+   * stored under ({@code Locale.toString()}: "fr", "es_ES"), because the version
+   * queries compare {@code p.lang = :lang} exactly, case-sensitive on PostgreSQL
+   * and HSQLDB: a wrong-case "FR" would otherwise read the default and write a
+   * second translation next to "fr".
+   *
+   * @param noteId the note id, whose stored translation codes are listed
+   * @param language the language as the caller gave it
+   * @return the stored code it matches, the trimmed code when none does (a new
+   *         translation), null for the default version
    */
-  private String normalizeLanguage(String language) {
+  private String resolveLanguage(long noteId, String language) {
     String lang = StringUtils.trimToNull(language);
-    // ROOT, not the JVM default: on a Turkish locale "FI" lower-cases to "fı"
-    return lang == null ? null : lang.toLowerCase(Locale.ROOT);
+    return lang == null ? null : matchStoredLanguage(lang, availableTranslationLanguages(noteId));
   }
 
   /**
-   * A blank language means the note's own default version, never the caller's UI
-   * locale: resolving it from the profile locale made getNoteByIdAndLang overlay
-   * whatever translation that user reads in, so every write started from one.
+   * Matches a trimmed language code to the note's stored translation codes:
+   * the code itself when it is stored, else the stored code equal to it
+   * ignoring case, else the code as given. The stored codes come as a distinct
+   * list in no order, so a case-insensitive match is taken in sorted order to
+   * stay the same from one call to the next.
+   *
+   * @param lang the trimmed, non-blank code
+   * @param storedLanguages the note's stored translation codes, or null
+   * @return the matched stored code, or {@code lang}
    */
-  private Page getNoteById(long noteId, String language) throws IllegalAccessException, ObjectNotFoundException {
+  private static String matchStoredLanguage(String lang, List<String> storedLanguages) {
+    if (storedLanguages == null || storedLanguages.contains(lang)) {
+      return lang;
+    }
+    return storedLanguages.stream()
+                          .filter(stored -> StringUtils.equalsIgnoreCase(stored, lang))
+                          .sorted()
+                          .findFirst()
+                          .orElse(lang);
+  }
+
+  /**
+   * Reads a note in a language, as the current user. A null language means
+   * the note's own default version, never the caller's UI locale: resolving it
+   * from the profile locale made getNoteByIdAndLang overlay whatever
+   * translation that user reads in, so every write started from one.
+   *
+   * @param noteId the note id
+   * @param lang the language as {@link #resolveLanguage(long, String)}
+   *          resolved it, null for the default
+   * @return the note
+   * @throws IllegalAccessException when the user can't view the note
+   * @throws ObjectNotFoundException when the note doesn't exist
+   */
+  private Page getNoteById(long noteId, String lang) throws IllegalAccessException, ObjectNotFoundException {
     Page note = noteService.getNoteByIdAndLang(Long.valueOf(noteId),
                                                getCurrentUserAclIdentity(),
                                                null,
-                                               normalizeLanguage(language));
+                                               lang);
     if (note == null) {
       throw new ObjectNotFoundException("Note with id %s doesn't exists".formatted(noteId));
     } else if (!noteService.canViewNote(note, getCurrentUserName())) {
