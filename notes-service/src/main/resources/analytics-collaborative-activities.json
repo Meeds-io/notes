@@ -4,7 +4,13 @@
   "legacyOperations": ["noteCreated"],
   "excludedActivityTypes": ["ks-wiki:spaces"],
   "labels": {
-    "counted": ["notes.collaborativeActivity.help.counted.publishNote"],
-    "notCounted": ["notes.collaborativeActivity.help.notCounted.editNote"]
+    "counted": [
+      "notes.collaborativeActivity.help.counted.publishNote",
+      "notes.collaborativeActivity.help.counted.importNotes"
+    ],
+    "notCounted": [
+      "notes.collaborativeActivity.help.notCounted.draftNote",
+      "notes.collaborativeActivity.help.notCounted.editNote"
+    ]
   }
 }

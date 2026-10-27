@@ -18,16 +18,16 @@
  */
 package io.meeds.notes.analytics;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.exoplatform.notes.listener.analytics.NotesPageListener;
 import org.exoplatform.wiki.ext.impl.WikiSpaceActivityPublisher;
@@ -40,28 +40,33 @@ import tools.jackson.databind.ObjectMapper;
  * stream post of a note is left out by its activity type; the name notes
  * recorded before 7.0.0-exo, noteCreated, keeps counting as a legacy name.
  */
-public class CollaborativeActivityDeclarationTest {
+class CollaborativeActivityDeclarationTest {
 
   private static final String DECLARATION_FILE = "analytics-collaborative-activities.json";
 
   @Test
   @SuppressWarnings("unchecked")
-  public void theDeclarationCountsThePublicationAndItsLegacyNameAndExcludesTheNoteStreamPost() throws IOException {
+  void theDeclarationCountsThePublicationAndItsLegacyNameAndExcludesTheNoteStreamPost() throws IOException {
     Map<String, Object> declaration;
     try (InputStream content = getClass().getClassLoader().getResourceAsStream(DECLARATION_FILE)) {
-      assertNotNull("the declaration ships at the root of notes-service, which lands in /lib", content);
+      assertNotNull(content, "the declaration ships at the root of notes-service, which lands in /lib");
       declaration = new ObjectMapper().readValue(content, Map.class);
     }
 
     assertEquals(List.of("contents"), declaration.get("modules"));
     assertEquals(List.of(NotesPageListener.WIKI_ADD_PAGE_OPERATION), declaration.get("operations"));
-    assertEquals("the name emitted until 7.0.0-exo, never again", List.of("noteCreated"), declaration.get("legacyOperations"));
+    assertEquals(List.of("noteCreated"), declaration.get("legacyOperations"), "the name emitted until 7.0.0-exo, never again");
     assertEquals(List.of(WikiSpaceActivityPublisher.WIKI_APP_ID), declaration.get("excludedActivityTypes"));
     assertFalse(declaration.containsKey("browserOperations"));
 
     Map<String, Object> labels = (Map<String, Object>) declaration.get("labels");
-    assertEquals(List.of("notes.collaborativeActivity.help.counted.publishNote"), labels.get("counted"));
-    assertEquals(List.of("notes.collaborativeActivity.help.notCounted.editNote"), labels.get("notCounted"));
+    assertEquals(List.of("notes.collaborativeActivity.help.counted.publishNote",
+                         "notes.collaborativeActivity.help.counted.importNotes"),
+                 labels.get("counted"));
+    assertEquals(List.of("notes.collaborativeActivity.help.notCounted.draftNote",
+                         "notes.collaborativeActivity.help.notCounted.editNote"),
+                 labels.get("notCounted"),
+                 "one entry per user-facing action; the keys are matched by hand against notes-webapp's Portlets_en.properties");
   }
 
 }
