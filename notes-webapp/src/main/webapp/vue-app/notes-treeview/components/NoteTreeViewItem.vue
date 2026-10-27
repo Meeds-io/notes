@@ -102,6 +102,8 @@
 </template>
 
 <script>
+import { getNoteUrl } from '../js/Utils.js';
+
 export default {
   props: {
     item: {
@@ -154,8 +156,7 @@ export default {
       if (!this.item || !this.item.noteId) {
         return '#';
       }
-      const baseUrl = window.location.pathname.split('/notes')[0];
-      return `${baseUrl}/notes/${this.item.noteId}`;
+      return getNoteUrl(this.item.noteId, this.item.draftPage);
     }
   },
   watch: {

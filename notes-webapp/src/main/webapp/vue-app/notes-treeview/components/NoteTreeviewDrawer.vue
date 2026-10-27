@@ -341,7 +341,7 @@
                     {{ homeLabel }}</span>
                   <a
                     v-else
-                    :href="home.noteId">
+                    :href="noteUrl(home)">
                     {{ homeLabel }}
                   </a>
                 </v-list-item-title>
@@ -425,7 +425,7 @@
                   </div>
                   <a
                     v-else
-                    :href="item.draftPage ? `${item.noteId}/draft` : item.noteId"
+                    :href="noteUrl(item)"
                     :class="{'text-color': (isDraftFilter && item.draftPage) || !item.draftPage}"
                     :aria-current="(item.noteId === activeItem[0] && !item.draftPage) ? 'page' : null"
                     @click.prevent="openNote($event,item)">
@@ -490,6 +490,8 @@
 </template>
 
 <script>
+import { getNoteUrl } from '../js/Utils.js';
+
 export default {
   data: () => ({
     note: {},
@@ -664,6 +666,12 @@ export default {
     this.filter = this.filterOptions[0];
   },
   methods: {
+    noteUrl(item) {
+      if (!item?.noteId) {
+        return '#';
+      }
+      return getNoteUrl(item.noteId, item.draftPage, this.note?.url);
+    },
     handleRefreshTreeView(note) {
       if (note.draftPage) {
         this.getDraftNote(note.id);
