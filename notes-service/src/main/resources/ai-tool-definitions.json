@@ -28,7 +28,7 @@
     {
       "name": "get_note",
       "title": "Get a note",
-      "description": "Get a single note by its ID.",
+      "description": "Get a single note by its ID, with its HTML content (html_content). A long note is read part by part: pass offset (0 first) or max_chars; while next_offset is present, call again with offset=next_offset and the version_number the first part gave, so every part comes from the same version.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -39,6 +39,18 @@
           "language": {
             "type": "string",
             "description": "Optional language/translation to read (e.g. 'fr', 'de'); omit for the note's default content. Use get_note_translations to list which languages exist."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Optional first character of the HTML content to read."
+          },
+          "max_chars": {
+            "type": "integer",
+            "description": "Optional part size: default 40000 with offset, max 200000."
+          },
+          "version_number": {
+            "type": "integer",
+            "description": "Optional version to read, from get_note_versions."
           }
         },
         "required": [
@@ -51,7 +63,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] }
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language", "offset", "max_chars", "version_number"] }
     },
     {
       "name": "create_space_note",
@@ -296,7 +308,7 @@
     {
       "name": "search_notes",
       "title": "Search for notes",
-      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook), returning matching notes with their ids. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax.",
+      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook). Compact hits without content: read it with get_note. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax. While has_more, call again with offset=next_offset.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -314,7 +326,7 @@
           },
           "limit": {
             "type": "integer",
-            "description": "Optional maximum number of results to return (default 10)."
+            "description": "Optional maximum number of results to return (default 10, max 100)."
           },
           "is_favorites": {
             "type": "boolean",
@@ -336,7 +348,7 @@
     {
       "name": "get_note_versions",
       "title": "Get a note's version history",
-      "description": "List the version history of a note: each version's number, id, title, content, date and author. Use restore_note_version to roll back to one.",
+      "description": "List the version history of a note, newest first: each version's version_number, id, title, date and author, without content (get_note with version_number reads it). While has_more, call again with offset=next_offset. Use restore_note_version to roll back to one.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -347,6 +359,14 @@
           "language": {
             "type": "string",
             "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note. Use get_note_translations to list which languages exist."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Optional number of versions to skip (default 0)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Optional maximum number of versions to return (default 10, max 100)."
           }
         },
         "required": [
@@ -359,7 +379,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] }
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language", "offset", "limit"] }
     },
     {
       "name": "restore_note_version",
