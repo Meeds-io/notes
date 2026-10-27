@@ -93,6 +93,7 @@ import io.meeds.mcp.server.model.ActingIdentity;
 import io.meeds.mcp.server.tool.model.ActivityModel;
 import io.meeds.mcp.server.tool.model.UserModel;
 import io.meeds.mcp.server.tool.util.ActivityToolUtils;
+import io.meeds.mcp.server.tool.util.UploadToolUtils;
 import io.meeds.mcp.server.tool.util.UserToolUtils;
 import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteModel;
@@ -1210,9 +1211,86 @@ public class NoteMcpToolTest {
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", null));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", null, null));
 
     verify(noteService).saveNoteMetadata(any(NotePageProperties.class), any(), eq(42L));
+  }
+
+  /**
+   * A cover sent through an upload link is read through mcp-server's shared
+   * resolver, owner-checked for the current user, and consumed through the
+   * owner-checked remove; the image it holds becomes the note's cover, staged
+   * for the metadata and released once written. An upload the accessor
+   * doesn't answer for the current user (unknown, or another user's) is
+   * refused before anything is written, and left to its owner; a user who
+   * can't edit the note is refused before the upload is read.
+   * Mutants: the upload id not forwarded, the resolver called without the
+   * upload service, the staged cover not released, the image resolved before
+   * the edit right is checked.
+   *
+   * @throws Exception never
+   */
+  @Test
+  public void setNoteCoverFromAnUploadConsumesItAndSavesTheImage() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+    java.nio.file.Path staged = java.nio.file.Files.createTempFile("upload", ".png");
+    try {
+      java.nio.file.Files.write(staged, java.util.Base64.getDecoder().decode(PNG_1PX));
+      org.exoplatform.upload.UploadResource upload = new org.exoplatform.upload.UploadResource("up-1");
+      upload.setFileName("chart.png");
+      upload.setMimeType("image/png");
+      upload.setStoreLocation(staged.toString());
+      upload.setStatus(org.exoplatform.upload.UploadResource.UPLOADED_STATUS);
+      when(uploadService.getUploadResource("up-1", USER)).thenReturn(upload);
+      org.mockito.ArgumentCaptor<org.exoplatform.upload.UploadResource> stagedCover =
+                                                                                  org.mockito.ArgumentCaptor.forClass(org.exoplatform.upload.UploadResource.class);
+
+      runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, null, null, null, "cover", null, "up-1"));
+
+      org.mockito.ArgumentCaptor<NotePageProperties> written = org.mockito.ArgumentCaptor.forClass(NotePageProperties.class);
+      verify(noteService).saveNoteMetadata(written.capture(), any(), eq(42L));
+      assertEquals("image/png", written.getValue().getFeaturedImage().getMimeType());
+      verify(uploadService).removeUploadResource("up-1", USER);
+      verify(uploadService).createUploadResource(stagedCover.capture());
+      String coverUploadId = stagedCover.getValue().getUploadId();
+      assertEquals(coverUploadId, written.getValue().getFeaturedImage().getUploadId());
+      verify(uploadService).removeUploadResource(coverUploadId);
+      verify(uploadService, never()).getUploadResource("up-1");
+
+      clearInvocations(noteService);
+      // another user's upload: the unchecked accessor would answer it, the owner-checked one doesn't
+      lenient().when(uploadService.getUploadResource("theirs")).thenReturn(upload);
+      ObjectNotFoundException refusal =
+                                      assertThrows(ObjectNotFoundException.class,
+                                                   () -> runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID,
+                                                                                                    null,
+                                                                                                    null,
+                                                                                                    null,
+                                                                                                    null,
+                                                                                                    "cover",
+                                                                                                    null,
+                                                                                                    "theirs")));
+      assertEquals(UploadToolUtils.UNKNOWN_UPLOAD_MESSAGE, refusal.getMessage());
+      verify(noteService, never()).saveNoteMetadata(any(NotePageProperties.class), any(), anyLong());
+      verify(uploadService, never()).removeUploadResource("theirs", USER);
+
+      // a user who can't edit the note is refused before the upload is read, which leaves it in place
+      clearInvocations(uploadService);
+      when(noteService.canEditNote(note, USER)).thenReturn(false);
+      assertThrows(IllegalAccessException.class,
+                   () -> runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, null, null, null, "cover", null, "up-1")));
+      verify(uploadService, never()).getUploadResource(anyString(), anyString());
+      verify(uploadService, never()).removeUploadResource(anyString(), anyString());
+    } finally {
+      java.nio.file.Files.deleteIfExists(staged);
+    }
   }
 
   // Regression for EXO-88373: setting a cover on the "fr" translation must base
@@ -1243,7 +1321,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr"));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr", null));
 
     verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
     assertEquals("fr summary", captor.getValue().getSummary());
@@ -1319,7 +1397,7 @@ public class NoteMcpToolTest {
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de"));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de", null));
 
     verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("de"), eq(42L));
     verify(note).setLang("de");
@@ -1346,7 +1424,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de"));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "de", null));
 
     verify(noteService).saveNoteMetadata(captor.capture(), eq("de"), eq(42L));
     // no id: saveNoteFeaturedImage writes a NEW file for this translation
@@ -1376,7 +1454,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr"));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr", null));
 
     verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
     assertNull(captor.getValue().getFeaturedImage().getId());
@@ -1449,7 +1527,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  es_ES  "));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  es_ES  ", null));
 
     verify(noteService).saveNoteMetadata(captor.capture(), eq("es_ES"), eq(42L));
     // the translation's OWN file is replaced in place, as for a plain "es_ES"
@@ -1651,7 +1729,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr"));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "fr", null));
 
     verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(42L));
     verify(noteService).createVersionOfNote(captor.capture(), eq(USER), eq(true));

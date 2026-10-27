@@ -826,9 +826,30 @@ public class NoteMcpTool implements McpToolPlugin {
 
   /**
    * Sets a note's cover ("featured") image from exactly one of a public http(s)
-   * URL, base64 bytes, or an ACL-checked reference to an existing platform
-   * attachment. Only a user who can edit the note may set it. The image is wired
-   * into the note metadata so it actually renders on the note.
+   * URL, base64 bytes, an ACL-checked reference to an existing platform
+   * attachment, or one of the user's uploads sent through an upload link.
+   * Every source is capped at {@link UploadToolUtils#DEFAULT_MAX_BYTES} and
+   * must hold a png, jpeg, gif or webp image. Only a user who can edit the
+   * note may set it. The image is wired into the note metadata so it actually
+   * renders on the note; it is staged in the platform's upload service for
+   * the metadata to read, and released on every path.
+   *
+   * @param noteId the note
+   * @param imageUrl a public http(s) URL serving the image
+   * @param imageBase64 the image bytes, base64-encoded
+   * @param attachmentObjectType the type of the object holding an attached
+   *          image
+   * @param attachmentObjectId the id of the object holding an attached image
+   * @param altText the image's alternative text
+   * @param language the translation to target, blank for the default note
+   * @param uploadId the id start_upload returned, once its curl command sent
+   *          the image: one of the user's own uploads, consumed once read,
+   *          whether the cover is set or not
+   * @return the note
+   * @throws IllegalAccessException when the user can't edit the note, or read
+   *           the attachment
+   * @throws ObjectNotFoundException when the note, the attachment or the
+   *           upload doesn't exist
    */
   public NoteModel setNoteCover(long noteId,
                                 String imageUrl,
@@ -836,7 +857,8 @@ public class NoteMcpTool implements McpToolPlugin {
                                 String attachmentObjectType,
                                 String attachmentObjectId,
                                 String altText,
-                                String language) throws IllegalAccessException, ObjectNotFoundException {
+                                String language,
+                                String uploadId) throws IllegalAccessException, ObjectNotFoundException {
     String lang = resolveLanguage(noteId, language);
     Page note = getNoteById(noteId, lang);
     String username = getCurrentUserName();
@@ -846,13 +868,15 @@ public class NoteMcpTool implements McpToolPlugin {
     UploadToolUtils.ImageSource imageSource = new UploadToolUtils.ImageSource(imageUrl,
                                                                              imageBase64,
                                                                              attachmentObjectType,
-                                                                             attachmentObjectId);
+                                                                             attachmentObjectId,
+                                                                             uploadId);
     UploadToolUtils.FetchedContent image = UploadToolUtils.resolveImage(attachmentService,
                                                                        fileService,
+                                                                       uploadService,
                                                                        getCurrentUserAclIdentity(),
                                                                        imageSource,
                                                                        UploadToolUtils.DEFAULT_MAX_BYTES);
-    String uploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
+    String imageUploadId = UploadToolUtils.materialize(uploadService, image.bytes(), image.fileName(), image.mimeType());
     try {
       LanguageProperties resolved = resolveProperties(noteId, note, lang);
       NotePageProperties properties = resolved.properties();
@@ -864,7 +888,7 @@ public class NoteMcpTool implements McpToolPlugin {
       if (resolved.ownsCoverFile() && existing != null && existing.getId() != null && existing.getId() > 0) {
         featuredImage.setId(existing.getId()); // update this language's own cover file in place
       }
-      featuredImage.setUploadId(uploadId);
+      featuredImage.setUploadId(imageUploadId);
       featuredImage.setMimeType(image.mimeType());
       featuredImage.setFileName(image.fileName());
       featuredImage.setAltText(altText);
@@ -878,8 +902,10 @@ public class NoteMcpTool implements McpToolPlugin {
       note.setLang(lang);
       noteService.createVersionOfNote(note, username, true);
     } catch (Exception e) {
-      UploadToolUtils.release(uploadService, uploadId);
       throw new IllegalStateException("Could not set the note cover image: " + e.getMessage());
+    } finally {
+      // the cover's file is written from it synchronously, which removes it; a path that doesn't reach it releases it here
+      UploadToolUtils.release(uploadService, imageUploadId);
     }
     return readNote(noteId, lang);
   }
