@@ -56,7 +56,6 @@ public class NotesPageListener extends PageWikiListener {
 
   private static final Log    LOG                         = ExoLogger.getLogger(NotesPageListener.class);
 
-
   private static final String WIKI_UPDATE_PAGE_OPERATION  = "updateContent";
 
   private static final String WIKI_DELETE_PAGE_OPERATION  = "deleteContent";
