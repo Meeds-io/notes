@@ -176,7 +176,8 @@ public class NoteToolDefinitionSpaceScopeTest {
                                  .filter(argument -> !("move_note".equals(name) && "target_parent_note_id".equals(argument)))
                                  .forEach(argument -> assertFalse(name + " takes " + argument, argument.endsWith("_id")));
     });
-    assertEquals(List.of("language"), allowed(declared.get("get_note")));
+    assertEquals(List.of("language", "offset", "max_chars", "version_number"), allowed(declared.get("get_note")));
+    assertEquals(List.of("language", "offset", "limit"), allowed(declared.get("get_note_versions")));
     assertEquals(List.of(), allowed(declared.get("delete_note")));
     assertEquals(List.of(), allowed(declared.get("publish_note")));
     assertEquals(List.of("title", "html_content", "language"), allowed(declared.get("update_note")));
