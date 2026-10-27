@@ -384,6 +384,77 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
+  public void testGetDraftsTreeShowsDraftUnderNoteWithoutPublishedChildren() throws Exception {
+    Page homePage = new Page("home");
+    homePage.setWikiOwner("user");
+    homePage.setWikiType("WIKIHOME");
+    homePage.setOwner("user");
+    homePage.setId("1");
+    homePage.setParentPageId("0");
+    homePage.setHasChild(true);
+    Wiki noteBook = new Wiki();
+    noteBook.setOwner("user");
+    noteBook.setType("WIKI");
+    noteBook.setId("0");
+    noteBook.setWikiHome(homePage);
+    Page parentNote = new Page("note1");
+    parentNote.setName("note1");
+    parentNote.setTitle("note1");
+    parentNote.setId("10");
+    parentNote.setParentPageId("1");
+    parentNote.setWikiType("PAGE");
+    DraftPage childDraft = new DraftPage();
+    childDraft.setId("3");
+    childDraft.setName("note2");
+    childDraft.setTitle("note2");
+    childDraft.setParentPageId("10");
+    childDraft.setDraftPage(true);
+    childDraft.setWikiType("PAGE");
+    WikiPageParams pageParams = new WikiPageParams();
+    pageParams.setPageName("home");
+    pageParams.setOwner("/spaces/test");
+    pageParams.setType("group");
+    @SuppressWarnings("unchecked")
+    Deque<Object> paramsDeque = mock(Deque.class);
+    when(identity.getUserId()).thenReturn("1");
+    GroupHandler groupHandler = mock(GroupHandler.class);
+    Group group = mock(Group.class);
+    when(groupHandler.findGroupById(anyString())).thenAnswer(invocation -> "/spaces/test".equals(invocation.getArgument(0)) ? group
+                                                                                                                          : null);
+    when(organizationService.getGroupHandler()).thenReturn(groupHandler);
+    utilsStatic.when(() -> Utils.getStackParams(homePage)).thenReturn(paramsDeque);
+    when(paramsDeque.pop()).thenReturn(pageParams);
+    when(noteService.getNoteOfNoteBookByName(pageParams.getType(),
+                                             pageParams.getOwner(),
+                                             pageParams.getPageName(),
+                                             identity)).thenReturn(homePage);
+    when(noteBookService.getWikiByTypeAndOwner(pageParams.getType(), pageParams.getOwner())).thenReturn(noteBook);
+    when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
+    when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
+    // note1 has no published child: its only child is the draft of note2
+    when(noteService.hasChildren(Long.parseLong(parentNote.getId()))).thenReturn(false);
+    when(noteService.getDraftsOfWiki(pageParams.getOwner(), pageParams.getType(), pageParams.getPageName()))
+                                                                                                          .thenReturn(List.of(childDraft));
+    when(noteService.getNoteById(parentNote.getId())).thenReturn(parentNote);
+    utilsStatic.when(() -> Utils.validateWikiOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenCallRealMethod();
+    utilsStatic.when(() -> Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
+    when(spaceService.getSpaceByGroupId(anyString())).thenReturn(mock(Space.class));
+
+    Response response = notesRestService.getNoteTreeData("all", "drafts", "group/spaces/test/home");
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    JsonNodeData rootNode = (JsonNodeData) ((BeanToJsons) response.getEntity()).getJsonList().getFirst();
+    JsonNodeData parentNode = rootNode.getChildren()
+                                      .stream()
+                                      .filter(node -> parentNote.getId().equals(node.getNoteId()))
+                                      .findFirst()
+                                      .orElseThrow();
+    assertTrue(parentNode.isHasChild());
+    assertEquals(1, parentNode.getChildren().size());
+    assertEquals(childDraft.getId(), parentNode.getChildren().getFirst().getNoteId());
+  }
+
+  @Test
   public void testGetPageAvailableTranslationLanguages() throws WikiException {
     List<String> langs = new ArrayList<>();
     langs.add("ar");

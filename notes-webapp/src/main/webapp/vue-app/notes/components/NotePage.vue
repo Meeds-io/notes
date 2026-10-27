@@ -903,6 +903,7 @@ export default {
     },
     handlePopstate(event) {
       this.currentPath = window.location.pathname;
+      this.isDraft = this.currentPath.endsWith('/draft');
       if (event?.state?.translation) {
         this.updateSelectedTranslation(event?.state?.translation);
       }
@@ -1279,7 +1280,8 @@ export default {
       if (this.selectedTranslation.value) {
         translation = `?translation=${this.selectedTranslation.value}`;
       }
-      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${translation}${urlHash}`;
+      const draftSuffix = this.isDraft ? '/draft' : '';
+      notesConstants.PORTAL_BASE_URL = `${notesConstants.PORTAL_BASE_URL.slice(0,-charsToRemove)}/${this.appName}/${this.note.id}${draftSuffix}${translation}${urlHash}`;
       window.history.pushState({'translation': this.selectedTranslation}, window.document.title, notesConstants.PORTAL_BASE_URL);
     },
     getNoteLanguages(noteId){

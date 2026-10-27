@@ -139,5 +139,10 @@ public class JsonNodeData {
       this.children = new ArrayList<JsonNodeData>();
     }
     this.children.addAll(children);
+    // hasChild is computed from the published children only: a note whose only children are drafts must
+    // still be expandable in the drafts tree
+    if (!this.children.isEmpty()) {
+      this.hasChild = true;
+    }
   }
 }
