@@ -1,0 +1,10 @@
+{
+  "modules": ["contents"],
+  "operations": ["createContent"],
+  "legacyOperations": ["noteCreated"],
+  "excludedActivityTypes": ["ks-wiki:spaces"],
+  "labels": {
+    "counted": ["notes.collaborativeActivity.help.counted.publishNote"],
+    "notCounted": ["notes.collaborativeActivity.help.notCounted.editNote"]
+  }
+}

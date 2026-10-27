@@ -54,7 +54,7 @@ public class NotesPageListener extends PageWikiListener {
 
   private static final Log    LOG                         = ExoLogger.getLogger(NotesPageListener.class);
 
-  private static final String WIKI_ADD_PAGE_OPERATION     = "createContent";
+  public static final String  WIKI_ADD_PAGE_OPERATION     = "createContent";
 
   private static final String WIKI_UPDATE_PAGE_OPERATION  = "updateContent";
 
