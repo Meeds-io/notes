@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.junit.Before;
@@ -77,6 +78,7 @@ import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
+import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
 import org.exoplatform.wiki.service.PageUpdateType;
@@ -93,11 +95,17 @@ import io.meeds.mcp.server.tool.util.UserToolUtils;
 import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
+import io.meeds.notes.mcp.model.NoteSearchCollectionModel;
+import io.meeds.notes.mcp.model.NoteSearchHitModel;
+import io.meeds.notes.mcp.model.NoteVersionCollectionModel;
 import io.meeds.notes.mcp.model.NoteVersionModel;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.portal.permlink.service.PermanentLinkService;
 import io.meeds.social.translation.service.TranslationService;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NoteMcpToolTest {
@@ -129,6 +137,11 @@ public class NoteMcpToolTest {
   private static final long       PARENT_NOTE_ID = 13L;
 
   private static final long       SPACE_ID       = 33L;
+
+  private static final String     LONG_HTML      =
+                                            "<p>Hello <b>world</b></p><p>a&amp;b <a href=\"https://meeds.test/x?a=1&amp;b=2\">link</a></p>";
+
+  private static final JsonMapper JSON           = JsonMapper.builder().build();
 
   @Mock
   private WikiService             wikiService;
@@ -238,7 +251,7 @@ public class NoteMcpToolTest {
   public void getNoteWhenNoteDoesNotExistShouldThrowException() throws Exception { // NOSONAR
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(null);
 
-    tool.getNote(NOTE_ID, null);
+    tool.getNote(NOTE_ID, null, null, null, null);
   }
 
   @Test(expected = IllegalAccessException.class)
@@ -248,7 +261,7 @@ public class NoteMcpToolTest {
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(false);
 
-    tool.getNote(NOTE_ID, null);
+    tool.getNote(NOTE_ID, null, null, null, null);
   }
 
   @Test
@@ -259,7 +272,7 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
 
     assertEquals(NOTE_ID, result.noteId());
     assertEquals("Note", result.title());
@@ -373,7 +386,7 @@ public class NoteMcpToolTest {
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
 
     assertEquals(NOTE_ID, result.noteId());
     assertNull(result.url());
@@ -401,7 +414,7 @@ public class NoteMcpToolTest {
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null));
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
 
     assertEquals("https://meeds.test/portal/myworkspace/dashboard/notes/" + NOTE_ID, result.url());
   }
@@ -427,19 +440,21 @@ public class NoteMcpToolTest {
     when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(parent);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID + 1), eq(currentIdentity), eq(null), eq(null))).thenReturn(child);
-    when(noteService.getNoteById(String.valueOf(NOTE_ID))).thenReturn(parent);
     when(noteService.canViewNote(parent, USER)).thenReturn(true);
     when(noteService.canViewNote(child, USER)).thenReturn(true);
 
-    List<NoteModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, null, false));
+    List<NoteSearchHitModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note",
+                                                                                                null,
+                                                                                                null,
+                                                                                                null,
+                                                                                                false)).notes();
 
     String notesUrl = "https://meeds.test/portal/myworkspace/dashboard/notes/";
     assertEquals(2, result.size());
     assertEquals(notesUrl + NOTE_ID, result.get(0).url());
     assertEquals(notesUrl + (NOTE_ID + 1), result.get(1).url());
-    assertEquals(2, result.get(1).breadcrumb().size());
-    assertEquals(notesUrl + NOTE_ID, result.get(1).breadcrumb().get(0).url());
-    // Three notes linked, the two results and the child's parent in its breadcrumb, one navigation lookup
+    assertNull(result.get(0).space());
+    // Two notes linked, one navigation lookup
     verify(layoutService, times(1)).getSites(any());
     verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "dw", USER, false);
     verify(portalConfigService, times(1)).getSiteRootNode(PortalConfig.PORTAL_TYPE, "myworkspace", USER, false);
@@ -914,9 +929,14 @@ public class NoteMcpToolTest {
 
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
-    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    Space space = mockSpace();
+    when(spaceService.getSpaceByGroupId(GROUP_ID)).thenReturn(space);
 
-    List<NoteModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", SPACE_ID, null, null, true));
+    List<NoteSearchHitModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note",
+                                                                                                SPACE_ID,
+                                                                                                null,
+                                                                                                null,
+                                                                                                true)).notes();
 
     assertEquals(1, result.size());
     assertEquals(NOTE_ID, result.get(0).noteId());
@@ -983,7 +1003,7 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
 
-    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null));
+    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, null, null)).versions();
 
     assertEquals(1, result.size());
     assertEquals(Long.valueOf(1L), result.get(0).versionNumber());
@@ -1057,7 +1077,7 @@ public class NoteMcpToolTest {
     when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(version));
     lenient().when(noteService.getVersionsHistoryOfNoteByLang(note, USER, "fr")).thenReturn(Collections.emptyList());
 
-    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null));
+    List<NoteVersionModel> result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, null, null)).versions();
 
     assertEquals(1, result.size());
     assertEquals(Long.valueOf(2L), result.get(0).versionNumber());
@@ -1287,45 +1307,51 @@ public class NoteMcpToolTest {
     verify(noteService, never()).removeNoteFeaturedImage(anyLong(), anyLong(), anyString(), anyBoolean(), anyLong());
   }
 
-  // EXO-90294: the code is normalized once at the tool boundary, so the metadata,
-  // the ownership verdict and the write cannot resolve to different languages.
+  /**
+   * EXO-90294: the code is normalized once at the tool boundary, so the
+   * metadata, the ownership verdict and the write cannot resolve to different
+   * languages. Normalizing trims the code and keeps its case: a translation is
+   * stored as {@code Locale.toString()} ("es_ES"), which a lower-cased
+   * "es_es" misses on PostgreSQL and HSQLDB.
+   */
   @Test
-  public void setNoteCoverWithAPaddedUpperCaseLanguageShouldTargetTheSameTranslation() throws Exception { // NOSONAR
+  public void setNoteCoverWithAPaddedLanguageShouldTargetTheTrimmedCode() throws Exception { // NOSONAR
     Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
     lenient().when(defaultNote.getProperties()).thenReturn(coverProperties(500L));
-    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
-    lenient().when(frNote.getLang()).thenReturn("fr");
-    lenient().when(frNote.getProperties()).thenReturn(coverProperties(600L));
+    Page esNote = mockPage(String.valueOf(NOTE_ID), "Note ES");
+    lenient().when(esNote.getLang()).thenReturn("es_ES");
+    lenient().when(esNote.getProperties()).thenReturn(coverProperties(600L));
     org.exoplatform.social.core.identity.model.Identity userIdentity =
                                                                      mock(org.exoplatform.social.core.identity.model.Identity.class);
     lenient().when(userIdentity.getId()).thenReturn("42");
 
-    // decoy answering the RAW code, so dropping the normalization fails on the
-    // assertion below rather than on an unresolvable note
-    Page rawCodeNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
-    lenient().when(rawCodeNote.getLang()).thenReturn("  FR  ");
-    lenient().when(rawCodeNote.getProperties()).thenReturn(coverProperties(700L));
-    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("  FR  ")))
-             .thenReturn(rawCodeNote);
-    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR")))
-             .thenReturn(rawCodeNote);
-    lenient().when(noteService.canViewNote(rawCodeNote, USER)).thenReturn(true);
-    lenient().when(noteService.canEditNote(rawCodeNote, USER)).thenReturn(true);
+    // decoys answering the RAW and the lower-cased codes, so dropping the trim or
+    // folding the case fails on the assertion below rather than on an
+    // unresolvable note
+    for (String decoyCode : List.of("  es_ES  ", "es_es")) {
+      Page decoy = mockPage(String.valueOf(NOTE_ID), "Note ES");
+      lenient().when(decoy.getLang()).thenReturn(decoyCode);
+      lenient().when(decoy.getProperties()).thenReturn(coverProperties(700L));
+      lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(decoyCode)))
+               .thenReturn(decoy);
+      lenient().when(noteService.canViewNote(decoy, USER)).thenReturn(true);
+      lenient().when(noteService.canEditNote(decoy, USER)).thenReturn(true);
+    }
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("es_ES"))).thenReturn(esNote);
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
-    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
-    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(noteService.canViewNote(esNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(esNote, USER)).thenReturn(true);
     when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
 
     ArgumentCaptor<NotePageProperties> captor = ArgumentCaptor.forClass(NotePageProperties.class);
 
-    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  FR  "));
+    runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  es_ES  "));
 
-    verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
-    // the translation's OWN file is replaced in place, as for a plain "fr"
+    verify(noteService).saveNoteMetadata(captor.capture(), eq("es_ES"), eq(42L));
+    // the translation's OWN file is replaced in place, as for a plain "es_ES"
     assertEquals(Long.valueOf(600L), captor.getValue().getFeaturedImage().getId());
-    verify(frNote).setLang("fr");
+    verify(esNote).setLang("es_ES");
   }
 
   // EXO-90294: without the default's metadata, ownership is unknowable and this
@@ -1641,11 +1667,716 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "fr"));
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "fr", null, null, null));
 
     assertNotNull(result);
     assertEquals(NOTE_ID, result.noteId());
     verify(noteService).getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"));
+  }
+
+  /**
+   * A search hit is compact: the note's id, title, summary, URL, update date
+   * and space, never its content, its users or its breadcrumb, and building
+   * it reads neither the edit permission nor the note's ancestors.
+   */
+  @Test
+  @SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
+  public void searchNotesShouldReturnCompactHitsWithoutContent() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    lenient().when(note.getParentPageId()).thenReturn(String.valueOf(PARENT_NOTE_ID));
+    NotePageProperties properties = new NotePageProperties();
+    properties.setSummary(SUMMARY);
+    when(note.getProperties()).thenReturn(properties);
+    mockSearchResults(List.of(NOTE_ID));
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    Space space = mockSpace();
+    when(spaceService.getSpaceByGroupId(GROUP_ID)).thenReturn(space);
+
+    NoteSearchCollectionModel result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, null, null));
+
+    JsonNode hit = JSON.valueToTree(result).get("notes").get(0);
+    assertEquals(Set.of("note_id", "title", "summary", "url", "updated_date", "space"), fieldNames(hit));
+    assertEquals(NOTE_ID, hit.get("note_id").asLong());
+    assertEquals("Note", hit.get("title").asString());
+    assertEquals(SUMMARY, hit.get("summary").asString());
+    assertEquals("https://meeds.test/note-link", hit.get("url").asString());
+    assertEquals(SPACE_ID, hit.get("space").get("space_id").asLong());
+    assertEquals("Space", hit.get("space").get("name").asString());
+    verify(noteService, never()).canEditNote(any(Page.class), anyString());
+    verify(noteService, never()).getNoteById(anyString());
+  }
+
+  /**
+   * A limit above the maximum is clamped to 100, and the search asks for one
+   * more hit than the limit, to tell whether another page follows.
+   */
+  @Test
+  public void searchNotesShouldClampTheLimitTo100() throws Exception { // NOSONAR
+    mockSearchResults(List.of());
+
+    NoteSearchCollectionModel result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, 101, null));
+
+    ArgumentCaptor<WikiSearchData> captor = ArgumentCaptor.forClass(WikiSearchData.class);
+    verify(noteService).search(captor.capture());
+    assertEquals(100, result.usedLimit());
+    assertEquals(101, captor.getValue().getLimit());
+    assertEquals(0, captor.getValue().getOffset());
+  }
+
+  /**
+   * When the search finds one hit more than the limit, the page holds the
+   * limit's hits, has_more is true and next_offset is the next page's offset.
+   */
+  @Test
+  public void searchNotesWithMoreHitsThanTheLimitShouldSayMoreFollow() throws Exception { // NOSONAR
+    mockSearchablePages(3);
+
+    NoteSearchCollectionModel result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, 4, 2, null));
+
+    assertEquals(List.of(NOTE_ID, NOTE_ID + 1), result.notes().stream().map(NoteSearchHitModel::noteId).toList());
+    assertTrue(result.hasMore());
+    assertEquals(Integer.valueOf(6), result.nextOffset());
+    assertEquals(6, JSON.valueToTree(result).get("next_offset").asInt());
+  }
+
+  /**
+   * When the search finds no more hits than the limit, has_more is false and
+   * next_offset is left out of the answer.
+   */
+  @Test
+  public void searchNotesWithoutMoreHitsShouldLeaveOutTheNextOffset() throws Exception { // NOSONAR
+    mockSearchablePages(2);
+
+    NoteSearchCollectionModel result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, 4, 2, null));
+
+    assertEquals(2, result.notes().size());
+    assertFalse(result.hasMore());
+    assertNull(result.nextOffset());
+    JsonNode json = JSON.valueToTree(result);
+    assertFalse(json.has("next_offset"));
+    assertFalse(json.get("has_more").asBoolean());
+  }
+
+  /**
+   * Without offset nor max_chars, get_note returns the whole content and none
+   * of the part's fields.
+   */
+  @Test
+  public void getNoteWithoutPartParametersShouldReturnTheWholeContent() throws Exception { // NOSONAR
+    stubNoteContent(LONG_HTML);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
+
+    assertEquals(LONG_HTML, result.htmlContent());
+    assertNull(result.offset());
+    assertNull(result.endOffset());
+    assertNull(result.totalChars());
+    assertNull(result.nextOffset());
+    assertNull(result.versionNumber());
+    JsonNode json = JSON.valueToTree(result);
+    for (String field : List.of("offset", "end_offset", "total_chars", "next_offset", "version_number")) {
+      assertFalse(field, json.has(field));
+    }
+  }
+
+  /**
+   * A long note is read part by part: each part ends where it splits no tag,
+   * says its bounds, the whole length and the next part's offset, and the
+   * parts read from next_offset join into the whole content.
+   */
+  @Test
+  public void getNoteShouldReadALongNotePartByPart() throws Exception { // NOSONAR
+    stubNoteContent(LONG_HTML);
+
+    NoteModel first = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 10, null));
+
+    // "<p>Hello <b>world</b></p>": 10 characters end inside "<b>", cut before it
+    assertEquals("<p>Hello ", first.htmlContent());
+    assertEquals(Integer.valueOf(0), first.offset());
+    assertEquals(Integer.valueOf(9), first.endOffset());
+    assertEquals(Integer.valueOf(LONG_HTML.length()), first.totalChars());
+    assertEquals(Integer.valueOf(9), first.nextOffset());
+    JsonNode json = JSON.valueToTree(first);
+    assertEquals(0, json.get("offset").asInt());
+    assertEquals(LONG_HTML.length(), json.get("total_chars").asInt());
+
+    StringBuilder whole = new StringBuilder(first.htmlContent());
+    Integer next = first.nextOffset();
+    int parts = 1;
+    while (next != null) {
+      long from = next;
+      NoteModel part = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, from, 10, null));
+      assertEquals(next, part.offset());
+      // longer only when a single tag is, which is returned whole
+      assertTrue(part.htmlContent(), part.htmlContent().length() <= 10 || part.htmlContent().matches("<[^>]*>"));
+      assertFalse(part.htmlContent(), part.htmlContent().lastIndexOf('<') > part.htmlContent().lastIndexOf('>'));
+      whole.append(part.htmlContent());
+      next = part.nextOffset();
+      parts++;
+    }
+    assertEquals(LONG_HTML, whole.toString());
+    assertTrue(parts > 2);
+  }
+
+  /**
+   * An offset that falls inside a tag starts at that tag, and an offset past
+   * the end returns an empty last part.
+   */
+  @Test
+  public void getNoteWithAnOffsetInsideATagShouldStartAtTheTag() throws Exception { // NOSONAR
+    stubNoteContent(LONG_HTML);
+
+    NoteModel inside = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 11L, 3, null));
+    NoteModel past = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 10_000L, null, null));
+
+    assertEquals(Integer.valueOf(9), inside.offset());
+    assertEquals("<b>", inside.htmlContent());
+    assertEquals(Integer.valueOf(LONG_HTML.length()), past.offset());
+    assertNull(past.nextOffset());
+  }
+
+  /**
+   * max_chars is clamped to 200000 above it and to 1 below 1, and offset
+   * alone reads 40000 characters.
+   */
+  @Test
+  public void getNoteShouldClampMaxChars() throws Exception { // NOSONAR
+    String html = "<p>" + "a".repeat(250_000) + "</p>";
+    stubNoteContent(html);
+
+    NoteModel capped = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 500_000, null));
+    NoteModel single = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 3L, -5, null));
+    NoteModel defaulted = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 3L, null, null));
+
+    assertEquals(NoteMcpTool.MAX_PART_CHARS, capped.htmlContent().length());
+    assertEquals(Integer.valueOf(NoteMcpTool.MAX_PART_CHARS), capped.nextOffset());
+    assertEquals("a", single.htmlContent());
+    assertEquals(NoteMcpTool.DEFAULT_PART_CHARS, defaulted.htmlContent().length());
+  }
+
+  /**
+   * A tag longer than max_chars is returned whole rather than an empty part
+   * that would never move on.
+   */
+  @Test
+  public void getNoteWithATagLongerThanMaxCharsShouldReturnTheTag() throws Exception { // NOSONAR
+    String html = "<img src=\"https://meeds.test/a-long-image-path.png\"><p>after</p>";
+    stubNoteContent(html);
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 5, null));
+
+    assertEquals("<img src=\"https://meeds.test/a-long-image-path.png\">", result.htmlContent());
+    assertEquals(Integer.valueOf(html.indexOf("<p>")), result.nextOffset());
+  }
+
+  /**
+   * A cut never splits a tag, a quoted attribute holding a {@code >}, a
+   * comment, a character reference or a surrogate pair.
+   */
+  @Test
+  public void safeBoundaryShouldNeverSplitATagAReferenceOrAPair() {
+    String quoted = "<a title=\"a>b\" href=\"x\">link</a>";
+    assertEquals(0, NoteMcpTool.safeBoundary(quoted, 12));
+    assertEquals(24, NoteMcpTool.safeBoundary(quoted, 24));
+    String comment = "ab<!-- x > y -->cd";
+    assertEquals(2, NoteMcpTool.safeBoundary(comment, 10));
+    assertEquals(16, NoteMcpTool.safeBoundary(comment, 16));
+    String entity = "<p>a&nbsp;b</p>";
+    assertEquals(4, NoteMcpTool.safeBoundary(entity, 7));
+    assertEquals(10, NoteMcpTool.safeBoundary(entity, 10));
+    String pair = "a\uD83D\uDE00b";
+    assertEquals(1, NoteMcpTool.safeBoundary(pair, 2));
+    assertEquals(3, NoteMcpTool.safeBoundary(pair, 3));
+    assertEquals(0, NoteMcpTool.safeBoundary(pair, -1));
+    assertEquals(pair.length(), NoteMcpTool.safeBoundary(pair, 99));
+    assertEquals(10, NoteMcpTool.boundaryAfter(entity, 4));
+    assertEquals(3, NoteMcpTool.boundaryAfter(pair, 1));
+  }
+
+  /**
+   * get_note reads one version of the history by its number: its title and
+   * content, with the version's number.
+   */
+  @Test
+  public void getNoteWithAVersionNumberShouldReadThatVersion() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    PageHistory version = pageHistory(note, 2L, "Old title", "<p>old</p>");
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(pageHistory(note,
+                                                                                                      3L,
+                                                                                                      "Current title",
+                                                                                                      "<p>current</p>"),
+                                                                                          version));
+
+    NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, 2L));
+
+    assertEquals("Old title", result.title());
+    assertTrue(result.htmlContent(), result.htmlContent().contains("old"));
+    assertFalse(result.htmlContent(), result.htmlContent().contains("current"));
+    assertEquals(Long.valueOf(2L), result.versionNumber());
+    assertEquals(2, JSON.valueToTree(result).get("version_number").asInt());
+  }
+
+  /**
+   * get_note refuses a version number the history doesn't hold.
+   */
+  @Test
+  public void getNoteWithAnUnknownVersionNumberShouldThrow() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(List.of(pageHistory(note, 1L, TITLE, CONTENT)));
+
+    assertThrows(ObjectNotFoundException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, 7L)));
+  }
+
+  /**
+   * The version history is read a page at a time, without the versions'
+   * content: a first page says more follow and where, the last page says none
+   * do and leaves out next_offset.
+   */
+  @Test
+  public void getNoteVersionsShouldBePaginatedWithoutContent() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    List<PageHistory> history = new java.util.ArrayList<>();
+    for (long number = 25; number > 0; number--) {
+      history.add(pageHistory(note, number, TITLE + number, "<p>content " + number + "</p>"));
+    }
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(history);
+
+    NoteVersionCollectionModel first = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, null, null));
+    NoteVersionCollectionModel last = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, 20, 10));
+
+    assertEquals(10, first.versions().size());
+    assertEquals(10, first.usedLimit());
+    assertEquals(Long.valueOf(25L), first.versions().get(0).versionNumber());
+    assertTrue(first.hasMore());
+    assertEquals(Integer.valueOf(10), first.nextOffset());
+    JsonNode version = JSON.valueToTree(first).get("versions").get(0);
+    assertEquals(Set.of("version_number", "version_id", "title", "updated_date", "author"), fieldNames(version));
+
+    assertEquals(5, last.versions().size());
+    assertEquals(Long.valueOf(5L), last.versions().get(0).versionNumber());
+    assertFalse(last.hasMore());
+    assertNull(last.nextOffset());
+    assertFalse(JSON.valueToTree(last).has("next_offset"));
+  }
+
+  /**
+   * A version history limit above the maximum is clamped to 100.
+   */
+  @Test
+  public void getNoteVersionsShouldClampTheLimitTo100() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    List<PageHistory> history = new java.util.ArrayList<>();
+    for (long number = 150; number > 0; number--) {
+      history.add(pageHistory(note, number, TITLE, CONTENT));
+    }
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(history);
+
+    NoteVersionCollectionModel result = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, null, 101));
+
+    assertEquals(100, result.usedLimit());
+    assertEquals(100, result.versions().size());
+    assertEquals(Integer.valueOf(100), result.nextOffset());
+  }
+
+  /**
+   * The service returns the version history in no stated order, so the tool
+   * sorts it by number before paging: read page after page, an unordered
+   * history comes back newest first, every version once.
+   */
+  @Test
+  public void getNoteVersionsShouldPageAnUnorderedHistoryNewestFirst() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    List<PageHistory> history = new java.util.ArrayList<>();
+    for (long number : new long[] { 7, 23, 1, 15, 25, 2, 11, 19, 4, 13, 24, 9, 17, 3, 21, 6, 12, 20, 8, 16, 5, 22, 10, 18, 14 }) {
+      history.add(pageHistory(note, number, TITLE + number, CONTENT));
+    }
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(note, USER, null)).thenReturn(history);
+
+    List<Long> read = new java.util.ArrayList<>();
+    Integer next = 0;
+    int pages = 0;
+    while (next != null) {
+      int from = next;
+      NoteVersionCollectionModel page = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, null, from, 10));
+      page.versions().forEach(version -> read.add(version.versionNumber()));
+      next = page.nextOffset();
+      pages++;
+    }
+
+    List<Long> expected = new java.util.ArrayList<>();
+    for (long number = 25; number > 0; number--) {
+      expected.add(number);
+    }
+    assertEquals(expected, read);
+    assertEquals(3, pages);
+  }
+
+  /**
+   * A part of the current note names the published version it was cut from,
+   * when that version is the one the read returned; passed back as
+   * version_number, it pins the next parts to that version although the note
+   * was edited in between.
+   */
+  @Test
+  public void getNotePartsShouldNameThePublishedVersionAndReadOnFromIt() throws Exception { // NOSONAR
+    String[] current = { LONG_HTML };
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenAnswer(invocation -> {
+      Page page = restorablePage();
+      page.setContent(current[0]);
+      page.setLatestVersionId("12-7");
+      return page;
+    });
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    lenient().when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+    PageVersion published = new PageVersion();
+    published.setId("12-7");
+    published.setName("7");
+    when(noteService.getPublishedVersionByPageIdAndLang(NOTE_ID, null)).thenReturn(published);
+    Page note = restorablePage();
+    when(noteService.getVersionsHistoryOfNoteByLang(any(Page.class), eq(USER), eq(null))).thenReturn(List.of(pageHistory(note,
+                                                                                                                         8L,
+                                                                                                                         TITLE,
+                                                                                                                         "<p>edited</p>"),
+                                                                                                             pageHistory(note,
+                                                                                                                         7L,
+                                                                                                                         TITLE,
+                                                                                                                         LONG_HTML)));
+
+    NoteModel first = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 10, null));
+    // the note is edited between two calls
+    current[0] = "<p>edited</p>";
+    long from = first.nextOffset();
+    NoteModel second = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, from, 10, first.versionNumber()));
+
+    assertEquals(Long.valueOf(7L), first.versionNumber());
+    assertEquals(7, JSON.valueToTree(first).get("version_number").asInt());
+    assertEquals(LONG_HTML.substring(second.offset(), second.endOffset()), second.htmlContent());
+    assertEquals(Long.valueOf(7L), second.versionNumber());
+  }
+
+  /**
+   * A part of the current note names no version when the latest published
+   * version isn't the one the read returned: a translation read with no
+   * version of its own holds the default content, and a version published
+   * after the read is another one.
+   */
+  @Test
+  public void getNotePartShouldNameNoVersionWhenThePublishedOneIsNotTheOneRead() throws Exception { // NOSONAR
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenAnswer(invocation -> {
+      Page page = restorablePage();
+      page.setContent(LONG_HTML);
+      page.setLatestVersionId("12-7");
+      return page;
+    });
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    lenient().when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+    PageVersion newer = new PageVersion();
+    newer.setId("12-8");
+    newer.setName("8");
+    when(noteService.getPublishedVersionByPageIdAndLang(NOTE_ID, null)).thenReturn(newer);
+
+    NoteModel part = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 10, null));
+
+    assertNull(part.versionNumber());
+    assertFalse(JSON.valueToTree(part).has("version_number"));
+  }
+
+  /**
+   * A region-qualified translation is stored as {@code Locale.toString()},
+   * "es_ES", and read by that code, trimmed but not case-folded, whether its
+   * current content or one of its versions is read.
+   */
+  @Test
+  public void getNoteWithARegionQualifiedLanguageShouldReadThatTranslation() throws Exception { // NOSONAR
+    Page esNote = restorablePage();
+    esNote.setTitle("Título");
+    esNote.setLang("es_ES");
+    Page defaultNote = restorablePage();
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "es_ES")).thenReturn(esNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.getVersionsHistoryOfNoteByLang(esNote, USER, "es_ES")).thenReturn(List.of(pageHistory(esNote,
+                                                                                                           3L,
+                                                                                                           "Título antiguo",
+                                                                                                           "<p>antiguo</p>")));
+
+    NoteModel current = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "es_ES", null, null, null));
+    NoteModel version = runWithStaticMocks(() -> tool.getNote(NOTE_ID, " es_ES ", null, null, 3L));
+
+    assertEquals("Título", current.title());
+    assertEquals("Título antiguo", version.title());
+    assertEquals(Long.valueOf(3L), version.versionNumber());
+  }
+
+  /**
+   * A version read is refused, before any version is looked up, to a user who
+   * can't view the note.
+   */
+  @Test
+  public void getNoteWithAVersionNumberShouldBeRefusedWhenTheUserCantViewTheNote() throws Exception { // NOSONAR
+    Page note = restorablePage();
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(false);
+
+    assertThrows(IllegalAccessException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, 2L)));
+    verify(noteService, never()).getVersionsHistoryOfNoteByLang(any(Page.class), anyString(), any());
+  }
+
+  /**
+   * A translation is removed under its code as stored, so a case variant of
+   * the code, which matches it in the list, deletes that translation and not
+   * a code no version holds.
+   */
+  @Test
+  public void removeNoteTranslationWithACaseVariantShouldDeleteTheStoredCode() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr", "es_ES"));
+
+    runWithStaticMocks(() -> tool.removeNoteTranslation(NOTE_ID, "ES_es"));
+
+    verify(noteService).deleteVersionsByNoteIdAndLang(NOTE_ID, "es_ES");
+    verify(noteService, never()).deleteVersionsByNoteIdAndLang(NOTE_ID, "ES_es");
+  }
+
+  /**
+   * A language given in the wrong case is resolved to the code the
+   * translation is stored under, so "FR" reads the "fr" translation and its
+   * history, not the default content and an empty history: the version
+   * queries compare the code exactly.
+   */
+  @Test
+  public void getNoteWithAWrongCaseLanguageShouldReadTheStoredTranslation() throws Exception { // NOSONAR
+    Page frNote = restorablePage();
+    frNote.setTitle("Titre");
+    frNote.setLang("fr");
+    Page defaultNote = restorablePage();
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "FR")).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "fr")).thenReturn(frNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(noteService.getVersionsHistoryOfNoteByLang(frNote, USER, "fr")).thenReturn(List.of(pageHistory(frNote,
+                                                                                                        2L,
+                                                                                                        "Ancien titre",
+                                                                                                        "<p>ancien</p>")));
+
+    NoteModel current = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "FR", null, null, null));
+    NoteModel version = runWithStaticMocks(() -> tool.getNote(NOTE_ID, " FR ", null, null, 2L));
+    NoteVersionCollectionModel versions = runWithStaticMocks(() -> tool.getNoteVersions(NOTE_ID, "FR", null, null));
+
+    assertEquals("Titre", current.title());
+    assertEquals("Ancien titre", version.title());
+    assertEquals(1, versions.versions().size());
+  }
+
+  /**
+   * An update in a wrong-case language writes the existing translation, from
+   * its own state and under its stored code, never a second translation next
+   * to it.
+   */
+  @Test
+  public void updateNoteWithAWrongCaseLanguageShouldWriteTheStoredTranslation() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Titre FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR"))).thenReturn(defaultNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, null, "nouveau contenu", "FR"));
+
+    verify(defaultNote).setTitle("Titre FR");
+    verify(defaultNote).setLang("fr");
+    verify(defaultNote, never()).setLang("FR");
+    verify(noteService).removeDraftOfNote(any(WikiPageParams.class), eq("fr"));
+  }
+
+  /**
+   * A summary set in a wrong-case language goes into the stored translation's
+   * metadata, keyed {@code <id>-fr}, not into a new {@code <id>-FR} no version
+   * reads.
+   */
+  @Test
+  public void setNoteSummaryWithAWrongCaseLanguageShouldWriteTheStoredTranslationsMetadata() throws Exception { // NOSONAR
+    Page frNote = mockPage(String.valueOf(NOTE_ID), "Note FR");
+    lenient().when(frNote.getLang()).thenReturn("fr");
+    lenient().when(frNote.getProperties()).thenReturn(new NotePageProperties());
+    org.exoplatform.social.core.identity.model.Identity userIdentity =
+                                                                     mock(org.exoplatform.social.core.identity.model.Identity.class);
+    lenient().when(userIdentity.getId()).thenReturn("42");
+
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR"))).thenReturn(frNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(frNote);
+    when(noteService.canViewNote(frNote, USER)).thenReturn(true);
+    when(noteService.canEditNote(frNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("fr"));
+    when(identityManager.getOrCreateUserIdentity(USER)).thenReturn(userIdentity);
+
+    runWithStaticMocks(() -> tool.setNoteSummary(NOTE_ID, "nouveau resume", "FR"));
+
+    verify(noteService).saveNoteMetadata(any(NotePageProperties.class), eq("fr"), eq(42L));
+    verify(noteService, never()).saveNoteMetadata(any(NotePageProperties.class), eq("FR"), anyLong());
+    verify(frNote).setLang("fr");
+  }
+
+  /**
+   * A code stored exactly as given is used over a stored case variant of it,
+   * and a code no translation is stored under is used as given, a new
+   * translation.
+   */
+  @Test
+  public void aLanguageShouldMatchItsExactStoredCodeFirstAndANewCodeAsGiven() throws Exception { // NOSONAR
+    Page esNote = restorablePage();
+    esNote.setTitle("Título");
+    esNote.setLang("es_ES");
+    Page decoy = restorablePage();
+    decoy.setTitle("Decoy");
+    Page defaultNote = restorablePage();
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "ES_es")).thenReturn(decoy);
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "es_ES")).thenReturn(esNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    // "ES_es" sorts first, so only an exact match first reads "es_ES"
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("ES_es", "es_ES"));
+
+    NoteModel es = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "es_ES", null, null, null));
+    assertEquals("Título", es.title());
+
+    Page deNote = restorablePage();
+    deNote.setTitle("Titel");
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, "de")).thenReturn(deNote);
+    NoteModel de = runWithStaticMocks(() -> tool.getNote(NOTE_ID, "de", null, null, null));
+    assertEquals("Titel", de.title());
+  }
+
+  /**
+   * With both "fr" and "FR" stored, "fr" removes "fr": the exact code first,
+   * not the first case-insensitive match of a list in no order.
+   */
+  @Test
+  public void removeNoteTranslationShouldPreferTheExactStoredCode() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("FR", "fr"));
+
+    runWithStaticMocks(() -> tool.removeNoteTranslation(NOTE_ID, "fr"));
+
+    verify(noteService).deleteVersionsByNoteIdAndLang(NOTE_ID, "fr");
+    verify(noteService, never()).deleteVersionsByNoteIdAndLang(NOTE_ID, "FR");
+  }
+
+  /**
+   * The search pages through the first 10,000 hits at most, the search
+   * engine's result window: an offset past it is clamped so that the page,
+   * and the one extra hit asked for, end within it, and no next page is
+   * offered past it, so next_offset never overflows nor repeats a page.
+   */
+  @Test
+  public void searchNotesShouldPageWithinTheSearchWindow() throws Exception { // NOSONAR
+    mockSearchablePages(11);
+
+    NoteSearchCollectionModel huge = runWithConversationAndStaticMocks(() -> tool.searchNotes("note",
+                                                                                               null,
+                                                                                               Integer.MAX_VALUE,
+                                                                                               10,
+                                                                                               null));
+    NoteSearchCollectionModel nearEnd = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, 9_979, 10, null));
+
+    ArgumentCaptor<WikiSearchData> captor = ArgumentCaptor.forClass(WikiSearchData.class);
+    verify(noteService, times(2)).search(captor.capture());
+    assertEquals(9_989, captor.getAllValues().get(0).getOffset());
+    assertEquals(11, captor.getAllValues().get(0).getLimit());
+    assertTrue(captor.getAllValues().get(0).getOffset() + captor.getAllValues().get(0).getLimit() <= 10_000);
+    assertFalse(huge.hasMore());
+    assertNull(huge.nextOffset());
+
+    assertEquals(9_979, captor.getAllValues().get(1).getOffset());
+    assertTrue(nearEnd.hasMore());
+    assertEquals(Integer.valueOf(9_989), nearEnd.nextOffset());
+  }
+
+  /**
+   * Stubs the note search to find the given note ids.
+   *
+   * @param noteIds the ids of the notes found
+   */
+  @SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
+  private void mockSearchResults(List<Long> noteIds) throws Exception { // NOSONAR
+    List<SearchResult> results = noteIds.stream().map(id -> {
+      SearchResult result = mock(SearchResult.class);
+      lenient().when(result.getId()).thenReturn(id);
+      return result;
+    }).toList();
+    ObjectPageList wikiSearchResult = mock(ObjectPageList.class);
+    when(wikiSearchResult.getAll()).thenReturn(results);
+    when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
+  }
+
+  /**
+   * Stubs the note search to find the given number of readable notes, from
+   * {@link #NOTE_ID} on.
+   *
+   * @param count the number of notes found
+   */
+  private void mockSearchablePages(int count) throws Exception { // NOSONAR
+    List<Long> ids = new java.util.ArrayList<>();
+    for (long id = NOTE_ID; id < NOTE_ID + count; id++) {
+      Page page = mockPage(String.valueOf(id), "Note " + id);
+      lenient().when(noteService.getNoteByIdAndLang(id, currentIdentity, null, null)).thenReturn(page);
+      lenient().when(noteService.canViewNote(page, USER)).thenReturn(true);
+      ids.add(id);
+    }
+    Space space = mockSpace();
+    lenient().when(spaceService.getSpaceByGroupId(GROUP_ID)).thenReturn(space);
+    mockSearchResults(ids);
+  }
+
+  /**
+   * Makes the note readable with the given HTML content, as a fresh page on
+   * each read, so that one read's sanitizing doesn't leak into the next.
+   *
+   * @param html the note's content
+   */
+  private void stubNoteContent(String html) throws Exception { // NOSONAR
+    when(noteService.getNoteByIdAndLang(NOTE_ID, currentIdentity, null, null)).thenAnswer(invocation -> {
+      Page page = restorablePage();
+      page.setContent(html);
+      return page;
+    });
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    lenient().when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+  }
+
+  /**
+   * Lists the field names of a JSON object.
+   *
+   * @param node the JSON object
+   * @return its field names
+   */
+  private Set<String> fieldNames(JsonNode node) {
+    return new java.util.HashSet<>(node.propertyNames());
   }
 
   private Page restorablePage() {
