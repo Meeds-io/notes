@@ -46,7 +46,7 @@ class CollaborativeActivityDeclarationTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void theDeclarationCountsThePublicationAndItsLegacyNameAndExcludesTheNoteStreamPost() throws IOException {
+  void theDeclarationCountsThePublicationAndItsLegacyNameAndExcludesTheNoteStreamPost() throws IOException, ReflectiveOperationException {
     Map<String, Object> declaration;
     try (InputStream content = getClass().getClassLoader().getResourceAsStream(DECLARATION_FILE)) {
       assertNotNull(content, "the declaration ships at the root of notes-service, which lands in /lib");
@@ -54,7 +54,9 @@ class CollaborativeActivityDeclarationTest {
     }
 
     assertEquals(List.of("contents"), declaration.get("modules"));
-    assertEquals(List.of(NotesPageListener.WIKI_ADD_PAGE_OPERATION), declaration.get("operations"));
+    // read through the loaded class, not the constant the compiler inlines
+    Object operation = NotesPageListener.class.getField("WIKI_ADD_PAGE_OPERATION").get(null);
+    assertEquals(List.of(operation), declaration.get("operations"));
     assertEquals(List.of("noteCreated"), declaration.get("legacyOperations"), "the name emitted until 7.0.0-exo, never again");
     assertEquals(List.of(WikiSpaceActivityPublisher.WIKI_APP_ID), declaration.get("excludedActivityTypes"));
     assertFalse(declaration.containsKey("browserOperations"));
