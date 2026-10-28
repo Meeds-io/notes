@@ -28,9 +28,11 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +45,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.ObjectProvider;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
@@ -73,6 +76,7 @@ import io.meeds.mcp.server.tool.util.UserToolUtils;
 import io.meeds.mcp.server.util.McpToolUtils;
 import io.meeds.notes.mcp.model.NoteModel;
 import io.meeds.notes.mcp.model.NoteRootTreeModel;
+import io.meeds.notes.plugin.NotePublicationPlugin;
 import io.meeds.portal.permlink.service.PermanentLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -98,6 +102,8 @@ public class NoteMcpToolTest {
   private static final long       PARENT_NOTE_ID = 13L;
 
   private static final long       SPACE_ID       = 33L;
+
+  private static final String     PLUGIN_ACTIVITY_ID = "55";
 
   @Mock
   private WikiService             wikiService;
@@ -138,12 +144,18 @@ public class NoteMcpToolTest {
   @Mock
   private ConversationState       conversationState;
 
+  @Mock
+  private ObjectProvider<NotePublicationPlugin> publicationPlugins;
+
+  private List<NotePublicationPlugin> publicationPluginList = new ArrayList<>();
+
   private NoteMcpTool             tool;
 
   @Before
   public void setUp() throws Exception { // NOSONAR
     lenient().when(currentIdentity.getUserId()).thenReturn(USER);
     lenient().when(permanentLinkService.getLink(any())).thenReturn("/note-link");
+    lenient().when(publicationPlugins.orderedStream()).thenAnswer(invocation -> publicationPluginList.stream());
 
     tool = new TestableNoteMcpTool();
   }
@@ -350,6 +362,97 @@ public class NoteMcpToolTest {
   }
 
   @Test
+  public void publishNoteShouldDelegateToThePublicationPluginHandlingTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin notHandlingPlugin = mock(NotePublicationPlugin.class);
+    NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(notHandlingPlugin);
+    publicationPluginList.add(handlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(handlingPlugin.publishNote(note, currentIdentity)).thenReturn(PLUGIN_ACTIVITY_ID);
+
+    ActivityModel activityModel = mock(ActivityModel.class);
+    ActivityModel result;
+    try (MockedStatic<ActivityToolUtils> activities = mockStatic(ActivityToolUtils.class)) {
+      activities.when(() -> ActivityToolUtils.toActivityModel(any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              any(),
+                                                              eq(PLUGIN_ACTIVITY_ID),
+                                                              any(),
+                                                              any()))
+                .thenReturn(activityModel);
+      result = runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    }
+
+    assertEquals(activityModel, result);
+    verify(notHandlingPlugin).publishNote(note, currentIdentity);
+    verify(note, never()).setToBePublished(true);
+    verify(noteService, never()).updateNote(any(Page.class), eq(PageUpdateType.PUBLISH), any(Identity.class));
+  }
+
+  @Test
+  public void publishNoteShouldUseLegacyPublicationWhenNoPluginHandlesTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin notHandlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(notHandlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+
+    runWithStaticMocksWithActivity(mock(ActivityModel.class), () -> tool.publishNote(NOTE_ID));
+
+    verify(notHandlingPlugin).publishNote(note, currentIdentity);
+    verify(note).setToBePublished(true);
+    verify(noteService).updateNote(note, PageUpdateType.PUBLISH, currentIdentity);
+  }
+
+  @Test(expected = IllegalAccessException.class)
+  public void publishNoteShouldNotFallBackToLegacyPublicationWhenAPluginRefusesIt() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin refusingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(refusingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(refusingPlugin.publishNote(note, currentIdentity)).thenThrow(new IllegalAccessException("refused"));
+
+    try {
+      runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    } finally {
+      verify(note, never()).setToBePublished(true);
+      verify(noteService, never()).updateNote(any(Page.class), eq(PageUpdateType.PUBLISH), any(Identity.class));
+    }
+  }
+
+  @Test(expected = IllegalAccessException.class)
+  public void publishNoteShouldNotCallPublicationPluginsWhenUserCannotEditTheNote() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
+    publicationPluginList.add(handlingPlugin);
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(false);
+
+    try {
+      runWithStaticMocks(() -> tool.publishNote(NOTE_ID));
+    } finally {
+      verify(handlingPlugin, never()).publishNote(any(), any());
+    }
+  }
+
+  @Test
   public void deleteNoteShouldDeleteNote() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
 
@@ -506,7 +609,8 @@ public class NoteMcpToolTest {
             profilePropertyService,
             userAcl,
             portalConfigService,
-            permanentLinkService);
+            permanentLinkService,
+            publicationPlugins);
     }
 
     @Override
