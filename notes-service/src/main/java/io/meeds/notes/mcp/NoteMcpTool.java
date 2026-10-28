@@ -32,6 +32,7 @@ import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -85,6 +86,7 @@ import io.meeds.notes.mcp.model.NoteVersionModel;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.plugin.NotePermanentLinkPlugin;
+import io.meeds.notes.plugin.NotePublicationPlugin;
 import io.meeds.portal.permlink.model.PermanentLinkObject;
 import io.meeds.portal.permlink.service.PermanentLinkService;
 import io.meeds.social.html.model.HtmlTransformerContext;
@@ -146,6 +148,8 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private LayoutService           layoutService;
 
+  private ObjectProvider<NotePublicationPlugin> publicationPlugins;
+
   public NoteMcpTool(WikiService wikiService,
                           NoteService noteService,
                           ActivityManager activityManager,
@@ -160,7 +164,8 @@ public class NoteMcpTool implements McpToolPlugin {
                           UploadService uploadService,
                           AttachmentService attachmentService,
                           FileService fileService,
-                          LayoutService layoutService) {
+                          LayoutService layoutService,
+                          ObjectProvider<NotePublicationPlugin> publicationPlugins) {
     this.wikiService = wikiService;
     this.noteService = noteService;
     this.activityManager = activityManager;
@@ -176,6 +181,7 @@ public class NoteMcpTool implements McpToolPlugin {
     this.attachmentService = attachmentService;
     this.fileService = fileService;
     this.layoutService = layoutService;
+    this.publicationPlugins = publicationPlugins;
   }
 
   public NoteRootTreeModel getSpaceNoteTree(long spaceId) throws ObjectNotFoundException, IllegalAccessException {
@@ -373,10 +379,13 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
-    note.setToBePublished(true);
-    noteService.updateNote(note, PageUpdateType.PUBLISH, currentUserAclIdentity);
-    note = getNoteById(noteId);
-    return toActivityModel(note.getActivityId());
+    String activityId = publishNoteUsingPlugins(note, currentUserAclIdentity);
+    if (activityId == null) {
+      note.setToBePublished(true);
+      noteService.updateNote(note, PageUpdateType.PUBLISH, currentUserAclIdentity);
+      activityId = getNoteById(noteId).getActivityId();
+    }
+    return toActivityModel(activityId);
   }
 
   public void deleteNote(long noteId) throws IllegalAccessException, ObjectNotFoundException {
@@ -1060,6 +1069,16 @@ public class NoteMcpTool implements McpToolPlugin {
       }
       if (node.getChildren() != null) {
         nodesToVisit.addAll(node.getChildren());
+      }
+    }
+    return null;
+  }
+
+  private String publishNoteUsingPlugins(Page note, Identity identity) throws Exception { // NOSONAR
+    for (NotePublicationPlugin publicationPlugin : publicationPlugins.orderedStream().toList()) {
+      String activityId = publicationPlugin.publishNote(note, identity);
+      if (activityId != null) {
+        return activityId;
       }
     }
     return null;
