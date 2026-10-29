@@ -61,10 +61,7 @@ class CollaborativeActivityDeclarationTest {
     assertEquals(List.of(WikiSpaceActivityPublisher.WIKI_APP_ID), declaration.get("excludedActivityTypes"));
     assertFalse(declaration.containsKey("browserOperations"));
 
-    Map<String, Object> labels = (Map<String, Object>) declaration.get("labels");
-    assertEquals(List.of("notes.collaborativeActivity.help.counted.publishNote",
-                         "notes.collaborativeActivity.help.counted.importNotes"),
-                 labels.get("counted"));
+    assertFalse(declaration.containsKey("labels"), "the News & Notes help group is content's, which depends on notes");
   }
 
 }
