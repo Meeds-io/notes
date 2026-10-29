@@ -65,10 +65,6 @@ class CollaborativeActivityDeclarationTest {
     assertEquals(List.of("notes.collaborativeActivity.help.counted.publishNote",
                          "notes.collaborativeActivity.help.counted.importNotes"),
                  labels.get("counted"));
-    assertEquals(List.of("notes.collaborativeActivity.help.notCounted.draftNote",
-                         "notes.collaborativeActivity.help.notCounted.editNote"),
-                 labels.get("notCounted"),
-                 "one entry per user-facing action; the keys are matched by hand against notes-webapp's Portlets_en.properties");
   }
 
 }

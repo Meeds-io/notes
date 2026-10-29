@@ -7,10 +7,6 @@
     "counted": [
       "notes.collaborativeActivity.help.counted.publishNote",
       "notes.collaborativeActivity.help.counted.importNotes"
-    ],
-    "notCounted": [
-      "notes.collaborativeActivity.help.notCounted.draftNote",
-      "notes.collaborativeActivity.help.notCounted.editNote"
     ]
   }
 }
