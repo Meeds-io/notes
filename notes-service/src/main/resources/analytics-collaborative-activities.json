@@ -1,0 +1,6 @@
+{
+  "modules": ["contents"],
+  "operations": ["createContent"],
+  "legacyOperations": ["noteCreated"],
+  "excludedActivityTypes": ["ks-wiki:spaces"]
+}
