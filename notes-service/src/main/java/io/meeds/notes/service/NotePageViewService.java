@@ -228,6 +228,7 @@ public class NotePageViewService {
           page = noteService.updateNote(page, PageUpdateType.EDIT_PAGE_CONTENT);
           page.setContent(content);
           page.setLang(pageWithLang.getLang());
+          page.setProperties(null);
         }
         noteService.createVersionOfNote(page, userIdentity.getUserId());
         noteService.removeDraftOfNote(page);

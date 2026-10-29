@@ -36,12 +36,15 @@ import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.service.NoteService;
 
+import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageData;
+import io.meeds.notes.model.NotePageProperties;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.cms.service.CMSServiceImpl;
 
@@ -75,6 +78,8 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
   private OrganizationService  organizationService;
 
+  private IdentityManager       identityManager;
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -84,6 +89,48 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     this.identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
     this.organizationService = getContainer().getComponentInstanceOfType(OrganizationService.class);
     this.noteService = getContainer().getComponentInstanceOfType(NoteService.class);
+    this.identityManager = getContainer().getComponentInstanceOfType(IdentityManager.class);
+  }
+
+  /**
+   * A write to an existing translation versions that language's content
+   * only: its own summary and cover, and the default content's, stay as
+   * stored. The mutant that versions the default page's in-memory
+   * properties under the translation writes the default's summary and a
+   * cover id of 0 over them.
+   */
+  public void testSaveNotePageTranslationKeepsItsOwnSummaryAndCover() throws Exception {
+    String pageNoteName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
+    String pageReference = createPage(PAGE_NAME_PREFIX + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
+    createUser(USERNAME);
+    org.exoplatform.services.security.Identity administrator = registerAdministratorUser(USERNAME);
+    long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(USERNAME).getId());
+
+    notePageViewService.saveNotePage(pageNoteName, "default content", null, administrator);
+    Page page = notePageViewService.getNotePage(pageNoteName, null, administrator);
+    long pageId = Long.parseLong(page.getId());
+    page.setLang("fr");
+    page.setContent("fr content");
+    noteService.createVersionOfNote(page, USERNAME);
+    noteService.saveNoteMetadata(new NotePageProperties(pageId, "default summary", null, false, false, false),
+                                 null,
+                                 userIdentityId);
+    NoteFeaturedImage frCover = new NoteFeaturedImage(4242L, "image/png", null, "fr cover", 0L, false);
+    noteService.saveNoteMetadata(new NotePageProperties(pageId, "fr summary", frCover, false, false, false),
+                                 "fr",
+                                 userIdentityId);
+
+    notePageViewService.saveNotePage(pageNoteName, "fr content 2", "fr", administrator);
+
+    Page frPage = noteService.getNoteByIdAndLang(pageId, "fr");
+    assertEquals("fr content 2", frPage.getContent());
+    assertEquals("fr summary", frPage.getProperties().getSummary());
+    assertEquals(4242L, frPage.getProperties().getFeaturedImage().getId().longValue());
+    Page defaultPage = noteService.getNoteByIdAndLang(pageId, null);
+    assertEquals("default content", defaultPage.getContent());
+    assertEquals("default summary", defaultPage.getProperties().getSummary());
+    assertEquals("fr content 2", notePageViewService.getNotePage(pageNoteName, "fr", administrator).getContent());
   }
 
   public void testGetNotePageWithAnonim() throws IllegalAccessException, ObjectAlreadyExistsException, ObjectNotFoundException {
