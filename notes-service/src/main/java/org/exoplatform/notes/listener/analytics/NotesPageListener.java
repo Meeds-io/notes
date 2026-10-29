@@ -52,9 +52,9 @@ import io.meeds.social.cms.service.CMSService;
 
 public class NotesPageListener extends PageWikiListener {
 
-  private static final Log    LOG                         = ExoLogger.getLogger(NotesPageListener.class);
+  public static final String  WIKI_ADD_PAGE_OPERATION     = "createContent";
 
-  private static final String WIKI_ADD_PAGE_OPERATION     = "createContent";
+  private static final Log    LOG                         = ExoLogger.getLogger(NotesPageListener.class);
 
   private static final String WIKI_UPDATE_PAGE_OPERATION  = "updateContent";
 
