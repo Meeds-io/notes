@@ -513,6 +513,13 @@ public class NoteServiceImpl implements NoteService {
       } else if (userIdentity == null || !canEditNote(moveNote, userIdentity.getUserId())) {
         throw new IllegalAccessException("User does not have edit the note.");
       }
+      Page destinationNote = getNoteOfNoteBookByName(newLocationParams.getType(),
+                                                     newLocationParams.getOwner(),
+                                                     newLocationParams.getPageName());
+      if (destinationNote == null) {
+        throw new EntityNotFoundException("Destination note not found");
+      }
+      checkMoveDestination(moveNote, destinationNote, userIdentity);
       moveNote(currentLocationParams, newLocationParams);
 
       Page note = new Page(currentLocationParams.getPageName());
@@ -1946,6 +1953,17 @@ public class NoteServiceImpl implements NoteService {
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
+    // The storage re-parents the note whenever the request names a source
+    // parent other than its target parent
+    if (noteReorder.getSourceParentId() != null
+        && !noteReorder.getSourceParentId().equals(noteReorder.getTargetParentId())
+        && StringUtils.isNotBlank(noteReorder.getTargetParentId())) {
+      Page destinationNote = getNoteById(noteReorder.getTargetParentId());
+      if (destinationNote == null) {
+        throw new EntityNotFoundException("Destination note not found");
+      }
+      checkMoveDestination(existingNote, destinationNote, userIdentity);
+    }
     dataStorage.updateNotesPosition(noteReorder);
     Page updatedPage = getNoteById(noteReorder.getPageId());
     PageUpdateType updateType = StringUtils.equals(existingNote.getParentPageId(),
@@ -2760,4 +2778,32 @@ public class NoteServiceImpl implements NoteService {
     return localeConfigService.getDefaultLocaleConfig().getLocale();
   }
 
+  /**
+   * Refuses a new parent the user can't edit, and one that is the moved note
+   * itself or one of its sub-notes at any depth: the storage re-parents a note
+   * without that check, which would leave a parent cycle with no path to the
+   * notebook's home. The walk up the new parent's ancestors stops on an id
+   * seen twice, so a tree that already holds a cycle ends it.
+   *
+   * @param note the note to move
+   * @param destinationNote its new parent
+   * @param userIdentity the user moving it
+   * @throws IllegalAccessException when the user can't edit the new parent
+   * @throws IllegalArgumentException when the new parent is the note itself or
+   *           one of its sub-notes
+   */
+  private void checkMoveDestination(Page note, Page destinationNote, Identity userIdentity) throws IllegalAccessException {
+    if (!canEditNote(destinationNote, userIdentity.getUserId())) {
+      throw new IllegalAccessException("User does not have edit the destination note.");
+    }
+    Set<String> visited = new HashSet<>();
+    Page ancestor = destinationNote;
+    while (ancestor != null && visited.add(ancestor.getId())) {
+      if (StringUtils.equals(ancestor.getId(), note.getId())) {
+        throw new IllegalArgumentException("A note can't move under itself or one of its own sub-notes.");
+      }
+      String parentId = ancestor.getParentPageId();
+      ancestor = StringUtils.isBlank(parentId) ? null : getNoteById(parentId);
+    }
+  }
 }
