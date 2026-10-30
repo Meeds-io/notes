@@ -89,7 +89,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "space_arg": "space_id", "allowed_args": ["title", "summary", "html_content"] },
+      "space_scope": { "space_arg": "space_id", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -161,7 +161,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "parent_note_id", "resolver": "note", "allowed_args": ["title", "summary", "html_content"] },
+      "space_scope": { "object_arg": "parent_note_id", "resolver": "note", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -210,7 +210,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["title", "html_content", "language"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["title", "html_content", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -235,7 +235,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note" },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -260,7 +260,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note" },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -290,7 +290,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["target_parent_note_id"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["target_parent_note_id"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -392,7 +392,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["version_number", "language"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["version_number", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -469,7 +469,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -503,7 +503,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["summary", "language"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["summary", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -557,7 +557,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
-      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     }
   ]
