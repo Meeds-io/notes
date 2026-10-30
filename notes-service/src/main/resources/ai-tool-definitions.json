@@ -22,7 +22,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "space_arg": "space_id" }
     },
     {
       "name": "get_note",
@@ -49,7 +50,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] }
     },
     {
       "name": "create_space_note",
@@ -87,6 +89,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "space_arg": "space_id", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -158,6 +161,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "parent_note_id", "resolver": "note", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -206,6 +210,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["title", "html_content", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -230,6 +235,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -254,6 +260,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -283,6 +290,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["target_parent_note_id"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -322,7 +330,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "space_arg": "space_id", "when_absent": "use_scope", "allowed_args": ["query", "offset", "limit"], "false_only_args": ["is_favorites"] }
     },
     {
       "name": "get_note_versions",
@@ -349,7 +358,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"] }
     },
     {
       "name": "restore_note_version",
@@ -382,6 +392,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["version_number", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -458,6 +469,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -491,6 +503,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["summary", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -514,7 +527,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note" }
     },
     {
       "name": "remove_note_translation",
@@ -543,6 +557,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     }
   ]
