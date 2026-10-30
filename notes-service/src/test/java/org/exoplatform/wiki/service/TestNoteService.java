@@ -1386,7 +1386,7 @@ public class TestNoteService extends BaseTest {
     noteService.updateNotesPosition(validReorder, root);
 
     NoteReorder reorder1 = new NoteReorder();
-    reorder1.setPageId("10");
+    reorder1.setPageId(String.valueOf(Long.MAX_VALUE));
 
     Exception notFoundException = assertThrows(Exception.class, () -> {
       noteService.updateNotesPosition(reorder1, root);
@@ -1402,10 +1402,6 @@ public class TestNoteService extends BaseTest {
     assertEquals("User does not have edit the note.", accessException.getMessage());
   }
 
-  // Declared last: this class extends junit.framework.TestCase (JUnit 3), whose reflection-based
-  // TestSuite ignores @FixMethodOrder and runs methods in declaration order, so a test creating a
-  // note must not run before testUpdateNotesPosition, which hard-codes page id "10" as
-  // non-existent and breaks if an earlier test shifts the id sequence.
   public void testSaveNoteMetadataChecksEditPermission() throws Exception {
     Wiki wiki = new Wiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page note = noteService.createNote(wiki, "Home", new Page("testMetadataAcl", "testMetadataAcl"), ROOT_IDENTITY);
@@ -1427,6 +1423,92 @@ public class TestNoteService extends BaseTest {
     userProps.setNoteId(Long.parseLong(note.getId()));
     userProps.setSummary("denied");
     assertThrows(IllegalAccessException.class, () -> noteService.saveNoteMetadata(userProps, null, plainUser));
+  }
+
+  /**
+   * A note moves, through the REST move as through the tree's reorder, under
+   * neither itself nor one of its sub-notes at any depth: the storage would
+   * re-parent it into a cycle. A new parent elsewhere is accepted. Mutants:
+   * the check removed from either path, or the walk stopped at the new parent.
+   */
+  public void testMoveNoteNeverUnderItselfOrItsSubNotes() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page parent = noteService.createNote(portalWiki, "Home", new Page("moveCycleParent", "moveCycleParent"), ROOT_IDENTITY);
+    Page child = noteService.createNote(portalWiki, parent.getName(), new Page("moveCycleChild", "moveCycleChild"), ROOT_IDENTITY);
+    Page grandChild = noteService.createNote(portalWiki,
+                                             child.getName(),
+                                             new Page("moveCycleGrandChild", "moveCycleGrandChild"),
+                                             ROOT_IDENTITY);
+    Page sibling = noteService.createNote(portalWiki, "Home", new Page("moveCycleSibling", "moveCycleSibling"), ROOT_IDENTITY);
+    WikiPageParams parentLocation = new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, parent.getName());
+
+    for (Page target : List.of(parent, child, grandChild)) {
+      WikiPageParams targetLocation = new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, target.getName());
+      assertThrows(target.getName(),
+                   IllegalArgumentException.class,
+                   () -> noteService.moveNote(parentLocation, targetLocation, ROOT_IDENTITY));
+    }
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId(parent.getId());
+    reorder.setWikiType(PortalConfig.PORTAL_TYPE);
+    reorder.setWikiOwner(PORTAL_NAME);
+    String parentParentId = noteService.getNoteById(parent.getId()).getParentPageId();
+    reorder.setSourceParentId(parentParentId);
+    reorder.setTargetParentId(grandChild.getId());
+    assertThrows(IllegalArgumentException.class, () -> noteService.updateNotesPosition(reorder, ROOT_IDENTITY));
+    assertEquals(parentParentId, noteService.getNoteById(parent.getId()).getParentPageId());
+    assertEquals(child.getId(), noteService.getNoteById(grandChild.getId()).getParentPageId());
+
+    assertTrue(noteService.moveNote(parentLocation,
+                                    new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, sibling.getName()),
+                                    ROOT_IDENTITY));
+    assertEquals(sibling.getId(), noteService.getNoteById(parent.getId()).getParentPageId());
+    String homeId = noteService.getNoteById(sibling.getId()).getParentPageId();
+    reorder.setSourceParentId(sibling.getId());
+    reorder.setTargetParentId(homeId);
+    noteService.updateNotesPosition(reorder, ROOT_IDENTITY);
+    assertEquals(homeId, noteService.getNoteById(parent.getId()).getParentPageId());
+  }
+
+  /**
+   * A note moves, through the REST move as through the tree's reorder, only
+   * under a new parent the user can edit: editing the moved note is not
+   * enough. A new parent the user can edit is accepted. Mutants: the check
+   * removed from either path, or made on the moved note again.
+   */
+  public void testMoveNoteOnlyUnderANoteTheUserCanEdit() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page readOnlyTarget = noteService.createNote(portalWiki, "Home", new Page("moveReadOnlyTarget", "moveReadOnlyTarget"), ROOT_IDENTITY);
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity mover = new Identity("noteMover", Arrays.asList(new MembershipEntry(USERS_GROUP, "*")));
+    identityRegistry.register(mover);
+    Wiki moverWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "noteMover");
+    Page moved = noteService.createNote(moverWiki, "Home", new Page("moveMine", "moveMine"), mover);
+    Page ownTarget = noteService.createNote(moverWiki, "Home", new Page("moveMineTarget", "moveMineTarget"), mover);
+    // sanity: the user sees the read-only target and edits the moved note
+    assertNotNull(noteService.getNoteById(readOnlyTarget.getId(), mover));
+    assertTrue(noteService.canEditNote(moved, "noteMover"));
+    assertFalse(noteService.canEditNote(readOnlyTarget, "noteMover"));
+    WikiPageParams movedLocation = new WikiPageParams(PortalConfig.USER_TYPE, "noteMover", moved.getName());
+
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.moveNote(movedLocation,
+                                            new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, readOnlyTarget.getName()),
+                                            mover));
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId(moved.getId());
+    reorder.setWikiType(PortalConfig.USER_TYPE);
+    reorder.setWikiOwner("noteMover");
+    String movedParentId = noteService.getNoteById(moved.getId()).getParentPageId();
+    reorder.setSourceParentId(movedParentId);
+    reorder.setTargetParentId(readOnlyTarget.getId());
+    assertThrows(IllegalAccessException.class, () -> noteService.updateNotesPosition(reorder, mover));
+    assertEquals(movedParentId, noteService.getNoteById(moved.getId()).getParentPageId());
+
+    assertTrue(noteService.moveNote(movedLocation,
+                                    new WikiPageParams(PortalConfig.USER_TYPE, "noteMover", ownTarget.getName()),
+                                    mover));
+    assertEquals(ownTarget.getId(), noteService.getNoteById(moved.getId()).getParentPageId());
   }
 
   private Long getIdentityId(String username) {
