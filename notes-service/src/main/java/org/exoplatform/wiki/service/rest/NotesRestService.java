@@ -1052,6 +1052,9 @@ public class NotesRestService implements ResourceContainer {
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have move permissions on the note {}", noteId, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
+    } catch (IllegalArgumentException e) {
+      LOG.debug("Note {} can't move under note {}", noteId, toNoteId, e);
+      return Response.status(Response.Status.BAD_REQUEST).build();
     } catch (Exception ex) {
       LOG.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
