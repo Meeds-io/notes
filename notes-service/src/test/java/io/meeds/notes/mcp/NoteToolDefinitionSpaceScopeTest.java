@@ -47,9 +47,9 @@ import org.exoplatform.wiki.service.NoteService;
 import io.meeds.mcp.server.constant.Origin;
 import io.meeds.mcp.server.model.ActingIdentity;
 import io.meeds.mcp.server.model.SimpleToolDefinition;
+import io.meeds.mcp.server.model.SpaceScopeDeclaration;
 import io.meeds.mcp.server.model.SpaceScopeRefusedException;
 import io.meeds.mcp.server.plugin.SpaceScopeResolver;
-import io.meeds.mcp.server.model.SpaceScopeDeclaration;
 import io.meeds.mcp.server.service.McpToolSpaceScopeService;
 import io.meeds.mcp.server.util.McpToolUtils;
 
@@ -104,7 +104,7 @@ public class NoteToolDefinitionSpaceScopeTest {
   public void declaredToolsAreTheExpectedOnes() {
     Map<String, SimpleToolDefinition> declared = declaredTools();
 
-    assertEquals(Set.copyOf(java.util.stream.Stream.concat(SPACE_TOOLS.stream(), OBJECT_TOOLS.stream()).toList()),
+    assertEquals(Set.copyOf(Stream.concat(SPACE_TOOLS.stream(), OBJECT_TOOLS.stream()).toList()),
                  declared.keySet());
     declared.forEach((name, tool) -> {
       boolean write = WRITES.contains(name);
