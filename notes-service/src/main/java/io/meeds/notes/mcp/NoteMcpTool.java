@@ -26,10 +26,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -108,9 +106,6 @@ public class NoteMcpTool implements McpToolPlugin {
   private static final String     NOTE_EDIT_DENIED     = "User isn't allowed to update the Note with id '%s'";
 
   private static final String     TARGET_OUTSIDE_SCOPE = "Note '%s' isn't in the space this call is limited to";
-
-  private static final String     TARGET_UNDER_NOTE    =
-                                                   "Note '%s' can't move under itself or one of its own sub-notes";
 
   private static final String     SCOPE_UNREADABLE     =
                                                    "The space this call is limited to can't be read, so it can't move a note";
@@ -227,32 +222,6 @@ public class NoteMcpTool implements McpToolPlugin {
     }
     if (spaceId != null && !spaceId.equals(NoteSpaceScopeResolver.spaceOfNote(note, spaceService))) {
       throw new IllegalAccessException(TARGET_OUTSIDE_SCOPE.formatted(noteId));
-    }
-  }
-
-  /**
-   * Checks a note doesn't move under itself or one of its own sub-notes, by
-   * walking the new parent's ancestors up to the root. The note storage
-   * re-parents a note without that check, and a move into its own subtree
-   * would cut the subtree off its notebook in a cycle. An ancestor seen twice
-   * ends the walk, so a tree that already holds a cycle can't loop it.
-   *
-   * @param note the note to move
-   * @param target the note that would become its parent
-   * @param noteId the note's id, for the message
-   * @throws IllegalArgumentException when the target is the note or one of
-   *           its sub-notes
-   */
-  @SneakyThrows
-  private void checkNotUnderItself(Page note, Page target, long noteId) {
-    Set<String> visited = new HashSet<>();
-    Page ancestor = target;
-    while (ancestor != null && visited.add(ancestor.getId())) {
-      if (StringUtils.equals(ancestor.getId(), note.getId())) {
-        throw new IllegalArgumentException(TARGET_UNDER_NOTE.formatted(noteId));
-      }
-      String parentId = ancestor.getParentPageId();
-      ancestor = StringUtils.isBlank(parentId) ? null : noteService.getNoteById(parentId);
     }
   }
 
@@ -474,6 +443,8 @@ public class NoteMcpTool implements McpToolPlugin {
    * call limited to a space, the new parent must belong to that space: the
    * space scope checks the moved note only, and the new parent would
    * otherwise carry the note to another space's notebook or a personal one.
+   * The note service refuses a new parent the user can't edit, and one that
+   * is the note itself or one of its sub-notes.
    *
    * @param noteId the note to move
    * @param targetParentNoteId the note that becomes its parent
@@ -492,11 +463,7 @@ public class NoteMcpTool implements McpToolPlugin {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
     Page targetNote = getNoteById(targetParentNoteId);
-    if (!noteService.canEditNote(targetNote, currentUserAclIdentity.getUserId())) {
-      throw new IllegalAccessException(NOTE_EDIT_DENIED);
-    }
     checkInScopeSpace(targetNote, targetParentNoteId);
-    checkNotUnderItself(note, targetNote, noteId);
     WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
     WikiPageParams newLocationParams = new WikiPageParams(targetNote.getWikiType(),
                                                           targetNote.getWikiOwner(),

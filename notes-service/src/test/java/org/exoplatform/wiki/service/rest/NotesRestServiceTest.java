@@ -758,4 +758,33 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
+
+  /**
+   * A move the note service refuses because the destination is the note itself
+   * or one of its sub-notes answers 400, not a server error; a destination the
+   * user can't edit answers as any refused edit. Mutant: the refusal left to
+   * the generic catch.
+   *
+   * @throws Exception never
+   */
+  @Test
+  public void testMoveNoteUnderItselfIsABadRequest() throws Exception {
+    Page note = new Page("note", "note");
+    note.setId("1");
+    Page destination = new Page("destination", "destination");
+    destination.setId("2");
+    when(noteService.getNoteById("1", identity)).thenReturn(note);
+    when(noteService.getNoteById("2")).thenReturn(destination);
+
+    when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
+                                                                                                .thenThrow(new IllegalArgumentException("A note can't move under itself or one of its own sub-notes."));
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.moveNote("1", "2").getStatus());
+
+    reset(noteService);
+    when(noteService.getNoteById("1", identity)).thenReturn(note);
+    when(noteService.getNoteById("2")).thenReturn(destination);
+    when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
+                                                                                                .thenThrow(new IllegalAccessException("User does not have edit the destination note."));
+    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), notesRestService.moveNote("1", "2").getStatus());
+  }
 }
