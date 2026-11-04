@@ -58,6 +58,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
@@ -270,6 +272,32 @@ public class NoteMcpToolTest {
     assertEquals("Note", result.title());
     assertEquals(true, result.canEdit());
     assertEquals(1, result.breadcrumb().size());
+  }
+
+  @Test
+  public void getNoteShouldReturnSanitizedContent() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+    assertEquals("<p>Content</p>", result.htmlContent());
+  }
+
+  @Test
+  public void getNoteShouldReturnEscapedContentWhenSanitizingFails() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
+      sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
+
+      NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+      assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Content</p>"), result.htmlContent());
+    }
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -977,7 +1005,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
 
-    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
+    runWithConversationAndStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
 
     verify(noteService).restoreVersionOfNote(eq("2"), captor.capture(), eq(USER));
     assertEquals("Old title", captor.getValue().getTitle());

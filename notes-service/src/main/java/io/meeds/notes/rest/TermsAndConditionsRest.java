@@ -27,6 +27,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -179,13 +181,14 @@ public class TermsAndConditionsRest {
 
   private String transformContent(String content, String lang) {
     try {
-      content = HtmlUtils.transform(content,
-                                    new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                      !lang.isBlank() ? LocaleUtils.toLocale(lang) : null));
-      return HTMLSanitizer.sanitize(content);
+      String transformedContent = HtmlUtils.transform(content,
+                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
+                                                                                 StringUtils.isBlank(lang) ? null : LocaleUtils.toLocale(lang)));
+      return HTMLSanitizer.sanitize(transformedContent);
     } catch (Exception e) {
-      LOG.warn("Error sanitizing terms and conditions content", e);
-      return content;
+      // Fails closed: the stored body is returned as escaped text, never as markup
+      LOG.warn("Error sanitizing terms and conditions content, its escaped text is returned", e);
+      return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }
   }
 }

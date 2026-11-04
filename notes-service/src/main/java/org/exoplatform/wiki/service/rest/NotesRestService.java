@@ -69,6 +69,7 @@ import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.commons.comparators.NaturalComparator;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.log.ExoLogger;
@@ -1612,12 +1613,14 @@ public class NotesRestService implements ResourceContainer {
   private String sanitizeAndSubstituteMentions(String content, String lang) {
     try {
       Locale locale = lang == null ? null : LocaleUtils.toLocale(lang);
-      content = HtmlUtils.transform(content, new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(), LocaleUtils.toLocale(lang)));
-      String sanitizedBody = HTMLSanitizer.sanitize(content);
+      String transformedContent = HtmlUtils.transform(content, new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(), locale));
+      String sanitizedBody = HTMLSanitizer.sanitize(transformedContent);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);
     } catch (Exception e) {
-      return content;
+      // Fails closed: the stored body is returned as escaped text, never as markup
+      LOG.warn("Error while sanitizing a note content, its escaped text is returned", e);
+      return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }
   }
 

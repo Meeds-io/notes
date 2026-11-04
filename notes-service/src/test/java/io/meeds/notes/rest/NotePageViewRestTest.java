@@ -20,6 +20,8 @@ package io.meeds.notes.rest;
 
 import static org.mockito.Mockito.mockStatic;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +34,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.mockito.MockedStatic;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -176,6 +179,20 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     registerInternalUser(USERNAME);
     response = getNotePageWithETag(pageNoteName, null, eTagValue);
     assertEquals(200, response.getStatus());
+  }
+
+  public void testGetNotePageReturnsEscapedContentWhenSanitizingFails() throws Exception {
+    String pageNoteName = "pageNoteName" + RANDOM.nextLong();
+    String pageReference = createPage("pageName" + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
+    createUser(USERNAME);
+    registerAdministratorUser(USERNAME);
+    assertEquals(204, saveNotePage(pageNoteName, URLEncoder.encode("<p>Body</p>", StandardCharsets.UTF_8), null).getStatus());
+    restartTransaction();
+
+    registerInternalUser(USERNAME);
+    assertEquals("<p>Body</p>", getNotePage(pageNoteName, "en").getContent());
+    assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Body</p>"), getNotePage(pageNoteName, "x").getContent());
   }
 
   private String createPage(String pageName, String accessPermission, String editPermission) {

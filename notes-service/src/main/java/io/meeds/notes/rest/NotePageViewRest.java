@@ -41,6 +41,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import com.google.javascript.jscomp.jarjar.com.google.common.base.Objects;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -160,13 +161,14 @@ public class NotePageViewRest implements ResourceContainer {
 
   private String transformContent(String content, String lang) {
     try {
-      content = HtmlUtils.transform(content,
-                                    new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                               LocaleUtils.toLocale(lang)));
-      return HTMLSanitizer.sanitize(content);
+      String transformedContent = HtmlUtils.transform(content,
+                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
+                                                                                 LocaleUtils.toLocale(lang)));
+      return HTMLSanitizer.sanitize(transformedContent);
     } catch (Exception e) {
-      LOG.warn("Error sanitizing terms and conditions content", e);
-      return content;
+      // Fails closed: the stored body is returned as escaped text, never as markup
+      LOG.warn("Error sanitizing note page content, its escaped text is returned", e);
+      return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }
   }
 }

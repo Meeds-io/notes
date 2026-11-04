@@ -51,6 +51,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
@@ -275,6 +276,35 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response6.getStatus());
   }
   
+  @Test
+  public void testGetNoteByIdReturnsSanitizedContent() throws Exception {
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(newReadableNote());
+
+    Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "en", false);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    assertEquals("<p>Body</p>", ((Page) response.getEntity()).getContent());
+  }
+
+  @Test
+  public void testGetNoteByIdReturnsEscapedContentWhenSanitizingFails() throws Exception {
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "x")).thenReturn(newReadableNote());
+
+    Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "x", false);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Body</p>"), ((Page) response.getEntity()).getContent());
+  }
+
+  private Page newReadableNote() {
+    Page page = new Page("note");
+    page.setId("1");
+    page.setWikiType("note");
+    page.setWikiOwner("user");
+    page.setContent("<p>Body</p>");
+    return page;
+  }
+
   // a note that never carried a summary nor a featured image has null properties
   @Test
   public void testUpdateNoteByIdAddsPropertiesToNoteWithoutProperties() throws Exception {

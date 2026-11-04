@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
@@ -778,14 +779,16 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private String sanitizeAndSubstituteMentions(String htmlContent, Locale locale) {
     try {
-      htmlContent = HtmlUtils.transform(htmlContent,
-                                        new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                                   locale));
-      String sanitizedBody = HTMLSanitizer.sanitize(htmlContent);
+      String transformedContent = HtmlUtils.transform(htmlContent,
+                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
+                                                                                 locale));
+      String sanitizedBody = HTMLSanitizer.sanitize(transformedContent);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(), sanitizedBody, locale);
     } catch (Exception e) {
-      return htmlContent;
+      // Fails closed: the stored body is returned as escaped text, never as markup
+      LOG.warn("Error while sanitizing a note content, its escaped text is returned", e);
+      return htmlContent == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(htmlContent);
     }
   }
 
