@@ -1313,10 +1313,7 @@ export default {
         owner: version.author,
         properties: version.properties
       };
-      this.note.content = version.content;
-      this.note.title = version.title;
-      this.noteSummary = version.properties.summary;
-      this.note.properties = version.properties;
+      this.displayVersion(version);
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
