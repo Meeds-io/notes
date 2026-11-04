@@ -36,7 +36,7 @@ export function getContentToEdit(content) {
   return docElement?.children[1].innerHTML;
 }
 
-export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner, computeNavigation) {
+export function getContentToDisplay(content, computeNavigation) {
   const internal = window.location.host + eXo.env.portal.context;
   const domParser = new DOMParser();
   const docElement = domParser.parseFromString(content, 'text/html').documentElement;
@@ -69,14 +69,8 @@ export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner
     for (let i = 0; i < contentChildren.length; i++) { // NOSONAR not iterable
       const child = contentChildren[i];
       if (child.classList.value.includes('navigation-img-wrapper')) {
-        // Props object
-        const componentProps = {
-          noteId: noteId,
-          source: '',
-          noteBookType: noteBookType,
-          noteBookOwner: noteBookOwner,
-        };
-        contentChildren[i].innerHTML = `<component v-bind:is="vTreeComponent" note-id="${componentProps.noteId}" note-book-type="${componentProps.noteBookType}" note-book-owner="${componentProps.noteBookOwner}"></component>`;
+        // emptied for the children tree the note page mounts in it
+        child.innerHTML = '';
       }
     }
   }

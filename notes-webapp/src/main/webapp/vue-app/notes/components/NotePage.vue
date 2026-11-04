@@ -235,7 +235,12 @@
         <div class="d-flex align-start note-content mt-8 my-4" v-if="!hasEmptyContent && !isHomeNoteDefaultContent">
           <div
             class="text-color flex-grow-1 min-width-0">
-            <component :is="notesContentProcessor" />
+            <note-content-view
+              :key="note.id"
+              :content="noteContent"
+              :note-id="note.id"
+              :note-book-type="noteBookType"
+              :note-book-owner="noteBookOwner" />
           </div>
           <extension-registry-components
             v-if="hasAssociatedEvent && !mdAndDown"
@@ -556,101 +561,6 @@ export default {
       // Twice the displayed height, for HiDPI. The server never upscales.
       const size = 2 * this.featuredImageMaxHeight;
       return `${this.illustrationBaseUrl}${this.note?.id}?v=${this.noteFeatureImageUpdatedDate}&isDraft=${this.isDraft}${this.langParam}&size=0x${size}`;
-    },
-    notesContentProcessor() {
-      return {
-        template: `<div class='rich-editor-content extended-rich-content'>${this.$noteUtils.getContentToDisplay(this.noteContent, this.note?.id, this.noteBookType, this.noteBookOwner, true)}</div>`,
-        data() {
-          return {
-            vTreeComponent: {
-              template: `
-                <v-treeview
-                  ref="noteTreeview"
-                  :items="noteChildItems"
-                  class="ps-1 notes-custom-treeview"
-                  item-key="noteId"
-                  expand-icon=""
-                  dense>
-                  <template #prepend="{ item, open }" >
-                    <note-treeview-item-prepend
-                        :item="item"
-                        :open="open"
-                        @click="handleFetchChildren(item, $refs.noteTreeview)" />
-                  </template>
-                  <template #label="{ item }">
-                    <note-content-table-item
-                        :note="item"
-                        @open-note="handleOpenNoteChild"/>
-                  </template>
-                </v-treeview>`,
-              props: {
-                noteId: {
-                  type: Number,
-                  default: 0
-                },
-                source: {
-                  type: String,
-                  default: ''
-                },
-                noteBookType: {
-                  type: String,
-                  default: ''
-                },
-                noteBookOwner: {
-                  type: String,
-                  default: ''
-                }
-              },
-              inject: ['fetchChildren', 'getNoteLanguages', 'openNoteChild'],
-              data() {
-                return {
-                  noteChildItems: [],
-                  selectedTranslation: { value: eXo.env.portal.language },
-                  note: null
-                };
-              },
-              created() {
-                this.$nextTick().then(() => {
-                  this.getNodeById(this.noteId, this.source, this.noteBookType, this.noteBookOwner);
-                });
-              },
-              methods: {
-                handleOpenNoteChild(item) {
-                  if (typeof this.openNoteChild === 'function') {
-                    return this.openNoteChild(item);
-                  }
-                },
-                handleFetchChildren(item, treeview) {
-                  if (typeof this.fetchChildren === 'function') {
-                    return this.fetchChildren(item, treeview);
-                  }
-                },
-                handleGetNoteLanguages(noteId) {
-                  if (typeof this.getNoteLanguages === 'function') {
-                    return this.getNoteLanguages(noteId);
-                  }
-                },
-                getNodeById(noteId, source, noteBookType, noteBookOwner) {
-                  return this.$notesService
-                    .getNoteById(noteId, this.selectedTranslation.value, source, noteBookType, noteBookOwner)
-                    .then(data => {
-                      this.note = data || {};
-                      this.handleGetNoteLanguages(noteId);
-                      return this.$notesService.getNoteTree(data.wikiType, data.wikiOwner, data.name, 'children');
-                    })
-                    .then(data => {
-                      if (data?.jsonList?.length) {
-                        this.noteChildItems = data.jsonList;
-                      }
-                    }).catch(e => {
-                      console.error('Error when getting note', e);
-                    });
-                }
-              }
-            }
-          };
-        }
-      };
     },
     noteVersionsArray() {
       return this.noteVersions.slice(0, this.versionsPageSize);
