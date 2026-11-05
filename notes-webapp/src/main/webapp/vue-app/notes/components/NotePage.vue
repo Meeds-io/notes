@@ -1392,8 +1392,9 @@ export default {
         properties: properties,
         extensionDataUpdated: false
       };
+      const translation = this.selectedTranslation.value ? `&translation=${this.selectedTranslation.value}` : '';
       this.$notesService.createNote(note).then(duplicated => {
-        this.openLink(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}&translation=${this.selectedTranslation.value}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, true);
+        this.openLink(`${eXo.env.portal.context}/${eXo.env.portal.portalName}/notes-editor?noteId=${duplicated.id}${translation}&spaceGroupId=${eXo.env.portal?.spaceGroup}&notePageUri=${encodeURIComponent(eXo.env.portal.selectedNodeUri)}`, true);
       }).catch(e => {
         this.$root.$emit('show-alert', {
           type: 'error',
