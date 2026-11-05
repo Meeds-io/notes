@@ -23,6 +23,7 @@ import static io.meeds.notes.util.ApplicationSettingsUtils.integerSchema;
 import static io.meeds.notes.util.ApplicationSettingsUtils.notAccepted;
 import static io.meeds.notes.util.ApplicationSettingsUtils.objectSchema;
 import static io.meeds.notes.util.ApplicationSettingsUtils.requireKnownOptions;
+import static io.meeds.notes.util.ApplicationSettingsUtils.siteWithoutPage;
 import static io.meeds.notes.util.ApplicationSettingsUtils.stringSchema;
 import static io.meeds.notes.util.ApplicationSettingsUtils.toText;
 
@@ -125,6 +126,11 @@ public class NotePageViewApplicationSettingsPlugin implements ApplicationSetting
   }
 
   @Override
+  public boolean isConfigurableInSiteContainer() {
+    return true;
+  }
+
+  @Override
   public Map<String, Object> getSettingsSchema() {
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put(CONTENT, stringSchema("HTML content, as the drawer's editor saves it; an empty text empties it"));
@@ -207,9 +213,13 @@ public class NotePageViewApplicationSettingsPlugin implements ApplicationSetting
 
   /**
    * The right to configure the window comes from the live page holding it,
-   * never from a preference: the window's {@code name} is client-writable.
+   * the site's home page for a window of a site container, never from a
+   * preference: the window's {@code name} is client-writable.
    */
   private Identity requireEditor(ApplicationSettingsContext context) throws IllegalAccessException {
+    if (context.isSiteContainer() && StringUtils.isBlank(context.getPageReference())) {
+      throw siteWithoutPage();
+    }
     if (StringUtils.isBlank(context.getUsername()) || StringUtils.isBlank(context.getPageReference())) {
       throw new IllegalAccessException(ApplicationSettingsService.APPLICATION_NOT_ALLOWED);
     }
