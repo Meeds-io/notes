@@ -28,11 +28,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -1478,23 +1476,42 @@ public class NoteMcpTool implements McpToolPlugin {
   /**
    * Matches a trimmed language code to the note's stored translation codes:
    * the code itself when it is stored, else the stored code equal to it
-   * ignoring case, else the code as given. The stored codes come as a distinct
-   * list in no order, so a case-insensitive match is taken in sorted order to
-   * stay the same from one call to the next.
+   * ignoring case, else the code in the platform's locale form (a new
+   * translation). The stored codes come as a distinct list in no order, so a
+   * case-insensitive match is taken in sorted order to stay the same from one
+   * call to the next.
    *
    * @param lang the trimmed, non-blank code
    * @param storedLanguages the note's stored translation codes, or null
-   * @return the matched stored code, or {@code lang}
+   * @return the matched stored code, or {@code lang} in the platform's locale
+   *         form
    */
   private static String matchStoredLanguage(String lang, List<String> storedLanguages) {
-    if (storedLanguages == null || storedLanguages.contains(lang)) {
+    if (storedLanguages != null && storedLanguages.contains(lang)) {
       return lang;
     }
-    return storedLanguages.stream()
+    return CollectionUtils.emptyIfNull(storedLanguages)
+                          .stream()
                           .filter(stored -> StringUtils.equalsIgnoreCase(stored, lang))
                           .sorted()
                           .findFirst()
-                          .orElse(lang);
+                          .orElse(toLocaleForm(lang));
+  }
+
+  /**
+   * Writes a language code in the form the platform names its locales in: the
+   * language in lower case, and its country, when given, in upper case after
+   * an underscore ({@code fr}, {@code pt_BR}), so that a new translation asked
+   * for as {@code FR} or {@code pt-br} is stored as the Notes editor's
+   * language list names it.
+   *
+   * @param lang the trimmed, non-blank code
+   * @return the code in the platform's locale form
+   */
+  static String toLocaleForm(String lang) {
+    String[] parts = lang.split("[_-]", 2);
+    String language = parts[0].toLowerCase(Locale.ROOT);
+    return parts.length == 1 || parts[1].isBlank() ? language : language + "_" + parts[1].toUpperCase(Locale.ROOT);
   }
 
   /**
