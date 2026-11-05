@@ -19,6 +19,7 @@
 package io.meeds.notes.rest;
 
 import java.util.Date;
+import java.util.Locale;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.FormParam;
@@ -49,6 +50,7 @@ import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.html.model.HtmlTransformerContext;
@@ -100,6 +102,9 @@ public class NotePageViewRest implements ResourceContainer {
                               @Parameter(description = "User language", required = false)
                               @QueryParam("lang")
                               String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      return Response.status(Status.BAD_REQUEST).entity(Utils.UNREADABLE_LANG_BODY).build();
+    }
     try {
       Page note = notePageViewService.getNotePage(name, lang, RestUtils.getCurrentUserAclIdentity());
       if (note == null) {
@@ -160,13 +165,17 @@ public class NotePageViewRest implements ResourceContainer {
   }
 
   private String transformContent(String content, String lang) {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No current user to sanitize a note page content for");
+    }
+    Locale locale = LocaleUtils.toLocale(lang);
     try {
       String transformedContent = HtmlUtils.transform(content,
-                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                                                 LocaleUtils.toLocale(lang)));
+                                                      new HtmlTransformerContext(conversationState.getIdentity(), locale));
       return HTMLSanitizer.sanitize(transformedContent);
     } catch (Exception e) {
-      // Fails closed: the stored body is returned as escaped text, never as markup
+      // Fails closed on a sanitizer failure: the stored body is returned as escaped text, never as markup
       LOG.warn("Error sanitizing note page content, its escaped text is returned", e);
       return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }

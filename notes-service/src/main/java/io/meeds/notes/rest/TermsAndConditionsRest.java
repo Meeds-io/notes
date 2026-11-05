@@ -19,6 +19,7 @@
 package io.meeds.notes.rest;
 
 
+import java.util.Locale;
 import java.util.Optional;
 
 import javax.ws.rs.Consumes;
@@ -46,6 +47,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.TermsAndConditionPage;
 import io.meeds.notes.service.TermsAndConditionsService;
@@ -81,6 +83,9 @@ public class TermsAndConditionsRest {
                                                                         @Parameter(description = "User language")
                                                                         @RequestParam(name= "lang", required=false)
                                                                         String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, Utils.UNREADABLE_LANG_MESSAGE);
+    }
     TermsAndConditionPage termsAndConditionPage = termsAndConditionsService.getTermsAndConditions(lang);
     if (termsAndConditionPage == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -180,13 +185,17 @@ public class TermsAndConditionsRest {
   }
 
   private String transformContent(String content, String lang) {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No current user to sanitize the terms and conditions content for");
+    }
+    Locale locale = StringUtils.isBlank(lang) ? null : LocaleUtils.toLocale(lang);
     try {
       String transformedContent = HtmlUtils.transform(content,
-                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                                                 StringUtils.isBlank(lang) ? null : LocaleUtils.toLocale(lang)));
+                                                      new HtmlTransformerContext(conversationState.getIdentity(), locale));
       return HTMLSanitizer.sanitize(transformedContent);
     } catch (Exception e) {
-      // Fails closed: the stored body is returned as escaped text, never as markup
+      // Fails closed on a sanitizer failure: the stored body is returned as escaped text, never as markup
       LOG.warn("Error sanitizing terms and conditions content, its escaped text is returned", e);
       return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }

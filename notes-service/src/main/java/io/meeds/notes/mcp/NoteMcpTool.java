@@ -778,15 +778,19 @@ public class NoteMcpTool implements McpToolPlugin {
   }
 
   private String sanitizeAndSubstituteMentions(String htmlContent, Locale locale) {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No current user to sanitize a note content for");
+    }
     try {
       String transformedContent = HtmlUtils.transform(htmlContent,
-                                                      new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                                                                 locale));
+                                                      new HtmlTransformerContext(conversationState.getIdentity(), locale));
       String sanitizedBody = HTMLSanitizer.sanitize(transformedContent);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(), sanitizedBody, locale);
     } catch (Exception e) {
-      // Fails closed: the stored body is returned as escaped text, never as markup
+      // Fails closed when sanitizing or substituting mentions fails: the stored
+      // body is returned as escaped text, never as markup
       LOG.warn("Error while sanitizing a note content, its escaped text is returned", e);
       return htmlContent == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(htmlContent);
     }

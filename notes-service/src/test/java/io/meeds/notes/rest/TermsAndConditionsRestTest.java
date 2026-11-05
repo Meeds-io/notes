@@ -19,8 +19,14 @@
 package io.meeds.notes.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,12 +34,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.TermsAndConditionPage;
 import io.meeds.notes.service.TermsAndConditionsService;
@@ -73,7 +83,48 @@ class TermsAndConditionsRestTest {
 
   @Test
   void getTermsAndConditionPageReturnsEscapedContentWhenSanitizingFails() {
-    assertEquals(HTMLEntityEncoder.getInstance().encodeHTML(CONTENT), getContent("x"));
+    try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
+      sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
+
+      assertEquals(HTMLEntityEncoder.getInstance().encodeHTML(CONTENT), getContent("en"));
+    }
+  }
+
+  @Test
+  void getTermsAndConditionPageAnswersBadRequestToAnUnreadableLang() {
+    HttpServletRequest request = mock(HttpServletRequest.class);
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                                                      () -> termsAndConditionsRest.getTermsAndConditionPage(request, "x"));
+
+    assertEquals(400, exception.getStatusCode().value());
+    assertEquals(Utils.UNREADABLE_LANG_MESSAGE, exception.getReason());
+    verifyNoInteractions(termsAndConditionsService);
+  }
+
+  @Test
+  void getTermsAndConditionPageReadsTheLanguagesClientsSend() {
+    for (String lang : List.of("pt-BR", "es_ES", "zh-TW", "")) {
+      assertEquals(CONTENT, getContent(lang), lang);
+    }
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    for (String lang : List.of("es-es", " ")) {
+      ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                                                        () -> termsAndConditionsRest.getTermsAndConditionPage(request, lang));
+      assertEquals(400, exception.getStatusCode().value(), lang);
+    }
+  }
+
+  @Test
+  void getTermsAndConditionPageFailsWithoutCurrentUser() {
+    ConversationState.setCurrent(null);
+    TermsAndConditionPage page = new TermsAndConditionPage();
+    page.setContent(CONTENT);
+    when(termsAndConditionsService.getTermsAndConditions("en")).thenReturn(page);
+    HttpServletRequest request = mock(HttpServletRequest.class);
+
+    assertThrows(IllegalStateException.class, () -> termsAndConditionsRest.getTermsAndConditionPage(request, "en"));
+    assertEquals(CONTENT, page.getContent());
   }
 
   private String getContent(String lang) {

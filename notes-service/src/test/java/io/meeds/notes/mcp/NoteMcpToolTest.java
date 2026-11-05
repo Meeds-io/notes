@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -200,6 +202,13 @@ public class NoteMcpToolTest {
     lenient().when(publicationPlugins.orderedStream()).thenAnswer(invocation -> publicationPluginList.stream());
 
     tool = new TestableNoteMcpTool();
+    // A note's content is sanitized for the current user, whom an MCP request always has
+    ConversationState.setCurrent(new ConversationState(currentIdentity));
+  }
+
+  @After
+  public void tearDown() {
+    ConversationState.setCurrent(null);
   }
 
   @Test(expected = ObjectNotFoundException.class)
@@ -298,6 +307,16 @@ public class NoteMcpToolTest {
 
       assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Content</p>"), result.htmlContent());
     }
+  }
+
+  @Test
+  public void getNoteShouldFailWithoutCurrentUser() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    ConversationState.setCurrent(null);
+
+    assertThrows(IllegalStateException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null)));
   }
 
   @Test(expected = IllegalArgumentException.class)

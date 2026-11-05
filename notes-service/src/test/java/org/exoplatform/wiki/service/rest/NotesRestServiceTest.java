@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -52,6 +55,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.component.test.AbstractKernelTest;
 import org.exoplatform.container.ExoContainer;
@@ -90,6 +94,7 @@ import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
@@ -144,6 +149,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     conversationStateStatic = mockStatic(ConversationState.class);
     environmentContextStatic = mockStatic(EnvironmentContext.class);
     utilsStatic = mockStatic(Utils.class);
+    utilsStatic.when(() -> Utils.isReadableLang(any())).thenCallRealMethod();
     REST_UTILS = mockStatic(RestUtils.class);
     ENTITY_BUILDER = mockStatic(EntityBuilder.class);
     containerContextStatic = mockStatic(ExoContainerContext.class);
@@ -288,12 +294,48 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
   @Test
   public void testGetNoteByIdReturnsEscapedContentWhenSanitizingFails() throws Exception {
-    when(noteService.getNoteByIdAndLang(1L, identity, "source", "x")).thenReturn(newReadableNote());
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(newReadableNote());
 
-    Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "x", false);
+    try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
+      sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
 
-    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Body</p>"), ((Page) response.getEntity()).getContent());
+      Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "en", false);
+
+      assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+      assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Body</p>"), ((Page) response.getEntity()).getContent());
+    }
+  }
+
+  @Test
+  public void testNoteEndpointsAnswerBadRequestToAnUnreadableLang() throws Exception {
+    PageEntity note = new PageEntity();
+    note.setWikiType("group");
+    note.setWikiOwner("/spaces/test");
+    note.setLang("x");
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setWikiType("group");
+    draft.setWikiOwner("/spaces/test");
+    draft.setLang("x");
+    Page version = new Page("note");
+    version.setLang("x");
+
+    List<Response> responses = List.of(notesRestService.getNote("group", "/spaces/test", "1", "source", "x"),
+                                       notesRestService.getNoteById("1", "note", "user", false, "source", "x", false),
+                                       notesRestService.getDraftNoteById(1L, "x"),
+                                       notesRestService.getLatestDraftOfPage("1", "x"),
+                                       notesRestService.getNoteVersions("1", "x"),
+                                       notesRestService.createNote(note),
+                                       notesRestService.saveDraft(draft),
+                                       notesRestService.updateNote("group", "/spaces/test", "1", note),
+                                       notesRestService.updateNoteById("1", note),
+                                       notesRestService.RestoreNoteVersion("1", version));
+
+    responses.forEach(response -> {
+      assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+      assertEquals(Utils.UNREADABLE_LANG_BODY, response.getEntity());
+      assertEquals(MediaType.APPLICATION_JSON, String.valueOf(response.getMetadata().getFirst(HttpHeaders.CONTENT_TYPE)));
+    });
+    verifyNoInteractions(noteService, noteBookService);
   }
 
   private Page newReadableNote() {

@@ -218,6 +218,9 @@ public class NotesRestService implements ResourceContainer {
                           @Parameter(description = "note content language")
                           @QueryParam("lang")
                           String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      return unreadableLangResponse();
+    }
     try {
       EnvironmentContext env = EnvironmentContext.getCurrent();
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
@@ -311,6 +314,9 @@ public class NotesRestService implements ResourceContainer {
                               @Parameter(description = "note content language")
                               @QueryParam("lang") String lang,
                               @QueryParam("includeDeleted") @DefaultValue("false") boolean includeDeleted) {
+    if (!Utils.isReadableLang(lang)) {
+      return unreadableLangResponse();
+    }
     try {
       EnvironmentContext env = EnvironmentContext.getCurrent();
       HttpServletRequest request = (HttpServletRequest) env.get(HttpServletRequest.class);
@@ -415,6 +421,9 @@ public class NotesRestService implements ResourceContainer {
                                    @PathParam("noteId") Long noteId,
                                    @Parameter(description = "draft content language")
                                    @QueryParam("lang") String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      return unreadableLangResponse();
+    }
     Identity identity = ConversationState.getCurrent().getIdentity();
     String currentUserId = identity.getUserId();
     try {
@@ -460,6 +469,9 @@ public class NotesRestService implements ResourceContainer {
                                        @PathParam("noteId") String noteId,
                                        @Parameter(description = "draft content language")
                                        @QueryParam("lang") String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      return unreadableLangResponse();
+    }
     try {
       Page targetPage = noteService.getNoteById(noteId);
       if (targetPage == null) {
@@ -490,6 +502,9 @@ public class NotesRestService implements ResourceContainer {
                                   @PathParam("noteId") String noteId,
                                   @Parameter(description = "versions content language")
                                   @QueryParam("lang") String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      return unreadableLangResponse();
+    }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
@@ -521,6 +536,9 @@ public class NotesRestService implements ResourceContainer {
                              PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (!Utils.isReadableLang(note.getLang())) {
+      return unreadableLangResponse();
     }
     String noteBookType = note.getWikiType();
     String noteBookOwner = note.getWikiOwner();
@@ -580,6 +598,9 @@ public class NotesRestService implements ResourceContainer {
                             DraftPageEntity draftNoteToSave) {
     if (draftNoteToSave == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (!Utils.isReadableLang(draftNoteToSave.getLang())) {
+      return unreadableLangResponse();
     }
     String noteBookType = draftNoteToSave.getWikiType();
     String noteBookOwner = draftNoteToSave.getWikiOwner();
@@ -670,6 +691,9 @@ public class NotesRestService implements ResourceContainer {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     }
+    if (!Utils.isReadableLang(note.getLang())) {
+      return unreadableLangResponse();
+    }
     try {
       if (noteBookType.toUpperCase().equals(WikiType.GROUP.name())) {
         noteBookOwner = formatWikiOwnerToGroupId(noteBookOwner);
@@ -735,6 +759,9 @@ public class NotesRestService implements ResourceContainer {
                                    @RequestBody(description = "note object to be updated", required = true) PageEntity note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (!Utils.isReadableLang(note.getLang())) {
+      return unreadableLangResponse();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -898,6 +925,9 @@ public class NotesRestService implements ResourceContainer {
   Page note) {
     if (note == null) {
       return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    if (!Utils.isReadableLang(note.getLang())) {
+      return unreadableLangResponse();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
@@ -1610,15 +1640,27 @@ public class NotesRestService implements ResourceContainer {
     return featuredImage == null || featuredImage.getId() == null ? 0L : featuredImage.getId();
   }
 
+  private Response unreadableLangResponse() {
+    return Response.status(Response.Status.BAD_REQUEST)
+                   .type(MediaType.APPLICATION_JSON)
+                   .entity(Utils.UNREADABLE_LANG_BODY)
+                   .build();
+  }
+
   private String sanitizeAndSubstituteMentions(String content, String lang) {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No current user to sanitize a note content for");
+    }
+    Locale locale = lang == null ? null : LocaleUtils.toLocale(lang);
     try {
-      Locale locale = lang == null ? null : LocaleUtils.toLocale(lang);
-      String transformedContent = HtmlUtils.transform(content, new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(), locale));
+      String transformedContent = HtmlUtils.transform(content, new HtmlTransformerContext(conversationState.getIdentity(), locale));
       String sanitizedBody = HTMLSanitizer.sanitize(transformedContent);
       sanitizedBody = sanitizedBody.replace("&#64;", "@");
       return MentionUtils.substituteUsernames(CommonsUtils.getCurrentPortalOwner(),sanitizedBody, locale);
     } catch (Exception e) {
-      // Fails closed: the stored body is returned as escaped text, never as markup
+      // Fails closed when sanitizing or substituting mentions fails: the stored
+      // body is returned as escaped text, never as markup
       LOG.warn("Error while sanitizing a note content, its escaped text is returned", e);
       return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }
