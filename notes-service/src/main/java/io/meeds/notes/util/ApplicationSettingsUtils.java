@@ -35,12 +35,23 @@ import org.exoplatform.services.resources.LocaleConfigService;
  */
 public class ApplicationSettingsUtils {
 
+  /**
+   * The refusal of a write on a site-container window whose setting hangs
+   * on the site's home page while the site has none: a fixed text the
+   * layout tools answer as is
+   */
+  public static final String SITE_WITHOUT_PAGE = "not configurable before the site has a page: application";
+
   private ApplicationSettingsUtils() {
     // Utility class
   }
 
   public static IllegalArgumentException notAccepted(String option) {
     return new IllegalArgumentException(String.format(VALUE_NOT_ACCEPTED, option));
+  }
+
+  public static IllegalArgumentException siteWithoutPage() {
+    return new IllegalArgumentException(SITE_WITHOUT_PAGE);
   }
 
   public static void requireKnownOptions(Map<String, Object> settings, Collection<String> options) {
