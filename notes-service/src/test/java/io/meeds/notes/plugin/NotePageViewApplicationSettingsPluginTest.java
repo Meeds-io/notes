@@ -20,7 +20,6 @@ package io.meeds.notes.plugin;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -85,6 +84,10 @@ class NotePageViewApplicationSettingsPluginTest {
 
   private static final String                  NOT_ALLOWED    = "not allowed: application";
 
+  private static final String                  SITE_HOME      = "portal::classic::welcome";
+
+  private static final String                  SITE_WITHOUT_PAGE = "not configurable before the site has a page: application";
+
   @Mock
   private NotePageViewService                  notePageViewService;
 
@@ -140,7 +143,7 @@ class NotePageViewApplicationSettingsPluginTest {
   @SuppressWarnings("unchecked")
   void testSchemaExposesTheDrawerOptions() {
     assertEquals("NotePageView", plugin.getPortletName());
-    assertFalse(plugin.isConfigurableInSiteContainer());
+    assertTrue(plugin.isConfigurableInSiteContainer());
     Map<String, Object> schema = plugin.getSettingsSchema();
     Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
     assertEquals(List.of("content", "lang", "note_id"), List.copyOf(properties.keySet()));
@@ -245,13 +248,36 @@ class NotePageViewApplicationSettingsPluginTest {
   }
 
   @Test
-  void testValidateRefusesAWindowWithoutPage() {
+  void testSiteContainerWindowOfASiteWithoutPageIsRefusedBeforeAnyCheck() throws Exception {
     ApplicationSettingsContext context = context(Map.of("name", SETTING_NAME), true);
     context.setSiteContainer(true);
     context.setPageReference(null);
-    IllegalAccessException e = assertThrows(IllegalAccessException.class,
-                                            () -> plugin.validate(context, Map.of("content", "<p>Hello</p>")));
-    assertEquals(NOT_ALLOWED, e.getMessage());
+    Map<String, Object> settings = Map.of("content", "<p>Hello</p>");
+    assertRefused(context, settings, SITE_WITHOUT_PAGE);
+    IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> plugin.apply(context, settings));
+    assertEquals(SITE_WITHOUT_PAGE, e.getMessage());
+    verify(cmsService, never()).hasEditPermission(any(), anyString(), anyLong());
+    verifyNothingWritten();
+  }
+
+  /**
+   * In a site container the setting hangs on the site's home page the
+   * context carries: the right is that page's, and the setting is keyed on it
+   */
+  @Test
+  void testSiteContainerWindowIsKeyedOnTheSiteHomePage() throws Exception {
+    when(cmsService.hasEditPermission(identity, SITE_HOME, 0)).thenReturn(true);
+    ApplicationSettingsContext context = context(Map.of(), false);
+    context.setSiteContainer(true);
+    context.setPageReference(SITE_HOME);
+
+    plugin.validate(context, Map.of("content", "<p>Hi</p>"));
+    plugin.apply(context, Map.of("content", "<p>Hi</p>"));
+
+    ArgumentCaptor<String> name = ArgumentCaptor.forClass(String.class);
+    verify(cmsService).saveSettingName(eq(CONTENT_TYPE), name.capture(), eq(SITE_HOME), eq(0L), eq(42L));
+    verify(notePageViewService).saveNotePage(name.getValue(), "<p>Hi</p>", null, identity);
+    verify(applicationSettingsService).markOwner(context, Map.of("name", name.getValue()));
   }
 
   @Test
