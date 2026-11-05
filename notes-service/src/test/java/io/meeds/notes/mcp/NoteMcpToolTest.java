@@ -2405,6 +2405,32 @@ public class NoteMcpToolTest {
   }
 
   /**
+   * An update in a language the note holds no translation of writes the new
+   * translation in the platform's locale form: "FR" on a note translated in
+   * German only is stored as "fr". Mutants: the code kept as the caller typed
+   * it, in the match or in the stored-languages branch.
+   */
+  @Test
+  public void updateNoteInANewWrongCaseLanguageShouldWriteItInTheLocaleForm() throws Exception { // NOSONAR
+    Page defaultNote = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("fr"))).thenReturn(defaultNote);
+    lenient().when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("FR"))).thenReturn(defaultNote);
+    when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    when(noteService.canEditNote(defaultNote, USER)).thenReturn(true);
+    when(noteService.getPageAvailableTranslationLanguages(NOTE_ID, false)).thenReturn(List.of("de"));
+    when(noteService.updateNote(eq(defaultNote), eq(PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE), eq(currentIdentity)))
+                                                                                                                     .thenReturn(defaultNote);
+
+    runWithStaticMocks(() -> tool.updateNote(NOTE_ID, "Titre", "contenu", "FR"));
+
+    verify(defaultNote).setLang("fr");
+    verify(defaultNote, never()).setLang("FR");
+    verify(noteService).removeDraftOfNote(any(WikiPageParams.class), eq("fr"));
+  }
+
+  /**
    * A summary set in a wrong-case language goes into the stored translation's
    * metadata, keyed {@code <id>-fr}, not into a new {@code <id>-FR} no version
    * reads.
