@@ -2317,6 +2317,20 @@ public class NoteMcpToolTest {
   }
 
   /**
+   * A language no translation of the note holds yet is written in the
+   * platform's locale form, so a new translation asked for as "FR" or "pt-br"
+   * is stored as "fr" or "pt_BR", the codes the editor's language list uses.
+   * Mutant: the code kept as the caller typed it.
+   */
+  @Test
+  public void aNewTranslationLanguageIsWrittenInThePlatformLocaleForm() {
+    assertEquals("fr", NoteMcpTool.toLocaleForm("FR"));
+    assertEquals("pt_BR", NoteMcpTool.toLocaleForm("pt-br"));
+    assertEquals("zh_TW", NoteMcpTool.toLocaleForm("ZH_tw"));
+    assertEquals("de", NoteMcpTool.toLocaleForm("de"));
+  }
+
+  /**
    * An update in a wrong-case language writes the existing translation, from
    * its own state and under its stored code, never a second translation next
    * to it.
