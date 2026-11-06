@@ -1489,7 +1489,10 @@ public class NoteMcpTool implements McpToolPlugin {
    * call to the next.
    *
    * @param lang the trimmed, non-blank code
-   * @param storedLanguages the note's stored translation codes, or null
+   * @param storedLanguages the note's stored translation codes; null is
+   *          handled defensively, though
+   *          {@code NoteService#getPageAvailableTranslationLanguages} always
+   *          returns a list
    * @return the matched stored code, or {@code lang} in the platform's locale
    *         form
    */
