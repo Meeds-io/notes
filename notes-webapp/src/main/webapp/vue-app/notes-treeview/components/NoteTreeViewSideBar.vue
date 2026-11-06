@@ -544,7 +544,10 @@ export default {
     },
     executeDragAndDropApi() {
       const requestData = { ...this.dragPayload };
-      this.$notesService.updateNotesOrder(requestData)
+      // each request sends the whole order of the siblings: they are sent one after the other,
+      // so that the last order shown is the last one stored
+      this.reorderQueue = (this.reorderQueue || Promise.resolve())
+        .then(() => this.$notesService.updateNotesOrder(requestData))
         .then(() => {
           this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
           this.$root.$emit('reorder-notes', requestData);
