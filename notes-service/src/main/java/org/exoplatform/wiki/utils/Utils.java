@@ -171,7 +171,13 @@ public class Utils {
   public static final String                                     UNREADABLE_LANG_MESSAGE          =
                                                                                          "The language must be a locale such as fr, pt-BR or es_ES";
 
-  /** That reason as the JSON body the Spring endpoints answer it with */
+  /**
+   * That reason as the JSON body the JAX-RS endpoints answer it with. A Spring
+   * endpoint throws a {@code ResponseStatusException(BAD_REQUEST, UNREADABLE_LANG_MESSAGE)}
+   * instead, whose reason reaches the error body as its {@code message} through
+   * portal's {@code PortalErrorAttributes} and
+   * {@code spring.web.error.include-message=always}.
+   */
   public static final String                                     UNREADABLE_LANG_BODY             =
                                                                                       "{\"message\":\"" + UNREADABLE_LANG_MESSAGE + "\"}";
 
