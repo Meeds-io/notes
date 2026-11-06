@@ -7,6 +7,7 @@ import NoteTreeviewToolbar from './components/NoteTreeviewToolbar.vue';
 import NoteTreeViewFilterDrawer from './components/NoteTreeViewFilterDrawer.vue';
 import NoteTreeViewItemList from './components/NoteTreeViewItemList.vue';
 import NoteTreeViewItem from './components/NoteTreeViewItem.vue';
+import NoteTreeViewItemMoveButtons from './components/NoteTreeViewItemMoveButtons.vue';
 
 const components = {
   'note-treeview-drawer': NoteTreeviewDrawer,
@@ -17,6 +18,7 @@ const components = {
   'note-treeview-filter-drawer': NoteTreeViewFilterDrawer,
   'note-treeview-item-list': NoteTreeViewItemList,
   'note-treeview-item': NoteTreeViewItem,
+  'note-treeview-item-move-buttons': NoteTreeViewItemMoveButtons,
   'note-breadcrumb': NoteBreadcrumb
 };
 

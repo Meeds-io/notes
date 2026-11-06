@@ -447,6 +447,44 @@
   }
 }
 
+.note-move-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.note-move-buttons {
+  position: relative;
+  height: 0;
+
+  .note-move-buttons-inner {
+    position: absolute;
+    right: 34px;
+    bottom: 10px;
+    opacity: 0;
+    background: inherit;
+  }
+}
+
+.tree-item:hover + .note-move-buttons .note-move-buttons-inner,
+.tree-item:focus-within + .note-move-buttons .note-move-buttons-inner,
+.note-move-buttons:hover .note-move-buttons-inner,
+.note-move-buttons:focus-within .note-move-buttons-inner {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .note-move-buttons .note-move-buttons-inner {
+    opacity: 1;
+  }
+}
+
 .noteHistoryDrawer {
   .drawerContent {
     .history-line {

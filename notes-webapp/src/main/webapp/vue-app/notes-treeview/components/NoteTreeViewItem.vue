@@ -71,6 +71,12 @@
         </v-list-item-icon>
       </v-list-item>
     </v-hover>
+    <note-treeview-item-move-buttons
+      v-if="showActions && !isDraftFilter && !isHomePage"
+      :item="item"
+      :position="position"
+      :siblings-count="siblingsCount"
+      @move="$emit('move-note', $event)" />
     <div
       v-show="isOpen(item.noteId) && item.hasChild"
       class="tree-children">
@@ -85,6 +91,7 @@
         :parent-id="item.noteId"
         :is-draft-filter="isDraftFilter"
         :level="level + 1"
+        :show-actions="showActions"
         @fetch-children="$emit('fetch-children', $event)"
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
@@ -141,6 +148,18 @@ export default {
       default: false
     },
     level: {
+      type: Number,
+      default: 0
+    },
+    showActions: {
+      type: Boolean,
+      default: false
+    },
+    position: {
+      type: Number,
+      default: 0
+    },
+    siblingsCount: {
       type: Number,
       default: 0
     }

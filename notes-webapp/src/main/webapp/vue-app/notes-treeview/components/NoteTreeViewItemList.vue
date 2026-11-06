@@ -38,7 +38,7 @@
       @end="onDragEnd"
       @change="onDragChange">
       <note-treeview-item
-        v-for="item in items"
+        v-for="(item, index) in items"
         :key="item.noteId"
         :item="item"
         :opened-items="openedItems"
@@ -50,12 +50,21 @@
         :is-draft-filter="isDraftFilter"
         :show-actions="showActions"
         :level="level"
+        :position="index"
+        :siblings-count="items.length"
+        @move-note="moveNote"
         @fetch-children="$emit('fetch-children', $event)"
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
         @reorder="$emit('reorder', $event)"
         @action="$emit('action', $event)" />
     </draggable>
+    <div
+      class="note-move-live-region"
+      aria-live="polite"
+      role="status">
+      {{ moveAnnouncement }}
+    </div>
   </v-list>
 </template>
 
@@ -105,7 +114,8 @@ export default {
   },
   data() {
     return {
-      isDragging: false
+      isDragging: false,
+      moveAnnouncement: ''
     };
   },
   methods: {
@@ -130,6 +140,18 @@ export default {
     onDragEnd() {
       this.isDragging = false;
       document.body.classList.remove('is-dragging-note');
+    },
+    moveNote({ item, direction }) {
+      const oldIndex = this.items.findIndex(i => i.noteId === item.noteId);
+      const newIndex = oldIndex + direction;
+      if (oldIndex < 0 || newIndex < 0 || newIndex >= this.items.length) {
+        return;
+      }
+      this.items.splice(newIndex, 0, this.items.splice(oldIndex, 1)[0]);
+      this.onDragChange({ moved: { element: item, oldIndex, newIndex } });
+      this.moveAnnouncement = this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]);
+      const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
+      this.$nextTick(() => document.getElementById(`${keepUp ? 'noteMoveUp' : 'noteMoveDown'}-${item.noteId}`)?.focus());
     },
     onDragChange(evt) {
       if (evt.added || evt.moved || evt.removed) {
