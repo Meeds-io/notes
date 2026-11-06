@@ -2407,8 +2407,8 @@ public class NoteMcpToolTest {
   /**
    * An update in a language the note holds no translation of writes the new
    * translation in the platform's locale form: "FR" on a note translated in
-   * German only is stored as "fr". Mutants: the code kept as the caller typed
-   * it, in the match or in the stored-languages branch.
+   * German only is stored as "fr". Mutant: the code kept as the caller typed
+   * it when no stored translation matches.
    */
   @Test
   public void updateNoteInANewWrongCaseLanguageShouldWriteItInTheLocaleForm() throws Exception { // NOSONAR
