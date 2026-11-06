@@ -112,10 +112,10 @@
                 <div
                   class="d-inline-flex flex-shrink-0">
                   <v-tooltip bottom v-if="!hasDraft && isManager">
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ on }">
                       <v-btn
                         v-on="on"
-                        v-bind="attrs"
+                        :aria-label="$t('notes.label.addPage')"
                         class="pa-0 mt-0"
                         :href="addNoteLink"
                         target="_blank"
@@ -133,11 +133,11 @@
                 <div
                   class="d-inline-flex flex-shrink-0 ms-2">
                   <v-tooltip bottom v-if="isManager">
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ on }">
                       <v-btn
                         icon
                         v-on="on"
-                        v-bind="attrs"
+                        :aria-label="$t('notes.label.editPage')"
                         class="pa-0 mt-0"
                         :href="editNoteLink"
                         target="_blank">
@@ -168,9 +168,13 @@
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
                       <v-btn
+                        id="noteActionsMenuButton"
                         v-on="on"
                         @click="$root.$emit('display-action-menu')"
                         v-bind="attrs"
+                        :aria-label="$t('notes.label.noteActions')"
+                        :aria-expanded="actionsMenuOpened ? 'true' : 'false'"
+                        aria-haspopup="menu"
                         class="pa-0 mt-0"
                         icon>
                         <v-icon
@@ -256,12 +260,12 @@
               <p class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
+                  <template #activator="{ on }">
                     <v-btn
                       class="pa-0"
                       icon
                       v-on="on"
-                      v-bind="attrs"
+                      :aria-label="$t('notes.label.editPage')"
                       :href="editNoteLink"
                       target="_blank">
                       <v-icon
@@ -275,11 +279,11 @@
                 </v-tooltip>
                 <span v-if="!hasDraft">{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
                 <v-tooltip bottom v-if="!hasDraft">
-                  <template #activator="{ on, attrs }">
+                  <template #activator="{ on }">
                     <v-btn
                       class="pa-0"
                       v-on="on"
-                      v-bind="attrs"
+                      :aria-label="$t('notes.label.addPage')"
                       :href="addNoteLink"
                       target="_blank"
                       icon>
@@ -418,6 +422,7 @@ export default {
   },
   data() {
     return {
+      actionsMenuOpened: false,
       versionsPageSize: null,
       note: {},
       lastUpdatedTime: '',
@@ -813,6 +818,7 @@ export default {
         this.getDraftNote(noteName);
       }
     });
+    this.$root.$on('action-menu-state-changed', opened => this.actionsMenuOpened = opened);
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
     });

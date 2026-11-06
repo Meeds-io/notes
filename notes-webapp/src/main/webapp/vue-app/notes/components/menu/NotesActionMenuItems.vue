@@ -27,6 +27,7 @@
       @click="handleAction(extension)">
       <v-icon
         size="16"
+        aria-hidden="true"
         :class="extension?.iconCssClass"
         class="clickable icon-menu">
         {{ extension?.icon }}

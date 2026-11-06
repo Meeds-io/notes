@@ -404,6 +404,8 @@
                 <v-btn
                   v-if="item.hasChild"
                   :loading="item.isLoading"
+                  :aria-label="$t('notes.label.treeview.subNotes', {0: item.name})"
+                  :aria-expanded="open ? 'true' : 'false'"
                   class="me-n3"
                   width="30"
                   height="30"
