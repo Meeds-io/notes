@@ -18,6 +18,7 @@ CKEDITOR.editorConfig = function (config) {
   CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
   CKEDITOR.plugins.addExternal('linkBalloon', '/social/js/ckeditorPlugins/linkBalloon/', 'plugin.js');
   CKEDITOR.plugins.addExternal('insertImage','/notes/javascript/eXo/wiki/ckeditor/plugins/insertImage/','plugin.js');
+  CKEDITOR.plugins.addExternal('tableStyle','/notes/javascript/eXo/wiki/ckeditor/plugins/tableStyle/','plugin.js');
 
   const blocksToolbarGroup = [
     'Blockquote',
@@ -73,7 +74,7 @@ CKEDITOR.editorConfig = function (config) {
   if (!webPageNote) {
     mobileToolbar[mobileToolbar.findIndex(item => item.name ==='blocks')].items.push('attachFile');
   }
-  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,emoji,link,font,justify,widget${!webPageNote && ',suggester,tagSuggester' || ''},contextmenu,tabletools,tableresize,toc,linkBalloon,image2,insertImage,vuetifyStyle,googleDocPastePlugin`;
+  let extraPlugins = `a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,autolink,colordialog,emoji,link,font,justify,widget${!webPageNote && ',suggester,tagSuggester' || ''},contextmenu,tabletools,tableresize,tableStyle,toc,linkBalloon,image2,insertImage,vuetifyStyle,googleDocPastePlugin`;
   let removePlugins = `image,confirmBeforeReload,maximize,resize,autoembed${webPageNote && ',tagSuggester' || ''}`;
 
   let configOptions = {};
