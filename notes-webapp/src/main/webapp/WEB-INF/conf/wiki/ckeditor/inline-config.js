@@ -15,10 +15,11 @@ CKEDITOR.editorConfig = function (config) {
   CKEDITOR.plugins.addExternal('toc','/notes/javascript/eXo/wiki/ckeditor/plugins/toc/','plugin.js');
   CKEDITOR.plugins.addExternal('linkBalloon', '/social/js/ckeditorPlugins/linkBalloon/', 'plugin.js');
   CKEDITOR.plugins.addExternal('insertImage','/notes/javascript/eXo/wiki/ckeditor/plugins/insertImage/','plugin.js');
+  CKEDITOR.plugins.addExternal('tableStyle','/notes/javascript/eXo/wiki/ckeditor/plugins/tableStyle/','plugin.js');
 
 
   let extraPlugins = 'simpleLink,a11ychecker,balloonpanel,indent,indentblock,indentlist,codesnippet,sharedspace,copyformatting,table,tabletools,embedsemantic,' +
-        'autolink,colordialog,emoji,link,font,justify,widget,contextmenu,tabletools,tableresize,toc,editorplaceholder,formatOption,linkBalloon,image2,insertImage';
+        'autolink,colordialog,emoji,link,font,justify,widget,contextmenu,tabletools,tableresize,tableStyle,toc,editorplaceholder,formatOption,linkBalloon,image2,insertImage';
 
   let removePlugins = 'image,confirmBeforeReload,maximize,resize,autoembed,tagSuggester,attachImage';
 
