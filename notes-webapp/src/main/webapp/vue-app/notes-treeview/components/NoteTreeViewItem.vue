@@ -96,6 +96,7 @@
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
         @reorder="$emit('reorder', $event)"
+        @move-announce="$emit('move-announce', $event)"
         @action="$emit('action', $event)" />
       <v-list-item
         v-else-if="item.isLoading"

@@ -52,7 +52,14 @@
           @fetch-children="fetchChildren"
           @open-note="handleOpenNote"
           @toggle-open="handleToggleOpen"
-          @reorder="handleReorder" />
+          @reorder="handleReorder"
+          @move-announce="moveAnnouncement = $event" />
+        <div
+          class="note-move-live-region"
+          aria-live="polite"
+          role="status">
+          {{ moveAnnouncement }}
+        </div>
         <template v-if="!resultSearch">
           <v-card
             flat
@@ -86,6 +93,7 @@ export default {
     },
   },
   data: () => ({
+    moveAnnouncement: '',
     note: {},
     items: [],
     allItems: [],

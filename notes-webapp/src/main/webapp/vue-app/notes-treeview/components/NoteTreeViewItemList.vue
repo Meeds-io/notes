@@ -57,14 +57,9 @@
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
         @reorder="$emit('reorder', $event)"
+        @move-announce="$emit('move-announce', $event)"
         @action="$emit('action', $event)" />
     </draggable>
-    <div
-      class="note-move-live-region"
-      aria-live="polite"
-      role="status">
-      {{ moveAnnouncement }}
-    </div>
   </v-list>
 </template>
 
@@ -114,8 +109,7 @@ export default {
   },
   data() {
     return {
-      isDragging: false,
-      moveAnnouncement: ''
+      isDragging: false
     };
   },
   methods: {
@@ -157,7 +151,7 @@ export default {
         this.pendingMove = null;
         this.onDragChange({ moved });
       }, 600);
-      this.moveAnnouncement = this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]);
+      this.$emit('move-announce', this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]));
       const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
       this.$nextTick(() => document.getElementById(`${keepUp ? 'noteMoveUp' : 'noteMoveDown'}-${item.noteId}`)?.focus());
     },
