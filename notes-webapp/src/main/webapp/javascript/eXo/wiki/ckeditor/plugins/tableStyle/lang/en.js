@@ -5,5 +5,5 @@ CKEDITOR.plugins.setLang('tableStyle', 'en',
     styleSimple: 'Simple (lines between rows)',
     styleStriped: 'Striped',
     styleBordered: 'Bordered',
-    numericColumn: 'Align numbers right'
+    numericColumn: 'Number column'
   });
