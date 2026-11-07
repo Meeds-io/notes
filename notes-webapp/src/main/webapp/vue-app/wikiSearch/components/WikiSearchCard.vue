@@ -2,9 +2,7 @@
   <v-hover v-slot="{ hover }">
     <v-card
       flat
-      class="pa-0"
-      :aria-label="$t('search.access.to.result', {0 :wikiTitleText})"
-      :href="wikiUrl">
+      class="search-result-card pa-0">
       <v-list class="pa-0" :class="hover && 'light-grey-background-color no-border-radius' || ''">
         <v-list-item>
           <v-list-item-icon class="me-4">
@@ -14,12 +12,16 @@
           <v-list-item-content>
             <div class="d-flex flex-row full-width align-center">
               <v-list-item-title class="flex-grow-1">
-                <h1
-                  class="title primary--text pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate"
-                  v-sanitized-html="wikiTitle">
+                <h1 class="title primary--text pt-1 mb-0 ps-0 my-auto align-center text-start text-truncate">
+                  <a
+                    :href="wikiUrl"
+                    class="search-result-link"
+                    v-sanitized-html="wikiTitle"></a>
                 </h1>
               </v-list-item-title>
-              <span v-show="hover || isMobile" class="ml-2">
+              <span
+                :class="{'search-result-actions-visible': isMobile}"
+                class="search-result-interactive search-result-actions ml-2">
                 <note-favorite-action
                   :note="result"
                   @removed="$emit('refresh-favorite')" />
@@ -33,7 +35,7 @@
                     v-bind="attrs"
                     v-on="on"
                     :href="spaceUrl"
-                    class="flex-nowrap flex-shrink-0 d-flex spaceAvatar">
+                    class="search-result-interactive flex-nowrap flex-shrink-0 d-flex spaceAvatar">
                     <v-avatar
                       :size="18"
                       tile
@@ -48,12 +50,14 @@
                   </a>
                   <v-icon size="3" class="icon-default-color mx-3">fas fa-circle</v-icon>
                 </span>
-                <exo-user-avatar
-                  :profile-id="posterUsername"
-                  :size="18"
-                  small-font-size
-                  :avatar="isMobile"
-                  :popover="false" />
+                <span class="search-result-interactive d-inline-flex align-center">
+                  <exo-user-avatar
+                    :profile-id="posterUsername"
+                    :size="18"
+                    small-font-size
+                    :avatar="isMobile"
+                    :popover="false" />
+                </span>
                 <v-icon
                   v-if="wikiUpdateDate"
                   size="3"
@@ -129,9 +133,6 @@ export default {
     },
     wikiTitle() {
       return this.result && this.result.title || '';
-    },
-    wikiTitleText() {
-      return $('<div />').html(this.wikiTitle).text();
     },
     posterUsername() {
       return this.result?.poster?.profile?.username;
