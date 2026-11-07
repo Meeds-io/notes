@@ -404,7 +404,7 @@ export default {
       this.isLoading = true;
       this.items = [];
 
-      this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter).then(data => {
+      return this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter).then(data => {
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
@@ -554,8 +554,10 @@ export default {
         })
         .catch(() => {
           this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
-          this.refreshTree();
-        });
+          // the next save waits for the tree read back after a failure
+          return this.refreshTree();
+        })
+        .catch(() => null);
     },
     fetchChildren(item) {
       if (!item.hasChild) {return;}
@@ -613,7 +615,7 @@ export default {
       }
     },
     refreshTree() {
-      this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner, this.note.name);
+      return this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner, this.note.name);
     }
   }
 };
