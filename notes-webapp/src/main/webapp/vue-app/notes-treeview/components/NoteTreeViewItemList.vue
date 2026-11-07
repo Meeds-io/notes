@@ -148,7 +148,15 @@ export default {
         return;
       }
       this.items.splice(newIndex, 0, this.items.splice(oldIndex, 1)[0]);
-      this.onDragChange({ moved: { element: item, oldIndex, newIndex } });
+      // successive presses are saved once, with the final order, 600 ms after the last one
+      const firstOldIndex = this.pendingMove?.element?.noteId === item.noteId ? this.pendingMove.oldIndex : oldIndex;
+      this.pendingMove = { element: item, oldIndex: firstOldIndex, newIndex };
+      window.clearTimeout(this.moveSaveTimer);
+      this.moveSaveTimer = window.setTimeout(() => {
+        const moved = this.pendingMove;
+        this.pendingMove = null;
+        this.onDragChange({ moved });
+      }, 600);
       this.moveAnnouncement = this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]);
       const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
       this.$nextTick(() => document.getElementById(`${keepUp ? 'noteMoveUp' : 'noteMoveDown'}-${item.noteId}`)?.focus());
