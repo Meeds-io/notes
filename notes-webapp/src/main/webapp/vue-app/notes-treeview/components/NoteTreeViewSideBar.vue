@@ -544,18 +544,26 @@ export default {
     },
     executeDragAndDropApi() {
       const requestData = { ...this.dragPayload };
+      const generation = this.reorderGeneration || 0;
       // each request sends the whole order of the siblings: they are sent one after the other,
       // so that the last order shown is the last one stored
       this.reorderQueue = (this.reorderQueue || Promise.resolve())
-        .then(() => this.$notesService.updateNotesOrder(requestData))
         .then(() => {
-          this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
-          this.$root.$emit('reorder-notes', requestData);
-        })
-        .catch(() => {
-          this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
-          // the next save waits for the tree read back after a failure
-          return this.refreshTree();
+          // an order computed before a failed save, or before the tree is read back, would store the failed move
+          if (generation !== (this.reorderGeneration || 0)) {
+            return null;
+          }
+          return this.$notesService.updateNotesOrder(requestData)
+            .then(() => {
+              this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+              this.$root.$emit('reorder-notes', requestData);
+            })
+            .catch(() => {
+              this.reorderGeneration = generation + 1;
+              this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
+              return Promise.resolve(this.refreshTree())
+                .finally(() => this.reorderGeneration = generation + 2);
+            });
         })
         .catch(() => null);
     },
