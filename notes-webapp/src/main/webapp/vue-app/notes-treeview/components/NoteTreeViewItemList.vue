@@ -53,6 +53,7 @@
         :position="index"
         :siblings-count="items.length"
         @move-note="moveNote"
+        @reorder-items="$emit('reorder-items', $event)"
         @fetch-children="$emit('fetch-children', $event)"
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
@@ -141,7 +142,8 @@ export default {
       if (oldIndex < 0 || newIndex < 0 || newIndex >= this.items.length) {
         return;
       }
-      this.items.splice(newIndex, 0, this.items.splice(oldIndex, 1)[0]);
+      // the tree's owner reorders its own data: a list never changes the items it is given
+      this.$emit('reorder-items', { items: this.items, oldIndex, newIndex });
       // successive presses are saved once, with the final order, 600 ms after the last one
       const firstOldIndex = this.pendingMove?.element?.noteId === item.noteId ? this.pendingMove.oldIndex : oldIndex;
       this.pendingMove = { element: item, oldIndex: firstOldIndex, newIndex };

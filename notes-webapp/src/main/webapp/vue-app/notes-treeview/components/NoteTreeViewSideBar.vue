@@ -53,13 +53,13 @@
           @open-note="handleOpenNote"
           @toggle-open="handleToggleOpen"
           @reorder="handleReorder"
+          @reorder-items="reorderItems"
           @move-announce="moveAnnouncement = $event" />
-        <div
+        <output
           class="note-move-live-region"
-          aria-live="polite"
-          role="status">
+          aria-live="polite">
           {{ moveAnnouncement }}
-        </div>
+        </output>
         <template v-if="!resultSearch">
           <v-card
             flat
@@ -507,6 +507,10 @@ export default {
           this.openNotes.splice(index, 1);
         }
       }
+    },
+    // a note moved up or down from the keyboard, in the list of the tree's data it belongs to
+    reorderItems({ items, oldIndex, newIndex }) {
+      items.splice(newIndex, 0, items.splice(oldIndex, 1)[0]);
     },
     handleReorder(payload) {
       const { event, items, parentId } = payload;
