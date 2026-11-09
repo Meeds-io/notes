@@ -1,27 +1,34 @@
 <template>
-  <div 
+  <nav
     v-if="isDesktop"
     class="note-breadcrumb-wrapper"
-    role="navigation" 
     :aria-label="$t('notes.label.breadcrumbs')">
-    <div class="notes-tree-items d-flex align-center">
+    <div
+      class="notes-tree-items d-flex align-center"
+      role="list">
       <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
         <div 
           v-if="breadcrumbItem.isBreadcrumbItem"
           :key="index"
-          :class="breadcrumbItem.class">
+          :class="breadcrumbItem.class"
+          role="listitem">
           <v-tooltip max-width="300" bottom>
             <template #activator="{ on, filteredAttrs }">
-              <a
+              <span
+                v-if="breadcrumbItem.id === 'lastBreadcrumbItem'"
                 :id="breadcrumbItem.id"
                 :ref="breadcrumbItem.id"
                 :class="breadcrumbItem.classLink"
-                :aria-current="breadcrumbItem.id === 'lastBreadcrumbItem' ? 'page' : null"
                 v-bind="filteredAttrs"
                 v-on="on"
-                tabindex="0"
-                @click="openNote(noteBreadcrumb[breadcrumbItem.index])"
-                @keydown="openNoteOnEnter($event, noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}
+                aria-current="page">{{ breadcrumbItem.title }}</span>
+              <a
+                v-else
+                :href="noteHref(noteBreadcrumb[breadcrumbItem.index])"
+                :class="breadcrumbItem.classLink"
+                v-bind="filteredAttrs"
+                v-on="on"
+                @click.prevent="openNote(noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}
               </a>
             </template>
             <span class="caption">{{ breadcrumbItem.title }}</span>
@@ -30,26 +37,32 @@
             v-if="breadcrumbItem.isIcon"
             class="flex-grow-1 icon-default-color flex-shrink-0"
             :class="index === 0 && noteEllipsisList.length > 0 ? 'ms-2' : 'mx-2'"
-            size="18">
+            size="18"
+            aria-hidden="true">
             fas fa-chevron-right
           </v-icon>
         </div>
         <div
           v-if="breadcrumbItem.isEllipsis && noteEllipsisList.length > 0"
           :key="index"
-          class="notes-tree-item min-width-content long-path-second-item d-flex">
+          class="notes-tree-item min-width-content long-path-second-item d-flex"
+          role="listitem">
           <v-tooltip :key="tooltipKey" bottom>
-            <template #activator="{ on, attrs }">
-              <v-icon
+            <template #activator="{ on }">
+              <v-btn
                 v-show="noteEllipsisList.length > 0"
-                v-bind="attrs"
                 v-on="on"
-                class="text-sub-title"
-                size="18"
-                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])"
-                @keydown="openNoteOnEnter($event, noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
-                fas fa-ellipsis-h
-              </v-icon>
+                :aria-label="$t('notes.label.breadcrumb.openNote', {0: noteEllipsisList[noteEllipsisList.length-1].title})"
+                class="text-sub-title breadcrumb-ellipsis-button"
+                width="18"
+                height="18"
+                min-width="18"
+                icon
+                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
+                <v-icon size="18">
+                  fas fa-ellipsis-h
+                </v-icon>
+              </v-btn>
             </template>
             <p
               v-for="(noteEllipsisItem) in noteEllipsisList"
@@ -59,20 +72,28 @@
                 class="caption">
                 <v-icon
                   size="18"
-                  class="tooltip-chevron">
+                  class="tooltip-chevron"
+                  aria-hidden="true">
                   fas fa-chevron-right
                 </v-icon>
                 {{ noteEllipsisItem.title }}
               </span>
             </p>
           </v-tooltip>
-          <v-icon class="clickable me-2" size="18">fas fa-chevron-right</v-icon>
+          <v-icon
+            class="clickable me-2"
+            size="18"
+            aria-hidden="true">
+            fas fa-chevron-right
+          </v-icon>
         </div>
       </template>
     </div>
-  </div>
+  </nav>
 </template>
 <script>
+import { getNoteUrl } from '../../notes-treeview/js/Utils.js';
+
 export default {
   props: {
     noteBreadcrumb: {
@@ -129,10 +150,8 @@ export default {
         document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
       }
     },
-    openNoteOnEnter(event, note) {
-      if (event.key === 'Enter') {
-        this.openNote(note);
-      }
+    noteHref(note) {
+      return getNoteUrl(note.id, false);
     },
     initNoteBreadcrumb() {
       const noteBreadcrumbLength = this.noteBreadcrumb.length;
