@@ -70,8 +70,9 @@ import jakarta.annotation.PostConstruct;
  * the setting it creates at the first render: the first write imports it
  * into the setting it creates through
  * {@link NotePageViewService#importNotePageData}, as the user, since that
- * preference is one any editor of the page can write. The setting hangs on a
- * page: a window of a site container is not configurable.
+ * preference is one any editor of the page can write. The setting of a
+ * window in a site container is keyed on the site's home page, and a write
+ * is refused while the site has none.
  */
 @Component
 @Profile("layout")
