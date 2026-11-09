@@ -19,6 +19,7 @@
 
 <template>
   <v-list
+    :aria-label="level === 0 ? $t('notes.label.breadcrumbTitle') : null"
     dense
     class="py-0 note-tree-list">
     <draggable

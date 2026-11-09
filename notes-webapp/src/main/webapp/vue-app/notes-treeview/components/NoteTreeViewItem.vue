@@ -17,20 +17,20 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <div>
+  <div role="listitem">
     <v-hover
       v-model="hover">
       <v-list-item
         :class="[
-          'tree-item rounded mx-1 my-1 pe-0',
+          'tree-item v-list-item--link rounded mx-1 my-1 pe-0',
           { 'v-list-item--active primary--text': isActive(item) },
           { 'ps-1': level === 0 }
         ]"
         :style="{ paddingLeft: `${level * 20 + 8}px` }"
         :ripple="false"
-        :href="noteUrl"
+        role="presentation"
         dense
-        @click="handleOpenNote($event, item)">
+        @click.native="handleOpenNote($event, item)">
         <v-list-item-avatar
           size="30"
           class="my-auto me-0 expand-icon align-center"
@@ -47,17 +47,23 @@
           </template>
         </v-list-item-avatar>
         <v-list-item-content>
-          <v-list-item-title
-            :class="[
-              'text-truncate d-flex align-center',
-              { 'font-weight-medium primary--text': isActive(item) }
-            ]">
-            <span class="text-truncate">{{ name }}</span>
-          </v-list-item-title>
+          <a
+            :href="noteUrl"
+            :aria-current="isActive(item) ? 'page' : null"
+            class="note-tree-link d-block text-truncate text-decoration-none">
+            <v-list-item-title
+              :class="[
+                'text-truncate d-flex align-center',
+                isActive(item) ? 'font-weight-medium primary--text text-decoration-underline' : 'text-color'
+              ]">
+              <span class="text-truncate">{{ name }}</span>
+            </v-list-item-title>
+          </a>
         </v-list-item-content>
         <v-list-item-icon
           v-if="!isDraftFilter && !isHomePage && hover"
-          class="drag-handle my-auto ml-1">
+          class="drag-handle my-auto ml-1"
+          aria-hidden="true">
           <v-icon
             small>
             fas fa-grip-vertical
@@ -86,6 +92,7 @@
         @action="$emit('action', $event)" />
       <v-list-item
         v-else-if="item.isLoading"
+        role="presentation"
         :style="{ paddingLeft: `${(level + 1) * 20 + 8}px` }"
         class="mx-1">
         <v-list-item-icon class="my-auto mr-3">
