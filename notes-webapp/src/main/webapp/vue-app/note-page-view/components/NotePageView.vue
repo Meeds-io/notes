@@ -26,7 +26,7 @@
       indeterminate />
     <div
       v-else
-      v-html="sanitizedPageContent"
+      v-sanitized-document="pageContent"
       class="reset-style-box rich-editor-content extended-rich-content overflow-hidden full-width"></div>
   </div>
 </template>
@@ -34,16 +34,8 @@
 <script>
 export default {
   computed: {
-    sanitizedPageContent() {
-      const DOMPurify = require('dompurify');
-      const pageContent = this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
-      const sanitizedContent = DOMPurify.sanitize(pageContent, {
-        ADD_TAGS: ['iframe'],
-        ADD_ATTR: ['target'],
-        tagNameCheck: () => true,
-        attributeNameCheck: () => true,
-      });
-      return sanitizedContent;
+    pageContent() {
+      return this.$root.pageContent && this.$noteUtils.getContentToDisplay(this.$root.pageContent) || '';
     },
   },
 };
