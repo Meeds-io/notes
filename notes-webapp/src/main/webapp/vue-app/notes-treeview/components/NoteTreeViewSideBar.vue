@@ -514,6 +514,11 @@ export default {
     },
     handleReorder(payload) {
       const { event, items, parentId } = payload;
+      // a move in another list while one waits to be saved: the waiting one is saved first,
+      // else this one would replace it
+      if (event.moved && this.dragPayload?.pageId && this.dragPayload.targetParentId !== parentId) {
+        this.saveReorder();
+      }
       if (!this.dragPayload) {
         this.dragPayload = {
           pageId: null,
@@ -546,13 +551,15 @@ export default {
         this.dragPayload.sourceOrderedIds = items.map(item => item.noteId);
       }
       clearTimeout(this.dragTimer);
-      this.dragTimer = setTimeout(() => {
-        const requestData = { ...this.dragPayload };
-        if (requestData.sourceParentId === this.home.noteId) {requestData.sourceParentId = null;}
-        if (requestData.targetParentId === this.home.noteId) {requestData.targetParentId = null;}
-        this.executeDragAndDropApi(requestData);
-        this.dragPayload = null;
-      }, 100);
+      this.dragTimer = setTimeout(this.saveReorder, 100);
+    },
+    saveReorder() {
+      clearTimeout(this.dragTimer);
+      const requestData = { ...this.dragPayload };
+      if (requestData.sourceParentId === this.home.noteId) {requestData.sourceParentId = null;}
+      if (requestData.targetParentId === this.home.noteId) {requestData.targetParentId = null;}
+      this.executeDragAndDropApi(requestData);
+      this.dragPayload = null;
     },
     executeDragAndDropApi() {
       const requestData = { ...this.dragPayload };
