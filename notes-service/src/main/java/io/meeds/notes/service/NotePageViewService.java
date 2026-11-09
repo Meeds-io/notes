@@ -275,14 +275,14 @@ public class NotePageViewService {
     String sourcePageId = sourcePage.getId();
     Map<String, String> pages = new HashMap<>();
     sourcePages.forEach((lang, page) -> pages.put(lang, page.getContent()));
-    long superUserIdentityId = getSuperUserIdentityId();
+    long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(currentUserAclIdentity.getUserId()).getId());
     return writeNotePages(newName,
                           pages,
                           (pageId, content) -> clonePageAttachments(pageId,
                                                                     content,
                                                                     (oldPageId, fileId) -> StringUtils.equals(sourcePageId, oldPageId)
                                                                                            && isAttachment(oldPageId, fileId),
-                                                                    superUserIdentityId),
+                                                                    userIdentityId),
                           currentUserAclIdentity);
   }
 
