@@ -245,8 +245,9 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
   /**
    * A copy carries the default content and every published translation onto
    * the target note, clones the source note's own attachments the content
-   * names and leaves the source as stored. The mutants that clone every
-   * named file, or skip the translations, fail it.
+   * names, recorded with the copying user's identity, and leaves the source
+   * as stored. The mutants that clone every named file, skip the
+   * translations, or record the clones as the super user, fail it.
    */
   public void testCopyNotePageCopiesEveryLanguageAndTheSourceAttachments() throws Exception {
     String sourceName = PAGE_NOTE_NAME_PREFIX + RANDOM.nextLong();
@@ -310,6 +311,10 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     assertEquals(expectedContent, targetPage.getContent());
     assertEquals(expectedContent, notePageViewService.getNotePage(targetName, null, internalUser).getContent());
     assertNotNull(attachmentService.getAttachment(WikiPageAttachmentPlugin.OBJECT_TYPE, targetId, fileId));
+    List<MetadataItem> attachmentItems = metadataService.getMetadataItemsByObject(new MetadataObject(WikiPageAttachmentPlugin.OBJECT_TYPE,
+                                                                                                    targetId));
+    assertEquals(1, attachmentItems.size());
+    assertEquals(userIdentityId, attachmentItems.get(0).getCreatorId());
     assertNull(attachmentService.getAttachment(WikiPageAttachmentPlugin.OBJECT_TYPE, targetId, "888"));
     assertEquals("fr content", notePageViewService.getNotePage(targetName, "fr", internalUser).getContent());
     assertEquals(List.of("fr"), noteService.getPageAvailableTranslationLanguages(Long.parseLong(targetId), false));
