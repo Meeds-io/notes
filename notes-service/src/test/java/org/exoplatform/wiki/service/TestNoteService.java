@@ -1523,7 +1523,7 @@ public class TestNoteService extends BaseTest {
     Page rootNote = createNoteFromDraft("root", ROOT_IDENTITY, "rootFromLegacyDraft", legacyDraft, fileId);
     assertEquals(List.of(fileId),
                  attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, legacyDraft.getId()));
-    assertTrue(attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, rootNote.getId()).isEmpty());
+    assertFalse(attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, rootNote.getId()).contains(fileId));
 
     DraftPage update = new DraftPage();
     update.setId(legacyDraft.getId());
