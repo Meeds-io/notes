@@ -463,9 +463,11 @@
   position: relative;
   height: 0;
 
-  // the icon size of the x-small icon buttons these plain buttons are drawn as
-  .v-icon {
+  // 14px icons, as the move buttons had: above the x-small icon buttons' 18px
+  .v-btn--icon.v-size--x-small .v-icon {
     font-size: 14px;
+    height: 14px;
+    width: 14px;
   }
 
   // Laid over the right end of the note row above: same height, centered,
