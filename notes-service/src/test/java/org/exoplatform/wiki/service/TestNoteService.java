@@ -20,8 +20,14 @@ package org.exoplatform.wiki.service;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -1489,6 +1495,43 @@ public class TestNoteService extends BaseTest {
                                                      .concat("/")
                                                      .concat(copiedFileId)
                                                      .concat("\"")));
+  }
+
+  /**
+   * A copy whose attachment to the target fails is deleted, and the content
+   * keeps the pasted address: no orphan file is left behind, and the source
+   * file, whose content the copy shares, stays readable
+   */
+  public void testCopiedImageWhoseAttachmentFailsIsDeleted() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    Page sourceNote = createUserNote("root", ROOT_IDENTITY, "failedCopySource");
+    String fileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, sourceNote.getId(), "root");
+    Page targetNote = createUserNote("root", ROOT_IDENTITY, "failedCopyTarget");
+    String copiedImage = "<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + sourceNote.getId() + "/" + fileId + "\">";
+
+    List<String> copiedFileIds = new ArrayList<>();
+    AttachmentService failingAttachmentService = spy(attachmentService);
+    doAnswer(invocation -> {
+      copiedFileIds.add(invocation.getArgument(0));
+      throw new IllegalStateException("Attachment refused");
+    }).when(failingAttachmentService)
+      .createAttachment(anyString(), eq(WikiPageAttachmentPlugin.OBJECT_TYPE), eq(targetNote.getId()), nullable(String.class), anyLong(), anyMap());
+    Field field = noteService.getClass().getDeclaredField("attachmentService");
+    field.setAccessible(true);
+    field.set(noteService, failingAttachmentService);
+    try {
+      targetNote.setContent(copiedImage);
+      noteService.updateNote(targetNote, PageUpdateType.EDIT_PAGE_CONTENT, ROOT_IDENTITY);
+    } finally {
+      field.set(noteService, attachmentService);
+    }
+
+    assertEquals(1, copiedFileIds.size());
+    assertNotEquals(fileId, copiedFileIds.get(0));
+    assertNull(fileService.getFile(Long.parseLong(copiedFileIds.get(0))));
+    assertNotNull(fileService.getFile(Long.parseLong(fileId)));
+    assertTrue(attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, targetNote.getId()).isEmpty());
+    assertEquals(copiedImage, noteService.getNoteById(targetNote.getId()).getContent());
   }
 
   public void testCreateNoteMovesImagesOnlyFromADraftOfTheCreatingUser() throws Exception {
