@@ -86,7 +86,7 @@
           class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: -1 })">
           <span class="v-btn__content">
-            <i class="v-icon notranslate fas fa-arrow-up theme--light" aria-hidden="true"></i>
+            <v-icon size="14" aria-hidden="true">fas fa-arrow-up</v-icon>
           </span>
         </button>
         <button
@@ -98,7 +98,7 @@
           class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: 1 })">
           <span class="v-btn__content">
-            <i class="v-icon notranslate fas fa-arrow-down theme--light" aria-hidden="true"></i>
+            <v-icon size="14" aria-hidden="true">fas fa-arrow-down</v-icon>
           </span>
         </button>
       </div>
