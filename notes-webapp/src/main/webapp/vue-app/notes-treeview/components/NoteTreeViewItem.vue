@@ -71,12 +71,38 @@
         </v-list-item-icon>
       </v-list-item>
     </v-hover>
-    <note-treeview-item-move-buttons
+    <!-- plain buttons drawn as Vuetify's x-small icon buttons: no component instance per note, they are
+         revealed in CSS (notes.less) on the item's hover or keyboard focus -->
+    <div
       v-if="showActions && !isDraftFilter && !isHomePage"
-      :item="item"
-      :position="position"
-      :siblings-count="siblingsCount"
-      @move="$emit('move-note', $event)" />
+      class="note-move-buttons">
+      <div class="note-move-buttons-inner d-flex align-center">
+        <button
+          :id="`noteMoveUp-${item.noteId}`"
+          :disabled="position <= 0"
+          :class="{ 'v-btn--disabled': position <= 0 }"
+          :aria-label="$t('notes.reorder.moveUp', [item.name])"
+          type="button"
+          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          @click="$emit('move-note', { item, direction: -1 })">
+          <span class="v-btn__content">
+            <i class="v-icon notranslate fas fa-arrow-up theme--light" aria-hidden="true"></i>
+          </span>
+        </button>
+        <button
+          :id="`noteMoveDown-${item.noteId}`"
+          :disabled="position >= siblingsCount - 1"
+          :class="{ 'v-btn--disabled': position >= siblingsCount - 1 }"
+          :aria-label="$t('notes.reorder.moveDown', [item.name])"
+          type="button"
+          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          @click="$emit('move-note', { item, direction: 1 })">
+          <span class="v-btn__content">
+            <i class="v-icon notranslate fas fa-arrow-down theme--light" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+    </div>
     <div
       v-show="isOpen(item.noteId) && item.hasChild"
       class="tree-children">
