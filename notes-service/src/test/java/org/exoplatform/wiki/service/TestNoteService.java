@@ -1612,8 +1612,79 @@ public class TestNoteService extends BaseTest {
     assertEquals("maryContentUpdated", noteService.getDraftNoteById(maryDraft.getId()).getContent());
   }
 
+  public void testCopiedImageSavedAgainReusesItsCopy() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    Page sourceNote = createUserNote("root", ROOT_IDENTITY, "reusedCopySource");
+    String fileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, sourceNote.getId(), "root");
+    String copiedImage = "<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + sourceNote.getId() + "/" + fileId + "\">";
+
+    DraftPage draft = new DraftPage();
+    draft.setTitle("reusedCopyDraft");
+    draft.setContent(copiedImage + copiedImage);
+    draft.setAttachmentObjectType(WikiDraftPageAttachmentPlugin.OBJECT_TYPE);
+    draft = noteService.createDraftForNewPage(draft, System.currentTimeMillis(), getIdentityId("root"));
+    List<String> draftFileIds = attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, draft.getId());
+    assertEquals(1, draftFileIds.size());
+    String copiedFileId = draftFileIds.get(0);
+
+    // The editor sends the pasted address again on the next save
+    DraftPage update = new DraftPage();
+    update.setId(draft.getId());
+    update.setTitle("reusedCopyDraft");
+    update.setContent(copiedImage);
+    update.setAttachmentObjectType(WikiDraftPageAttachmentPlugin.OBJECT_TYPE);
+    DraftPage updatedDraft = noteService.updateDraftForNewPage(update, System.currentTimeMillis(), getIdentityId("root"));
+    assertEquals(List.of(copiedFileId),
+                 attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, draft.getId()));
+    assertTrue(updatedDraft.getContent().contains("/attachments/wikiDraft/" + draft.getId() + "/" + copiedFileId + "\""));
+  }
+
+  public void testCopiedImageIsNotMistakenForAnotherFileOfTheSameNameAndSize() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    Page sourceNote = createUserNote("root", ROOT_IDENTITY, "sameSizeSource");
+    String fileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, sourceNote.getId(), "root");
+    Page targetNote = createUserNote("root", ROOT_IDENTITY, "sameSizeTarget");
+    String otherFileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, targetNote.getId(), "root", new byte[] { 4, 5, 6 });
+
+    targetNote.setContent("<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + sourceNote.getId() + "/" + fileId + "\">");
+    noteService.updateNote(targetNote, PageUpdateType.EDIT_PAGE_CONTENT, ROOT_IDENTITY);
+
+    List<String> targetFileIds = attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, targetNote.getId());
+    assertEquals(2, targetFileIds.size());
+    String copiedFileId = targetFileIds.stream().filter(id -> !id.equals(otherFileId)).findFirst().orElseThrow();
+    assertTrue(noteService.getNoteById(targetNote.getId())
+                          .getContent()
+                          .contains("/attachments/wikiPage/" + targetNote.getId() + "/" + copiedFileId + "\""));
+  }
+
+  public void testNoteCreatedFromADraftPointsToItsCopiedImage() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    Page sourceNote = createUserNote("root", ROOT_IDENTITY, "publishedCopySource");
+    String fileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, sourceNote.getId(), "root");
+    String copiedImage = "<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + sourceNote.getId() + "/" + fileId + "\">";
+    DraftPage draft = new DraftPage();
+    draft.setTitle("publishedCopyDraft");
+    draft.setContent(copiedImage);
+    draft.setAttachmentObjectType(WikiDraftPageAttachmentPlugin.OBJECT_TYPE);
+    draft = noteService.createDraftForNewPage(draft, System.currentTimeMillis(), getIdentityId("root"));
+    String copiedFileId = attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, draft.getId()).get(0);
+
+    // The editor publishes the pasted address, not the draft's rewritten one
+    Wiki rootWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    Page note = new Page("publishedCopyNote", "publishedCopyNote");
+    note.setContent(copiedImage);
+    note.setProperties(new NotePageProperties(Long.parseLong(draft.getId()), null, null, false, false, true));
+    note = noteService.createNote(rootWiki, "Home", note, ROOT_IDENTITY);
+
+    assertEquals(List.of(copiedFileId), attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, note.getId()));
+    String noteContent = noteService.getNoteById(note.getId()).getContent();
+    assertTrue(noteContent.contains("src=\"/portal/rest/v1/social/attachments/wikiPage/" + note.getId() + "/" + copiedFileId + "\""));
+    assertFalse(noteContent.contains("/wikiPage/" + sourceNote.getId() + "/"));
+  }
+
   private AttachmentService registerNoteAttachmentPlugins() {
-    // The webapp's configuration registers them, which the test container lacks
+    // The webapp's configuration registers them, which the test container
+    // lacks; they stay registered for the next tests, as in production
     AttachmentService attachmentService = getContainer().getComponentInstanceOfType(AttachmentService.class);
     attachmentService.addPlugin(new WikiPageAttachmentPlugin(noteService, spaceService));
     attachmentService.addPlugin(new WikiDraftPageAttachmentPlugin(noteService, spaceService));
@@ -1646,7 +1717,10 @@ public class TestNoteService extends BaseTest {
   }
 
   private String attachImage(String objectType, String objectId, String username) throws Exception {
-    byte[] content = new byte[] { 1, 2, 3 };
+    return attachImage(objectType, objectId, username, new byte[] { 1, 2, 3 });
+  }
+
+  private String attachImage(String objectType, String objectId, String username, byte[] content) throws Exception {
     FileItem fileItem = fileService.writeFile(new FileItem(null,
                                                            "image.png",
                                                            "image/png",
@@ -1662,6 +1736,8 @@ public class TestNoteService extends BaseTest {
     return fileId;
   }
 
+  // ListenerService can't remove a listener: this one stays registered and
+  // only records the draft ids of the events
   private List<String> recordDraftVersionEvents() {
     List<String> draftIds = new ArrayList<>();
     getContainer().getComponentInstanceOfType(ListenerService.class)

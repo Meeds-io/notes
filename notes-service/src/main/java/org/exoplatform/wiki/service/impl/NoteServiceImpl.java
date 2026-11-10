@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gatein.api.EntityNotFoundException;
@@ -2558,6 +2559,7 @@ public class NoteServiceImpl implements NoteService {
       // process imported images
       newContent = processImportedNoteImages(note, userIdentityId);
     }
+    newContent = saveCopiedContentImages(newContent, note.getAttachmentObjectType(), note.getId(), userIdentityId);
     if (!newContent.equals(note.getContent())) {
       return updateNoteContent(note, newContent);
     }
@@ -2672,6 +2674,10 @@ public class NoteServiceImpl implements NoteService {
     }
     Long copiedFileId = null;
     try {
+      String attachedCopyId = getAttachedCopyId(Long.parseLong(fileId), objectType, objectId);
+      if (attachedCopyId != null) {
+        return attachedCopyId;
+      }
       FileItem sourceFile = fileService.getFile(Long.parseLong(fileId));
       if (sourceFile == null || sourceFile.getFileInfo() == null) {
         return null;
@@ -2705,6 +2711,36 @@ public class NoteServiceImpl implements NoteService {
         fileService.deleteFile(copiedFileId);
       }
       return null;
+    }
+  }
+
+  /**
+   * Retrieves a file already attached to the target object with the same name,
+   * type and content as the source file, so that saving the same content again
+   * doesn't copy the file again.
+   */
+  private String getAttachedCopyId(long sourceFileId, String objectType, String objectId) throws Exception {
+    FileInfo sourceFileInfo = fileService.getFileInfo(sourceFileId);
+    if (sourceFileInfo == null) {
+      return null;
+    }
+    for (String attachedFileId : attachmentService.getAttachmentFileIds(objectType, objectId)) {
+      FileInfo attachedFileInfo = fileService.getFileInfo(Long.parseLong(attachedFileId));
+      if (attachedFileInfo != null
+          && attachedFileInfo.getSize() == sourceFileInfo.getSize()
+          && StringUtils.equals(attachedFileInfo.getName(), sourceFileInfo.getName())
+          && StringUtils.equals(attachedFileInfo.getMimetype(), sourceFileInfo.getMimetype())
+          && hasSameContent(sourceFileId, attachedFileInfo.getId())) {
+        return attachedFileId;
+      }
+    }
+    return null;
+  }
+
+  private boolean hasSameContent(long fileId, long otherFileId) throws Exception {
+    try (InputStream fileStream = fileService.getFile(fileId).getAsStream();
+        InputStream otherFileStream = fileService.getFile(otherFileId).getAsStream()) {
+      return IOUtils.contentEquals(fileStream, otherFileStream);
     }
   }
 
