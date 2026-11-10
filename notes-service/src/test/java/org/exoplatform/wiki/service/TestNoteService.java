@@ -1657,6 +1657,21 @@ public class TestNoteService extends BaseTest {
                           .contains("/attachments/wikiPage/" + targetNote.getId() + "/" + copiedFileId + "\""));
   }
 
+  public void testUnreadableImageIsNotMatchedWithAFileOfTheTarget() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    Page rootNote = createUserNote("root", ROOT_IDENTITY, "unreadableMatchSource");
+    String fileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, rootNote.getId(), "root");
+    Page maryNote = createUserNote("mary", USER_IDENTITY, "unreadableMatchTarget");
+    String maryFileId = attachImage(WikiPageAttachmentPlugin.OBJECT_TYPE, maryNote.getId(), "mary");
+    String copiedImage = "<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + rootNote.getId() + "/" + fileId + "\">";
+
+    maryNote.setContent(copiedImage);
+    noteService.updateNote(maryNote, PageUpdateType.EDIT_PAGE_CONTENT, USER_IDENTITY);
+
+    assertEquals(copiedImage, noteService.getNoteById(maryNote.getId()).getContent());
+    assertEquals(List.of(maryFileId), attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, maryNote.getId()));
+  }
+
   public void testNoteCreatedFromADraftPointsToItsCopiedImage() throws Exception {
     AttachmentService attachmentService = registerNoteAttachmentPlugins();
     Page sourceNote = createUserNote("root", ROOT_IDENTITY, "publishedCopySource");

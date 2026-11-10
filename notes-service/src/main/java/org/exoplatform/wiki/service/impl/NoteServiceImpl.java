@@ -2659,6 +2659,8 @@ public class NoteServiceImpl implements NoteService {
     if (userAclIdentity == null) {
       return null;
     }
+    // Checked before looking for an attached copy, which compares the source
+    // file's content with the target's files
     try {
       if (attachmentService.getAttachment(sourceObjectType, sourceObjectId, fileId, userAclIdentity) == null) {
         return null;
