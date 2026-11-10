@@ -1585,6 +1585,23 @@ public class TestNoteService extends BaseTest {
                  attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, rootDraft.getId()));
     assertTrue(attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, maryNewNote.getId()).isEmpty());
 
+    Page rootNote = createUserNote("root", ROOT_IDENTITY, "rootExistingNote");
+    DraftPage rootNoteDraft = new DraftPage();
+    rootNoteDraft.setTitle("rootNoteDraft");
+    rootNoteDraft.setContent("rootNoteDraft");
+    rootNoteDraft = noteService.createDraftForExistPage(rootNoteDraft, rootNote, null, System.currentTimeMillis(), "root");
+    update = new DraftPage();
+    update.setId(rootNoteDraft.getId());
+    update.setTargetPageId(maryNote.getId());
+    update.setTitle("maryTitle");
+    update.setContent("maryContent");
+    DraftPage maryOtherDraft = noteService.updateDraftForExistPage(update, maryNote, null, System.currentTimeMillis(), "mary");
+    assertNotEquals(rootNoteDraft.getId(), maryOtherDraft.getId());
+    DraftPage storedRootNoteDraft = noteService.getDraftNoteById(rootNoteDraft.getId());
+    assertEquals("root", storedRootNoteDraft.getAuthor());
+    assertEquals("rootNoteDraft", storedRootNoteDraft.getTitle());
+    assertEquals(rootNote.getId(), storedRootNoteDraft.getTargetPageId());
+
     update = new DraftPage();
     update.setId(maryDraft.getId());
     update.setTargetPageId(maryNote.getId());
