@@ -1128,6 +1128,13 @@ public class NoteServiceImpl implements NoteService {
                                            String revision,
                                            long clientTime,
                                            String username) throws WikiException {
+    DraftPage storedDraft = getDraftNoteById(draftNoteToUpdate.getId());
+    if (storedDraft != null && !StringUtils.equals(storedDraft.getTargetPageId(), targetPage.getId())) {
+      // A draft of another note, or of a new note, is left untouched: the
+      // content goes to a new draft of the target note
+      draftNoteToUpdate.setId(null);
+      return createDraftForExistPage(draftNoteToUpdate, targetPage, revision, clientTime, username);
+    }
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
     Long userIdentityId = Long.parseLong(identityManager.getOrCreateUserIdentity(username).getId());
