@@ -20,30 +20,44 @@ package io.meeds.notes.service;
 
 import static org.junit.Assert.assertThrows;
 
+import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.page.PageContext;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.portal.mop.page.PageState;
 import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.pom.spi.portlet.Portlet;
 import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.social.attachment.AttachmentService;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.jpa.BaseTest;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.Wiki;
 import org.exoplatform.wiki.service.NoteService;
+import org.exoplatform.wiki.service.WikiService;
+import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 
+import io.meeds.layout.model.PortletInstancePreference;
 import io.meeds.notes.model.NotePageData;
+import io.meeds.notes.plugin.layout.renderer.NoteSingleViewRenderPlugin;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.cms.service.CMSServiceImpl;
+import io.meeds.social.util.JsonUtils;
 
 import lombok.SneakyThrows;
 
@@ -208,6 +222,92 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     assertNotNull(notePageData);
     assertEquals(pageContent, notePageData.getPages().get(""));
     assertEquals(1, notePageData.getPages().size());
+  }
+
+  @SneakyThrows
+  public void testSavePageDataLinksOnlyAttachmentsOfTheExportedNotePage() {
+    AttachmentService attachmentService = getContainer().getComponentInstanceOfType(AttachmentService.class);
+    WikiService wikiService = getContainer().getComponentInstanceOfType(WikiService.class);
+    org.exoplatform.services.security.Identity root = new org.exoplatform.services.security.Identity("root");
+    String pageReference = createPage(PAGE_NAME_PREFIX + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+
+    String sourceName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, sourceName, pageReference, 0l, USER_IDENTITY_ID);
+    Page sourcePage = notePageViewService.saveNotePage(sourceName, "source", null, registerAdministratorUser(USERNAME));
+    String sourceImageId = attachImage(attachmentService, sourcePage.getId());
+    String unattachedFileId = writeImage();
+
+    Wiki rootWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    // A user note named after a note page setting
+    String userNoteName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, userNoteName, pageReference, 0l, USER_IDENTITY_ID);
+    Page userNote = noteService.createNote(rootWiki, "Home", new Page(userNoteName, userNoteName), root);
+    String userNoteImageId = attachImage(attachmentService, userNote.getId());
+    // A system note holding no note page setting
+    String systemNoteName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
+    Page systemNote = new Page(systemNoteName, systemNoteName);
+    systemNote.setOwner(IdentityConstants.SYSTEM);
+    systemNote = noteService.createNote(rootWiki, rootWiki.getWikiHome(), systemNote);
+    String systemNoteImageId = attachImage(attachmentService, systemNote.getId());
+
+    sourcePage.setContent(imageTag(sourcePage.getId(), sourceImageId) + imageTag(sourcePage.getId(), unattachedFileId)
+        + imageTag(userNote.getId(), userNoteImageId) + imageTag(systemNote.getId(), systemNoteImageId));
+    noteService.updateNote(sourcePage);
+
+    // The page export writes the note page data into the data.init preference,
+    // which the cloned portlet's first render passes to savePageData
+    List<PortletInstancePreference> exportedPreferences =
+                                                        new NoteSingleViewRenderPlugin(notePageViewService).generatePreferences(null,
+                                                                                                                                new Portlet().setValue("name",
+                                                                                                                                                       sourceName),
+                                                                                                                                null);
+    NotePageData pageData = JsonUtils.fromJsonString(exportedPreferences.get(0).getValue(), NotePageData.class);
+    String targetName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, targetName, pageReference, 0l, USER_IDENTITY_ID);
+    Page targetPage = notePageViewService.savePageData(targetName, pageData);
+
+    assertEquals(List.of(sourceImageId),
+                 attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, targetPage.getId()));
+    String targetContent = noteService.getNoteById(targetPage.getId()).getContent();
+    assertTrue(targetContent.contains(imageTag(targetPage.getId(), sourceImageId)));
+    assertTrue(targetContent.contains(imageTag(sourcePage.getId(), unattachedFileId)));
+    assertTrue(targetContent.contains(imageTag(userNote.getId(), userNoteImageId)));
+    assertTrue(targetContent.contains(imageTag(systemNote.getId(), systemNoteImageId)));
+  }
+
+  private String imageTag(String noteId, String fileId) {
+    return "<img src=\"/portal/rest/v1/social/attachments/wikiPage/" + noteId + "/" + fileId + "\">";
+  }
+
+  @SneakyThrows
+  private String writeImage() {
+    byte[] content = new byte[] { 1, 2, 3 };
+    FileItem fileItem = getContainer().getComponentInstanceOfType(FileService.class)
+                                      .writeFile(new FileItem(null,
+                                                              "image.png",
+                                                              "image/png",
+                                                              "attachment",
+                                                              content.length,
+                                                              new Date(),
+                                                              "root",
+                                                              false,
+                                                              new ByteArrayInputStream(content)));
+    return String.valueOf(fileItem.getFileInfo().getId());
+  }
+
+  @SneakyThrows
+  private String attachImage(AttachmentService attachmentService, String noteId) {
+    String fileId = writeImage();
+    long rootIdentityId = Long.parseLong(getContainer().getComponentInstanceOfType(IdentityManager.class)
+                                                       .getOrCreateUserIdentity("root")
+                                                       .getId());
+    attachmentService.createAttachment(fileId,
+                                       WikiPageAttachmentPlugin.OBJECT_TYPE,
+                                       noteId,
+                                       null,
+                                       rootIdentityId,
+                                       Collections.emptyMap());
+    return fileId;
   }
 
   private String createPage(String pageName, String accessPermission, String editPermission) {

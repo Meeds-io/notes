@@ -121,6 +121,8 @@ public class NoteServiceImpl implements NoteService {
 
   private static final String                             FILE_NAME_SPACE                        = "wiki";
 
+  private static final String                             ATTACHMENT_FILE_NAME_SPACE             = "attachment";
+
   private static final String                             IMAGE_URL_REPLACEMENT_PREFIX           = "//-";
 
   private static final String                             IMAGE_URL_REPLACEMENT_SUFFIX           = "-//";
@@ -265,6 +267,10 @@ public class NoteServiceImpl implements NoteService {
       Page createdPage = createNote(noteBook, parentPage, note, broadcast);
       NotePageProperties properties = note.getProperties();
       String draftPageId = properties != null && properties.isDraft() ? String.valueOf(properties.getNoteId()) : null;
+      if (draftPageId != null && !isDraftAuthor(getDraftNoteById(draftPageId), userIdentity.getUserId())) {
+        // Only a draft of the creating user brings its attachments to the note
+        draftPageId = null;
+      }
       try {
         if (properties != null) {
           properties.setNoteId(Long.parseLong(createdPage.getId()));
@@ -1172,6 +1178,14 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public DraftPage updateDraftForNewPage(DraftPage draftNoteToUpdate, long clientTime, long userIdentityId) throws WikiException {
+    DraftPage storedDraft = getDraftNoteById(draftNoteToUpdate.getId());
+    if (storedDraft != null
+        && !isDraftAuthor(storedDraft, identityManager.getIdentity(userIdentityId).getRemoteId())) {
+      // Another user's draft is left untouched: the content goes to a new
+      // draft of the caller
+      draftNoteToUpdate.setId(null);
+      return createDraftForNewPage(draftNoteToUpdate, clientTime, userIdentityId);
+    }
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
 
@@ -2601,9 +2615,12 @@ public class NoteServiceImpl implements NoteService {
         if (oldObjectId.equals(String.valueOf(objectId))) {
           continue;
         }
-        if (attachmentService.getAttachment(oldObjectType, oldObjectId, fileId) != null) {
-          attachmentService.createAttachment(fileId, objectType, objectId, null, userId, Collections.emptyMap());
-          String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"", objectType, objectId, fileId);
+        String copiedFileId = copyReadableAttachment(oldObjectType, oldObjectId, fileId, objectType, objectId, userId);
+        if (copiedFileId != null) {
+          String newSrc = String.format("src=\"/portal/rest/v1/social/attachments/%s/%s/%s\"",
+                                        objectType,
+                                        objectId,
+                                        copiedFileId);
           String newImgTag = imgElement.replaceAll("src=[\"'][^\"']+[\"']", newSrc);
           content = content.replace(imgElement, newImgTag);
         }
@@ -2613,6 +2630,84 @@ public class NoteServiceImpl implements NoteService {
       return content;
     }
     return content;
+  }
+
+  /**
+   * Links to the target object a copy of an attached file, when the user may
+   * read the object the file is attached to.
+   *
+   * @return the copied file identifier, or null when the file isn't an
+   *         attachment of the source object, the user can't read that object,
+   *         or the copy fails
+   */
+  private String copyReadableAttachment(String sourceObjectType,
+                                        String sourceObjectId,
+                                        String fileId,
+                                        String objectType,
+                                        String objectId,
+                                        long userId) {
+    Identity userAclIdentity = getUserAclIdentity(userId);
+    if (userAclIdentity == null) {
+      return null;
+    }
+    try {
+      if (attachmentService.getAttachment(sourceObjectType, sourceObjectId, fileId, userAclIdentity) == null) {
+        return null;
+      }
+    } catch (IllegalAccessException | ObjectNotFoundException e) {
+      log.debug("User {} can't read the attachment {} of {}/{}",
+                userAclIdentity.getUserId(),
+                fileId,
+                sourceObjectType,
+                sourceObjectId,
+                e);
+      return null;
+    }
+    Long copiedFileId = null;
+    try {
+      FileItem sourceFile = fileService.getFile(Long.parseLong(fileId));
+      if (sourceFile == null || sourceFile.getFileInfo() == null) {
+        return null;
+      }
+      FileItem copiedFile = fileService.writeFile(new FileItem(null,
+                                                               sourceFile.getFileInfo().getName(),
+                                                               sourceFile.getFileInfo().getMimetype(),
+                                                               ATTACHMENT_FILE_NAME_SPACE,
+                                                               sourceFile.getFileInfo().getSize(),
+                                                               new Date(),
+                                                               String.valueOf(userId),
+                                                               false,
+                                                               sourceFile.getAsStream()));
+      copiedFileId = copiedFile.getFileInfo().getId();
+      attachmentService.createAttachment(String.valueOf(copiedFileId),
+                                         objectType,
+                                         objectId,
+                                         null,
+                                         userId,
+                                         Collections.emptyMap());
+      return String.valueOf(copiedFileId);
+    } catch (Exception e) {
+      log.warn("Error while copying the attachment {} of {}/{} to {}/{}",
+               fileId,
+               sourceObjectType,
+               sourceObjectId,
+               objectType,
+               objectId,
+               e);
+      if (copiedFileId != null) {
+        fileService.deleteFile(copiedFileId);
+      }
+      return null;
+    }
+  }
+
+  private Identity getUserAclIdentity(long userIdentityId) {
+    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getIdentity(userIdentityId);
+    return identity == null ? null : userAcl.getUserIdentity(identity.getRemoteId());
+  }
+
+  private boolean isDraftAuthor(DraftPage draftPage, String username) {
+    return draftPage != null && StringUtils.isNotBlank(username) && StringUtils.equals(draftPage.getAuthor(), username);
   }
 
   private String updateNoteContentImages(Page note, Identity userIdentity) {
