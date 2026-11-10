@@ -281,7 +281,7 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
 
   @SneakyThrows
   private String writeImage() {
-    byte[] content = new byte[] { 1, 2, 3 };
+    byte[] content = { 1, 2, 3 };
     FileItem fileItem = getContainer().getComponentInstanceOfType(FileService.class)
                                       .writeFile(new FileItem(null,
                                                               "image.png",

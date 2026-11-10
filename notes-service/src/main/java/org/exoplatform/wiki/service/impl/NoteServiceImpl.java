@@ -47,6 +47,7 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.commons.file.services.FileStorageException;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.portal.config.UserACL;
@@ -2560,7 +2561,7 @@ public class NoteServiceImpl implements NoteService {
       newContent = processImportedNoteImages(note, userIdentityId);
     }
     newContent = saveCopiedContentImages(newContent, note.getAttachmentObjectType(), note.getId(), userIdentityId);
-    if (!newContent.equals(note.getContent())) {
+    if (!StringUtils.equals(newContent, note.getContent())) {
       return updateNoteContent(note, newContent);
     }
     return note;
@@ -2739,9 +2740,14 @@ public class NoteServiceImpl implements NoteService {
     return null;
   }
 
-  private boolean hasSameContent(long fileId, long otherFileId) throws Exception {
-    try (InputStream fileStream = fileService.getFile(fileId).getAsStream();
-        InputStream otherFileStream = fileService.getFile(otherFileId).getAsStream()) {
+  private boolean hasSameContent(long fileId, long otherFileId) throws FileStorageException, IOException {
+    FileItem file = fileService.getFile(fileId);
+    FileItem otherFile = fileService.getFile(otherFileId);
+    if (file == null || otherFile == null) {
+      return false;
+    }
+    try (InputStream fileStream = file.getAsStream();
+        InputStream otherFileStream = otherFile.getAsStream()) {
       return IOUtils.contentEquals(fileStream, otherFileStream);
     }
   }
