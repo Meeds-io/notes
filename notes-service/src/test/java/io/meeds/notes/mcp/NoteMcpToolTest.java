@@ -369,7 +369,7 @@ public class NoteMcpToolTest {
     publicationPluginList.add(notHandlingPlugin);
     publicationPluginList.add(handlingPlugin);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(handlingPlugin.publishNote(note, currentIdentity)).thenReturn(PLUGIN_ACTIVITY_ID);
@@ -405,7 +405,7 @@ public class NoteMcpToolTest {
     NotePublicationPlugin notHandlingPlugin = mock(NotePublicationPlugin.class);
     publicationPluginList.add(notHandlingPlugin);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
@@ -422,7 +422,7 @@ public class NoteMcpToolTest {
     NotePublicationPlugin refusingPlugin = mock(NotePublicationPlugin.class);
     publicationPluginList.add(refusingPlugin);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
     when(refusingPlugin.publishNote(note, currentIdentity)).thenThrow(new IllegalAccessException("refused"));
@@ -441,7 +441,7 @@ public class NoteMcpToolTest {
     NotePublicationPlugin handlingPlugin = mock(NotePublicationPlugin.class);
     publicationPluginList.add(handlingPlugin);
 
-    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq("en"))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(false);
 
