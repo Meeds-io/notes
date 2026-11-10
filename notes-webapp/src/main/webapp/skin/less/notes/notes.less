@@ -447,58 +447,6 @@
   }
 }
 
-.note-move-live-region {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.note-move-buttons {
-  position: relative;
-  height: 0;
-
-  // Laid over the right end of the note row above: same height, centered,
-  // past the row's 4px bottom margin
-  .note-move-buttons-inner {
-    position: absolute;
-    right: 34px;
-    bottom: 4px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    opacity: 0;
-    background: inherit;
-  }
-}
-
-// While the buttons show, the note title ends with an ellipsis before them
-.tree-item:hover .v-list-item__title,
-.tree-item:focus-within .v-list-item__title,
-.tree-item:has(+ .note-move-buttons:hover) .v-list-item__title,
-.tree-item:has(+ .note-move-buttons:focus-within) .v-list-item__title {
-  padding-right: 80px;
-  box-sizing: border-box;
-}
-
-.tree-item:hover + .note-move-buttons .note-move-buttons-inner,
-.tree-item:focus-within + .note-move-buttons .note-move-buttons-inner,
-.note-move-buttons:hover .note-move-buttons-inner,
-.note-move-buttons:focus-within .note-move-buttons-inner {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .note-move-buttons .note-move-buttons-inner {
-    opacity: 1;
-  }
-}
-
 .noteHistoryDrawer {
   .drawerContent {
     .history-line {

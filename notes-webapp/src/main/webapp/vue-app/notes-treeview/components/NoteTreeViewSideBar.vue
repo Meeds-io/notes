@@ -56,7 +56,7 @@
           @reorder-items="reorderItems"
           @move-announce="moveAnnouncement = $event" />
         <output
-          class="note-move-live-region"
+          class="d-sr-only"
           aria-live="polite">
           {{ moveAnnouncement }}
         </output>
