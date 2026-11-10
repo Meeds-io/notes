@@ -240,8 +240,8 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     Wiki rootWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
     // A user note named after a note page setting
     String userNoteName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
-    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, userNoteName, pageReference, 0l, USER_IDENTITY_ID);
     Page userNote = noteService.createNote(rootWiki, "Home", new Page(userNoteName, userNoteName), root);
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, userNote.getName(), pageReference, 0l, USER_IDENTITY_ID);
     String userNoteImageId = attachImage(attachmentService, userNote.getId());
     // A system note holding no note page setting
     String systemNoteName = PAGE_NOTE_NAME_PREFIX + Math.abs(RANDOM.nextLong());
