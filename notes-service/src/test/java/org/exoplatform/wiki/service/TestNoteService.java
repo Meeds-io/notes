@@ -1561,6 +1561,40 @@ public class TestNoteService extends BaseTest {
     assertEquals("rootContent", noteService.getDraftNoteById(rootDraft.getId()).getContent());
   }
 
+  public void testUpdateDraftForExistPageLeavesADraftOfAnotherNoteUntouched() throws Exception {
+    AttachmentService attachmentService = registerNoteAttachmentPlugins();
+    DraftPage rootDraft = createNewPageDraft("rootNewPageDraft", getIdentityId("root"));
+    String fileId = attachImage(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, rootDraft.getId(), "root");
+    Page maryNote = createUserNote("mary", USER_IDENTITY, "maryExistingNote");
+
+    DraftPage update = new DraftPage();
+    update.setId(rootDraft.getId());
+    update.setTargetPageId(maryNote.getId());
+    update.setTitle("maryTitle");
+    update.setContent("maryContent");
+    DraftPage maryDraft = noteService.updateDraftForExistPage(update, maryNote, null, System.currentTimeMillis(), "mary");
+
+    assertNotEquals(rootDraft.getId(), maryDraft.getId());
+    assertEquals(maryNote.getId(), noteService.getDraftNoteById(maryDraft.getId()).getTargetPageId());
+    DraftPage storedRootDraft = noteService.getDraftNoteById(rootDraft.getId());
+    assertEquals("root", storedRootDraft.getAuthor());
+    assertEquals("rootNewPageDraft", storedRootDraft.getTitle());
+    assertNull(storedRootDraft.getTargetPageId());
+    Page maryNewNote = createNoteFromDraft("mary", USER_IDENTITY, "maryFromRewrittenDraft", rootDraft, fileId);
+    assertEquals(List.of(fileId),
+                 attachmentService.getAttachmentFileIds(WikiDraftPageAttachmentPlugin.OBJECT_TYPE, rootDraft.getId()));
+    assertTrue(attachmentService.getAttachmentFileIds(WikiPageAttachmentPlugin.OBJECT_TYPE, maryNewNote.getId()).isEmpty());
+
+    update = new DraftPage();
+    update.setId(maryDraft.getId());
+    update.setTargetPageId(maryNote.getId());
+    update.setTitle("maryTitleUpdated");
+    update.setContent("maryContentUpdated");
+    DraftPage updatedMaryDraft = noteService.updateDraftForExistPage(update, maryNote, null, System.currentTimeMillis(), "mary");
+    assertEquals(maryDraft.getId(), updatedMaryDraft.getId());
+    assertEquals("maryContentUpdated", noteService.getDraftNoteById(maryDraft.getId()).getContent());
+  }
+
   private AttachmentService registerNoteAttachmentPlugins() {
     // The webapp's configuration registers them, which the test container lacks
     AttachmentService attachmentService = getContainer().getComponentInstanceOfType(AttachmentService.class);
