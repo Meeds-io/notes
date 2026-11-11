@@ -399,18 +399,9 @@
   .notes-tree-items {
     max-width: 100% !important;
     width: 100% !important;
-    
-    .min-width-content {
-      min-width: max-content;
-    }
-    
-    .min-width-title {
-      min-width: 7%;
-    }
-    
-    .notes-tree-item {           
+
+    .notes-tree-item {
       .path-clickable {
-        max-width: 97% !important;
         white-space: nowrap;
         
         &:hover {
@@ -429,22 +420,30 @@
   .note-breadcrumb-wrapper {
     max-width: 95% !important;
     width: 95% !important;
+  }
+}
 
-    .notes-long-path {
-      .long-path-first-item {
-        max-width: 100px;
-        min-width: 60px;
-      }
+// the breadcrumb is also mounted in the move note drawer, outside the notes application
+.note-breadcrumb-wrapper ol.notes-tree-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 
-      .long-path-second-item {
-        max-width: 42px;
-      }
+  > li {
+    min-width: 0;
+  }
 
-      .long-path-third-item {
-        max-width: 50%;
-        min-width: 60px;
-      }
+  .notes-tree-item {
+    flex: 0 1 auto;
+
+    .path-clickable {
+      max-width: 200px;
     }
+  }
+
+  .note-breadcrumb-current {
+    flex: 1 1 auto;
+    min-width: 60px;
   }
 }
 
@@ -588,10 +587,6 @@
       }
     }
   }
-}
-
-.tooltip-chevron {
-  color: white !important;
 }
 
 /************ WikiBox ****************/
