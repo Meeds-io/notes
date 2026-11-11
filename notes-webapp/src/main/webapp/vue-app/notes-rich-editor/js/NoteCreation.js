@@ -30,11 +30,20 @@
  */
 export function newNoteCreation() {
   const hooks = new Set();
+  // A hook runs inside the chain, so that its own throw, synchronous or not, never escapes: a check that throws passes, a write that throws reports nothing unsaved
+  const run = (call, fallback) => Promise.resolve().then(call).catch(() => fallback);
+  const giveBack = hook => {
+    try {
+      hook.dispose?.();
+    } catch (e) {
+      // a section failing to give back what it holds never stops the others
+    }
+  };
   const leaving = new Set();
   let committed = null;
   let disposeAsked = false;
   const disposeAll = () => {
-    hooks.forEach(hook => hook.dispose?.());
+    hooks.forEach(giveBack);
     hooks.clear();
   };
   return {
@@ -48,9 +57,9 @@ export function newNoteCreation() {
         }
       };
     },
-    validate: () => Promise.all([...hooks].map(hook => Promise.resolve(hook.validate ? hook.validate() : true).catch(() => true)))
+    validate: () => Promise.all([...hooks].map(hook => run(() => (hook.validate ? hook.validate() : true), true)))
       .then(answers => answers.every(Boolean)),
-    commit: noteId => Promise.all([...(committed || hooks)].map(hook => Promise.resolve(hook.commit ? hook.commit(noteId) : []).catch(() => [])))
+    commit: noteId => Promise.all([...(committed || hooks)].map(hook => run(() => (hook.commit ? hook.commit(noteId) : []), [])))
       .then(notSaved => notSaved.flat().filter(Boolean)),
     seal: () => {
       committed = new Set(hooks);
@@ -59,7 +68,7 @@ export function newNoteCreation() {
       committed = null;
       // A section that left while the note was created is given back now: nothing else will
       leaving.forEach(hook => {
-        hook.dispose?.();
+        giveBack(hook);
         hooks.delete(hook);
       });
       leaving.clear();
