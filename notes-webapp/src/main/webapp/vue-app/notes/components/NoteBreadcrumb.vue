@@ -3,7 +3,9 @@
     v-if="isDesktop"
     class="note-breadcrumb-wrapper"
     :aria-label="$t('notes.label.breadcrumbs')">
-    <ol class="notes-tree-items d-flex align-center">
+    <!-- WebKit drops the list role of a list whose bullets are hidden: it is stated again -->
+    <!-- eslint-disable-next-line vuejs-accessibility/no-redundant-roles -->
+    <ol class="notes-tree-items d-flex align-center" role="list">
       <li
         v-for="item in breadcrumbItems"
         :key="item.key"
@@ -17,6 +19,7 @@
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
+              ref="hiddenNotesButton"
               v-bind="attrs"
               v-on="on"
               :aria-label="$t('notes.label.breadcrumb.hiddenParentNotes')"
@@ -157,6 +160,12 @@ export default {
         this.focusHiddenNote(0);
       } else if (event.key === 'End') {
         this.focusHiddenNote(items.length - 1);
+      } else if (event.key === 'Tab') {
+        // the menu content is detached at the end of the page: Tab goes on from the "…" button, not from there
+        this.hiddenNotesMenuOpened = false;
+        const button = this.$refs.hiddenNotesButton;
+        (Array.isArray(button) ? button[0] : button)?.$el?.focus();
+        return;
       } else {
         return;
       }
