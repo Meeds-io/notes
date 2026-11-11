@@ -16,6 +16,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
+const SCROLLABLE_TABLE_WRAPPER_CLASS = 'rich-content-table-wrapper';
+
 export function getContentToSave(ckEditorInstanceId, oembedMinWidth) {
   const domParser = new DOMParser();
   const newData = CKEDITOR.instances[ckEditorInstanceId].getData();
@@ -61,6 +63,8 @@ export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner
       }
     }
   }
+  // After the summary loop, which reads each table's original parent
+  wrapTablesInScrollableBox(docElement);
   if (contentChildren && computeNavigation) {
     for (let i = 0; i < contentChildren.length; i++) { // NOSONAR not iterable
       const child = contentChildren[i];
@@ -77,6 +81,66 @@ export function getContentToDisplay(content, noteId, noteBookType, noteBookOwner
     }
   }
   return docElement?.children[1].innerHTML;
+}
+
+export function getContentWithScrollableTables(content) {
+  if (!content) {
+    return content;
+  }
+  const docElement = new DOMParser().parseFromString(content, 'text/html').documentElement;
+  wrapTablesInScrollableBox(docElement);
+  return docElement?.children[1].innerHTML;
+}
+
+/*
+ * A table cannot be narrower than its content (its longest words, its images,
+ * its cells' widths), and on WebKit it also keeps the width its author gave
+ * it, so on a narrow screen it can be wider than the content: each top-level
+ * table gets its own horizontal scroll. Only an inline width counts: the
+ * platform's styles give every table a width of 100%, which overrides a width
+ * attribute.
+ * A table aligned left or right is floated: its box takes that float, to keep
+ * the text flowing beside it, and the table stops floating inside the box,
+ * since a float on the end side (right in a left-to-right text) wider than the
+ * box would overflow its start side, where a scroll container cannot scroll.
+ * Its percentage width (100% when it has none) moves to the box, since it
+ * would otherwise resolve against the box: the table is sized to the box, and
+ * scrolls inside it when its content is wider than that share, even on a wide
+ * screen. A fixed width stays on the table, which the box fits up to the
+ * column's width.
+ * Any other box would, beside a float, shrink into the space left, down to
+ * nothing. Around a table of fixed width that no auto margin centres or pushes
+ * aside, it fits the table, so it sits beside a float when the table fits
+ * there and below it otherwise, as the table did. Every other box takes the
+ * full width, which keeps an auto margin's effect on its table: it always
+ * starts below an earlier float, even when its table would fit beside it.
+ */
+function wrapTablesInScrollableBox(documentElement) {
+  documentElement.querySelectorAll('table').forEach(table => {
+    const parent = table.parentElement;
+    if (parent.closest('table') || parent.classList.contains(SCROLLABLE_TABLE_WRAPPER_CLASS)) {
+      return;
+    }
+    const wrapper = documentElement.ownerDocument.createElement('div');
+    wrapper.classList.add(SCROLLABLE_TABLE_WRAPPER_CLASS, 'overflow-x-auto', 'max-width-fit');
+    const float = (table.getAttribute('align') || table.style.cssFloat || '').trim().toLowerCase();
+    const width = table.style.width.trim();
+    const hasFixedWidth = !!width && !width.endsWith('%');
+    if (float === 'left' || float === 'right') {
+      wrapper.classList.add(`float-${float}`);
+      table.classList.add('float-none');
+      if (!hasFixedWidth) {
+        wrapper.style.width = width || '100%';
+        table.style.width = '100%';
+      }
+    } else if (hasFixedWidth && float !== 'center' && table.style.marginLeft !== 'auto' && table.style.marginRight !== 'auto') {
+      wrapper.classList.add('width-fit-content');
+    } else {
+      wrapper.classList.add('full-width');
+    }
+    table.replaceWith(wrapper);
+    wrapper.appendChild(table);
+  });
 }
 
 function restoreUnHighlightedCode(documentElement) {
