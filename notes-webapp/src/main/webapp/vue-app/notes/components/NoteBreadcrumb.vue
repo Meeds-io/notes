@@ -3,96 +3,76 @@
     v-if="isDesktop"
     class="note-breadcrumb-wrapper"
     :aria-label="$t('notes.label.breadcrumbs')">
-    <div
-      class="notes-tree-items d-flex align-center"
-      role="list">
-      <template v-for="(breadcrumbItem, index) in noteBreadcrumbList">
-        <div 
-          v-if="breadcrumbItem.isBreadcrumbItem"
-          :key="index"
-          :class="breadcrumbItem.class"
-          role="listitem">
-          <v-tooltip max-width="300" bottom>
-            <template #activator="{ on, filteredAttrs }">
-              <span
-                v-if="breadcrumbItem.id === 'lastBreadcrumbItem'"
-                :id="breadcrumbItem.id"
-                :ref="breadcrumbItem.id"
-                :class="breadcrumbItem.classLink"
-                v-bind="filteredAttrs"
-                v-on="on"
-                aria-current="page">{{ breadcrumbItem.title }}</span>
-              <a
-                v-else
-                :href="noteHref(noteBreadcrumb[breadcrumbItem.index])"
-                :class="breadcrumbItem.classLink"
-                v-bind="filteredAttrs"
-                v-on="on"
-                @click.prevent="openNote(noteBreadcrumb[breadcrumbItem.index])">{{ breadcrumbItem.title }}
-              </a>
-            </template>
-            <span class="caption">{{ breadcrumbItem.title }}</span>
-          </v-tooltip>
-          <v-icon
-            v-if="breadcrumbItem.isIcon"
-            class="flex-grow-1 icon-default-color flex-shrink-0"
-            :class="index === 0 && noteEllipsisList.length > 0 ? 'ms-2' : 'mx-2'"
-            size="18"
-            aria-hidden="true">
-            fas fa-chevron-right
-          </v-icon>
-        </div>
-        <div
-          v-if="breadcrumbItem.isEllipsis && noteEllipsisList.length > 0"
-          :key="index"
-          class="notes-tree-item min-width-content long-path-second-item d-flex"
-          role="listitem">
-          <v-tooltip :key="tooltipKey" bottom>
-            <template #activator="{ on }">
-              <v-btn
-                v-show="noteEllipsisList.length > 0"
-                v-on="on"
-                :aria-label="$t('notes.label.breadcrumb.openNote', {0: noteEllipsisList[noteEllipsisList.length-1].title})"
-                class="text-sub-title breadcrumb-ellipsis-button"
-                width="18"
-                height="18"
-                min-width="18"
-                icon
-                @click="openNote(noteBreadcrumb[noteEllipsisList[noteEllipsisList.length-1].index])">
-                <v-icon size="18">
-                  fas fa-ellipsis-h
-                </v-icon>
-              </v-btn>
-            </template>
-            <p
-              v-for="(noteEllipsisItem) in noteEllipsisList"
-              :key="noteEllipsisItem.index"
-              class="mb-0">
-              <span
-                class="caption">
-                <v-icon
-                  size="18"
-                  class="tooltip-chevron"
-                  aria-hidden="true">
-                  fas fa-chevron-right
-                </v-icon>
-                {{ noteEllipsisItem.title }}
-              </span>
-            </p>
-          </v-tooltip>
-          <v-icon
-            class="clickable me-2"
-            size="18"
-            aria-hidden="true">
-            fas fa-chevron-right
-          </v-icon>
-        </div>
-      </template>
-    </div>
+    <!-- WebKit drops the list role of a list whose bullets are hidden: it is stated again -->
+    <!-- eslint-disable-next-line vuejs-accessibility/no-redundant-roles -->
+    <ol class="notes-tree-items d-flex align-center pa-0 ma-0" role="list">
+      <li
+        v-for="item in breadcrumbItems"
+        :key="item.key"
+        :class="item.current && 'note-breadcrumb-current' || 'notes-tree-item'"
+        class="d-flex align-center">
+        <v-menu
+          v-if="item.hiddenNotes"
+          v-model="hiddenNotesMenuOpened"
+          content-class="note-breadcrumb-hidden-notes"
+          offset-y
+          bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              ref="hiddenNotesButton"
+              v-bind="attrs"
+              v-on="on"
+              :aria-label="$t('notes.label.breadcrumb.hiddenParentNotes')"
+              :title="$t('notes.label.breadcrumb.hiddenParentNotes')"
+              class="text-sub-title breadcrumb-ellipsis-button"
+              width="18"
+              height="18"
+              min-width="18"
+              icon>
+              <v-icon size="18" aria-hidden="true">
+                fas fa-ellipsis-h
+              </v-icon>
+            </v-btn>
+          </template>
+          <v-list
+            ref="hiddenNotesList"
+            dense
+            @keydown.native="moveFocusInHiddenNotes">
+            <v-list-item
+              v-for="note in item.hiddenNotes"
+              :key="note.id"
+              :href="noteHref(note)"
+              @click.prevent="openNote(note)">
+              <v-list-item-title class="caption">{{ note.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <span
+          v-else-if="item.current"
+          :title="item.note.title"
+          class="caption text-color text-truncate breadCrumb-link"
+          aria-current="page">{{ item.note.title }}</span>
+        <a
+          v-else
+          :href="noteHref(item.note)"
+          :title="item.note.title"
+          class="caption text-sub-title text-truncate path-clickable breadCrumb-link"
+          @click.prevent="openNote(item.note)">{{ item.note.title }}</a>
+        <v-icon
+          v-if="!item.current"
+          class="icon-default-color flex-shrink-0 mx-2"
+          size="18"
+          aria-hidden="true">
+          fas fa-chevron-right
+        </v-icon>
+      </li>
+    </ol>
   </nav>
 </template>
 <script>
 import { getNoteUrl } from '../../notes-treeview/js/Utils.js';
+
+const MAX_VISIBLE_LEVELS = 4;
 
 export default {
   props: {
@@ -105,170 +85,93 @@ export default {
       default: ''
     },
   },
+  data: () => ({
+    hiddenNotesMenuOpened: false,
+  }),
   computed: {
     isDesktop() {
       return this.$vuetify.breakpoint.width >= 960;
     },
-    filteredAttrs() {
-      const attrs = { ...(this.attrs || {}) };
-      delete attrs.role;
-      return attrs;
-    }
+    breadcrumbItems() {
+      const notes = this.noteBreadcrumb || [];
+      const lastIndex = notes.length - 1;
+      const toItem = (note, index) => ({
+        key: note.id,
+        note,
+        current: index === lastIndex,
+      });
+      if (notes.length <= MAX_VISIBLE_LEVELS) {
+        return notes.map(toItem);
+      }
+      return [
+        toItem(notes[0], 0),
+        {
+          key: 'hiddenParentNotes',
+          hiddenNotes: notes.slice(1, lastIndex - 1),
+        },
+        toItem(notes[lastIndex - 1], lastIndex - 1),
+        toItem(notes[lastIndex], lastIndex),
+      ];
+    },
   },
   watch: {
-    noteBreadcrumb() {
-      this.initNoteBreadcrumb();
-      this.$forceUpdate();
-      this.isMounted = true;
-    },
-    isMounted() {
-      if (this.isMounted) {
-        document.fonts.ready.then(() => {
-          this.$nextTick(() => {
-            if (this.noteEllipsisList.length === 0 || this.noteBreadcrumb.length > 4) {
-              this.isLastNoteTruncated();
-              this.countRecursive = 0;
-            }
-          });
-        });
-        this.isMounted = false;
+    hiddenNotesMenuOpened(opened) {
+      if (opened) {
+        this.focusHiddenNote(0);
       }
     },
   },
-  data: () => ({
-    noteBreadcrumbList: [],
-    noteEllipsisList: [],
-    isMounted: false,
-    tooltipKey: 0,
-    countRecursive: 0,
-  }),
   methods: {
     openNote(note) {
-      if (note.noteId !== this.actualNoteId ) {
-        this.noteBreadcrumb = [];
-        this.$emit('open-note',note.id);
+      this.hiddenNotesMenuOpened = false;
+      if (note.noteId !== this.actualNoteId) {
+        this.$emit('open-note', note.id);
         document.dispatchEvent(new CustomEvent('note-navigation-updated', {detail: note}));
       }
     },
     noteHref(note) {
       return getNoteUrl(note.id, false);
     },
-    initNoteBreadcrumb() {
-      const noteBreadcrumbLength = this.noteBreadcrumb.length;
-      this.noteBreadcrumbList = [];
-      this.noteEllipsisList = [];
-      this.noteBreadcrumb.forEach((note, index) => {
-        const isFirst = index === 0;
-        const isLast = index === noteBreadcrumbLength - 1;
-        const isSecondLast = index === noteBreadcrumbLength - 2;
-        const isEllipsis = noteBreadcrumbLength > 4 && this.noteEllipsisList.length === 0 && !isFirst;
-        const isBreadcrumbItem = isFirst || isLast || isSecondLast || noteBreadcrumbLength <= 4;
-        const breadcrumbItem = {
-          id: isLast ? 'lastBreadcrumbItem' : null,
-          index,
-          title: note.title,
-          class: isLast ? 'd-flex text-truncate mx-2' : 'd-flex notes-tree-item min-width-content',
-          classLink: isLast ? 'caption text-color text-truncate breadCrumb-link' : 'caption text-sub-title path-clickable breadCrumb-link',
-          isIcon: isFirst && noteBreadcrumbLength !== 1  || !isLast,
-          isEllipsis,
-          isBreadcrumbItem,
-        };
-        if (noteBreadcrumbLength > 4 && !isFirst && !isSecondLast && !isLast) {
-          this.noteEllipsisList.push(breadcrumbItem);
-        }
-        this.noteBreadcrumbList.push(breadcrumbItem);
-      });
+    hiddenNoteItems() {
+      const list = this.$refs.hiddenNotesList;
+      const listElement = Array.isArray(list) ? list[0]?.$el : list?.$el;
+      return listElement && Array.from(listElement.querySelectorAll('[role="menuitem"]')) || [];
     },
-    getTextWidth(text, font) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      context.font = font;
-      return context.measureText(text).width;
-    },
-    isLastNoteTruncated() {
-      document.fonts.ready.then(() => {
-        this.$nextTick(() => {
-          const lastNoteElement = document.getElementById('lastBreadcrumbItem');
-          const noteBreadcrumbListLength = this.noteBreadcrumbList.length;
-          if (this.countRecursive === 2){
-            this.noteBreadcrumbList[noteBreadcrumbListLength - 1].class = 'd-flex text-truncate min-width-title';
-            return;
-          }
-          if (!lastNoteElement) {
-            return;
-          }
-          const elementWidth = lastNoteElement.clientWidth;
-          const text = this.getTruncatedText(lastNoteElement);
-          const font = window.getComputedStyle(lastNoteElement).font;
-          const textWidth = this.getTextWidth(lastNoteElement.innerText, font);
-          if (textWidth > elementWidth && text.length <= 10) {
-            if (this.noteBreadcrumb.length < 5 && this.countRecursive === 0) {
-              this.getNoteBreadcrumbList();
-            } else if (this.countRecursive === 0) {
-              const beforeLastIndex = noteBreadcrumbListLength - 2;
-              const beforeLastElement = this.noteBreadcrumbList[beforeLastIndex];
-              beforeLastElement.isBreadcrumbItem = false;
-              beforeLastElement.isIcon = false;
-              beforeLastElement.isEllipsis = this.noteEllipsisList.length === 0 ? true : false;
-              this.noteEllipsisList.push(beforeLastElement);
-              this.noteBreadcrumbList = this.noteBreadcrumbList.map((item, index) => {
-                return index === beforeLastIndex ? beforeLastElement : item;
-              });
-            } else if (this.countRecursive === 1) {
-              this.noteBreadcrumbList[0].class = 'd-flex notes-tree-item text-truncate';
-              this.noteBreadcrumbList[0].classLink = 'caption text-sub-title text-truncate path-clickable breadCrumb-link';
-            }
-            this.isLastNoteTruncated();
-            this.countRecursive += 1;
-          } else {
-            this.noteBreadcrumbList[noteBreadcrumbListLength - 1].class = 'd-flex text-truncate min-width-title';
-          }
-        });
-      });
-    },
-    getTruncatedText(element) {
-      const text = element.innerText;
-      const style = window.getComputedStyle(element);
-      const font = `${style.fontSize} ${style.fontFamily}`;
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      context.font = font;
-      let truncatedText = '';
-      const visibleWidth = element.clientWidth;
-      for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const charWidth = context.measureText(truncatedText + char).width;
-        if (charWidth > visibleWidth) {
-          break;
-        }
-        truncatedText += char;
+    focusHiddenNote(index, attempt = 0) {
+      const items = this.hiddenNoteItems();
+      const item = items.length && items[(index + items.length) % items.length];
+      if (item) {
+        item.focus();
       }
-      return truncatedText;
+      // the menu content is shown a frame after it opens: an item cannot take the focus before
+      if ((!item || document.activeElement !== item) && attempt < 10) {
+        window.requestAnimationFrame(() => this.focusHiddenNote(index, attempt + 1));
+      }
     },
-    getNoteBreadcrumbList() {
-      this.noteBreadcrumbList = [];
-      this.noteEllipsisList = [];
-      const noteBreadcrumbLength = this.noteBreadcrumb.length;
-      this.noteBreadcrumb.forEach((note, index) => {
-        const isFirst = index === 0;
-        const isLast = index === noteBreadcrumbLength - 1;
-        const breadcrumbItem = {
-          id: isLast ? 'lastBreadcrumbItem' : null,
-          index,
-          title: note.title,
-          class: isLast ? 'd-flex text-truncate' : 'd-flex notes-tree-item min-width-content',
-          classLink: isLast ? 'caption text-color text-truncate breadCrumb-link' : 'caption text-sub-title path-clickable breadCrumb-link',
-          isIcon: isFirst,
-          isEllipsis: !isFirst && !isLast && this.noteEllipsisList.length === 0,
-          isBreadcrumbItem: isFirst || isLast,
-        };
-        if (!isFirst && !isLast) {
-          this.noteEllipsisList.push(breadcrumbItem);
-        }
-        this.noteBreadcrumbList.push(breadcrumbItem);
-      });
-      this.tooltipKey += 1;
+    moveFocusInHiddenNotes(event) {
+      // Vuetify 2.3 menus only highlight an item on the arrow keys: the focus has to move for a screen reader to read it
+      const items = this.hiddenNoteItems();
+      const current = items.indexOf(document.activeElement);
+      if (event.key === 'ArrowDown') {
+        this.focusHiddenNote(current + 1);
+      } else if (event.key === 'ArrowUp') {
+        this.focusHiddenNote(current - 1);
+      } else if (event.key === 'Home') {
+        this.focusHiddenNote(0);
+      } else if (event.key === 'End') {
+        this.focusHiddenNote(items.length - 1);
+      } else if (event.key === 'Tab') {
+        // the menu content is detached at the end of the page: Tab goes on from the "…" button, not from there
+        this.hiddenNotesMenuOpened = false;
+        const button = this.$refs.hiddenNotesButton;
+        (Array.isArray(button) ? button[0] : button)?.$el?.focus();
+        return;
+      } else {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
     },
-  }
+  },
 };
 </script>

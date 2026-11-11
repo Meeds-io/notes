@@ -61,7 +61,7 @@
                   style="min-width: 0;"
                   :note-breadcrumb="notebreadcrumb"
                   :actual-note-id="note.id"
-                  @open-note="getNoteByName($event, 'breadCrumb', true)" />
+                  @open-note="openNoteFromBreadcrumb" />
               </div>
             </v-col>
             <v-col
@@ -203,7 +203,10 @@
               width="100%" />
           </v-card>
           <div class="notes-title">
-            <p ref="noteTitle" class="title text-color text-break">
+            <p
+              ref="noteTitle"
+              class="title text-color text-break"
+              tabindex="-1">
               <span>
                 {{ noteTitleToDisplay }}
               </span>
@@ -933,6 +936,11 @@ export default {
       } else {
         this.getNoteByName(this.notesPageName,'',true);
       }
+    },
+    openNoteFromBreadcrumb(noteName) {
+      // the breadcrumb link that had the focus is re-rendered with the opened note: the focus goes to its title
+      return this.getNoteByName(noteName, 'breadCrumb', true)
+        .then(() => this.$refs.noteTitle?.focus());
     },
     getHomeTitle(title) {
       return title === 'Home' && this.noteHomeTitle || title;
