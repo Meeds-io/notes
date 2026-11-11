@@ -54,7 +54,8 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 45,
   actionEvent: 'open-note-properties',
-  enabled: (note) => note?.canManage,
+  // Opened to every viewer: the drawer is read-only for whoever cannot manage the note
+  enabled: (note) => !!note,
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'movePage',

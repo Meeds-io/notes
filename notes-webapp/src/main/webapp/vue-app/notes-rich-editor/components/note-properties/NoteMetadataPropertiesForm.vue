@@ -18,12 +18,14 @@
 -->
 <template>
   <v-form>
-    <label for="image-area">
+    <label
+      v-if="!readOnly || canShowFeaturedImagePreview"
+      for="image-area">
       <p class="text-color text-body mb-3">
         {{ $t('notes.metadata.featuredImage.label') }}
       </p>
       <v-btn
-        v-if="!canShowFeaturedImagePreview"
+        v-if="!canShowFeaturedImagePreview && !readOnly"
         name="image-area"
         class="btn add-image-area d-flex"
         :height="featuredImagePreviewHeight"
@@ -54,7 +56,7 @@
               :alt="savedFeaturedImageAltText"
               :src="featuredImagePreviewLink">
               <div
-                v-if="hover && canShowFeaturedImagePreview"
+                v-if="hover && canShowFeaturedImagePreview && !readOnly"
                 class="width-fit-content full-height ms-auto d-flex me-2">
                 <v-btn
                   class="feature-image-button me-1 mt-2 mb-auto"
@@ -82,7 +84,25 @@
         </v-hover>
       </v-sheet>
     </label>
-    <label for="summaryInputEditor">
+    <div
+      v-if="readOnly"
+      id="notePropertiesReadOnlySummary"
+      :class="{'mt-5': canShowFeaturedImagePreview}">
+      <template v-if="summaryLines.length">
+        <p class="text-color text-body mb-3">
+          {{ $t('notes.metadata.summary.label') }}
+        </p>
+        <p
+          v-for="(line, index) in summaryLines"
+          :key="index"
+          class="text-color text-break mb-1">
+          {{ line }}
+        </p>
+      </template>
+    </div>
+    <label
+      v-else
+      for="summaryInputEditor">
       <div class="mt-5">
         <p class="text-color text-body mb-3">
           {{ $t('notes.metadata.summary.label') }}
@@ -147,11 +167,18 @@ export default {
     summaryMaxLength: {
       type: Number,
       default: 1300
+    },
+    readOnly: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
     summaryLengthError() {
       return this.summaryContent?.length > this.summaryMaxLength;
+    },
+    summaryLines() {
+      return this.summaryContent?.trim() ? this.summaryContent.split('\n') : [];
     },
     savedFeaturedImageAltText() {
       return this.noteObject?.properties?.featuredImage?.altText;

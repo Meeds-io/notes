@@ -475,7 +475,12 @@ export default {
         note.properties.noteId = this.note?.id;
         note.properties.draftPage = this.note?.draftPage;
       }
+      const draftId = this.note?.id || null;
+      this.$refs.editor?.startCreation();
+      let created = false;
       return this.$notesService.createNote(note).then(data => {
+        created = true;
+        this.writeCreated(data.id, draftId);
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
           content: data.content
@@ -496,11 +501,41 @@ export default {
           alertLink: this.redirectAfterSaveLink(data || note)
         });
       }).catch(e => {
+        if (!created) {
+          this.$refs.editor?.abortCreation();
+        }
         this.$root.$emit('show-alert', {
           type: 'error',
           message: this.$t(`notes.message.${e.message}`)
         });
       }).finally(() => this.enableClickOnce());
+    },
+    /**
+     * Has the Properties sections write what they hold on the note just
+     * created, then announces the creation to the page with the document
+     * event `note-created`. A value the sections could not write never undoes
+     * the note: the section shows it as not saved, and an alert names it.
+     *
+     * @param {string|number} noteId the page id of the note just created
+     * @param {string|number} draftId the id of the draft the note was created from, or null
+     * @returns {Promise} settled once the creation is announced
+     */
+    writeCreated(noteId, draftId) {
+      const commit = this.$refs.editor?.commitCreation(noteId) || Promise.resolve([]);
+      return commit
+        .catch(() => [])
+        .then(notSaved => {
+          if (notSaved?.length) {
+            this.$root.$emit('show-alert', {
+              type: 'error',
+              message: this.$t('notes.message.createdPropertiesNotSaved', {0: notSaved.map(item => item?.label).filter(Boolean).join(', ')})
+            });
+          }
+          document.dispatchEvent(new CustomEvent('note-created', {detail: {
+            noteId,
+            draftId,
+          }}));
+        });
     },
     autoSave() {
       // No draft saving if init not done or in edit mode for the moment
@@ -785,6 +820,7 @@ export default {
           this.draftSavingStatus = '';
           //re-initialize data
           if (!noteUrl) {
+            this.$refs.editor?.disposeCreation();
             this.note = {
               id: '',
               title: '',
