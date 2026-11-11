@@ -29,6 +29,7 @@
       v-model="drawer"
       allow-expand
       right
+      @expand-updated="expanded = $event"
       @closed="resetProperties">
       <template slot="title">
         <div class="d-flex my-auto text-header font-weight-bold text-color">
@@ -36,17 +37,37 @@
         </div>
       </template>
       <template slot="content">
-        <div class="pa-5">
-          <note-metadata-properties-form
-            ref="propertiesForm"
-            :note="noteObject"
-            :current-properties="currentNoteProperties"
-            :has-featured-image="hasFeaturedImage"
-            :summary-max-length="summaryMaxLength"
-            @properties-updated="propertiesUpdated" />
+        <div
+          class="pa-5"
+          :class="{'d-flex flex-wrap': expanded}">
+          <div
+            id="notePropertiesMainPane"
+            :class="{'col-12 col-md-4 pa-0 pe-md-5': expanded}">
+            <note-metadata-properties-form
+              ref="propertiesForm"
+              :note="noteObject"
+              :current-properties="currentNoteProperties"
+              :has-featured-image="hasFeaturedImage"
+              :summary-max-length="summaryMaxLength"
+              :read-only="readOnly"
+              @properties-updated="propertiesUpdated" />
+          </div>
+          <div
+            id="notePropertiesSectionsPane"
+            :class="{'col-12 col-md-8 pa-0': expanded}">
+            <div id="notePropertiesDrawerSections">
+              <extension-registry-components
+                v-if="noteObject"
+                name="NotesPropertiesDrawer"
+                type="notes-properties-sections"
+                :params="sectionsParams" />
+            </div>
+          </div>
         </div>
       </template>
-      <template slot="footer">
+      <template
+        v-if="!readOnly"
+        slot="footer">
         <div class="d-flex width-fit-content ms-auto">
           <v-btn
             class="btn me-5"
@@ -66,24 +87,47 @@
 </template>
 
 <script>
+import {newNoteCreation} from '../../js/NoteCreation.js';
 
 export default {
   data() {
     return {
       noteObject: null,
       drawer: false,
+      expanded: false,
       currentNoteProperties: {},
       propertiesToSave: null,
       summaryMaxLength: 1300,
+      creation: newNoteCreation(),
+      createdPageId: null,
     };
   },
   props: {
     hasFeaturedImage: {
       type: Boolean,
       default: false
+    },
+    readOnly: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
+    pageId() {
+      const pageId = this.noteObject?.draftPage ? this.noteObject?.targetPageId : this.noteObject?.id;
+      return pageId || this.createdPageId || null;
+    },
+    sectionsParams() {
+      return {
+        note: this.noteObject,
+        pageId: this.pageId,
+        parentPageId: this.noteObject?.parentPageId || null,
+        lang: this.noteObject?.lang || null,
+        editable: !this.readOnly,
+        expanded: this.expanded,
+        creation: this.creation,
+      };
+    },
     summaryLengthError() {
       return this.noteObject?.properties?.summary?.length > this.summaryMaxLength;
     },
@@ -117,6 +161,7 @@ export default {
     open(note) {
       // a copy: the reset on close would otherwise revert the caller's note after it saved
       this.noteObject = structuredClone(note);
+      this.createdPageId = null;
       this.cloneProperties();
       this.$refs.metadataDrawer.open();
       this.$refs.propertiesForm?.initProperties();
@@ -143,6 +188,53 @@ export default {
     save() {
       this.$emit('metadata-updated', this.propertiesToSave);
       this.close();
+    },
+    /**
+     * Seals the new note's creation while the note is being created, and has
+     * its sections check what they hold; a refused value never blocks the
+     * creation, it stays on its field.
+     *
+     * @returns {void}
+     */
+    startCreation() {
+      this.creation.seal();
+      this.creation.validate();
+    },
+    /**
+     * Has the sections write what they hold on the note just created, then
+     * shows the note's own values in the drawer.
+     *
+     * @param {string|number} noteId the page id of the note just created
+     * @returns {Promise<Array<object>>} what the sections could not write, each with its label
+     */
+    commitCreation(noteId) {
+      const creation = this.creation;
+      return creation.commit(noteId)
+        .then(notSaved => {
+          this.createdPageId = noteId;
+          return notSaved;
+        })
+        .finally(() => creation.unseal());
+    },
+    /**
+     * Unseals the creation when the note could not be created: the sections
+     * keep what they hold for the next attempt.
+     *
+     * @returns {void}
+     */
+    abortCreation() {
+      this.creation.unseal();
+    },
+    /**
+     * Gives back what the sections hold for a new note that is dropped, and
+     * starts a fresh creation for the next one.
+     *
+     * @returns {void}
+     */
+    disposeCreation() {
+      this.creation.dispose();
+      this.creation = newNoteCreation();
+      this.createdPageId = null;
     },
     updateCurrentNoteObjectProperties(properties) {
       this.noteObject.properties.noteId = Number(properties.noteId);
