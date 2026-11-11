@@ -401,6 +401,7 @@
     <note-editor-metadata-drawer
       ref="metadataDrawer"
       :has-featured-image="hasFeaturedImage"
+      :read-only="!note.canManage"
       @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer

@@ -633,6 +633,39 @@ export default {
     openMetadataDrawer() {
       this.$refs.editorMetadataDrawer.open(this.noteObject);
     },
+    /**
+     * Seals the Properties sections' creation while a new note is created.
+     *
+     * @returns {void}
+     */
+    startCreation() {
+      this.$refs.editorMetadataDrawer?.startCreation();
+    },
+    /**
+     * Has the Properties sections write what they hold on the note just created.
+     *
+     * @param {string|number} noteId the page id of the note just created
+     * @returns {Promise<Array<object>>} what the sections could not write
+     */
+    commitCreation(noteId) {
+      return this.$refs.editorMetadataDrawer?.commitCreation(noteId) || Promise.resolve([]);
+    },
+    /**
+     * Unseals the Properties sections' creation when the note could not be created.
+     *
+     * @returns {void}
+     */
+    abortCreation() {
+      this.$refs.editorMetadataDrawer?.abortCreation();
+    },
+    /**
+     * Gives back what the Properties sections hold for a new note that is dropped.
+     *
+     * @returns {void}
+     */
+    disposeCreation() {
+      this.$refs.editorMetadataDrawer?.disposeCreation();
+    },
     displayAlert(detail) {
       document.dispatchEvent(new CustomEvent('alert-message', {detail: {
         alertType: detail?.type,
