@@ -5,7 +5,7 @@
     :aria-label="$t('notes.label.breadcrumbs')">
     <!-- WebKit drops the list role of a list whose bullets are hidden: it is stated again -->
     <!-- eslint-disable-next-line vuejs-accessibility/no-redundant-roles -->
-    <ol class="notes-tree-items d-flex align-center" role="list">
+    <ol class="notes-tree-items d-flex align-center pa-0 ma-0" role="list">
       <li
         v-for="item in breadcrumbItems"
         :key="item.key"
