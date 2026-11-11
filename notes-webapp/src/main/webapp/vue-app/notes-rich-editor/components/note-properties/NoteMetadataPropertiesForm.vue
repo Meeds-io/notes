@@ -177,6 +177,10 @@ export default {
     summaryLengthError() {
       return this.summaryContent?.length > this.summaryMaxLength;
     },
+    /**
+     * @returns {Array<string>} the summary's lines, as a read-only drawer
+     *          shows them; none for an empty summary
+     */
     summaryLines() {
       return this.summaryContent?.trim() ? this.summaryContent.split('\n') : [];
     },
