@@ -480,7 +480,7 @@ export default {
       let created = false;
       return this.$notesService.createNote(note).then(data => {
         created = true;
-        this.writeCreated(data.id, draftId);
+        this.writeCreated(data.id, draftId).catch(e => console.error('Error when announcing the created note', e));
         const draftNote = JSON.parse(localStorage.getItem(`draftNoteId-${this.note.id}-${this.selectedLanguage}`));
         document.dispatchEvent(new CustomEvent('update-processed-image-url', {detail: {
           content: data.content
