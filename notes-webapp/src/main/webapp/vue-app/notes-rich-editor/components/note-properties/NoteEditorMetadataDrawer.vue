@@ -113,10 +113,20 @@ export default {
     }
   },
   computed: {
+    /**
+     * @returns {string} the page id of the note shown: an existing note's own,
+     *          or the one a new note got at its creation; null for a new note
+     *          not created yet, a draft's own id never
+     */
     pageId() {
       const pageId = this.noteObject?.draftPage ? this.noteObject?.targetPageId : this.noteObject?.id;
       return pageId || this.createdPageId || null;
     },
+    /**
+     * @returns {object} what the drawer hands its add-on sections: the note,
+     *          its page id, its parent's, its language, whether the drawer is
+     *          editable and expanded, and the new note's creation
+     */
     sectionsParams() {
       return {
         note: this.noteObject,
