@@ -938,7 +938,7 @@ public class NoteMcpToolTest {
 
     IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class, () -> tool.deleteNote(NOTE_ID));
 
-    assertEquals("The home note of a space can't be deleted", refusal.getMessage());
+    assertEquals("The home note of a notebook can't be deleted", refusal.getMessage());
     verify(noteService, never()).deleteNote(anyString());
   }
 
