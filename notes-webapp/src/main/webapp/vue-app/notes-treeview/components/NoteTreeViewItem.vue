@@ -47,7 +47,7 @@
                 class="align-center" />
             </template>
           </v-list-item-avatar>
-          <v-list-item-content :class="showActions && 'pe-16'">
+          <v-list-item-content :class="showActions && 'pe-16 me-3'">
             <a
               :href="noteUrl"
               :aria-current="isActive(item) ? 'page' : null"
@@ -63,7 +63,7 @@
           </v-list-item-content>
           <v-list-item-icon
             v-if="!isDraftFilter && !isHomePage && hover"
-            class="drag-handle my-auto ml-1"
+            class="drag-handle my-auto ms-1"
             aria-hidden="true">
             <v-icon
               small>
