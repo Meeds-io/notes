@@ -57,7 +57,7 @@ import io.meeds.social.translation.service.TranslationService;
  */
 public class TestNoteServiceMcpDelete extends BaseTest {
 
-  private static final String PORTAL_NAME = "mcpDelete";
+  private static final String PORTAL_NAME = "classic";
 
   private NoteService         noteService;
 
