@@ -76,6 +76,26 @@ public class PageDAO extends WikiBaseDAO<PageEntity, Long> {
     return query.getResultList();
   }
 
+  /**
+   * Reads the tree of a notebook's pages that are not deleted, without
+   * loading any page: one row per page, in page id order.
+   *
+   * @param wikiType the notebook type
+   * @param wikiOwner the notebook owner, a group notebook's with or without
+   *          its leading slash
+   * @return one array per page: the page id, the parent page id (null for
+   *         the Home), the page name and the page owner
+   */
+  public List<Object[]> getPageTreeOfWiki(String wikiType, String wikiOwner) {
+    if (wikiType.toUpperCase().equals(WikiType.GROUP.name())) {
+      wikiOwner = validateGroupWikiOwner(wikiOwner);
+    }
+    return getEntityManager().createNamedQuery("wikiPage.getPageTreeOfWiki", Object[].class)
+                             .setParameter(TYPE_PARAM, wikiType)
+                             .setParameter(OWNER_PARAM, wikiOwner)
+                             .getResultList();
+  }
+
   public PageEntity getPageOfWikiByName(String wikiType, String wikiOwner, String pageName) {
 
     // We need to add the first "/" on the wiki owner if it's wiki group

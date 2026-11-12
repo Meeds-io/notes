@@ -49,6 +49,7 @@ import lombok.EqualsAndHashCode;
 @NamedQuery(name = "wikiPage.getPageOfWikiByName", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE p.name = :name AND w.type = :type AND w.owner = :owner AND p.deleted = false")
 @NamedQuery(name = "wikiPage.getAllPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner")
 @NamedQuery(name = "wikiPage.getPagesOfWiki", query = "SELECT p FROM WikiPageEntity p JOIN p.wiki w WHERE w.type = :type AND w.owner = :owner AND p.deleted = :deleted")
+@NamedQuery(name = "wikiPage.getPageTreeOfWiki", query = "SELECT p.id, pp.id, p.name, p.owner FROM WikiPageEntity p JOIN p.wiki w LEFT JOIN p.parentPage pp WHERE w.type = :type AND w.owner = :owner AND p.deleted = false ORDER BY p.id")
 @NamedQuery(name = "wikiPage.getChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id AND p.deleted = false ORDER BY p.position ASC, p.name ASC")
 @NamedQuery(name = "wikiPage.getAllChildrenPages", query = "SELECT p FROM WikiPageEntity p WHERE p.parentPage.id = :id ORDER BY p.position ASC, p.name ASC")
 @NamedQuery(name = "wikiPage.getRelatedPages", query = "SELECT p FROM WikiPageEntity p INNER JOIN p.relatedPages r where r.id = :pageId")
