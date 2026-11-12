@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -165,6 +166,20 @@ public class Utils {
 
   public static final Pattern                                    MENTION_PATTERN                  =
                                                                                  Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
+
+  /** The reason given to a request whose content language does not parse */
+  public static final String                                     UNREADABLE_LANG_MESSAGE          =
+                                                                                         "The language must be a locale such as fr, pt-BR or es_ES";
+
+  /**
+   * That reason as the JSON body the JAX-RS endpoints answer it with. A Spring
+   * endpoint throws a {@code ResponseStatusException(BAD_REQUEST, UNREADABLE_LANG_MESSAGE)}
+   * instead, whose reason reaches the error body as its {@code message} through
+   * portal's {@code PortalErrorAttributes} and
+   * {@code spring.web.error.include-message=always}.
+   */
+  public static final String                                     UNREADABLE_LANG_BODY             =
+                                                                                      "{\"message\":\"" + UNREADABLE_LANG_MESSAGE + "\"}";
 
   private static final String                                    NOTES_APPLICATION_CONTENT_ID     = "notes/Notes";
 
@@ -412,6 +427,19 @@ public class Utils {
       return ConversationState.getCurrent().getIdentity().getUserId();
     }
     return null; 
+  }
+
+  /**
+   * @param lang a content language received in a request
+   * @return true when the language is null or parses as a {@link Locale}
+   */
+  public static boolean isReadableLang(String lang) {
+    try {
+      LocaleUtils.toLocale(lang);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
   
   public static boolean isDescendantPage(Page page, Page parentPage) throws WikiException {

@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,6 +60,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.commons.utils.ObjectPageList;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.portal.config.UserACL;
@@ -198,6 +202,13 @@ public class NoteMcpToolTest {
     lenient().when(publicationPlugins.orderedStream()).thenAnswer(invocation -> publicationPluginList.stream());
 
     tool = new TestableNoteMcpTool();
+    // A note's content is sanitized for the current user, whom an MCP request always has
+    ConversationState.setCurrent(new ConversationState(currentIdentity));
+  }
+
+  @After
+  public void tearDown() {
+    ConversationState.setCurrent(null);
   }
 
   @Test(expected = ObjectNotFoundException.class)
@@ -270,6 +281,42 @@ public class NoteMcpToolTest {
     assertEquals("Note", result.title());
     assertEquals(true, result.canEdit());
     assertEquals(1, result.breadcrumb().size());
+  }
+
+  @Test
+  public void getNoteShouldReturnSanitizedContent() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+    assertEquals("<p>Content</p>", result.htmlContent());
+  }
+
+  @Test
+  public void getNoteShouldReturnEscapedContentWhenSanitizingFails() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
+      sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
+
+      NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+
+      assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Content</p>"), result.htmlContent());
+    }
+  }
+
+  @Test
+  public void getNoteShouldFailWithoutCurrentUser() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    ConversationState.setCurrent(null);
+
+    assertThrows(IllegalStateException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null)));
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -977,7 +1024,7 @@ public class NoteMcpToolTest {
 
     ArgumentCaptor<Page> captor = ArgumentCaptor.forClass(Page.class);
 
-    runWithStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
+    runWithConversationAndStaticMocks(() -> tool.restoreNoteVersion(NOTE_ID, 2L, null));
 
     verify(noteService).restoreVersionOfNote(eq("2"), captor.capture(), eq(USER));
     assertEquals("Old title", captor.getValue().getTitle());

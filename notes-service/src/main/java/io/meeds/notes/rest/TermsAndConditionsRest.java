@@ -19,6 +19,7 @@
 package io.meeds.notes.rest;
 
 
+import java.util.Locale;
 import java.util.Optional;
 
 import javax.ws.rs.Consumes;
@@ -27,6 +28,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +41,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
 import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.rest.api.RestUtils;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.model.TermsAndConditionPage;
 import io.meeds.notes.service.TermsAndConditionsService;
@@ -79,6 +83,9 @@ public class TermsAndConditionsRest {
                                                                         @Parameter(description = "User language")
                                                                         @RequestParam(name= "lang", required=false)
                                                                         String lang) {
+    if (!Utils.isReadableLang(lang)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, Utils.UNREADABLE_LANG_MESSAGE);
+    }
     TermsAndConditionPage termsAndConditionPage = termsAndConditionsService.getTermsAndConditions(lang);
     if (termsAndConditionPage == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -178,14 +185,19 @@ public class TermsAndConditionsRest {
   }
 
   private String transformContent(String content, String lang) {
+    ConversationState conversationState = ConversationState.getCurrent();
+    if (conversationState == null) {
+      throw new IllegalStateException("No current user to sanitize the terms and conditions content for");
+    }
+    Locale locale = StringUtils.isBlank(lang) ? null : LocaleUtils.toLocale(lang);
     try {
-      content = HtmlUtils.transform(content,
-                                    new HtmlTransformerContext(ConversationState.getCurrent().getIdentity(),
-                                      !lang.isBlank() ? LocaleUtils.toLocale(lang) : null));
-      return HTMLSanitizer.sanitize(content);
+      String transformedContent = HtmlUtils.transform(content,
+                                                      new HtmlTransformerContext(conversationState.getIdentity(), locale));
+      return HTMLSanitizer.sanitize(transformedContent);
     } catch (Exception e) {
-      LOG.warn("Error sanitizing terms and conditions content", e);
-      return content;
+      // Fails closed on a sanitizer failure: the stored body is returned as escaped text, never as markup
+      LOG.warn("Error sanitizing terms and conditions content, its escaped text is returned", e);
+      return content == null ? null : HTMLEntityEncoder.getInstance().encodeHTML(content);
     }
   }
 }

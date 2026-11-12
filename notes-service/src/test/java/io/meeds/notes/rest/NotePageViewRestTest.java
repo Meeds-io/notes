@@ -18,8 +18,11 @@
  */
 package io.meeds.notes.rest;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +35,8 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.mockito.MockedStatic;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
+import org.exoplatform.commons.utils.HTMLEntityEncoder;
+import org.exoplatform.commons.utils.HTMLSanitizer;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -47,6 +52,7 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.rest.api.RestUtils;
 import org.exoplatform.social.service.test.AbstractResourceTest;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.utils.Utils;
 
 import io.meeds.notes.service.NotePageViewService;
 import io.meeds.social.cms.service.CMSService;
@@ -176,6 +182,39 @@ public class NotePageViewRestTest extends AbstractResourceTest { // NOSONAR
     registerInternalUser(USERNAME);
     response = getNotePageWithETag(pageNoteName, null, eTagValue);
     assertEquals(200, response.getStatus());
+  }
+
+  public void testGetNotePageReturnsEscapedContentWhenSanitizingFails() throws Exception {
+    String pageNoteName = saveNotePageBody("<p>Body</p>");
+
+    registerInternalUser(USERNAME);
+    assertEquals("<p>Body</p>", getNotePage(pageNoteName, "en").getContent());
+    try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
+      sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
+
+      assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Body</p>"), getNotePage(pageNoteName, "en").getContent());
+    }
+  }
+
+  public void testGetNotePageAnswersBadRequestToAnUnreadableLang() throws Exception {
+    String pageNoteName = saveNotePageBody("<p>Body</p>");
+
+    registerInternalUser(USERNAME);
+    ContainerResponse response = getNotePageResponse(pageNoteName, "x");
+    assertEquals(400, response.getStatus());
+    assertEquals(Utils.UNREADABLE_LANG_BODY, response.getEntity());
+    assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getContentType());
+  }
+
+  private String saveNotePageBody(String content) throws Exception {
+    String pageNoteName = "pageNoteName" + RANDOM.nextLong();
+    String pageReference = createPage("pageName" + RANDOM.nextLong(), USERS_GROUP, ADMINISTRATORS_GROUP);
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, pageNoteName, pageReference, 0l, USER_IDENTITY_ID);
+    createUser(USERNAME);
+    registerAdministratorUser(USERNAME);
+    assertEquals(204, saveNotePage(pageNoteName, URLEncoder.encode(content, StandardCharsets.UTF_8), null).getStatus());
+    restartTransaction();
+    return pageNoteName;
   }
 
   private String createPage(String pageName, String accessPermission, String editPermission) {
