@@ -47,7 +47,7 @@
                 class="align-center" />
             </template>
           </v-list-item-avatar>
-          <v-list-item-content :class="showActions && 'pe-16'">
+          <v-list-item-content :class="showActions && 'pe-16 me-3'">
             <a
               :href="noteUrl"
               :aria-current="isActive(item) ? 'page' : null"
@@ -63,7 +63,7 @@
           </v-list-item-content>
           <v-list-item-icon
             v-if="!isDraftFilter && !isHomePage && hover"
-            class="drag-handle my-auto ml-1"
+            class="drag-handle my-auto ms-1"
             aria-hidden="true">
             <v-icon
               small>
@@ -77,7 +77,7 @@
       <div
         v-if="showActions && !isDraftFilter && !isHomePage"
         :class="$vuetify.rtl && 'l-0' || 'r-0'"
-        class="position-absolute t-0 b-0 me-7 d-flex align-center">
+        class="position-absolute t-0 b-0 me-8 d-flex align-center">
         <button
           :id="`noteMoveUp-${item.noteId}`"
           :disabled="position <= 0"
@@ -96,7 +96,7 @@
           :class="[{ 'v-btn--disabled': position >= siblingsCount - 1 }, !$root.isMobile && 'hover-reveal']"
           :aria-label="$t('notes.reorder.moveDown', [item.name])"
           type="button"
-          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          class="ms-1 v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: 1 })">
           <span class="v-btn__content">
             <v-icon size="14" aria-hidden="true">fas fa-arrow-down</v-icon>
