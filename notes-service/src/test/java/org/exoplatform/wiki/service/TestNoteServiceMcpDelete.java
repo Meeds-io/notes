@@ -135,7 +135,7 @@ public class TestNoteServiceMcpDelete extends BaseTest {
       tool.deleteNote(homeId);
       fail("The Home must not be deleted");
     } catch (IllegalArgumentException e) {
-      assertEquals("The home note of a space can't be deleted", e.getMessage());
+      assertEquals("The home note of a notebook can't be deleted", e.getMessage());
     }
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, NoteConstants.NOTE_HOME_NAME));
   }
