@@ -168,4 +168,56 @@ public class PageDAOTest extends BaseWikiJPAIntegrationTest {
     assertEquals("page1", fetchedPages.get(0).getName());
   }
 
+  /**
+   * The tree of a notebook, read on the real engine: one row per page that
+   * is not deleted, in page id order, with its parent id (null for the
+   * Home), name and owner; a deleted page and another notebook's pages are
+   * left out, and a group notebook's owner is found with or without its
+   * leading slash.
+   */
+  @Test
+  public void testGetPageTreeOfWiki() {
+    WikiEntity wiki = new WikiEntity();
+    wiki.setType("group");
+    wiki.setOwner("/spaces/tree");
+    wiki = wikiDAO.create(wiki);
+    WikiEntity otherWiki = new WikiEntity();
+    otherWiki.setType("group");
+    otherWiki.setOwner("/spaces/other");
+    otherWiki = wikiDAO.create(otherWiki);
+    PageEntity home = pageDAO.create(treePage(wiki, null, "WikiHome", null, false));
+    PageEntity child = pageDAO.create(treePage(wiki, home, "child", "john", false));
+    pageDAO.create(treePage(wiki, home, "deletedChild", "john", true));
+    PageEntity grandChild = pageDAO.create(treePage(wiki, child, "grandChild", "mary", false));
+    pageDAO.create(treePage(otherWiki, null, "WikiHome", null, false));
+
+    List<Object[]> tree = pageDAO.getPageTreeOfWiki("group", "spaces/tree");
+
+    assertEquals(3, tree.size());
+    assertTreeRow(tree.get(0), home.getId(), null, "WikiHome", null);
+    assertTreeRow(tree.get(1), child.getId(), home.getId(), "child", "john");
+    assertTreeRow(tree.get(2), grandChild.getId(), child.getId(), "grandChild", "mary");
+    assertEquals(3, pageDAO.getPageTreeOfWiki("group", "/spaces/tree").size());
+  }
+
+  private PageEntity treePage(WikiEntity wiki, PageEntity parent, String name, String owner, boolean deleted) {
+    PageEntity page = new PageEntity();
+    page.setWiki(wiki);
+    page.setParentPage(parent);
+    page.setName(name);
+    page.setTitle(name);
+    page.setOwner(owner);
+    page.setDeleted(deleted);
+    page.setCreatedDate(new Date());
+    page.setUpdatedDate(new Date());
+    return page;
+  }
+
+  private void assertTreeRow(Object[] row, long id, Long parentId, String name, String owner) {
+    assertEquals(id, ((Number) row[0]).longValue());
+    assertEquals(parentId, row[1] == null ? null : ((Number) row[1]).longValue());
+    assertEquals(name, row[2]);
+    assertEquals(owner, row[3]);
+  }
+
 }
