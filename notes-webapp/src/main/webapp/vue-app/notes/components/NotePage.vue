@@ -380,12 +380,13 @@
     <note-treeview-drawer
       ref="notesBreadcrumb" />
     <version-history-drawer
-      :versions="noteVersionsArray"
+      :versions="noteVersions"
       :can-manage="this.note.canManage"
-      :show-load-more="hasMoreVersions"
+      :is-loading="loadingVersions"
+      :source-params="{noteId: note.id}"
+      sources-extension="NotesHistory"
       @open-version="displayVersion($event)"
       @restore-version="restoreVersion($event)"
-      @load-more="loadMoreVersions"
       ref="noteVersionsHistoryDrawer" />
     <note-import-drawer
       ref="noteImportDrawer" />
@@ -428,7 +429,6 @@ export default {
   data() {
     return {
       actionsMenuOpened: false,
-      versionsPageSize: null,
       note: {},
       lastUpdatedTime: '',
       lang: eXo.env.portal.language,
@@ -460,6 +460,7 @@ export default {
       openTreeView: false,
       hideElementsForSavingPDF: false,
       noteVersions: [],
+      loadingVersions: false,
       actualVersion: {},
       noteContent: '',
       displayLastVersion: true,
@@ -661,15 +662,6 @@ export default {
           };
         }
       };
-    },
-    noteVersionsArray() {
-      return this.noteVersions.slice(0, this.versionsPageSize);
-    },
-    allNoteVersionsCount() {
-      return this.noteVersions.length;
-    },
-    hasMoreVersions() {
-      return this.allNoteVersionsCount > this.versionsPageSize;
     },
     isHomeNoteDefaultContent() {
       return !this.note.parentPageId && ( this.noteContent===`<h1> Welcome to Space ${this.spaceDisplayName} Notes Home </h1>` || this.noteContent === '');
@@ -1001,9 +993,6 @@ export default {
       const baseUrl = window.location.href;
       return `${baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1)}${noteId}`;
     },
-    loadMoreVersions() {
-      this.versionsPageSize += this.versionsPageSize;
-    },
     handlePopstate(event) {
       this.currentPath = window.location.pathname;
       this.isDraft = this.currentPath.endsWith('/draft');
@@ -1281,20 +1270,35 @@ export default {
     displayMessage(message) {
       this.$root.$emit('alert-message', message?.message, message?.type || 'success');
     },
+    /**
+     * Reads the note's versions in the selected translation, newest first,
+     * marks the newest one current and every other one not, then shows the
+     * newest. The History drawer's timeline waits while the flag is up.
+     * @param {string} noteId the note's id
+     * @returns {Promise} settled once the versions are read, or failed to be
+     */
     getNoteVersionByNoteId(noteId) {
-      this.noteVersionsArray = [];
+      this.loadingVersions = true;
       this.noteVersions = [];
       return this.$notesService.getNoteVersionsByNoteId(noteId, this.selectedTranslation?.value).then(data => {
-        this.noteVersions = data && data.reverse() || [];
+        const versions = data && data.reverse() || [];
+        versions.forEach((version, index) => version.current = index === 0);
+        this.noteVersions = versions;
         if (this.noteVersions.length) {
           this.displayVersion(this.noteVersions[0]);
           this.$root.$emit('version-restored', this.noteVersions[0]);
         }
-      });
+      }).finally(() => this.loadingVersions = false);
     },
+    /**
+     * Shows a version's content and properties on the page. It leaves the
+     * versions' current flag as getNoteVersionByNoteId set it: the newest
+     * version stays the current one whichever version is shown.
+     * @param {Object} version the version to show
+     * @returns {void}
+     */
     displayVersion(version) {
       this.actualVersion = version;
-      this.actualVersion.current = true;
       this.note.content = version?.content;
       this.note.title = version?.title;
       // The summary and featured image (cover) are metadata stored per
@@ -1332,13 +1336,12 @@ export default {
           this.getNoteVersionByNoteId(this.note.id);
         });
     },
+    /**
+     * Opens the note's History, never a draft's.
+     * @returns {void}
+     */
     openNoteVersionsHistoryDrawer() {
       if (!this.isDraft) {
-        if ( this.note.canManage ) {
-          this.versionsPageSize = Math.round((window.innerHeight-79)/80);
-        } else {
-          this.versionsPageSize = Math.round((window.innerHeight-79)/60);
-        }
         this.$refs.noteVersionsHistoryDrawer.open();
       }
       this.closeMobileActionMenu();
