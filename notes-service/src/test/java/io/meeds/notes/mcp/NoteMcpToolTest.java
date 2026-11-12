@@ -863,9 +863,35 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     when(noteService.canEditNote(note, USER)).thenReturn(true);
 
+    when(noteService.deleteNote(WIKI_TYPE, GROUP_ID, "note-" + NOTE_ID, currentIdentity)).thenReturn(true);
+
     tool.deleteNote(NOTE_ID);
 
-    verify(noteService).deleteNote(String.valueOf(NOTE_ID));
+    verify(noteService).deleteNote(WIKI_TYPE, GROUP_ID, "note-" + NOTE_ID, currentIdentity);
+    verify(noteService, never()).deleteNote(anyString());
+  }
+
+  /**
+   * The Home of a notebook is refused with the tool's own sentence: the
+   * listening deletion answers false for it and deletes nothing.
+   * Mutant: the answer ignored (the call returns as if the note were
+   * deleted).
+   *
+   * @throws Exception never
+   */
+  @Test
+  public void deleteNoteShouldRefuseTheHome() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Home");
+
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    when(noteService.canViewNote(note, USER)).thenReturn(true);
+    when(noteService.canEditNote(note, USER)).thenReturn(true);
+    when(noteService.deleteNote(WIKI_TYPE, GROUP_ID, "note-" + NOTE_ID, currentIdentity)).thenReturn(false);
+
+    IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class, () -> tool.deleteNote(NOTE_ID));
+
+    assertEquals("The home note of a space can't be deleted", refusal.getMessage());
+    verify(noteService, never()).deleteNote(anyString());
   }
 
   /**

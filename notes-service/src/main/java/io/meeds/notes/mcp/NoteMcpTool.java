@@ -140,7 +140,9 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final String     NOTE_EDIT_DENIED     = "User isn't allowed to update the Note with id '%s'";
 
-  private static final String     TARGET_OUTSIDE_SCOPE = "Note '%s' isn't in the space this call is limited to";
+  private static final String     HOME_NOTE_DELETE_DENIED = "The home note of a space can't be deleted";
+
+  private static final String     TARGET_OUTSIDE_SCOPE ="Note '%s' isn't in the space this call is limited to";
 
   private static final String     TARGET_UNDER_NOTE    =
                                                    "Note '%s' can't move under itself or one of its own sub-notes";
@@ -605,13 +607,29 @@ public class NoteMcpTool implements McpToolPlugin {
     return toActivityModel(activityId);
   }
 
+  /**
+   * Deletes a note the current user may edit, with every note below it,
+   * through the deletion the Notes app runs: each deleted page reaches the
+   * page listeners (the search index, the add-ons that keep data on a note)
+   * and the note's deletion is broadcast. A notebook's Home is never
+   * deleted.
+   *
+   * @param noteId the id of the note to delete
+   * @throws IllegalAccessException when the current user may not edit the
+   *           note
+   * @throws ObjectNotFoundException when no note has this id
+   * @throws IllegalArgumentException when the note is a notebook's Home
+   */
+  @SneakyThrows
   public void deleteNote(long noteId) throws IllegalAccessException, ObjectNotFoundException {
     Page note = getNoteById(noteId);
     Identity currentUserAclIdentity = getCurrentUserAclIdentity();
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
-    noteService.deleteNote(String.valueOf(noteId));
+    if (!noteService.deleteNote(note.getWikiType(), note.getWikiOwner(), note.getName(), currentUserAclIdentity)) {
+      throw new IllegalArgumentException(HOME_NOTE_DELETE_DENIED);
+    }
   }
 
   /**
