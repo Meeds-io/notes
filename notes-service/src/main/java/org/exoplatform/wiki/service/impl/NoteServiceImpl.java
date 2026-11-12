@@ -76,6 +76,7 @@ import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.ImportList;
 import org.exoplatform.wiki.model.NoteToExport;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageTreeEntry;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.PermissionType;
@@ -1103,6 +1104,14 @@ public class NoteServiceImpl implements NoteService {
   @Override
   public List<Page> getNotesOfWiki(String noteType, String noteOwner) {
     return dataStorage.getPagesOfWiki(noteType, noteOwner);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<PageTreeEntry> getPageTreeOfWiki(String noteType, String noteOwner) {
+    return dataStorage.getPageTreeOfWiki(noteType, noteOwner);
   }
 
   /**

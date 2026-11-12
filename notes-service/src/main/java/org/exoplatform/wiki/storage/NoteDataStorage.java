@@ -58,6 +58,7 @@ import org.exoplatform.wiki.jpa.entity.WikiEntity;
 import org.exoplatform.wiki.jpa.search.WikiElasticSearchServiceConnector;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageTreeEntry;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.Wiki;
@@ -487,6 +488,30 @@ public class NoteDataStorage {
     pageEntity.setRelatedPages(relatedPages);
 
     pageDAO.update(pageEntity);
+  }
+
+  /**
+   * Reads the tree of a notebook's pages that are not deleted, in page id
+   * order, without loading or converting any page.
+   *
+   * @param wikiType the notebook type
+   * @param wikiOwner the notebook owner
+   * @return one entry per page
+   */
+  public List<PageTreeEntry> getPageTreeOfWiki(String wikiType, String wikiOwner) {
+    if (StringUtils.isBlank(wikiOwner)) {
+      throw new IllegalArgumentException("wikiOwner is mandatory argument");
+    }
+    if (StringUtils.isBlank(wikiType)) {
+      throw new IllegalArgumentException("wikiType is mandatory argument");
+    }
+    return pageDAO.getPageTreeOfWiki(wikiType, wikiOwner)
+                  .stream()
+                  .map(row -> new PageTreeEntry(((Number) row[0]).longValue(),
+                                                row[1] == null ? null : ((Number) row[1]).longValue(),
+                                                (String) row[2],
+                                                (String) row[3]))
+                  .toList();
   }
 
   public List<Page> getPagesOfWiki(String wikiType, String wikiOwner) {
