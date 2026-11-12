@@ -77,7 +77,7 @@
       <div
         v-if="showActions && !isDraftFilter && !isHomePage"
         :class="$vuetify.rtl && 'l-0' || 'r-0'"
-        class="position-absolute t-0 b-0 me-7 d-flex align-center">
+        class="position-absolute t-0 b-0 me-8 d-flex align-center">
         <button
           :id="`noteMoveUp-${item.noteId}`"
           :disabled="position <= 0"
@@ -96,7 +96,7 @@
           :class="[{ 'v-btn--disabled': position >= siblingsCount - 1 }, !$root.isMobile && 'hover-reveal']"
           :aria-label="$t('notes.reorder.moveDown', [item.name])"
           type="button"
-          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          class="ms-1 v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: 1 })">
           <span class="v-btn__content">
             <v-icon size="14" aria-hidden="true">fas fa-arrow-down</v-icon>
