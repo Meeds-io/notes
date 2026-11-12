@@ -141,7 +141,7 @@ public class NoteMcpTool implements McpToolPlugin {
 
   private static final String     NOTE_EDIT_DENIED     = "User isn't allowed to update the Note with id '%s'";
 
-  private static final String     HOME_NOTE_DELETE_DENIED = "The home note of a space can't be deleted";
+  private static final String     HOME_NOTE_DELETE_DENIED = "The home note of a notebook can't be deleted";
 
   private static final String     TARGET_OUTSIDE_SCOPE = "Note '%s' isn't in the space this call is limited to";
 
