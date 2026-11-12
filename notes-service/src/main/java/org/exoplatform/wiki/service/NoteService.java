@@ -30,6 +30,7 @@ import org.exoplatform.wiki.WikiException;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.NoteToExport;
 import org.exoplatform.wiki.model.Page;
+import org.exoplatform.wiki.model.PageTreeEntry;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
 import org.exoplatform.wiki.model.PermissionType;
@@ -601,6 +602,24 @@ public interface NoteService {
    * @return List of pages
    */
   List<Page> getNotesOfWiki(String noteType, String noteOwner);
+
+  /**
+   * Reads where every page of a notebook sits, without its content: the
+   * id, parent id, name and owner of each page that is not deleted, in page
+   * id order, with no conversion to {@link Page}. A caller that walks a whole
+   * notebook (a listing, a subtree) reads it once instead of loading every
+   * page.
+   * <p>
+   * No permission is checked: like {@link #getNotesOfWiki(String, String)},
+   * it is a storage read for trusted callers. The caller checks each page it
+   * serves, through the {@code notes} ACL plugin or
+   * {@link #canViewNote(Page, String)}.
+   *
+   * @param noteType the notebook type: portal, group or user
+   * @param noteOwner the notebook owner
+   * @return one entry per page that is not deleted
+   */
+  List<PageTreeEntry> getPageTreeOfWiki(String noteType, String noteOwner);
 
   /**
    * Check if the given note is existing
