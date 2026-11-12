@@ -18,59 +18,92 @@
 -->
 <template>
   <div role="listitem">
-    <v-hover
-      v-model="hover">
-      <v-list-item
-        :class="[
-          'tree-item v-list-item--link rounded mx-1 my-1 pe-0',
-          { 'v-list-item--active primary--text': isActive(item) },
-          { 'ps-1': level === 0 }
-        ]"
-        :style="{ paddingLeft: `${level * 20 + 8}px` }"
-        :ripple="false"
-        role="presentation"
-        dense
-        @click.native="handleOpenNote($event, item)">
-        <v-list-item-avatar
-          size="30"
-          class="my-auto me-0 expand-icon align-center"
-          @click.stop="toggle($event, item)">
-          <template>
-            <note-treeview-sidebar-item-prepend
-              :note="item"
-              :space-note="spaceNote"
-              :note-wiki-owner="noteWikiOwner"
-              :space-group-id="spaceGroupId"
-              :open="isOpen(item.noteId)"
-              :is-draft-filter="isDraftFilter"
-              class="align-center" />
-          </template>
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <a
-            :href="noteUrl"
-            :aria-current="isActive(item) ? 'page' : null"
-            class="note-tree-link d-block text-truncate text-decoration-none">
-            <v-list-item-title
-              :class="[
-                'text-truncate d-flex align-center',
-                isActive(item) ? 'font-weight-medium primary--text text-decoration-underline' : 'text-color'
-              ]">
-              <span class="text-truncate">{{ name }}</span>
-            </v-list-item-title>
-          </a>
-        </v-list-item-content>
-        <v-list-item-icon
-          v-if="!isDraftFilter && !isHomePage && hover"
-          class="drag-handle my-auto ml-1"
-          aria-hidden="true">
-          <v-icon
-            small>
-            fas fa-grip-vertical
-          </v-icon>
-        </v-list-item-icon>
-      </v-list-item>
-    </v-hover>
+    <div class="position-relative hover-reveal-parent">
+      <v-hover
+        v-model="hover">
+        <v-list-item
+          :class="[
+            'tree-item v-list-item--link rounded mx-1 my-1 pe-0',
+            { 'v-list-item--active primary--text': isActive(item) },
+            { 'ps-1': level === 0 }
+          ]"
+          :style="{ paddingLeft: `${level * 20 + 8}px` }"
+          :ripple="false"
+          role="presentation"
+          dense
+          @click.native="handleOpenNote($event, item)">
+          <v-list-item-avatar
+            size="30"
+            class="my-auto me-0 expand-icon align-center"
+            @click.stop="toggle($event, item)">
+            <template>
+              <note-treeview-sidebar-item-prepend
+                :note="item"
+                :space-note="spaceNote"
+                :note-wiki-owner="noteWikiOwner"
+                :space-group-id="spaceGroupId"
+                :open="isOpen(item.noteId)"
+                :is-draft-filter="isDraftFilter"
+                class="align-center" />
+            </template>
+          </v-list-item-avatar>
+          <v-list-item-content :class="showActions && 'pe-16'">
+            <a
+              :href="noteUrl"
+              :aria-current="isActive(item) ? 'page' : null"
+              class="note-tree-link d-block text-truncate text-decoration-none">
+              <v-list-item-title
+                :class="[
+                  'text-truncate d-flex align-center',
+                  isActive(item) ? 'font-weight-medium primary--text text-decoration-underline' : 'text-color'
+                ]">
+                <span class="text-truncate">{{ name }}</span>
+              </v-list-item-title>
+            </a>
+          </v-list-item-content>
+          <v-list-item-icon
+            v-if="!isDraftFilter && !isHomePage && hover"
+            class="drag-handle my-auto ml-1"
+            aria-hidden="true">
+            <v-icon
+              small>
+              fas fa-grip-vertical
+            </v-icon>
+          </v-list-item-icon>
+        </v-list-item>
+      </v-hover>
+      <!-- plain buttons drawn as Vuetify's x-small icon buttons: no component instance per note, revealed by the
+           platform's hover-reveal helpers on the item's hover or keyboard focus -->
+      <div
+        v-if="showActions && !isDraftFilter && !isHomePage"
+        :class="$vuetify.rtl && 'l-0' || 'r-0'"
+        class="position-absolute t-0 b-0 me-7 d-flex align-center">
+        <button
+          :id="`noteMoveUp-${item.noteId}`"
+          :disabled="position <= 0"
+          :class="[{ 'v-btn--disabled': position <= 0 }, !$root.isMobile && 'hover-reveal']"
+          :aria-label="$t('notes.reorder.moveUp', [item.name])"
+          type="button"
+          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          @click="$emit('move-note', { item, direction: -1 })">
+          <span class="v-btn__content">
+            <v-icon size="14" aria-hidden="true">fas fa-arrow-up</v-icon>
+          </span>
+        </button>
+        <button
+          :id="`noteMoveDown-${item.noteId}`"
+          :disabled="position >= siblingsCount - 1"
+          :class="[{ 'v-btn--disabled': position >= siblingsCount - 1 }, !$root.isMobile && 'hover-reveal']"
+          :aria-label="$t('notes.reorder.moveDown', [item.name])"
+          type="button"
+          class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
+          @click="$emit('move-note', { item, direction: 1 })">
+          <span class="v-btn__content">
+            <v-icon size="14" aria-hidden="true">fas fa-arrow-down</v-icon>
+          </span>
+        </button>
+      </div>
+    </div>
     <div
       v-show="isOpen(item.noteId) && item.hasChild"
       class="tree-children">
@@ -85,10 +118,13 @@
         :parent-id="item.noteId"
         :is-draft-filter="isDraftFilter"
         :level="level + 1"
+        :show-actions="showActions"
         @fetch-children="$emit('fetch-children', $event)"
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
         @reorder="$emit('reorder', $event)"
+        @reorder-items="$emit('reorder-items', $event)"
+        @move-announce="$emit('move-announce', $event)"
         @action="$emit('action', $event)" />
       <v-list-item
         v-else-if="item.isLoading"
@@ -141,6 +177,18 @@ export default {
       default: false
     },
     level: {
+      type: Number,
+      default: 0
+    },
+    showActions: {
+      type: Boolean,
+      default: false
+    },
+    position: {
+      type: Number,
+      default: 0
+    },
+    siblingsCount: {
       type: Number,
       default: 0
     }
