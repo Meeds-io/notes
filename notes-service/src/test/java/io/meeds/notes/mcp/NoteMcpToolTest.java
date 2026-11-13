@@ -308,7 +308,7 @@ public class NoteMcpToolTest {
     when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
     when(noteService.canViewNote(note, USER)).thenReturn(true);
 
-    NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+    NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
 
     assertEquals("<p>Content</p>", result.htmlContent());
   }
@@ -322,7 +322,7 @@ public class NoteMcpToolTest {
     try (MockedStatic<HTMLSanitizer> sanitizer = mockStatic(HTMLSanitizer.class)) {
       sanitizer.when(() -> HTMLSanitizer.sanitize(anyString())).thenThrow(new IllegalStateException("sanitizer failure"));
 
-      NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null));
+      NoteModel result = runWithConversationAndStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null));
 
       assertEquals(HTMLEntityEncoder.getInstance().encodeHTML("<p>Content</p>"), result.htmlContent());
     }
@@ -335,7 +335,7 @@ public class NoteMcpToolTest {
     when(noteService.canViewNote(note, USER)).thenReturn(true);
     ConversationState.setCurrent(null);
 
-    assertThrows(IllegalStateException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null)));
+    assertThrows(IllegalStateException.class, () -> runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, null, null, null)));
   }
 
   @Test(expected = IllegalArgumentException.class)
