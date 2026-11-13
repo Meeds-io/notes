@@ -151,7 +151,8 @@ export default {
       this.moveSaveTimer = window.setTimeout(() => {
         const moved = this.pendingMove;
         this.pendingMove = null;
-        this.onDragChange({ moved });
+        // the move was announced on each press: the save adds no message of its own
+        this.onDragChange({ moved, announced: true });
       }, 600);
       this.$emit('move-announce', this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]));
       const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
