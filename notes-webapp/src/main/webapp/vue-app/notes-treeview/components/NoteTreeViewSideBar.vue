@@ -531,9 +531,12 @@ export default {
           sourceOrderedIds: [],
           targetOrderedIds: []
         };
+        this.reorderPayloadFresh = true;
       }
-      // kept out of the payload, which is sent as the request body
-      this.reorderAnnounced = !!event.announced;
+      // kept out of the payload, which is sent as the request body: a save merging several moves
+      // stays silent only when every one of them was announced
+      this.reorderAnnounced = (this.reorderPayloadFresh || this.reorderAnnounced) && !!event.announced;
+      this.reorderPayloadFresh = false;
       if (event.moved) {
         this.dragPayload.pageId = event.moved.element.noteId;
         this.dragPayload.pageName = this.selectedNoteName;
