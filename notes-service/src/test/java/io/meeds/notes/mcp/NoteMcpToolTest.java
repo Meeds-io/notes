@@ -147,8 +147,10 @@ public class NoteMcpToolTest {
 
   private static final String     PLUGIN_ACTIVITY_ID = "55";
 
+  // Written as the sanitizer returns it, so the content a part is cut from is
+  // this text as is
   private static final String     LONG_HTML      =
-                                            "<p>Hello <b>world</b></p><p>a&amp;b <a href=\"https://meeds.test/x?a=1&amp;b=2\">link</a></p>";
+                                            "<p>Hello <b>world</b></p><p>a&amp;b <a href=\"https://meeds.test/x?a&#61;1&amp;b&#61;2\" rel=\"nofollow\">link</a></p>";
 
   private static final JsonMapper JSON           = JsonMapper.builder().build();
 
@@ -2088,12 +2090,12 @@ public class NoteMcpToolTest {
    */
   @Test
   public void getNoteWithATagLongerThanMaxCharsShouldReturnTheTag() throws Exception { // NOSONAR
-    String html = "<img src=\"https://meeds.test/a-long-image-path.png\"><p>after</p>";
+    String html = "<img src=\"https://meeds.test/a-long-image-path.png\" /><p>after</p>";
     stubNoteContent(html);
 
     NoteModel result = runWithStaticMocks(() -> tool.getNote(NOTE_ID, null, 0L, 5, null));
 
-    assertEquals("<img src=\"https://meeds.test/a-long-image-path.png\">", result.htmlContent());
+    assertEquals("<img src=\"https://meeds.test/a-long-image-path.png\" />", result.htmlContent());
     assertEquals(Integer.valueOf(html.indexOf("<p>")), result.nextOffset());
   }
 
