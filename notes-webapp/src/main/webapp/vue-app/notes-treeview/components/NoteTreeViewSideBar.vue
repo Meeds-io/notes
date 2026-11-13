@@ -531,7 +531,12 @@ export default {
           sourceOrderedIds: [],
           targetOrderedIds: []
         };
+        this.reorderPayloadFresh = true;
       }
+      // kept out of the payload, which is sent as the request body: a save merging several moves
+      // stays silent only when every one of them was announced
+      this.reorderAnnounced = (this.reorderPayloadFresh || this.reorderAnnounced) && !!event.announced;
+      this.reorderPayloadFresh = false;
       if (event.moved) {
         this.dragPayload.pageId = event.moved.element.noteId;
         this.dragPayload.pageName = this.selectedNoteName;
@@ -561,6 +566,8 @@ export default {
     },
     executeDragAndDropApi() {
       const requestData = { ...this.dragPayload };
+      const announced = this.reorderAnnounced;
+      this.reorderAnnounced = false;
       const generation = this.reorderGeneration || 0;
       // each request sends the whole order of the siblings: they are sent one after the other,
       // so that the last order shown is the last one stored
@@ -572,7 +579,11 @@ export default {
           }
           return this.$notesService.updateNotesOrder(requestData)
             .then(() => {
-              this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+              // a move made with the Move up / Move down buttons is already announced by the tree's live region:
+              // a success alert would interrupt it
+              if (!announced) {
+                this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+              }
               this.$root.$emit('reorder-notes', requestData);
             })
             .catch(() => {
