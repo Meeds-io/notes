@@ -85,6 +85,52 @@
       </v-sheet>
     </label>
     <div
+      v-if="canPickNoteImage"
+      class="note-properties-pick-image d-flex mt-2">
+      <v-menu
+        v-model="pickNoteImageMenu"
+        attach
+        max-height="300"
+        offset-y
+        bottom
+        left>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            class="note-properties-pick-image-button ms-auto px-1"
+            text
+            v-bind="attrs"
+            v-on="on">
+            <v-icon
+              class="me-2 icon-default-color"
+              size="16">
+              fas fa-images
+            </v-icon>
+            <span class="text-body text-color">
+              {{ $t('notes.metadata.featuredImage.pick.label') }}
+            </span>
+          </v-btn>
+        </template>
+        <v-list
+          ref="pickNoteImageList"
+          class="d-flex flex-wrap pa-2"
+          max-width="300">
+          <v-list-item
+            v-for="image in noteImages"
+            :key="image.src"
+            class="note-properties-image-choice pa-1 flex-grow-0"
+            :title="image.alt || $t('notes.metadata.featuredImage.pick.imageAlt')"
+            @click="pickNoteImage(image)">
+            <v-img
+              :src="image.src"
+              :alt="image.alt || $t('notes.metadata.featuredImage.pick.imageAlt')"
+              width="80"
+              height="80"
+              class="card-border-radius" />
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </div>
+    <div
       v-if="readOnly"
       id="notePropertiesReadOnlySummary"
       :class="{'mt-5': canShowFeaturedImagePreview}">
@@ -134,6 +180,8 @@
 </template>
 
 <script>
+import {listContentImages, selectPickableImages} from '../../js/NoteImages.js';
+
 export default {
   data() {
     return {
@@ -149,6 +197,7 @@ export default {
       illustrationBaseUrl: `${eXo.env.portal.context}/${eXo.env.portal.rest}/notes/illustration/`,
       // Both arms of the featured-image v-if must match, or the form jumps.
       featuredImagePreviewHeight: 206,
+      pickNoteImageMenu: false,
     };
   },
   props: {
@@ -171,9 +220,32 @@ export default {
     readOnly: {
       type: Boolean,
       default: false
+    },
+    /**
+     * Whether the form offers to fill the note's properties from its content
+     * (the pick among the note's images). Set by the note's own Properties
+     * drawer only: the publish step and the articles' screens leave it off.
+     */
+    fillFromContent: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
+    /**
+     * @returns {Array<{src: string, alt: string}>} the images of the note's
+     *          content its featured image can be picked from
+     */
+    noteImages() {
+      return selectPickableImages(listContentImages(this.noteObject?.content), window.location.origin);
+    },
+    /**
+     * @returns {boolean} whether the pick among the note's images is offered:
+     *          in the note's own editable Properties, when the note shows one
+     */
+    canPickNoteImage() {
+      return this.fillFromContent && !this.readOnly && this.noteImages.length > 0;
+    },
     summaryLengthError() {
       return this.summaryContent?.length > this.summaryMaxLength;
     },
@@ -253,6 +325,20 @@ export default {
       }
       this.propertiesUpdated();
     },
+    /**
+     * Listens to the clicks on the document while the pick among the note's
+     * images is open, so that a click outside it closes it, and stops
+     * listening once it is closed.
+     *
+     * @returns {void}
+     */
+    pickNoteImageMenu() {
+      if (this.pickNoteImageMenu) {
+        document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+      } else {
+        document.removeEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+      }
+    },
   },
   created() {
     this.initProperties();
@@ -260,8 +346,18 @@ export default {
     this.$root.$on('image-uploaded', (uploadId) => this.uploadId = uploadId);
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
   },
+  /**
+   * Stops listening to the document's clicks when the form is destroyed while
+   * the pick among the note's images is open.
+   *
+   * @returns {void}
+   */
+  beforeDestroy() {
+    document.removeEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+  },
   methods: {
     initProperties() {
+      this.pickNoteImageMenu = false;
       this.noteObject = structuredClone(this.note);
       this.hasFeaturedImageValue = this.hasFeaturedImage;
       this.summaryContent = this.currentProperties?.summary || '';
@@ -297,6 +393,35 @@ export default {
         src: this.featuredImageLink
       });
     },
+    /**
+     * Opens the featured image's crop window on an image of the note: the
+     * crop, its upload and the Properties' Save then go as for an added image.
+     *
+     * @param {{src: string, alt: string}} image the image picked
+     * @returns {void}
+     */
+    pickNoteImage(image) {
+      this.pickNoteImageMenu = false;
+      this.$root.$emit('open-featured-image-drawer', {
+        altText: image.alt || '',
+        src: image.src
+      });
+    },
+    /**
+     * Closes the pick among the note's images on a click outside its list: an
+     * attached menu inside a drawer does not close on an outside click by
+     * itself (frontend-vue.md, « Closing a menu »). The activator's own click
+     * does not reach the document, so it never closes the menu it opens.
+     *
+     * @param {MouseEvent} event the click on the document
+     * @returns {void}
+     */
+    closePickNoteImageMenuOnOutsideClick(event) {
+      const list = this.$refs.pickNoteImageList?.$el;
+      if (!list?.contains(event.target)) {
+        this.pickNoteImageMenu = false;
+      }
+    },
     removeNoteFeaturedImage() {
       this.featuredImage = null;
       this.removeFeaturedImage = true;
@@ -310,6 +435,7 @@ export default {
       this.uploadId = null;
     },
     cancelChanges() {
+      this.pickNoteImageMenu = false;
       this.noteObject.properties = structuredClone(this.currentProperties || {});
       this.summaryContent = this.currentProperties?.summary || '';
       this.featuredImageAltText = this.savedFeaturedImageAltText;

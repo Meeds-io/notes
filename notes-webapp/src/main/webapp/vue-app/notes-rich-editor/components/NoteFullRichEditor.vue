@@ -85,6 +85,7 @@
       <note-editor-metadata-drawer
         ref="editorMetadataDrawer"
         :has-featured-image="hasFeaturedImage"
+        :fill-from-content="fillFromContent"
         @metadata-updated="metadataUpdated" />
       <note-editor-featured-image-drawer
         ref="featuredImageDrawer"
@@ -241,6 +242,14 @@ export default {
     targetSpaceId: {
       type: Number,
       default: null
+    },
+    /**
+     * Whether the Properties drawer offers to fill the note's properties from
+     * its content; set by the Notes editor only, never by Content's composer.
+     */
+    fillFromContent: {
+      type: Boolean,
+      default: false
     },
     canRedact: {
       type: Boolean,
