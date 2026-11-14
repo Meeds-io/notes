@@ -150,9 +150,32 @@
       v-else
       for="summaryInputEditor">
       <div class="mt-5">
-        <p class="text-color text-body mb-3">
-          {{ $t('notes.metadata.summary.label') }}
-        </p>
+        <div class="d-flex align-center mb-3">
+          <p class="text-color text-body mb-0">
+            {{ $t('notes.metadata.summary.label') }}
+          </p>
+          <v-tooltip
+            v-if="canAskSummary"
+            bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                :aria-label="$t('notes.metadata.summary.ask.label')"
+                :loading="openingAssistant"
+                class="note-properties-ask-summary ms-auto"
+                icon
+                v-bind="attrs"
+                v-on="on"
+                @click.prevent.stop="askSummary">
+                <v-icon
+                  class="icon-default-color"
+                  size="18">
+                  fa-concierge-bell
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('notes.metadata.summary.ask.label') }}</span>
+          </v-tooltip>
+        </div>
         <v-textarea
           v-model="summaryContent"
           name="summaryInputEditor"
@@ -181,6 +204,16 @@
 
 <script>
 import {listContentImages, selectPickableImages} from '../../js/NoteImages.js';
+import {
+  PROPERTIES_APPLICATION_ID,
+  PROPERTIES_EXTENSION_ID,
+  getBindings,
+  isSpaceSharedWithAssistant,
+  openAssistant
+} from '../../js/NoteAssistant.js';
+
+/** The binding that writes a note's summary from its content. */
+const SUMMARY_BINDING = 'Note-Summary';
 
 export default {
   data() {
@@ -198,6 +231,9 @@ export default {
       // Both arms of the featured-image v-if must match, or the form jumps.
       featuredImagePreviewHeight: 206,
       pickNoteImageMenu: false,
+      assistantBindings: [],
+      assistantLoad: 0,
+      openingAssistant: false,
     };
   },
   props: {
@@ -229,6 +265,14 @@ export default {
     fillFromContent: {
       type: Boolean,
       default: false
+    },
+    /**
+     * The space of the note the Properties drawer shows, as its caller knows
+     * it; none for a note outside spaces.
+     */
+    spaceId: {
+      type: [Number, String],
+      default: null
     }
   },
   computed: {
@@ -243,6 +287,21 @@ export default {
      * @returns {boolean} whether the pick among the note's images is offered:
      *          in the note's own editable Properties, when the note shows one
      */
+    /**
+     * @returns {object} the binding that writes the summary, when the
+     *          assistant offers it here; none otherwise
+     */
+    summaryBinding() {
+      return this.assistantBindings.find(binding => binding.nameId === SUMMARY_BINDING) || null;
+    },
+    /**
+     * @returns {boolean} whether the assistant is offered to write the
+     *          summary: in the note's own editable Properties, when the
+     *          assistant offers it and the note's space is shared with it
+     */
+    canAskSummary() {
+      return this.fillFromContent && !this.readOnly && !!this.summaryBinding;
+    },
     canPickNoteImage() {
       return this.fillFromContent && !this.readOnly && this.noteImages.length > 0;
     },
@@ -332,6 +391,32 @@ export default {
      *
      * @returns {void}
      */
+    /**
+     * Reads again what the assistant offers when the note's space changes.
+     *
+     * @returns {void}
+     */
+    spaceId() {
+      this.loadAssistantBindings();
+    },
+    /**
+     * Reads again what the assistant offers when the drawer turns editable
+     * or read-only.
+     *
+     * @returns {void}
+     */
+    readOnly() {
+      this.loadAssistantBindings();
+    },
+    /**
+     * Reads again what the assistant offers when the caller turns the
+     * filling from the content on or off.
+     *
+     * @returns {void}
+     */
+    fillFromContent() {
+      this.loadAssistantBindings();
+    },
     pickNoteImageMenu() {
       if (this.pickNoteImageMenu) {
         document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
@@ -342,6 +427,7 @@ export default {
   },
   created() {
     this.initProperties();
+    this.loadAssistantBindings();
     this.$root.$on('image-data', this.imageDataUpdated);
     this.$root.$on('image-uploaded', (uploadId) => this.uploadId = uploadId);
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
@@ -421,6 +507,59 @@ export default {
       if (!list?.contains(event.target)) {
         this.pickNoteImageMenu = false;
       }
+    },
+    /**
+     * Reads what the assistant offers in the note's Properties: nothing
+     * outside the note's own editable Properties, when the assistant is off,
+     * or in a space not shared with it, a space that cannot be read included.
+     * Only the latest read applies.
+     *
+     * @returns {Promise<void>} resolved once read
+     */
+    async loadAssistantBindings() {
+      const load = ++this.assistantLoad;
+      this.assistantBindings = [];
+      if (!this.fillFromContent || this.readOnly) {
+        return;
+      }
+      const [shared, bindings] = await Promise.all([
+        isSpaceSharedWithAssistant(this.spaceId),
+        getBindings(PROPERTIES_APPLICATION_ID, PROPERTIES_EXTENSION_ID),
+      ]);
+      if (load === this.assistantLoad) {
+        this.assistantBindings = shared && bindings || [];
+      }
+    },
+    /**
+     * Opens the assistant to write the note's summary from the content on
+     * screen, saved or not: the content is handed to the chat, not the note's
+     * id, whose stored version may be older. « Insert » puts the text in the
+     * Summary field; the Properties' Save saves it.
+     *
+     * @returns {void}
+     */
+    askSummary() {
+      this.openingAssistant = true;
+      openAssistant({
+        uxBindings: [this.summaryBinding],
+        properties: {
+          objectType: 'notes',
+          objectTitle: this.noteObject?.title || '',
+          objectContent: this.noteObject?.content || '',
+        },
+        insertText: this.insertSummary,
+      })
+        .catch(() => this.$root.$emit('alert-message', this.$t('notes.metadata.assistant.error'), 'error'))
+        .finally(() => this.openingAssistant = false);
+    },
+    /**
+     * Puts the assistant's answer in the Summary field, as plain text.
+     *
+     * @param {string} html the answer, as the chat inserts it
+     * @returns {void}
+     */
+    insertSummary(html) {
+      this.summaryContent = this.$utils.htmlToText(html || '').trim();
     },
     removeNoteFeaturedImage() {
       this.featuredImage = null;

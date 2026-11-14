@@ -86,6 +86,7 @@
         ref="editorMetadataDrawer"
         :has-featured-image="hasFeaturedImage"
         :fill-from-content="fillFromContent"
+        :space-id="propertiesSpaceId"
         @metadata-updated="metadataUpdated" />
       <note-editor-featured-image-drawer
         ref="featuredImageDrawer"
@@ -306,6 +307,13 @@ export default {
     },
     entityId() {
       return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
+    },
+    /**
+     * @returns {number|string} the space of the note being edited, as the
+     *          editor's extensions also get it; none outside spaces
+     */
+    propertiesSpaceId() {
+      return this.getURLQueryParam('spaceId') || this.targetSpaceId || null;
     },
     extensionParams() {
       return {
