@@ -50,10 +50,31 @@ import {
 } from '../../js/NoteAssistant.js';
 
 /**
+ * Reads a file as a data URL.
+ *
+ * @param {File} file the file to read
+ * @returns {Promise<string>} its content as a data URL; rejected when the
+ *          file is missing or cannot be read
+ */
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error('no file'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * « Ask AI » in the header of a note's own Properties: opens the assistant
  * with every enabled binding of the Properties' place, on the note's content
  * as it is on screen. A text answer is inserted in the Summary field, through
- * the drawer; Save then saves it.
+ * the drawer, and an image answer opens the featured image's crop window;
+ * Save then saves them.
  */
 export default {
   props: {
@@ -204,10 +225,32 @@ export default {
           params: {note_id: this.pageId || ''},
         },
         insertText: text => this.$emit('insert-text', text),
+        insertImage: this.insertImage,
       })
         .then(() => this.$emit('assistant-opened'))
         .catch(() => this.$root.$emit('alert-message', this.$t('notes.metadata.assistant.error'), 'error'))
         .finally(() => this.opening = false);
+    },
+    /**
+     * Opens an image the assistant made in the featured image's crop window,
+     * as an added image: the crop, its upload and the Properties' Save make
+     * it the featured image, and closing the window drops it. The image is
+     * handed as a data URL read from the file, as the window already takes
+     * the last crop back, so that no object URL outlives a cancelled crop, a
+     * closed window or a failed read; its type is left to the crop, as for a
+     * picked image, since a type the window reads as animated would skip the
+     * crop and its upload.
+     *
+     * @param {File} file the image the assistant made
+     * @returns {Promise<void>} resolved once the window is asked to open
+     */
+    insertImage(file) {
+      return readAsDataUrl(file)
+        .then(src => this.$root.$emit('open-featured-image-drawer', {
+          src,
+          altText: '',
+        }))
+        .catch(() => this.$root.$emit('alert-message', this.$t('notes.metadata.assistant.imageError'), 'error'));
     },
   },
 };
