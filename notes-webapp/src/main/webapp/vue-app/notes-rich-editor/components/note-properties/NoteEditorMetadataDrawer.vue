@@ -153,9 +153,10 @@ export default {
      * @returns {object} what the drawer hands its add-on sections: the note,
      *          its page id, its parent's, its language, whether the drawer is
      *          editable, expanded and open, the note's space as the
-     *          drawer's caller gives it (null when it gives none, undefined
-     *          while the caller does not know it yet or could not read it),
-     *          and the new note's creation
+     *          drawer's caller gives it (null when it gives none, left out
+     *          while the caller does not know it yet or could not read it, so
+     *          that the sections receive it undefined), and the new note's
+     *          creation
      */
     sectionsParams() {
       return {
@@ -166,7 +167,7 @@ export default {
         editable: !this.readOnly,
         expanded: this.expanded,
         open: this.drawer,
-        spaceId: this.spaceResolved ? (this.spaceId || null) : undefined,
+        ...(this.spaceResolved && {spaceId: this.spaceId || null}),
         creation: this.creation,
       };
     },
