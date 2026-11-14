@@ -325,6 +325,13 @@ export default {
       }
       this.propertiesUpdated();
     },
+    /**
+     * Listens to the clicks on the document while the pick among the note's
+     * images is open, so that a click outside it closes it, and stops
+     * listening once it is closed.
+     *
+     * @returns {void}
+     */
     pickNoteImageMenu() {
       if (this.pickNoteImageMenu) {
         document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
@@ -339,6 +346,12 @@ export default {
     this.$root.$on('image-uploaded', (uploadId) => this.uploadId = uploadId);
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
   },
+  /**
+   * Stops listening to the document's clicks when the form is destroyed while
+   * the pick among the note's images is open.
+   *
+   * @returns {void}
+   */
   beforeDestroy() {
     document.removeEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
   },
