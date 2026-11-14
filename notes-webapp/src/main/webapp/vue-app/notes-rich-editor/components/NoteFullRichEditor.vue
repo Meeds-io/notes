@@ -254,6 +254,14 @@ export default {
       default: false
     },
     /**
+     * The space of the note being edited, as the caller read it for the
+     * note's Properties; none outside spaces or while unknown.
+     */
+    noteSpaceId: {
+      type: [Number, String],
+      default: null
+    },
+    /**
      * Whether the caller knows the note's space: false while a note in a
      * space waits for its space's id, or when it could not be read.
      */
@@ -318,11 +326,12 @@ export default {
       return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
     },
     /**
-     * @returns {number|string} the space of the note being edited, as the
-     *          editor's extensions also get it; none outside spaces
+     * @returns {number|string} the space of the note being edited, for its
+     *          Properties: the one the caller read, else the one the
+     *          editor's extensions get; none outside spaces
      */
     propertiesSpaceId() {
-      return this.getURLQueryParam('spaceId') || this.targetSpaceId || null;
+      return this.noteSpaceId || this.getURLQueryParam('spaceId') || this.targetSpaceId || null;
     },
     extensionParams() {
       return {
