@@ -97,7 +97,6 @@
         <template #activator="{ on, attrs }">
           <v-btn
             class="note-properties-pick-image-button ms-auto px-1"
-            small
             text
             v-bind="attrs"
             v-on="on">
