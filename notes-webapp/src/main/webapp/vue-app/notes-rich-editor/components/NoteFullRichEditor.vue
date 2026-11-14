@@ -87,6 +87,7 @@
         :has-featured-image="hasFeaturedImage"
         :fill-from-content="fillFromContent"
         :space-id="propertiesSpaceId"
+        :space-resolved="spaceResolved"
         @metadata-updated="metadataUpdated" />
       <note-editor-featured-image-drawer
         ref="featuredImageDrawer"
@@ -251,6 +252,14 @@ export default {
     fillFromContent: {
       type: Boolean,
       default: false
+    },
+    /**
+     * Whether the caller knows the note's space: false while a note in a
+     * space waits for its space's id, or when it could not be read.
+     */
+    spaceResolved: {
+      type: Boolean,
+      default: true
     },
     canRedact: {
       type: Boolean,

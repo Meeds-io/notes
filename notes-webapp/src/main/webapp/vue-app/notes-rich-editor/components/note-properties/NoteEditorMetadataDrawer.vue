@@ -52,6 +52,7 @@
               :read-only="readOnly"
               :fill-from-content="fillFromContent"
               :space-id="spaceId"
+              :space-resolved="spaceResolved"
               @properties-updated="propertiesUpdated" />
           </div>
           <div
@@ -128,6 +129,14 @@ export default {
     spaceId: {
       type: [Number, String],
       default: null
+    },
+    /**
+     * Whether the caller knows the note's space; false while a note in a
+     * space waits for its space's id, or when it could not be read.
+     */
+    spaceResolved: {
+      type: Boolean,
+      default: true
     }
   },
   computed: {
@@ -143,8 +152,9 @@ export default {
     /**
      * @returns {object} what the drawer hands its add-on sections: the note,
      *          its page id, its parent's, its language, whether the drawer is
-     *          editable, expanded and open, the note's space (null outside
-     *          spaces), and the new note's creation
+     *          editable, expanded and open, the note's space as the
+     *          drawer's caller gives it (null when it gives none), and the
+     *          new note's creation
      */
     sectionsParams() {
       return {
