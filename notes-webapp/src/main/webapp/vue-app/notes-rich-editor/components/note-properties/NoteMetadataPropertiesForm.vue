@@ -111,6 +111,7 @@
           </v-btn>
         </template>
         <v-list
+          ref="pickNoteImageList"
           class="d-flex flex-wrap pa-2"
           max-width="300">
           <v-list-item
@@ -324,6 +325,13 @@ export default {
       }
       this.propertiesUpdated();
     },
+    pickNoteImageMenu() {
+      if (this.pickNoteImageMenu) {
+        document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+      } else {
+        document.removeEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+      }
+    },
   },
   created() {
     this.initProperties();
@@ -331,8 +339,12 @@ export default {
     this.$root.$on('image-uploaded', (uploadId) => this.uploadId = uploadId);
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
   },
+  beforeDestroy() {
+    document.removeEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
+  },
   methods: {
     initProperties() {
+      this.pickNoteImageMenu = false;
       this.noteObject = structuredClone(this.note);
       this.hasFeaturedImageValue = this.hasFeaturedImage;
       this.summaryContent = this.currentProperties?.summary || '';
@@ -382,6 +394,21 @@ export default {
         src: image.src
       });
     },
+    /**
+     * Closes the pick among the note's images on a click outside its list: an
+     * attached menu inside a drawer does not close on an outside click by
+     * itself (frontend-vue.md, « Closing a menu »). The activator's own click
+     * does not reach the document, so it never closes the menu it opens.
+     *
+     * @param {MouseEvent} event the click on the document
+     * @returns {void}
+     */
+    closePickNoteImageMenuOnOutsideClick(event) {
+      const list = this.$refs.pickNoteImageList?.$el;
+      if (!list?.contains(event.target)) {
+        this.pickNoteImageMenu = false;
+      }
+    },
     removeNoteFeaturedImage() {
       this.featuredImage = null;
       this.removeFeaturedImage = true;
@@ -395,6 +422,7 @@ export default {
       this.uploadId = null;
     },
     cancelChanges() {
+      this.pickNoteImageMenu = false;
       this.noteObject.properties = structuredClone(this.currentProperties || {});
       this.summaryContent = this.currentProperties?.summary || '';
       this.featuredImageAltText = this.savedFeaturedImageAltText;
