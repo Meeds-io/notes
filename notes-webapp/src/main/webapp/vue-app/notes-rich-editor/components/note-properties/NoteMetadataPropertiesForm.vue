@@ -566,7 +566,7 @@ export default {
         uxBindings: this.assistantBindings,
         properties: {
           objectType: 'notes',
-          objectTitle: this.noteObject?.title || '',
+          objectTitle: this.noteObject?.title || this.$t('notes.untitled.title'),
           objectContent: this.noteObject?.content || '',
         },
         insertText: this.insertSummary,
