@@ -150,33 +150,9 @@
       v-else
       for="summaryInputEditor">
       <div class="mt-5">
-        <div class="d-flex align-center mb-3">
-          <p class="text-color text-body mb-0">
-            {{ $t('notes.metadata.summary.label') }}
-          </p>
-          <v-tooltip
-            v-if="canAskSummary"
-            bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                :aria-label="$t('notes.metadata.summary.ask.label')"
-                :loading="openingAssistant"
-                :disabled="!hasContentToSummarise"
-                class="note-properties-ask-summary ms-auto"
-                icon
-                v-bind="attrs"
-                v-on="on"
-                @click.prevent.stop="askSummary">
-                <v-icon
-                  class="icon-default-color"
-                  size="18">
-                  fa-concierge-bell
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('notes.metadata.summary.ask.label') }}</span>
-          </v-tooltip>
-        </div>
+        <p class="text-color text-body mb-3">
+          {{ $t('notes.metadata.summary.label') }}
+        </p>
         <v-textarea
           v-model="summaryContent"
           name="summaryInputEditor"
@@ -205,13 +181,6 @@
 
 <script>
 import {listContentImages, selectPickableImages} from '../../js/NoteImages.js';
-import {
-  PROPERTIES_APPLICATION_ID,
-  SUMMARY_EXTENSION_ID,
-  getBindings,
-  isSpaceSharedWithAssistant,
-  openAssistant
-} from '../../js/NoteAssistant.js';
 
 export default {
   data() {
@@ -229,9 +198,6 @@ export default {
       // Both arms of the featured-image v-if must match, or the form jumps.
       featuredImagePreviewHeight: 206,
       pickNoteImageMenu: false,
-      assistantBindings: [],
-      assistantLoad: 0,
-      openingAssistant: false,
     };
   },
   props: {
@@ -263,23 +229,6 @@ export default {
     fillFromContent: {
       type: Boolean,
       default: false
-    },
-    /**
-     * The space of the note the Properties drawer shows, as its caller knows
-     * it; none for a note outside spaces.
-     */
-    spaceId: {
-      type: [Number, String],
-      default: null
-    },
-    /**
-     * Whether the caller knows the note's space: false while a note in a
-     * space waits for its space's id, or when it could not be read, so that
-     * the assistant is not offered as if the note were outside spaces.
-     */
-    spaceResolved: {
-      type: Boolean,
-      default: true
     }
   },
   computed: {
@@ -289,23 +238,6 @@ export default {
      */
     noteImages() {
       return selectPickableImages(listContentImages(this.noteObject?.content), window.location.origin);
-    },
-    /**
-     * @returns {boolean} whether the assistant is offered to write the
-     *          summary: in the note's own editable Properties, when the
-     *          summary's place holds an enabled binding and the note's space
-     *          is shared with the assistant
-     */
-    canAskSummary() {
-      return this.fillFromContent && !this.readOnly && this.assistantBindings.length > 0;
-    },
-    /**
-     * @returns {boolean} whether the note holds text to summarise: an empty
-     *          note would hand the assistant nothing to read, so the entry
-     *          stays disabled until something is written
-     */
-    hasContentToSummarise() {
-      return !!this.$utils.htmlToText(this.noteObject?.content || '').trim();
     },
     /**
      * @returns {boolean} whether the pick among the note's images is offered:
@@ -394,40 +326,6 @@ export default {
       this.propertiesUpdated();
     },
     /**
-     * Reads again what the assistant offers when the note's space changes.
-     *
-     * @returns {void}
-     */
-    spaceId() {
-      this.loadAssistantBindings();
-    },
-    /**
-     * Reads again what the assistant offers when the drawer turns editable
-     * or read-only.
-     *
-     * @returns {void}
-     */
-    readOnly() {
-      this.loadAssistantBindings();
-    },
-    /**
-     * Reads again what the assistant offers when the caller turns the
-     * filling from the content on or off.
-     *
-     * @returns {void}
-     */
-    fillFromContent() {
-      this.loadAssistantBindings();
-    },
-    /**
-     * Reads again what the assistant offers once the note's space is known.
-     *
-     * @returns {void}
-     */
-    spaceResolved() {
-      this.loadAssistantBindings();
-    },
-    /**
      * Listens to the clicks on the document while the pick among the note's
      * images is open, so that a click outside it closes it, and stops
      * listening once it is closed.
@@ -444,7 +342,6 @@ export default {
   },
   created() {
     this.initProperties();
-    this.loadAssistantBindings();
     this.$root.$on('image-data', this.imageDataUpdated);
     this.$root.$on('image-uploaded', (uploadId) => this.uploadId = uploadId);
     this.$root.$on('image-alt-text', (altText) => this.featuredImageAltText = altText);
@@ -526,58 +423,10 @@ export default {
       }
     },
     /**
-     * Reads what the assistant offers in the note's Properties: nothing
-     * outside the note's own editable Properties, when the assistant is off,
-     * or in a space not shared with it, a space that cannot be read or is not
-     * known yet included. The space is read only when the assistant offers
-     * an entry here. Only the latest read applies.
+     * Puts a text the assistant wrote in the Summary field, as plain text: the
+     * Properties' Save saves it, their Cancel restores the previous summary.
      *
-     * @returns {Promise<void>} resolved once read
-     */
-    async loadAssistantBindings() {
-      const load = ++this.assistantLoad;
-      this.assistantBindings = [];
-      if (!this.fillFromContent || this.readOnly || !this.spaceResolved) {
-        return;
-      }
-      const bindings = await getBindings(PROPERTIES_APPLICATION_ID, SUMMARY_EXTENSION_ID);
-      if (load !== this.assistantLoad || !bindings.length) {
-        return;
-      }
-      const shared = await isSpaceSharedWithAssistant(this.spaceId);
-      if (load === this.assistantLoad && shared) {
-        this.assistantBindings = bindings;
-      }
-    },
-    /**
-     * Opens the assistant to write the note's summary from the content on
-     * screen, saved or not: the content is handed to the chat, not the note's
-     * id, whose stored version may be older. « Insert » puts the text in the
-     * Summary field; the Properties' Save saves it.
-     *
-     * @returns {void}
-     */
-    askSummary() {
-      if (!this.hasContentToSummarise) {
-        return;
-      }
-      this.openingAssistant = true;
-      openAssistant({
-        uxBindings: this.assistantBindings,
-        properties: {
-          objectType: 'notes',
-          objectTitle: this.noteObject?.title || this.$t('notes.untitled.title'),
-          objectContent: this.noteObject?.content || '',
-        },
-        insertText: this.insertSummary,
-      })
-        .catch(() => this.$root.$emit('alert-message', this.$t('notes.metadata.assistant.error'), 'error'))
-        .finally(() => this.openingAssistant = false);
-    },
-    /**
-     * Puts the assistant's answer in the Summary field, as plain text.
-     *
-     * @param {string} html the answer, as the chat inserts it
+     * @param {string} html the assistant's answer, as its chat inserts it
      * @returns {void}
      */
     insertSummary(html) {
