@@ -112,8 +112,7 @@
         </template>
         <v-list
           class="d-flex flex-wrap pa-2"
-          max-width="300"
-          dense>
+          max-width="300">
           <v-list-item
             v-for="image in noteImages"
             :key="image.src"
