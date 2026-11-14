@@ -122,6 +122,7 @@ export default {
       targetSpaceId: null,
       noteSpaceId: null,
       noteSpaceResolved: false,
+      noteSpaceFromNote: false,
       oembedMinWidth: 300,
       selectedLanguage: null,
       translations: null,
@@ -191,6 +192,23 @@ export default {
     }
   },
   watch: {
+    /**
+     * Reads the note's space from the note once it is loaded, when the page's
+     * address named none.
+     *
+     * @returns {void}
+     */
+    'note.wikiOwner': function () {
+      this.noteSpaceFromLoadedNote();
+    },
+    /**
+     * Same, when the note's kind of notebook is known.
+     *
+     * @returns {void}
+     */
+    'note.wikiType': function () {
+      this.noteSpaceFromLoadedNote();
+    },
     'note.title'() {
       if (this.note?.title !== this.actualNote.title ) {
         this.autoSave();
@@ -304,8 +322,9 @@ export default {
      * Reads the space of the note being edited for its Properties, from the
      * page's address whatever opened the editor (a new note, an edit, a
      * duplicate): the space stays unknown while it is read, and when it
-     * cannot be read. An address naming no space group means a note outside
-     * spaces.
+     * cannot be read. An address naming no space group leaves it to the note
+     * itself once loaded (noteSpaceFromNote), and a new note with neither is
+     * outside spaces.
      *
      * @param {string} groupId the space group the address names, if any
      * @returns {void}
@@ -313,9 +332,12 @@ export default {
     resolveNoteSpace(groupId) {
       this.noteSpaceId = null;
       if (!groupId || groupId === 'null' || groupId === 'undefined') {
-        this.noteSpaceResolved = true;
+        this.noteSpaceFromNote = true;
+        this.noteSpaceResolved = !this.noteId;
+        this.noteSpaceFromLoadedNote();
         return;
       }
+      this.noteSpaceFromNote = false;
       this.noteSpaceResolved = false;
       this.getSpaceByGroupId(groupId)
         .then(space => {
@@ -323,6 +345,25 @@ export default {
           this.noteSpaceResolved = !!space?.id;
         })
         .catch(() => this.noteSpaceResolved = false);
+    },
+    /**
+     * Reads the note's space from the note itself when the page's address
+     * named none: a space note's group is read as the address's would be, a
+     * personal note is outside spaces, and a note not loaded yet leaves the
+     * space unknown.
+     *
+     * @returns {void}
+     */
+    noteSpaceFromLoadedNote() {
+      if (!this.noteSpaceFromNote) {
+        return;
+      }
+      if (this.note?.wikiType === 'group' && this.note?.wikiOwner) {
+        this.noteSpaceFromNote = false;
+        this.resolveNoteSpace(this.note.wikiOwner);
+      } else if (this.note?.wikiType === 'user') {
+        this.noteSpaceResolved = true;
+      }
     },
     /**
      * Reads the editor's space id and whether the user may redact in it,
