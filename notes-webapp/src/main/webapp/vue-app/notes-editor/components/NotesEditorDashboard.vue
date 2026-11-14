@@ -284,6 +284,23 @@ export default {
   },
   methods: {
     /**
+     * Reads a space by its group once per editor, whoever asks it: the
+     * editor's own space information and the note's Properties share the
+     * same request.
+     *
+     * @param {string} groupId the space's group
+     * @returns {Promise<object>} the space
+     */
+    getSpaceByGroupId(groupId) {
+      if (!this.spaceRequests) {
+        this.spaceRequests = new Map();
+      }
+      if (!this.spaceRequests.has(groupId)) {
+        this.spaceRequests.set(groupId, this.$spaceService.getSpaceByGroupId(groupId));
+      }
+      return this.spaceRequests.get(groupId);
+    },
+    /**
      * Reads the space of the note being edited for its Properties, from the
      * page's address whatever opened the editor (a new note, an edit, a
      * duplicate): the space stays unknown while it is read, and when it
@@ -300,7 +317,7 @@ export default {
         return;
       }
       this.noteSpaceResolved = false;
-      this.$spaceService.getSpaceByGroupId(groupId)
+      this.getSpaceByGroupId(groupId)
         .then(space => {
           this.noteSpaceId = space?.id || null;
           this.noteSpaceResolved = !!space?.id;
@@ -312,7 +329,7 @@ export default {
         this.canRedact = true;
         return;
       }
-      this.$spaceService.getSpaceByGroupId(groupId).then((space) => {
+      this.getSpaceByGroupId(groupId).then((space) => {
         this.targetSpaceId = space?.id;
         this.canRedact = space.canRedactOnSpace;
       });
