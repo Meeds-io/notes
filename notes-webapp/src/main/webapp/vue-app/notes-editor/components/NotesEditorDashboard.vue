@@ -322,18 +322,24 @@ export default {
      * Reads the space of the note being edited for its Properties, from the
      * page's address whatever opened the editor (a new note, an edit, a
      * duplicate): the space stays unknown while it is read, and when it
-     * cannot be read. An address naming no space group leaves it to the note
-     * itself once loaded (noteSpaceFromNote), and a new note with neither is
-     * outside spaces.
+     * cannot be read. The note page sends an empty group for a note outside
+     * spaces; an address with no group at all (a hand-made or older link)
+     * leaves the space to the note itself, once loaded or once its first
+     * draft is saved (noteSpaceFromNote), and unknown until then.
      *
      * @param {string} groupId the space group the address names, if any
      * @returns {void}
      */
     resolveNoteSpace(groupId) {
       this.noteSpaceId = null;
+      if (groupId === '') {
+        this.noteSpaceFromNote = false;
+        this.noteSpaceResolved = true;
+        return;
+      }
       if (!groupId || groupId === 'null' || groupId === 'undefined') {
         this.noteSpaceFromNote = true;
-        this.noteSpaceResolved = !this.noteId;
+        this.noteSpaceResolved = false;
         this.noteSpaceFromLoadedNote();
         return;
       }
@@ -349,8 +355,8 @@ export default {
     /**
      * Reads the note's space from the note itself when the page's address
      * named none: a space note's group is read as the address's would be, a
-     * personal note is outside spaces, and a note not loaded yet leaves the
-     * space unknown.
+     * note of any other notebook (personal, portal) is outside spaces, and a
+     * note whose notebook is not known yet leaves the space unknown.
      *
      * @returns {void}
      */
@@ -361,7 +367,7 @@ export default {
       if (this.note?.wikiType === 'group' && this.note?.wikiOwner) {
         this.noteSpaceFromNote = false;
         this.resolveNoteSpace(this.note.wikiOwner);
-      } else if (this.note?.wikiType === 'user') {
+      } else if (this.note?.wikiType && this.note.wikiType !== 'group') {
         this.noteSpaceResolved = true;
       }
     },
