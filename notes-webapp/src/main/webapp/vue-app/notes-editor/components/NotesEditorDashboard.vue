@@ -41,6 +41,7 @@
       :space-group-id="`/spaces/${spaceGroupId}`"
       :target-space-id="targetSpaceId"
       fill-from-content
+      :space-resolved="!spaceGroupId || !!targetSpaceId"
       :suggester-space-url="spaceGroupId"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
