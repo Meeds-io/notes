@@ -124,6 +124,35 @@ class NoteUxBindingsTest {
     }
   }
 
+  private static final Path PROPERTIES_OPENER = Path.of("..",
+                                                        "notes-webapp",
+                                                        "src",
+                                                        "main",
+                                                        "webapp",
+                                                        "vue-app",
+                                                        "notes-rich-editor",
+                                                        "js",
+                                                        "NoteAssistant.js");
+
+  /**
+   * The Properties read the summary's entries at the summary binding's own
+   * place: an opener reading another place than the binding declares shows
+   * nothing, with nothing failing, since the bindings a client receives
+   * carry no name to match them by.
+   *
+   * @throws Exception when a definition cannot be read
+   */
+  @Test
+  void thePropertiesReadTheSummaryAtItsBindingsPlace() throws Exception {
+    JsonNode summary = read("/ai-ux-bindings.json").get("bindings").get(0);
+    String opener = Files.readString(PROPERTIES_OPENER);
+    assertEquals("Note-Summary", summary.get("nameId").asString());
+    assertTrue(opener.contains("PROPERTIES_APPLICATION_ID = '" + summary.get("applicationId").asString() + "'"),
+               "the opener reads the binding's application");
+    assertTrue(opener.contains("SUMMARY_EXTENSION_ID = '" + summary.get("extensionId").asString() + "'"),
+               "the opener reads the binding's place");
+  }
+
   /**
    * Each binding's place is registered in the AI administration under
    * Notes, with its label in the administration bundle, so that an
