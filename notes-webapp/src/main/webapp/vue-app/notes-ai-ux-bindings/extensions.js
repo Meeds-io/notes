@@ -22,8 +22,9 @@
  * the place of a note's Properties, matched by its applicationId and
  * extensionId: every request of that place, whichever add-on ships it, is a
  * chip of the Properties' « Ask AI », and an administrator sees, turns off,
- * rewords or restores them here. The variables offered are the ones the
- * Properties fill: the note's content as it is on screen, and its title.
+ * rewords or restores them here. The variables offered are the note's
+ * content as it is on screen and its title; the note's page id also reaches
+ * the prompts, as {note_id}, through the Properties' own parameters.
  */
 extensionRegistry.registerExtension('ai-agent', 'ux-binding', {
   id: 'notesProperties',
