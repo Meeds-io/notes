@@ -30,6 +30,7 @@ const config = {
     notesAnalyticsExtension: './src/main/webapp/vue-app/notes-analytics-extension/main.js',
     notesAnalyticsTableExtension: './src/main/webapp/vue-app/notes-analytics-table-extension/main.js',
     notesContentLinkExtension: './src/main/webapp/vue-app/content-link-extension/extensions.js',
+    notesAiUxBindingExtension: './src/main/webapp/vue-app/notes-ai-ux-bindings/main.js',
   },
   output: {
     publicPath: '',
