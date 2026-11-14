@@ -594,4 +594,19 @@
     </depends>
   </module>
 
+  <!-- The note's Properties place in the AI administration's ready-made
+       requests. The assistant runs the modules of this load-group whose name
+       contains "AiUxBindingExtension". Harmless where the AI add-on is not
+       installed: nothing loads that group. -->
+  <module>
+    <name>NotesAiUxBindingExtension</name>
+    <load-group>aiUxBindingExtenionsGRP</load-group>
+    <script>
+      <path>/javascript/notesAiUxBindingExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
