@@ -403,6 +403,7 @@
       ref="metadataDrawer"
       :has-featured-image="hasFeaturedImage"
       :read-only="!note.canManage"
+      fill-from-content
       @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer

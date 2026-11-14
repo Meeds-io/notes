@@ -50,6 +50,7 @@
               :has-featured-image="hasFeaturedImage"
               :summary-max-length="summaryMaxLength"
               :read-only="readOnly"
+              :fill-from-content="fillFromContent"
               @properties-updated="propertiesUpdated" />
           </div>
           <div
@@ -108,6 +109,14 @@ export default {
       default: false
     },
     readOnly: {
+      type: Boolean,
+      default: false
+    },
+    /**
+     * Whether the properties form offers to fill the note's properties from
+     * its content; set by the note page and the Notes editor only.
+     */
+    fillFromContent: {
       type: Boolean,
       default: false
     }
