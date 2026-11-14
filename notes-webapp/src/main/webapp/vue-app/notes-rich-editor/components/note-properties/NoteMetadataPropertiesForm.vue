@@ -273,6 +273,15 @@ export default {
     spaceId: {
       type: [Number, String],
       default: null
+    },
+    /**
+     * Whether the caller knows the note's space: false while a note in a
+     * space waits for its space's id, or when it could not be read, so that
+     * the assistant is not offered as if the note were outside spaces.
+     */
+    spaceResolved: {
+      type: Boolean,
+      default: true
     }
   },
   computed: {
@@ -417,6 +426,14 @@ export default {
     fillFromContent() {
       this.loadAssistantBindings();
     },
+    /**
+     * Reads again what the assistant offers once the note's space is known.
+     *
+     * @returns {void}
+     */
+    spaceResolved() {
+      this.loadAssistantBindings();
+    },
     pickNoteImageMenu() {
       if (this.pickNoteImageMenu) {
         document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
@@ -511,7 +528,8 @@ export default {
     /**
      * Reads what the assistant offers in the note's Properties: nothing
      * outside the note's own editable Properties, when the assistant is off,
-     * or in a space not shared with it, a space that cannot be read included.
+     * or in a space not shared with it, a space that cannot be read or is not
+     * known yet included.
      * Only the latest read applies.
      *
      * @returns {Promise<void>} resolved once read
@@ -519,7 +537,7 @@ export default {
     async loadAssistantBindings() {
       const load = ++this.assistantLoad;
       this.assistantBindings = [];
-      if (!this.fillFromContent || this.readOnly) {
+      if (!this.fillFromContent || this.readOnly || !this.spaceResolved) {
         return;
       }
       const [shared, bindings] = await Promise.all([
