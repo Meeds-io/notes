@@ -39,11 +39,11 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * The assistant entries Notes ships for a note's Properties (EXO-94358):
- * one place per action, since the bindings a client receives carry no name,
- * each binding with its name and prompts in Notes' English bundle and its
- * place in the AI administration. The Properties open the chat with the
- * note's content as it is on screen and no note id, so the chat fills
+ * The assistant entries Notes ships for a note's Properties (EXO-94358): one
+ * place, whose every request is a chip of the Properties' « Ask AI », each
+ * binding with its name and prompts in Notes' English bundle, and the place
+ * in the AI administration. The Properties open the chat with the note's
+ * content as it is on screen and no note id, so the chat fills
  * {@code {content_body}} from that content and never {@code {content_id}} or
  * {@code {content_link}}.
  */
@@ -66,7 +66,7 @@ class NoteUxBindingsTest {
 
   /**
    * The summary entry is the only Notes binding, on the CONTENT agent, at
-   * the summary's own place, selecting only {@code get_note}, a tool Notes
+   * the Properties' place, selecting only {@code get_note}, a tool Notes
    * defines: the summary is written into the Properties' field and saved by
    * their Save, never by a tool. Its version is pinned: a stored binding is
    * re-imported only when its version changes, which replaces an
@@ -86,9 +86,9 @@ class NoteUxBindingsTest {
     assertEquals(List.of("Note-Summary"), nameIds);
 
     JsonNode summary = bindings.get(0);
-    assertEquals("1-exo-94358", summary.get("version").asString(), "EXO-94358 ships the summary entry");
+    assertEquals("2-exo-94358", summary.get("version").asString(), "EXO-94358 moves the summary entry to the Properties' one place");
     assertEquals("notes", summary.get("applicationId").asString());
-    assertEquals("notes-properties-summary", summary.get("extensionId").asString());
+    assertEquals("notes-properties", summary.get("extensionId").asString());
     assertEquals("CONTENT", summary.get("agentNameId").asString());
     assertTrue(summary.get("enabled").asBoolean());
     assertEquals("[\"*:/platform/users\"]", summary.get("permissions").toString());
@@ -135,21 +135,21 @@ class NoteUxBindingsTest {
                                                         "NoteAssistant.js");
 
   /**
-   * The Properties read the summary's entries at the summary binding's own
-   * place: an opener reading another place than the binding declares shows
+   * The Properties' « Ask AI » reads the entries at the binding's place: an
+   * opener reading another place than the binding declares shows
    * nothing, with nothing failing, since the bindings a client receives
    * carry no name to match them by.
    *
    * @throws Exception when a definition cannot be read
    */
   @Test
-  void thePropertiesReadTheSummaryAtItsBindingsPlace() throws Exception {
+  void thePropertiesReadTheEntriesAtTheirBindingsPlace() throws Exception {
     JsonNode summary = read("/ai-ux-bindings.json").get("bindings").get(0);
     String opener = Files.readString(PROPERTIES_OPENER);
     assertEquals("Note-Summary", summary.get("nameId").asString());
     assertTrue(opener.contains("PROPERTIES_APPLICATION_ID = '" + summary.get("applicationId").asString() + "'"),
                "the opener reads the binding's application");
-    assertTrue(opener.contains("SUMMARY_EXTENSION_ID = '" + summary.get("extensionId").asString() + "'"),
+    assertTrue(opener.contains("PROPERTIES_EXTENSION_ID = '" + summary.get("extensionId").asString() + "'"),
                "the opener reads the binding's place");
   }
 
@@ -170,8 +170,8 @@ class NoteUxBindingsTest {
       assertTrue(extensions.contains("extensionId: '" + extensionId + "'"), extensionId + " is registered");
     }
     assertTrue(extensions.contains("parentId: 'notes'"));
-    assertTrue(extensions.contains("nameKey: 'aiAgentAdmin.uxBindings.notesPropertiesSummary'"));
-    assertFalse(administration.getProperty("aiAgentAdmin.uxBindings.notesPropertiesSummary", "").isBlank());
+    assertTrue(extensions.contains("nameKey: 'aiAgentAdmin.uxBindings.notesProperties'"));
+    assertFalse(administration.getProperty("aiAgentAdmin.uxBindings.notesProperties", "").isBlank());
   }
 
   /**
