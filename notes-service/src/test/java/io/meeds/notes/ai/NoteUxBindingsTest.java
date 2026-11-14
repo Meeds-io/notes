@@ -86,7 +86,7 @@ class NoteUxBindingsTest {
     assertEquals(List.of("Note-Summary"), nameIds);
 
     JsonNode summary = bindings.get(0);
-    assertEquals("2-exo-94358", summary.get("version").asString(), "EXO-94358 moves the summary entry to the Properties' one place");
+    assertEquals("2-exo-94358", summary.get("version").asString(), "EXO-94358: the summary entry's version, which a changed definition must change to be re-imported");
     assertEquals("notes", summary.get("applicationId").asString());
     assertEquals("notes-properties", summary.get("extensionId").asString());
     assertEquals("CONTENT", summary.get("agentNameId").asString());
