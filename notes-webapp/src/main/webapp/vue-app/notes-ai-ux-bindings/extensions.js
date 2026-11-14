@@ -19,20 +19,21 @@
 
 /*
  * The Notes section of the AI administration's ready-made requests gains
- * the note's Properties: the place a Notes binding of ai-ux-bindings.json
- * declares with applicationId notes and extensionId notes-properties, so
- * that an administrator sees, turns off, rewords or restores its entries.
- * The variables offered are the ones the Properties fill: the note's
- * content as it is on screen, and its title.
+ * the places of a note's Properties, one per action, each matched by its
+ * applicationId and extensionId: a client tells the actions apart by their
+ * place, the bindings it receives carrying no name. An administrator sees,
+ * turns off, rewords or restores the entries of each. The variables offered
+ * are the ones the Properties fill: the note's content as it is on screen,
+ * and its title.
  */
 extensionRegistry.registerExtension('ai-agent', 'ux-binding', {
-  id: 'notesProperties',
+  id: 'notesPropertiesSummary',
   profile: 'notes',
   parentId: 'notes',
   applicationId: 'notes',
-  extensionId: 'notes-properties',
+  extensionId: 'notes-properties-summary',
   rank: 26,
-  nameKey: 'aiAgentAdmin.uxBindings.notesProperties',
+  nameKey: 'aiAgentAdmin.uxBindings.notesPropertiesSummary',
   component: 'ai-ux-bindings-list',
   availableVariables: ['content_body', 'content_title'],
 });

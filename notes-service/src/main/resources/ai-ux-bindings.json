@@ -4,7 +4,7 @@
       "nameId": "Note-Summary",
       "version": "1-exo-94358",
       "applicationId": "notes",
-      "extensionId": "notes-properties",
+      "extensionId": "notes-properties-summary",
       "agentNameId": "CONTENT",
       "enabled": true,
       "icon": "fas fa-align-left",
