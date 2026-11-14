@@ -51,6 +51,7 @@
               :summary-max-length="summaryMaxLength"
               :read-only="readOnly"
               :fill-from-content="fillFromContent"
+              :space-id="spaceId"
               @properties-updated="propertiesUpdated" />
           </div>
           <div
@@ -119,6 +120,14 @@ export default {
     fillFromContent: {
       type: Boolean,
       default: false
+    },
+    /**
+     * The space of the note shown, as the caller knows it; none for a note
+     * outside spaces. Handed to the properties form and to the sections.
+     */
+    spaceId: {
+      type: [Number, String],
+      default: null
     }
   },
   computed: {
@@ -134,7 +143,8 @@ export default {
     /**
      * @returns {object} what the drawer hands its add-on sections: the note,
      *          its page id, its parent's, its language, whether the drawer is
-     *          editable and expanded, and the new note's creation
+     *          editable, expanded and open, the note's space (null outside
+     *          spaces), and the new note's creation
      */
     sectionsParams() {
       return {
@@ -144,6 +154,8 @@ export default {
         lang: this.noteObject?.lang || null,
         editable: !this.readOnly,
         expanded: this.expanded,
+        open: this.drawer,
+        spaceId: this.spaceId || null,
         creation: this.creation,
       };
     },
