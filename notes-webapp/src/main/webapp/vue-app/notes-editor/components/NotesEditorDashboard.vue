@@ -41,7 +41,8 @@
       :space-group-id="`/spaces/${spaceGroupId}`"
       :target-space-id="targetSpaceId"
       fill-from-content
-      :space-resolved="!spaceGroupId || !!targetSpaceId"
+      :note-space-id="noteSpaceId"
+      :space-resolved="noteSpaceResolved"
       :suggester-space-url="spaceGroupId"
       :save-button-icon="saveButtonIcon"
       :is-mobile="isMobile"
@@ -119,6 +120,8 @@ export default {
       noteNavigationDisplayed: false,
       spaceGroupId: null,
       targetSpaceId: null,
+      noteSpaceId: null,
+      noteSpaceResolved: false,
       oembedMinWidth: 300,
       selectedLanguage: null,
       translations: null,
@@ -251,6 +254,7 @@ export default {
       this.note.parentPageId = this.parentPageId;
     }
     this.retrieveSpaceInformation(this.spaceGroupId);
+    this.resolveNoteSpace(urlParams.get('spaceGroupId'));
     if (urlParams.has('owner')) {
       this.note.wikiOwner = urlParams.get('owner');
     }
@@ -279,6 +283,30 @@ export default {
     this.$root.$on('save-draft', this.autoSave);
   },
   methods: {
+    /**
+     * Reads the space of the note being edited for its Properties, from the
+     * page's address whatever opened the editor (a new note, an edit, a
+     * duplicate): the space stays unknown while it is read, and when it
+     * cannot be read. An address naming no space group means a note outside
+     * spaces.
+     *
+     * @param {string} groupId the space group the address names, if any
+     * @returns {void}
+     */
+    resolveNoteSpace(groupId) {
+      this.noteSpaceId = null;
+      if (!groupId || groupId === 'null' || groupId === 'undefined') {
+        this.noteSpaceResolved = true;
+        return;
+      }
+      this.noteSpaceResolved = false;
+      this.$spaceService.getSpaceByGroupId(groupId)
+        .then(space => {
+          this.noteSpaceId = space?.id || null;
+          this.noteSpaceResolved = !!space?.id;
+        })
+        .catch(() => this.noteSpaceResolved = false);
+    },
     retrieveSpaceInformation(groupId) {
       if (!groupId) {
         this.canRedact = true;

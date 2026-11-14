@@ -293,10 +293,6 @@ export default {
       return selectPickableImages(listContentImages(this.noteObject?.content), window.location.origin);
     },
     /**
-     * @returns {boolean} whether the pick among the note's images is offered:
-     *          in the note's own editable Properties, when the note shows one
-     */
-    /**
      * @returns {object} the binding that writes the summary, when the
      *          assistant offers it here; none otherwise
      */
@@ -311,6 +307,10 @@ export default {
     canAskSummary() {
       return this.fillFromContent && !this.readOnly && !!this.summaryBinding;
     },
+    /**
+     * @returns {boolean} whether the pick among the note's images is offered:
+     *          in the note's own editable Properties, when the note shows one
+     */
     canPickNoteImage() {
       return this.fillFromContent && !this.readOnly && this.noteImages.length > 0;
     },
@@ -394,13 +394,6 @@ export default {
       this.propertiesUpdated();
     },
     /**
-     * Listens to the clicks on the document while the pick among the note's
-     * images is open, so that a click outside it closes it, and stops
-     * listening once it is closed.
-     *
-     * @returns {void}
-     */
-    /**
      * Reads again what the assistant offers when the note's space changes.
      *
      * @returns {void}
@@ -434,6 +427,13 @@ export default {
     spaceResolved() {
       this.loadAssistantBindings();
     },
+    /**
+     * Listens to the clicks on the document while the pick among the note's
+     * images is open, so that a click outside it closes it, and stops
+     * listening once it is closed.
+     *
+     * @returns {void}
+     */
     pickNoteImageMenu() {
       if (this.pickNoteImageMenu) {
         document.addEventListener('click', this.closePickNoteImageMenuOnOutsideClick);
@@ -529,8 +529,8 @@ export default {
      * Reads what the assistant offers in the note's Properties: nothing
      * outside the note's own editable Properties, when the assistant is off,
      * or in a space not shared with it, a space that cannot be read or is not
-     * known yet included.
-     * Only the latest read applies.
+     * known yet included. The space is read only when the assistant offers
+     * an entry here. Only the latest read applies.
      *
      * @returns {Promise<void>} resolved once read
      */
@@ -540,12 +540,13 @@ export default {
       if (!this.fillFromContent || this.readOnly || !this.spaceResolved) {
         return;
       }
-      const [shared, bindings] = await Promise.all([
-        isSpaceSharedWithAssistant(this.spaceId),
-        getBindings(PROPERTIES_APPLICATION_ID, PROPERTIES_EXTENSION_ID),
-      ]);
-      if (load === this.assistantLoad) {
-        this.assistantBindings = shared && bindings || [];
+      const bindings = await getBindings(PROPERTIES_APPLICATION_ID, PROPERTIES_EXTENSION_ID);
+      if (load !== this.assistantLoad || !bindings.length) {
+        return;
+      }
+      const shared = await isSpaceSharedWithAssistant(this.spaceId);
+      if (load === this.assistantLoad && shared) {
+        this.assistantBindings = bindings;
       }
     },
     /**
