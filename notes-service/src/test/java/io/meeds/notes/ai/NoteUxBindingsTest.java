@@ -39,7 +39,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * The assistant entries Notes ships for a note's Properties (EXO-94358): one
+ * The assistant entries Notes ships for a note's Properties (EXO-94358 for
+ * the summary, EXO-94368 for the illustration): one
  * place, whose every request is a chip of the Properties' « Ask AI », each
  * binding with its name and prompts in Notes' English bundle, and the place
  * in the AI administration. The Properties open the chat with the note's
@@ -65,7 +66,7 @@ class NoteUxBindingsTest {
                                                                 "extensions.js");
 
   /**
-   * The summary entry is the only Notes binding, on the CONTENT agent, at
+   * The summary entry, on the CONTENT agent, at
    * the Properties' place, selecting only {@code get_note}, a tool Notes
    * defines: the summary is written into the Properties' field and saved by
    * their Save, never by a tool. Its version is pinned: a stored binding is
@@ -83,7 +84,7 @@ class NoteUxBindingsTest {
 
     List<String> nameIds = new ArrayList<>();
     bindings.forEach(binding -> nameIds.add(binding.get("nameId").asString()));
-    assertEquals(List.of("Note-Summary"), nameIds);
+    assertEquals(List.of("Note-Summary", "Note-Illustration"), nameIds);
 
     JsonNode summary = bindings.get(0);
     assertEquals("2-exo-94358", summary.get("version").asString(), "EXO-94358: the summary entry's version, which a changed definition must change to be re-imported");
@@ -94,6 +95,29 @@ class NoteUxBindingsTest {
     assertEquals("[\"*:/platform/users\"]", summary.get("permissions").toString());
     assertEquals("[\"get_note\"]", summary.get("toolNames").toString(), "a binding without toolNames gets its agent's whole list");
     summary.get("toolNames").forEach(tool -> assertTrue(tools.contains(tool.asString()), "Note-Summary selects " + tool));
+  }
+
+  /**
+   * The illustration entry, on the IMAGE agent, at the Properties' place,
+   * selects no tool, as the assistant's own image entry: the image agent has
+   * no tool support, so the fallback that hands a binding without toolNames
+   * its agent's whole list does not apply. Its image goes into the
+   * Properties' crop window and is saved by their Save. Its version is
+   * pinned for the same reason as the summary's.
+   *
+   * @throws Exception when a definition cannot be read
+   */
+  @Test
+  void theIllustrationEntryIsPinnedToThePropertiesPlaceAndTheImageAgent() throws Exception {
+    JsonNode illustration = read("/ai-ux-bindings.json").get("bindings").get(1);
+    assertEquals("Note-Illustration", illustration.get("nameId").asString());
+    assertEquals("2-exo-94368", illustration.get("version").asString(), "EXO-94368 ships the illustration entry at the Properties' one place");
+    assertEquals("notes", illustration.get("applicationId").asString());
+    assertEquals("notes-properties", illustration.get("extensionId").asString());
+    assertEquals("IMAGE", illustration.get("agentNameId").asString());
+    assertTrue(illustration.get("enabled").asBoolean());
+    assertEquals("[\"*:/platform/users\"]", illustration.get("permissions").toString());
+    assertTrue(illustration.path("toolNames").isMissingNode(), "the image agent selects no tool");
   }
 
   /**
@@ -144,13 +168,14 @@ class NoteUxBindingsTest {
    */
   @Test
   void thePropertiesReadTheEntriesAtTheirBindingsPlace() throws Exception {
-    JsonNode summary = read("/ai-ux-bindings.json").get("bindings").get(0);
     String opener = Files.readString(PROPERTIES_OPENER);
-    assertEquals("Note-Summary", summary.get("nameId").asString());
-    assertTrue(opener.contains("PROPERTIES_APPLICATION_ID = '" + summary.get("applicationId").asString() + "'"),
-               "the opener reads the binding's application");
-    assertTrue(opener.contains("PROPERTIES_EXTENSION_ID = '" + summary.get("extensionId").asString() + "'"),
-               "the opener reads the binding's place");
+    for (JsonNode binding : read("/ai-ux-bindings.json").get("bindings")) {
+      String nameId = binding.get("nameId").asString();
+      assertTrue(opener.contains("PROPERTIES_APPLICATION_ID = '" + binding.get("applicationId").asString() + "'"),
+                 nameId + ": the opener reads the binding's application");
+      assertTrue(opener.contains("PROPERTIES_EXTENSION_ID = '" + binding.get("extensionId").asString() + "'"),
+                 nameId + ": the opener reads the binding's place");
+    }
   }
 
   /**
