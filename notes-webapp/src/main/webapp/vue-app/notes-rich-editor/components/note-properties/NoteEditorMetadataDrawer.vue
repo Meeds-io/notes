@@ -182,6 +182,15 @@ export default {
     }
   },
   methods: {
+    /**
+     * Puts a text the assistant wrote in the Summary field; Save saves it.
+     *
+     * @param {string} text the assistant's answer, as its chat inserts it
+     * @returns {void}
+     */
+    insertText(text) {
+      this.$refs.propertiesForm?.insertSummary(text);
+    },
     propertiesUpdated(properties) {
       if (!this.noteObject?.properties || !Object.keys(this.noteObject?.properties).length) {
         this.noteObject.properties = structuredClone(properties || {});
