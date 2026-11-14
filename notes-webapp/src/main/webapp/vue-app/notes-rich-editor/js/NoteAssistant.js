@@ -23,9 +23,14 @@
  * the assistant, and offers nothing when it is absent or off.
  */
 
-/** The place of the note's Properties, as its bindings declare it. */
+/**
+ * The places of the note's Properties, one per action, as their bindings
+ * declare them: the bindings a client receives carry no name, so an action
+ * is told apart by its place, and every enabled binding of the place is
+ * offered with it.
+ */
 export const PROPERTIES_APPLICATION_ID = 'notes';
-export const PROPERTIES_EXTENSION_ID = 'notes-properties';
+export const SUMMARY_EXTENSION_ID = 'notes-properties-summary';
 
 /** The bindings of the page, by place, read once whatever the forms asking them. */
 const BINDINGS = new Map();
