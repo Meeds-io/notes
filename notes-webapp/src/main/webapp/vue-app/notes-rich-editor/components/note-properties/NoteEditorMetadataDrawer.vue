@@ -32,8 +32,19 @@
       @expand-updated="expanded = $event"
       @closed="resetProperties">
       <template slot="title">
-        <div class="d-flex my-auto text-header font-weight-bold text-color">
-          {{ $t('notes.metadata.properties.label') }}
+        <div class="d-flex align-center flex-grow-1 my-auto">
+          <div class="text-header font-weight-bold text-color">
+            {{ $t('notes.metadata.properties.label') }}
+          </div>
+          <note-properties-ask-ai
+            :note="noteObject"
+            :page-id="pageId"
+            :space-id="spaceId"
+            :space-resolved="spaceResolved"
+            :read-only="readOnly"
+            :fill-from-content="fillFromContent"
+            @insert-text="insertText"
+            @assistant-opened="assistantOpened++" />
         </div>
       </template>
       <template slot="content">
@@ -51,8 +62,6 @@
               :summary-max-length="summaryMaxLength"
               :read-only="readOnly"
               :fill-from-content="fillFromContent"
-              :space-id="spaceId"
-              :space-resolved="spaceResolved"
               @properties-updated="propertiesUpdated" />
           </div>
           <div
@@ -91,8 +100,12 @@
 
 <script>
 import {newNoteCreation} from '../../js/NoteCreation.js';
+import NotePropertiesAskAi from './NotePropertiesAskAi.vue';
 
 export default {
+  components: {
+    'note-properties-ask-ai': NotePropertiesAskAi,
+  },
   data() {
     return {
       noteObject: null,
@@ -103,6 +116,7 @@ export default {
       summaryMaxLength: 1300,
       creation: newNoteCreation(),
       createdPageId: null,
+      assistantOpened: 0,
     };
   },
   props: {
@@ -152,7 +166,8 @@ export default {
     /**
      * @returns {object} what the drawer hands its add-on sections: the note,
      *          its page id, its parent's, its language, whether the drawer is
-     *          editable, expanded and open, the note's space as the
+     *          editable, expanded and open, how many times its « Ask AI »
+     *          opened the assistant, the note's space as the
      *          drawer's caller gives it (null when it gives none, left out
      *          while the caller does not know it yet or could not read it, so
      *          that the sections receive it undefined), and the new note's
@@ -167,6 +182,7 @@ export default {
         editable: !this.readOnly,
         expanded: this.expanded,
         open: this.drawer,
+        assistantOpened: this.assistantOpened,
         ...(this.spaceResolved && {spaceId: this.spaceId || null}),
         creation: this.creation,
       };

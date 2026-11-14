@@ -24,7 +24,6 @@
     :loading="opening"
     :disabled="!hasNoteText"
     class="note-properties-ask-ai ms-auto"
-    small
     text
     @click.prevent.stop="askAi">
     <v-icon
