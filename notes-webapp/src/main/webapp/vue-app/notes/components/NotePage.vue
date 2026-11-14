@@ -404,6 +404,7 @@
       :has-featured-image="hasFeaturedImage"
       :read-only="!note.canManage"
       fill-from-content
+      :space-id="note.spaceId || spaceId"
       @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer
