@@ -2,9 +2,9 @@
   "bindings": [
     {
       "nameId": "Note-Summary",
-      "version": "1-exo-94358",
+      "version": "2-exo-94358",
       "applicationId": "notes",
-      "extensionId": "notes-properties-summary",
+      "extensionId": "notes-properties",
       "agentNameId": "CONTENT",
       "enabled": true,
       "icon": "fas fa-align-left",
