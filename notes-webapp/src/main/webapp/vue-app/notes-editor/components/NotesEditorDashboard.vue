@@ -324,6 +324,14 @@ export default {
         })
         .catch(() => this.noteSpaceResolved = false);
     },
+    /**
+     * Reads the editor's space id and whether the user may redact in it,
+     * through the request the note's Properties share; an editor opened with
+     * no space group may redact.
+     *
+     * @param {string} groupId the space group of the editor, if any
+     * @returns {void}
+     */
     retrieveSpaceInformation(groupId) {
       if (!groupId) {
         this.canRedact = true;
