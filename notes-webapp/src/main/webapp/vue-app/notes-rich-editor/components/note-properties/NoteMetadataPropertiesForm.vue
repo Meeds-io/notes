@@ -161,6 +161,7 @@
               <v-btn
                 :aria-label="$t('notes.metadata.summary.ask.label')"
                 :loading="openingAssistant"
+                :disabled="!hasContentToSummarise"
                 class="note-properties-ask-summary ms-auto"
                 icon
                 v-bind="attrs"
@@ -206,14 +207,11 @@
 import {listContentImages, selectPickableImages} from '../../js/NoteImages.js';
 import {
   PROPERTIES_APPLICATION_ID,
-  PROPERTIES_EXTENSION_ID,
+  SUMMARY_EXTENSION_ID,
   getBindings,
   isSpaceSharedWithAssistant,
   openAssistant
 } from '../../js/NoteAssistant.js';
-
-/** The binding that writes a note's summary from its content. */
-const SUMMARY_BINDING = 'Note-Summary';
 
 export default {
   data() {
@@ -293,19 +291,21 @@ export default {
       return selectPickableImages(listContentImages(this.noteObject?.content), window.location.origin);
     },
     /**
-     * @returns {object} the binding that writes the summary, when the
-     *          assistant offers it here; none otherwise
-     */
-    summaryBinding() {
-      return this.assistantBindings.find(binding => binding.nameId === SUMMARY_BINDING) || null;
-    },
-    /**
      * @returns {boolean} whether the assistant is offered to write the
      *          summary: in the note's own editable Properties, when the
-     *          assistant offers it and the note's space is shared with it
+     *          summary's place holds an enabled binding and the note's space
+     *          is shared with the assistant
      */
     canAskSummary() {
-      return this.fillFromContent && !this.readOnly && !!this.summaryBinding;
+      return this.fillFromContent && !this.readOnly && this.assistantBindings.length > 0;
+    },
+    /**
+     * @returns {boolean} whether the note holds text to summarise: an empty
+     *          note would hand the assistant nothing to read, so the entry
+     *          stays disabled until something is written
+     */
+    hasContentToSummarise() {
+      return !!this.$utils.htmlToText(this.noteObject?.content || '').trim();
     },
     /**
      * @returns {boolean} whether the pick among the note's images is offered:
@@ -540,7 +540,7 @@ export default {
       if (!this.fillFromContent || this.readOnly || !this.spaceResolved) {
         return;
       }
-      const bindings = await getBindings(PROPERTIES_APPLICATION_ID, PROPERTIES_EXTENSION_ID);
+      const bindings = await getBindings(PROPERTIES_APPLICATION_ID, SUMMARY_EXTENSION_ID);
       if (load !== this.assistantLoad || !bindings.length) {
         return;
       }
@@ -558,9 +558,12 @@ export default {
      * @returns {void}
      */
     askSummary() {
+      if (!this.hasContentToSummarise) {
+        return;
+      }
       this.openingAssistant = true;
       openAssistant({
-        uxBindings: [this.summaryBinding],
+        uxBindings: this.assistantBindings,
         properties: {
           objectType: 'notes',
           objectTitle: this.noteObject?.title || '',
