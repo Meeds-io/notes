@@ -97,7 +97,8 @@ export async function isSpaceSharedWithAssistant(spaceId) {
   try {
     const space = await Vue.prototype.$spaceService.getSpaceById(spaceId);
     return space?.sovereign === false;
-  } catch (e) {
+  } catch {
+    // a space that cannot be read is treated as not shared: the assistant fails closed
     return false;
   }
 }
