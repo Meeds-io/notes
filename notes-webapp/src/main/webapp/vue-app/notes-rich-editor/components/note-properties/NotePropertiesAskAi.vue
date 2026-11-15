@@ -17,22 +17,28 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-btn
-    v-if="canAskAi"
-    :aria-label="$t('notes.metadata.askAi.label')"
-    :title="$t('notes.metadata.askAi.label')"
-    :loading="opening"
-    :disabled="!hasNoteText"
-    class="note-properties-ask-ai ms-auto"
-    text
-    @click.prevent.stop="askAi">
-    <v-icon
-      class="icon-default-color me-1"
-      size="16">
-      fa-concierge-bell
-    </v-icon>
-    <span class="text-body text-color">{{ $t('notes.metadata.askAi.label') }}</span>
-  </v-btn>
+  <v-tooltip v-if="canAskAi" bottom>
+    <template #activator="{on, attrs}">
+      <!-- a wrapper, so that the tooltip still shows while the button is disabled -->
+      <div
+        class="ms-auto"
+        v-bind="attrs"
+        v-on="on">
+        <v-btn
+          :aria-label="$t('notes.metadata.askAi.label')"
+          :loading="opening"
+          :disabled="!hasNoteText"
+          class="note-properties-ask-ai"
+          max-width="36"
+          max-height="36"
+          icon
+          @click.prevent.stop="askAi">
+          <v-icon size="18" class="icon-default-color">fa-concierge-bell</v-icon>
+        </v-btn>
+      </div>
+    </template>
+    <span class="text-subtitle-font-size">{{ $t('notes.metadata.askAi.label') }}</span>
+  </v-tooltip>
 </template>
 
 <script>
