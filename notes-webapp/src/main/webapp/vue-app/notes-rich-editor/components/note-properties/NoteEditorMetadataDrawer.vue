@@ -32,20 +32,20 @@
       @expand-updated="expanded = $event"
       @closed="resetProperties">
       <template slot="title">
-        <div class="d-flex align-center flex-grow-1 my-auto">
-          <div class="text-header font-weight-bold text-color">
-            {{ $t('notes.metadata.properties.label') }}
-          </div>
-          <note-properties-ask-ai
-            :note="noteObject"
-            :page-id="pageId"
-            :space-id="spaceId"
-            :space-resolved="spaceResolved"
-            :read-only="readOnly"
-            :fill-from-content="fillFromContent"
-            @insert-text="insertText"
-            @assistant-opened="assistantOpened++" />
+        <div class="d-flex my-auto text-header font-weight-bold text-color">
+          {{ $t('notes.metadata.properties.label') }}
         </div>
+      </template>
+      <template slot="titleIcons">
+        <note-properties-ask-ai
+          :note="noteObject"
+          :page-id="pageId"
+          :space-id="spaceId"
+          :space-resolved="spaceResolved"
+          :read-only="readOnly"
+          :fill-from-content="fillFromContent"
+          @insert-text="insertText"
+          @assistant-opened="assistantOpened++" />
       </template>
       <template slot="content">
         <div
