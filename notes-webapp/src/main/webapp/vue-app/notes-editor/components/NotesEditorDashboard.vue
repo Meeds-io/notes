@@ -387,6 +387,8 @@ export default {
       this.getSpaceByGroupId(groupId).then((space) => {
         this.targetSpaceId = space?.id;
         this.canRedact = space.canRedactOnSpace;
+      }).catch(() => {
+        // a space that cannot be read leaves the editor closed, as before; resolveNoteSpace keeps the note's space unknown
       });
     },
     processAutoSaveFromEditorExtension(event) {
