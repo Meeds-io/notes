@@ -21,14 +21,13 @@
     <template #activator="{on, attrs}">
       <!-- a wrapper, so that the tooltip still shows while the button is disabled -->
       <div
-        class="ms-auto"
         v-bind="attrs"
         v-on="on">
         <v-btn
           :aria-label="$t('notes.metadata.askAi.label')"
           :loading="opening"
           :disabled="!hasNoteText"
-          class="note-properties-ask-ai"
+          class="note-properties-ask-ai ms-4"
           max-width="36"
           max-height="36"
           icon
