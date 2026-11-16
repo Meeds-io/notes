@@ -79,14 +79,16 @@
     </div>
     <div
       v-if="schedule"
-      :class="{'d-flex': !showStartDate && expanded}"
       class="width-fit-content mt-5">
       <div
         :class="{'d-flex': (!publish && !isActivityPosted) || expanded}"
         class="justify-start">
         <div
-          :class="{'mb-2': !expanded && (publish || isActivityPosted)}"
-          class="my-auto me-4">
+          :class="[
+            showStartDate && showEndDate && 'align-self-start' || 'my-auto',
+            {'mb-2': !expanded && (publish || isActivityPosted)},
+          ]"
+          class="me-4">
           <span
             v-if="!publish && !isActivityPosted">
             {{ $t('notes.publication.schedule.from.label') }}
@@ -109,17 +111,16 @@
             outlined
             @blur="$refs.scheduleType.blur()" />
         </div>
-        <div
-          class="d-flex">
-          <v-icon
-            v-if="!isUntilScheduleType || expanded"
-            color="primary"
-            size="24">
-            fas fa-calendar-check
-          </v-icon>
+        <div>
           <div
             v-if="showStartDate"
             class="d-flex">
+            <v-icon
+              v-if="!isUntilScheduleType || expanded"
+              color="primary"
+              size="24">
+              fas fa-calendar-check
+            </v-icon>
             <v-menu
               v-model="startDateMenu"
               :close-on-content-click="true"
@@ -153,50 +154,50 @@
               type="time"
               class="mb-1 " />
           </div>
+          <div
+            v-if="showEndDate"
+            :class="{'mt-2': showStartDate}"
+            class="d-flex">
+            <v-icon
+              :class="{'invisible': showStartDate}"
+              color="primary"
+              size="24">
+              fas fa-calendar-check
+            </v-icon>
+            <v-menu
+              v-model="endDateMenu"
+              :close-on-content-click="true"
+              :nudge-right="40"
+              transition="scale-transition"
+              content-class="ms-n10"
+              offset-y
+              min-width="auto">
+              <template #activator="{ on, attrs }">
+                <v-text-field
+                  v-model="formattedEndDate"
+                  v-bind="attrs"
+                  v-on="on"
+                  :aria-label="$t('notes.publication.endDate.label')"
+                  class="pt-0 ms-4 border-box-sizing flex-grow-0"
+                  readonly
+                  outlined
+                  dense />
+              </template>
+              <v-date-picker
+                v-model="endDate"
+                :min="minEndDate"
+                :locale="locale"
+                @input="updateEndMinTime" />
+            </v-menu>
+            <time-picker
+              v-model="endTime"
+              :min="minEndTime"
+              :aria-label="$t('notes.publication.endTime.label')"
+              format="ampm"
+              type="time"
+              class="mb-1 " />
+          </div>
         </div>
-      </div>
-      <div
-        v-if="showEndDate"
-        :class="{'mt-2': showStartDate}"
-        class="d-flex justify-end">
-        <v-icon
-          v-if="isUntilScheduleType && !expanded"
-          color="primary"
-          size="24">
-          fas fa-calendar-check
-        </v-icon>
-        <v-menu
-          v-model="endDateMenu"
-          :close-on-content-click="true"
-          :nudge-right="40"
-          transition="scale-transition"
-          content-class="ms-n10"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              v-model="formattedEndDate"
-              v-bind="attrs"
-              v-on="on"
-              :aria-label="$t('notes.publication.endDate.label')"
-              class="pt-0 ms-4 border-box-sizing flex-grow-0"
-              readonly
-              outlined
-              dense />
-          </template>
-          <v-date-picker
-            v-model="endDate"
-            :min="minEndDate"
-            :locale="locale"
-            @input="updateEndMinTime" />
-        </v-menu>
-        <time-picker
-          v-model="endTime"
-          :min="minEndTime"
-          :aria-label="$t('notes.publication.endTime.label')"
-          format="ampm"
-          type="time"
-          class="mb-1 " />
       </div>
     </div>
   </div>
