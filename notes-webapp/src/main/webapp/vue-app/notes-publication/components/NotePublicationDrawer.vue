@@ -98,7 +98,9 @@
                 'col-12': expanded && editMode,
                 'mt-8': !expanded && stepper < 2 && !editMode,
                 'mt-4': !expanded && stepper === 2 && !editMode,
+                'align-self-start': stickyOptions,
               }"
+              :style="stickyOptions && {position: 'sticky', top: 0}"
               class="flex-grow-0 flex-shrink-0">
               <v-stepper-step
                 v-if="!editMode"
@@ -327,6 +329,17 @@ export default {
     };
   },
   computed: {
+    /**
+     * The expanded drawer lays its two steps side by side: the publication
+     * options stay in view while the first step, which add-ons may make
+     * long, scrolls. The drawer expands on a wide screen only, so the
+     * stacked layouts of narrow screens and phones never stick.
+     *
+     * @returns {boolean} true when the publication options stick to the top
+     */
+    stickyOptions() {
+      return this.expanded && !this.editMode;
+    },
     publishAllowed() {
       return this.canPublish && this.allowedTargets?.length;
     },
