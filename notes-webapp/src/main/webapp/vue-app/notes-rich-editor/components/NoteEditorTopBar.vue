@@ -57,27 +57,36 @@
           </v-tooltip>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn
+              <v-badge
                 v-if="editorMetadataDrawerEnabled"
-                v-on="on"
-                v-bind="attrs"
-                width="36"
-                min-width="36"
-                height="36"
-                class="pa-0 my-auto "
-                :aria-label="$t('notes.metadata.properties.label')"
-                :disabled="!editorReady"
-                icon
-                @click="openMetadataDrawer">
-                <v-icon
-                  size="20"
-                  class="pa-0 metadata-button-icon my-auto icon-default-color">
-                  fas fa-th-list
-                </v-icon>
-              </v-btn>
+                :value="propertiesBadge > 0"
+                :content="propertiesBadge"
+                class="notes-properties-badge my-auto"
+                color="error"
+                offset-x="14"
+                offset-y="14"
+                overlap>
+                <v-btn
+                  v-on="on"
+                  v-bind="attrs"
+                  width="36"
+                  min-width="36"
+                  height="36"
+                  class="pa-0 my-auto "
+                  :aria-label="propertiesLabel"
+                  :disabled="!editorReady"
+                  icon
+                  @click="openMetadataDrawer">
+                  <v-icon
+                    size="20"
+                    class="pa-0 metadata-button-icon my-auto icon-default-color">
+                    fas fa-th-list
+                  </v-icon>
+                </v-btn>
+              </v-badge>
             </template>
             <span class="caption">
-              {{ $t('notes.metadata.properties.label') }}
+              {{ propertiesLabel }}
             </span>
           </v-tooltip>
         </div>
@@ -219,11 +228,29 @@ export default {
     isPosting: {
       type: Boolean,
       default: false
+    },
+    /**
+     * How many values the add-ons tell the note's Properties still miss,
+     * shown on the Properties button; 0 shows nothing.
+     */
+    propertiesBadge: {
+      type: Number,
+      default: 0
     }
   },
   computed: {
     editorMetadataDrawerEnabled() {
       return !this.isMobile && !this.webPageNote;
+    },
+    /**
+     * @returns {string} the Properties button's label, with how many values
+     *          are left to complete when there are some
+     */
+    propertiesLabel() {
+      const label = this.$t('notes.metadata.properties.label');
+      return this.propertiesBadge > 0
+        ? `${label} · ${this.$t('notes.metadata.properties.toComplete', {0: this.propertiesBadge})}`
+        : label;
     }
   },
   created() {

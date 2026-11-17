@@ -43,6 +43,7 @@
         :save-button-icon="saveButtonIcon"
         :save-button-disabled="saveNoteButtonDisabled"
         :editor-ready="!!editor"
+        :properties-badge="propertiesBadge"
         @editor-closed="editorClosed"
         @post-note="postNote"
         @open-metadata-drawer="openMetadataDrawer" />
@@ -120,6 +121,8 @@ export default {
       typingTimer: null,
       isUserTyping: false,
       editorExtensions: [],
+      propertiesBadge: 0,
+      propertiesBadgeRequest: 0,
       updatingProperties: false,
       enablePostKeys: 0,
       isPublishing: false,
@@ -294,6 +297,16 @@ export default {
     'note.id': function () {
       this.cloneNoteObject();
     },
+    /**
+     * Another note, or the same note under a new identity, once created or
+     * saved as a draft: its Properties badge is asked again, an add-on
+     * keeping its values under the note's own id or under its page.
+     *
+     * @returns {void}
+     */
+    propertiesBadgeKey() {
+      this.refreshPropertiesBadge();
+    },
     'note.lang': function() {
       this.cloneNoteObject();
     },
@@ -333,6 +346,23 @@ export default {
     propertiesSpaceId() {
       return this.noteSpaceId || this.getURLQueryParam('spaceId') || this.targetSpaceId || null;
     },
+    /**
+     * @returns {string|number} the page the note's Properties read, as the
+     *          metadata drawer names it: a draft's target page, else the note
+     *          itself; null for a note not created yet
+     */
+    propertiesPageId() {
+      const note = this.noteObject;
+      return (note?.draftPage ? note?.targetPageId : note?.id) || null;
+    },
+    /**
+     * @returns {string} what identifies the note an add-on counts the
+     *          Properties of: its id, whether it is a draft, and its page
+     */
+    propertiesBadgeKey() {
+      const note = this.noteObject;
+      return [note?.id || '', !!note?.draftPage, note?.targetPageId || ''].join('|');
+    },
     extensionParams() {
       return {
         spaceId: this.getURLQueryParam('spaceId') || this.targetSpaceId,
@@ -369,6 +399,14 @@ export default {
     document.addEventListener('notes-editor-upload-progress', () => this.contentImageUploadProgress = true);
     document.addEventListener('notes-editor-upload-done', () => this.contentImageUploadProgress = false);
     document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
+    document.addEventListener('notes-properties-badge-updated', this.refreshPropertiesBadge);
+    this.refreshPropertiesBadge();
+  },
+  /**
+   * @returns {void}
+   */
+  beforeDestroy() {
+    document.removeEventListener('notes-properties-badge-updated', this.refreshPropertiesBadge);
   },
   methods: {
     loadEditorExtension() {
@@ -394,6 +432,33 @@ export default {
     async refreshEditorExtensions() {
       await this.$nextTick();
       this.editorExtensions = extensionRegistry.loadComponents('NotesRichEditor') || [];
+    },
+    /**
+     * Asks each add-on registered as a « properties-badge » extension of
+     * NotesRichEditor how many values the note's Properties still miss, and
+     * shows their sum on the Properties button. Each extension gives a
+     * count(params) function, params being {note, pageId, spaceId}; one that
+     * fails or answers no number counts nothing. An answer older than
+     * another one asked is dropped. An add-on asks again by dispatching
+     * notes-properties-badge-updated on document.
+     *
+     * @returns {Promise} settled once the badge shows the new sum, or not
+     */
+    async refreshPropertiesBadge() {
+      const request = ++this.propertiesBadgeRequest;
+      const extensions = extensionRegistry.loadExtensions('NotesRichEditor', 'properties-badge') || [];
+      const params = {
+        note: this.noteObject,
+        pageId: this.propertiesPageId,
+        spaceId: this.propertiesSpaceId,
+      };
+      const counts = await Promise.all(extensions.map(extension => Promise.resolve()
+        .then(() => extension.count?.(params))
+        .then(count => (Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0))
+        .catch(() => 0)));
+      if (request === this.propertiesBadgeRequest) {
+        this.propertiesBadge = counts.reduce((sum, count) => sum + count, 0);
+      }
     },
     editorClosed(){
       this.$emit('editor-closed');
