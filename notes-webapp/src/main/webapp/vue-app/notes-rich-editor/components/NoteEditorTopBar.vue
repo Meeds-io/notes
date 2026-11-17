@@ -65,19 +65,31 @@
                 min-width="36"
                 height="36"
                 class="pa-0 my-auto "
-                :aria-label="$t('notes.metadata.properties.label')"
+                :aria-label="propertiesLabel"
                 :disabled="!editorReady"
                 icon
                 @click="openMetadataDrawer">
-                <v-icon
-                  size="20"
-                  class="pa-0 metadata-button-icon my-auto icon-default-color">
-                  fas fa-th-list
-                </v-icon>
+                <v-badge
+                  :value="propertiesBadge > 0"
+                  :aria-label="propertiesLabel"
+                  class="notes-properties-badge"
+                  color="var(--allPagesBadgePrimaryColor, #d32a2a)"
+                  offset-x="6"
+                  offset-y="6"
+                  overlap>
+                  <template #badge>
+                    <span class="notes-properties-badge-count white--text">{{ propertiesBadge }}</span>
+                  </template>
+                  <v-icon
+                    size="20"
+                    class="pa-0 metadata-button-icon my-auto icon-default-color">
+                    fas fa-th-list
+                  </v-icon>
+                </v-badge>
               </v-btn>
             </template>
             <span class="caption">
-              {{ $t('notes.metadata.properties.label') }}
+              {{ propertiesLabel }}
             </span>
           </v-tooltip>
         </div>
@@ -219,11 +231,29 @@ export default {
     isPosting: {
       type: Boolean,
       default: false
+    },
+    /**
+     * How many values the add-ons tell the note's Properties still miss,
+     * shown on the Properties button; 0 shows nothing.
+     */
+    propertiesBadge: {
+      type: Number,
+      default: 0
     }
   },
   computed: {
     editorMetadataDrawerEnabled() {
       return !this.isMobile && !this.webPageNote;
+    },
+    /**
+     * @returns {string} the Properties button's label, with how many values
+     *          are left to complete when there are some
+     */
+    propertiesLabel() {
+      const label = this.$t('notes.metadata.properties.label');
+      return this.propertiesBadge > 0
+        ? this.$t('notes.metadata.properties.labelToComplete', {0: label, 1: this.propertiesBadge})
+        : label;
     }
   },
   created() {
