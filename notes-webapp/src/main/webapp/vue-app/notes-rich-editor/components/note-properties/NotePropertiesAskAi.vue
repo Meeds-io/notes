@@ -70,15 +70,17 @@ function readAsDataUrl(file) {
 }
 
 /**
- * « Ask AI » in the header of a note's own Properties, or of an article's in
- * Content's editor: opens the assistant with every enabled binding of the
- * Properties' place, on the content as it is on screen. A text answer is inserted in the Summary field, through
- * the drawer, and an image answer opens the featured image's crop window;
- * Save then saves them.
+ * « Ask AI » in the header of a note's own Properties, in the Notes editor and
+ * in its view, of an article's Properties in its editor and in its view, and of the
+ * article editor's Publication drawer at the first publication: opens the
+ * assistant with every enabled binding of the Properties' place, on the
+ * content as it is on screen, an article's published text in its view. A
+ * text answer is inserted in the Summary field, through the drawer, and an
+ * image answer opens the featured image's crop window; Save then saves them.
  */
 export default {
   props: {
-    /** The note the drawer shows, with the content being written. */
+    /** The note or article the drawer shows: being written, or published (an article's view, read from its body). */
     note: {
       type: Object,
       default: null
@@ -130,8 +132,9 @@ export default {
     /**
      * @returns {boolean} whether the drawer is one the assistant is offered
      *          in: a note's own Properties, which fill from its content, or
-     *          an article's, which Content's editor names by its kind while
-     *          it leaves the pick among the article's images off
+     *          an article's drawers, named by the article kind (its editor's
+     *          and its view's Properties, its editor's Publication drawer),
+     *          which leave the pick among the article's images off
      */
     offered() {
       return this.fillFromContent || this.kind === 'news';
@@ -151,7 +154,7 @@ export default {
     },
     /**
      * @returns {boolean} whether « Ask AI » is offered: the bindings read
-     *          last are kept only in a note's or an article's editable Properties, with
+     *          last are kept only in a drawer the assistant is offered in, editable, with
      *          the space shared with the assistant, and cleared at once when
      *          any of these changes
      */
@@ -159,12 +162,21 @@ export default {
       return this.bindings.length > 0;
     },
     /**
+     * @returns {string} the content shown, as HTML: a note's or an edited
+     *          article's `content`, even when cleared, else the `body` of an
+     *          article's view, which holds no `content` (its published
+     *          text); empty when there is none
+     */
+    noteContent() {
+      return this.note?.content ?? this.note?.body ?? '';
+    },
+    /**
      * @returns {boolean} whether the note holds text for the assistant to
      *          read: an empty note would hand it nothing, so the button
      *          stays disabled until something is written
      */
     hasNoteText() {
-      return !!this.$utils.htmlToText(this.note?.content || '').trim();
+      return !!this.$utils.htmlToText(this.noteContent).trim();
     },
   },
   watch: {
@@ -221,8 +233,8 @@ export default {
   },
   methods: {
     /**
-     * Reads the bindings of the Properties' place: none outside a note's or
-     * an article's editable Properties, when the assistant is off, or in a space not
+     * Reads the bindings of the Properties' place: none outside a drawer the
+     * assistant is offered in, or in a read-only one, when the assistant is off, or in a space not
      * shared with it, a space that cannot be read or is not known yet
      * included. The space is read only when the place holds a binding. Only
      * the latest read applies.
@@ -264,7 +276,7 @@ export default {
         properties: {
           objectType: this.place.objectType,
           objectTitle: this.note?.title || this.$t('notes.untitled.title'),
-          objectContent: this.note?.content || '',
+          objectContent: this.noteContent,
           params: this.params,
         },
         insertText: text => this.$emit('insert-text', text),
