@@ -31,6 +31,54 @@
 export const PROPERTIES_APPLICATION_ID = 'notes';
 export const PROPERTIES_EXTENSION_ID = 'notes-properties';
 
+/**
+ * The place of an article's Properties, in the article editor Content builds
+ * on the Notes editor: an article's own requests, which an administrator
+ * changes apart from a note's, under « Articles » › Properties.
+ */
+export const ARTICLE_PROPERTIES_APPLICATION_ID = 'news';
+export const ARTICLE_PROPERTIES_EXTENSION_ID = 'news-properties';
+
+/**
+ * What the Properties' « Ask AI » hands the assistant for each kind of
+ * content it is shown for: the place its requests are read at, the type of
+ * the object, and the name its id has in the prompts.
+ */
+export const PROPERTIES_KINDS = {
+  notes: {
+    applicationId: PROPERTIES_APPLICATION_ID,
+    extensionId: PROPERTIES_EXTENSION_ID,
+    objectType: 'notes',
+    idParam: 'note_id',
+  },
+  news: {
+    applicationId: ARTICLE_PROPERTIES_APPLICATION_ID,
+    extensionId: ARTICLE_PROPERTIES_EXTENSION_ID,
+    objectType: 'news',
+    idParam: 'news_id',
+  },
+};
+
+/**
+ * The id an article has for the add-ons that attach data to it, such as its
+ * forms' values: its published page's once published, `draft-<id>` for a
+ * draft never published, so that a draft's values follow it once published.
+ * It is Forms' canonical article id (forms `ArticleObject.js#articleObjectId`,
+ * read by `ArticleFormHostPlugin`): a change there is mirrored here.
+ *
+ * @param {object} article the article being written, as the editor holds it
+ * @returns {string} that id, empty for an article never saved
+ */
+export function getArticleObjectId(article) {
+  if (article?.targetPageId) {
+    return String(article.targetPageId);
+  }
+  if (!article?.id || article.id === '0') {
+    return '';
+  }
+  return article.draftPage ? `draft-${article.id}` : String(article.id);
+}
+
 /** The bindings of the page, by place, read once whatever the forms asking them. */
 const BINDINGS = new Map();
 

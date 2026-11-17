@@ -44,6 +44,7 @@
           :space-resolved="spaceResolved"
           :read-only="readOnly"
           :fill-from-content="fillFromContent"
+          :kind="kind"
           @insert-text="insertText"
           @assistant-opened="assistantOpened++" />
       </template>
@@ -151,6 +152,14 @@ export default {
     spaceResolved: {
       type: Boolean,
       default: true
+    },
+    /**
+     * The kind of content shown, `notes` or `news` (an article in Content's
+     * editor), which sets the place of the assistant's requests.
+     */
+    kind: {
+      type: String,
+      default: 'notes'
     }
   },
   computed: {
