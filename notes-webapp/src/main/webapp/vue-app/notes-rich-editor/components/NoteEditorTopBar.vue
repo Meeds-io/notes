@@ -252,7 +252,7 @@ export default {
     propertiesLabel() {
       const label = this.$t('notes.metadata.properties.label');
       return this.propertiesBadge > 0
-        ? `${label} · ${this.$t('notes.metadata.properties.toComplete', {0: this.propertiesBadge})}`
+        ? this.$t('notes.metadata.properties.labelToComplete', {0: label, 1: this.propertiesBadge})
         : label;
     }
   },
