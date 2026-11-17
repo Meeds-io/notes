@@ -262,7 +262,7 @@
         </div>
         <div class="mt-12" v-else-if="noteChildren && !hasChildren || hasDraft && hasEmptyContent">
           <div class="d-flex flex-column justify-center text-center">
-            <v-icon size="60" class="tertiary-color">
+            <v-icon size="60" class="secondary--text">
               fa-clipboard
             </v-icon>
             <div v-if="isManager" class="mt-5">
