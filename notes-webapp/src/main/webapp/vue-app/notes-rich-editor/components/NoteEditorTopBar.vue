@@ -57,36 +57,36 @@
           </v-tooltip>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-badge
+              <v-btn
                 v-if="editorMetadataDrawerEnabled"
-                :value="propertiesBadge > 0"
+                v-on="on"
+                v-bind="attrs"
+                width="36"
+                min-width="36"
+                height="36"
+                class="pa-0 my-auto "
                 :aria-label="propertiesLabel"
-                class="notes-properties-badge my-auto"
-                color="error-color-background"
-                offset-x="14"
-                offset-y="14"
-                overlap>
-                <template #badge>
-                  <span class="notes-properties-badge-count white--text">{{ propertiesBadge }}</span>
-                </template>
-                <v-btn
-                  v-on="on"
-                  v-bind="attrs"
-                  width="36"
-                  min-width="36"
-                  height="36"
-                  class="pa-0 my-auto "
+                :disabled="!editorReady"
+                icon
+                @click="openMetadataDrawer">
+                <v-badge
+                  :value="propertiesBadge > 0"
                   :aria-label="propertiesLabel"
-                  :disabled="!editorReady"
-                  icon
-                  @click="openMetadataDrawer">
+                  class="notes-properties-badge"
+                  color="var(--allPagesBadgePrimaryColor, #d32a2a)"
+                  offset-x="6"
+                  offset-y="6"
+                  overlap>
+                  <template #badge>
+                    <span class="notes-properties-badge-count white--text">{{ propertiesBadge }}</span>
+                  </template>
                   <v-icon
                     size="20"
                     class="pa-0 metadata-button-icon my-auto icon-default-color">
                     fas fa-th-list
                   </v-icon>
-                </v-btn>
-              </v-badge>
+                </v-badge>
+              </v-btn>
             </template>
             <span class="caption">
               {{ propertiesLabel }}
