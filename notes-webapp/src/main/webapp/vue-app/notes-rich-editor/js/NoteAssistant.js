@@ -31,6 +31,34 @@
 export const PROPERTIES_APPLICATION_ID = 'notes';
 export const PROPERTIES_EXTENSION_ID = 'notes-properties';
 
+/**
+ * The place of an article's Properties, in the article editor Content builds
+ * on the Notes editor: an article's own requests, which an administrator
+ * changes apart from a note's, under « Articles » › Properties.
+ */
+export const ARTICLE_PROPERTIES_APPLICATION_ID = 'news';
+export const ARTICLE_PROPERTIES_EXTENSION_ID = 'news-properties';
+
+/**
+ * What the Properties' « Ask AI » hands the assistant for each kind of
+ * content it is shown for: the place its requests are read at, the type of
+ * the object, and the name its id has in the prompts.
+ */
+export const PROPERTIES_KINDS = {
+  notes: {
+    applicationId: PROPERTIES_APPLICATION_ID,
+    extensionId: PROPERTIES_EXTENSION_ID,
+    objectType: 'notes',
+    idParam: 'note_id',
+  },
+  news: {
+    applicationId: ARTICLE_PROPERTIES_APPLICATION_ID,
+    extensionId: ARTICLE_PROPERTIES_EXTENSION_ID,
+    objectType: 'news',
+    idParam: 'news_id',
+  },
+};
+
 /** The bindings of the page, by place, read once whatever the forms asking them. */
 const BINDINGS = new Map();
 

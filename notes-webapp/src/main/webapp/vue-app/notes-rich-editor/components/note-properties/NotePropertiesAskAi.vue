@@ -42,8 +42,7 @@
 
 <script>
 import {
-  PROPERTIES_APPLICATION_ID,
-  PROPERTIES_EXTENSION_ID,
+  PROPERTIES_KINDS,
   getBindings,
   isSpaceSharedWithAssistant,
   openAssistant
@@ -70,9 +69,9 @@ function readAsDataUrl(file) {
 }
 
 /**
- * « Ask AI » in the header of a note's own Properties: opens the assistant
- * with every enabled binding of the Properties' place, on the note's content
- * as it is on screen. A text answer is inserted in the Summary field, through
+ * « Ask AI » in the header of a note's own Properties, or of an article's in
+ * Content's editor: opens the assistant with every enabled binding of the
+ * Properties' place, on the content as it is on screen. A text answer is inserted in the Summary field, through
  * the drawer, and an image answer opens the featured image's crop window;
  * Save then saves them.
  */
@@ -103,10 +102,15 @@ export default {
       type: Boolean,
       default: false
     },
-    /** Whether the drawer is the note's own Properties, the only one that offers the assistant. */
+    /** Whether the drawer is the note's own Properties, which offers the assistant, as an article's does. */
     fillFromContent: {
       type: Boolean,
       default: false
+    },
+    /** The kind of content shown, `notes` or `news` (an article), which sets the requests' place. */
+    kind: {
+      type: String,
+      default: 'notes'
     }
   },
   data: () => ({
@@ -116,8 +120,24 @@ export default {
   }),
   computed: {
     /**
+     * @returns {object} the place, object type and id name of the content
+     *          shown, a note's for a kind it does not know
+     */
+    place() {
+      return PROPERTIES_KINDS[this.kind] || PROPERTIES_KINDS.notes;
+    },
+    /**
+     * @returns {boolean} whether the drawer is one the assistant is offered
+     *          in: a note's own Properties, which fill from its content, or
+     *          an article's, which Content's editor names by its kind while
+     *          it leaves the pick among the article's images off
+     */
+    offered() {
+      return this.fillFromContent || this.kind === 'news';
+    },
+    /**
      * @returns {boolean} whether « Ask AI » is offered: the bindings read
-     *          last are kept only in the note's own editable Properties, with
+     *          last are kept only in a note's or an article's editable Properties, with
      *          the space shared with the assistant, and cleared at once when
      *          any of these changes
      */
@@ -168,6 +188,14 @@ export default {
     fillFromContent() {
       this.loadBindings();
     },
+    /**
+     * Reads again what the assistant offers when the kind of content changes.
+     *
+     * @returns {void}
+     */
+    kind() {
+      this.loadBindings();
+    },
   },
   /**
    * Reads what the assistant offers when the header is first shown.
@@ -179,8 +207,8 @@ export default {
   },
   methods: {
     /**
-     * Reads the bindings of the Properties' place: none outside the note's
-     * own editable Properties, when the assistant is off, or in a space not
+     * Reads the bindings of the Properties' place: none outside a note's or
+     * an article's editable Properties, when the assistant is off, or in a space not
      * shared with it, a space that cannot be read or is not known yet
      * included. The space is read only when the place holds a binding. Only
      * the latest read applies.
@@ -190,10 +218,10 @@ export default {
     async loadBindings() {
       const load = ++this.load;
       this.bindings = [];
-      if (!this.fillFromContent || this.readOnly || !this.spaceResolved) {
+      if (!this.offered || this.readOnly || !this.spaceResolved) {
         return;
       }
-      const bindings = await getBindings(PROPERTIES_APPLICATION_ID, PROPERTIES_EXTENSION_ID);
+      const bindings = await getBindings(this.place.applicationId, this.place.extensionId);
       if (load !== this.load || !bindings.length) {
         return;
       }
@@ -206,7 +234,7 @@ export default {
      * Opens the assistant with every binding of the place, on the content on
      * screen, saved or not: the chat gets the content, never the note's id,
      * whose stored version may be older. The page id reaches the prompts as
-     * {note_id}, empty for a note never saved. Tells the drawer once the
+     * {note_id}, or {news_id} for an article, empty for content never saved. Tells the drawer once the
      * chat is open.
      *
      * @returns {void}
@@ -219,10 +247,10 @@ export default {
       openAssistant({
         uxBindings: this.bindings,
         properties: {
-          objectType: 'notes',
+          objectType: this.place.objectType,
           objectTitle: this.note?.title || this.$t('notes.untitled.title'),
           objectContent: this.note?.content || '',
-          params: {note_id: this.pageId || ''},
+          params: {[this.place.idParam]: this.pageId || ''},
         },
         insertText: text => this.$emit('insert-text', text),
         insertImage: this.insertImage,
