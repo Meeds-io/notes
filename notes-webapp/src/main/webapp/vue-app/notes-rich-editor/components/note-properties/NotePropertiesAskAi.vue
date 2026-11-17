@@ -43,6 +43,7 @@
 <script>
 import {
   PROPERTIES_KINDS,
+  getArticleObjectId,
   getBindings,
   isSpaceSharedWithAssistant,
   openAssistant
@@ -134,6 +135,19 @@ export default {
      */
     offered() {
       return this.fillFromContent || this.kind === 'news';
+    },
+    /**
+     * @returns {object} the values the prompts receive besides the content:
+     *          the page id, as {note_id} or {news_id}, and for an article its
+     *          id for the add-ons that attach data to it, as {article_id};
+     *          each empty for content never saved
+     */
+    params() {
+      const params = {[this.place.idParam]: this.pageId || ''};
+      if (this.kind === 'news') {
+        params.article_id = getArticleObjectId(this.note);
+      }
+      return params;
     },
     /**
      * @returns {boolean} whether « Ask AI » is offered: the bindings read
@@ -234,7 +248,8 @@ export default {
      * Opens the assistant with every binding of the place, on the content on
      * screen, saved or not: the chat gets the content, never the note's id,
      * whose stored version may be older. The page id reaches the prompts as
-     * {note_id}, or {news_id} for an article, empty for content never saved. Tells the drawer once the
+     * {note_id}, or {news_id} and {article_id} for an article, empty for
+     * content never saved. Tells the drawer once the
      * chat is open.
      *
      * @returns {void}
@@ -250,7 +265,7 @@ export default {
           objectType: this.place.objectType,
           objectTitle: this.note?.title || this.$t('notes.untitled.title'),
           objectContent: this.note?.content || '',
-          params: {[this.place.idParam]: this.pageId || ''},
+          params: this.params,
         },
         insertText: text => this.$emit('insert-text', text),
         insertImage: this.insertImage,

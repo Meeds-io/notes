@@ -205,6 +205,10 @@ class NoteUxBindingsTest {
                                                      .resolve("NotePropertiesAskAi.vue"));
     assertTrue(askAi.contains("return this.fillFromContent || this.kind === 'news';"),
                "an article's Properties offer the assistant while they leave the pick among its images off");
+    assertTrue(askAi.contains("params.article_id = getArticleObjectId(this.note);"),
+               "an article's forms read their values on the article's own id");
+    assertTrue(opener.contains("return article.draftPage ? `draft-${article.id}` : String(article.id);"),
+               "a draft's forms id is the one Forms gives a draft article");
   }
 
   /**

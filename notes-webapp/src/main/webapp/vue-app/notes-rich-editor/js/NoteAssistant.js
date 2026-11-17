@@ -59,6 +59,24 @@ export const PROPERTIES_KINDS = {
   },
 };
 
+/**
+ * The id an article has for the add-ons that attach data to it, such as its
+ * forms' values: its published page's once published, `draft-<id>` for a
+ * draft never published, so that a draft's values follow it once published.
+ *
+ * @param {object} article the article being written, as the editor holds it
+ * @returns {string} that id, empty for an article never saved
+ */
+export function getArticleObjectId(article) {
+  if (article?.targetPageId) {
+    return String(article.targetPageId);
+  }
+  if (!article?.id || article.id === '0') {
+    return '';
+  }
+  return article.draftPage ? `draft-${article.id}` : String(article.id);
+}
+
 /** The bindings of the page, by place, read once whatever the forms asking them. */
 const BINDINGS = new Map();
 
