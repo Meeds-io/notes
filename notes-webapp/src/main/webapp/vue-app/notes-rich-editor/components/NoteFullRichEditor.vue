@@ -401,7 +401,6 @@ export default {
     document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
     document.addEventListener('notes-properties-badge-updated', this.refreshPropertiesBadge);
     document.addEventListener('extension-NotesRichEditor-properties-badge-updated', this.refreshPropertiesBadge);
-    this.refreshPropertiesBadge();
   },
   /**
    * @returns {void}
