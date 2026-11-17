@@ -89,6 +89,7 @@
         :fill-from-content="fillFromContent"
         :space-id="propertiesSpaceId"
         :space-resolved="spaceResolved"
+        :kind="contentKind"
         @metadata-updated="metadataUpdated" />
       <note-editor-featured-image-drawer
         ref="featuredImageDrawer"
@@ -337,6 +338,14 @@ export default {
     },
     entityId() {
       return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
+    },
+    /**
+     * @returns {string} the kind of content written, `news` in Content's
+     *          article editor and `notes` otherwise: it sets the place of the
+     *          assistant's requests in the editor and in the Properties
+     */
+    contentKind() {
+      return this.appName === 'content' ? 'news' : 'notes';
     },
     /**
      * @returns {number|string} the space of the note being edited, for its
@@ -598,6 +607,7 @@ export default {
         copyFormatting_allowedContexts: true,
         autoParagraph: false,
         ckEditorType: 'notes',
+        aiUxBindingsApplicationId: this.contentKind,
         objectType: 'notes',
         objectId: this.entityId,
         indentBlock: {
