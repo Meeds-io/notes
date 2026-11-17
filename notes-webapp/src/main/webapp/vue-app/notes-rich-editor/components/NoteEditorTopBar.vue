@@ -60,12 +60,15 @@
               <v-badge
                 v-if="editorMetadataDrawerEnabled"
                 :value="propertiesBadge > 0"
-                :content="propertiesBadge"
+                :aria-label="propertiesLabel"
                 class="notes-properties-badge my-auto"
                 color="error"
                 offset-x="14"
                 offset-y="14"
                 overlap>
+                <template #badge>
+                  <span class="notes-properties-badge-count">{{ propertiesBadge }}</span>
+                </template>
                 <v-btn
                   v-on="on"
                   v-bind="attrs"

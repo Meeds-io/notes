@@ -400,6 +400,7 @@ export default {
     document.addEventListener('notes-editor-upload-done', () => this.contentImageUploadProgress = false);
     document.addEventListener('notes-extensions-updated', this.refreshEditorExtensions);
     document.addEventListener('notes-properties-badge-updated', this.refreshPropertiesBadge);
+    document.addEventListener('extension-NotesRichEditor-properties-badge-updated', this.refreshPropertiesBadge);
     this.refreshPropertiesBadge();
   },
   /**
@@ -407,6 +408,7 @@ export default {
    */
   beforeDestroy() {
     document.removeEventListener('notes-properties-badge-updated', this.refreshPropertiesBadge);
+    document.removeEventListener('extension-NotesRichEditor-properties-badge-updated', this.refreshPropertiesBadge);
   },
   methods: {
     loadEditorExtension() {
@@ -439,8 +441,9 @@ export default {
      * shows their sum on the Properties button. Each extension gives a
      * count(params) function, params being {note, pageId, spaceId}; one that
      * fails or answers no number counts nothing. An answer older than
-     * another one asked is dropped. An add-on asks again by dispatching
-     * notes-properties-badge-updated on document.
+     * another one asked is dropped. The sum is asked again when an extension
+     * registers, and whenever an add-on dispatches
+     * notes-properties-badge-updated on document, after a value changes.
      *
      * @returns {Promise} settled once the badge shows the new sum, or not
      */
