@@ -340,11 +340,6 @@ export default {
       return this.newEmptyTranslation ? null : this.note?.draftPage ? this.note?.id : this.note?.latestVersionId;
     },
     /**
-     * @returns {number|string} the space of the note being edited, for its
-     *          Properties: the one the caller read, else the one the
-     *          editor's extensions get; none outside spaces
-     */
-    /**
      * @returns {string} the kind of content written, `news` in Content's
      *          article editor and `notes` otherwise: it sets the place of the
      *          assistant's requests in the editor and in the Properties
@@ -352,6 +347,11 @@ export default {
     contentKind() {
       return this.appName === 'content' ? 'news' : 'notes';
     },
+    /**
+     * @returns {number|string} the space of the note being edited, for its
+     *          Properties: the one the caller read, else the one the
+     *          editor's extensions get; none outside spaces
+     */
     propertiesSpaceId() {
       return this.noteSpaceId || this.getURLQueryParam('spaceId') || this.targetSpaceId || null;
     },

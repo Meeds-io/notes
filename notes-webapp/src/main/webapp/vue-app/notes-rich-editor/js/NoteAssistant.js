@@ -63,6 +63,8 @@ export const PROPERTIES_KINDS = {
  * The id an article has for the add-ons that attach data to it, such as its
  * forms' values: its published page's once published, `draft-<id>` for a
  * draft never published, so that a draft's values follow it once published.
+ * It is Forms' canonical article id (forms `ArticleObject.js#articleObjectId`,
+ * read by `ArticleFormHostPlugin`): a change there is mirrored here.
  *
  * @param {object} article the article being written, as the editor holds it
  * @returns {string} that id, empty for an article never saved
