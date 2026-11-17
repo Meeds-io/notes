@@ -62,12 +62,12 @@
                 :value="propertiesBadge > 0"
                 :aria-label="propertiesLabel"
                 class="notes-properties-badge my-auto"
-                color="error"
+                color="error-color-background"
                 offset-x="14"
                 offset-y="14"
                 overlap>
                 <template #badge>
-                  <span class="notes-properties-badge-count">{{ propertiesBadge }}</span>
+                  <span class="notes-properties-badge-count white--text">{{ propertiesBadge }}</span>
                 </template>
                 <v-btn
                   v-on="on"
