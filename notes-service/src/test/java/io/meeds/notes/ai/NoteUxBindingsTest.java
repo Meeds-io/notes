@@ -171,11 +171,44 @@ class NoteUxBindingsTest {
     String opener = Files.readString(PROPERTIES_OPENER);
     for (JsonNode binding : read("/ai-ux-bindings.json").get("bindings")) {
       String nameId = binding.get("nameId").asString();
-      assertTrue(opener.contains("PROPERTIES_APPLICATION_ID = '" + binding.get("applicationId").asString() + "'"),
+      assertTrue(opener.contains("export const PROPERTIES_APPLICATION_ID = '" + binding.get("applicationId").asString() + "'"),
                  nameId + ": the opener reads the binding's application");
-      assertTrue(opener.contains("PROPERTIES_EXTENSION_ID = '" + binding.get("extensionId").asString() + "'"),
+      assertTrue(opener.contains("export const PROPERTIES_EXTENSION_ID = '" + binding.get("extensionId").asString() + "'"),
                  nameId + ": the opener reads the binding's place");
     }
+  }
+
+  /**
+   * An article's Properties, in Content's editor built on this one, reads
+   * the requests of « Articles » › Properties, the place the assistant's own
+   * article bindings declare (news/news-properties in the ai add-on's
+   * ai-ux-bindings.json): reading the note's place there would offer a
+   * note's requests on an article, and an administrator could not tell them
+   * apart. The editor names the article kind from Content's app name, and
+   * the kind alone offers the assistant: Content leaves fill-from-content,
+   * the pick among the article's images, off.
+   *
+   * @throws Exception when a source cannot be read
+   */
+  @Test
+  void anArticlesPropertiesReadTheArticlesPlace() throws Exception {
+    String opener = Files.readString(PROPERTIES_OPENER);
+    assertTrue(opener.contains("export const ARTICLE_PROPERTIES_APPLICATION_ID = 'news'"), "the article's application");
+    assertTrue(opener.contains("export const ARTICLE_PROPERTIES_EXTENSION_ID = 'news-properties'"), "the article's place");
+    String editor = Files.readString(PROPERTIES_OPENER.getParent().resolveSibling("components").resolve("NoteFullRichEditor.vue"));
+    assertTrue(editor.contains("this.appName === 'content' ? 'news' : 'notes'"), "the editor names the article kind");
+    assertTrue(editor.contains("aiUxBindingsApplicationId: this.contentKind"),
+               "the editor's toolbar reads the requests of its own kind");
+    String askAi = Files.readString(PROPERTIES_OPENER.getParent()
+                                                     .resolveSibling("components")
+                                                     .resolve("note-properties")
+                                                     .resolve("NotePropertiesAskAi.vue"));
+    assertTrue(askAi.contains("return this.fillFromContent || this.kind === 'news';"),
+               "an article's Properties offer the assistant while they leave the pick among its images off");
+    assertTrue(askAi.contains("params.article_id = getArticleObjectId(this.note);"),
+               "an article's forms read their values on the article's own id");
+    assertTrue(opener.contains("return article.draftPage ? `draft-${article.id}` : String(article.id);"),
+               "a draft's forms id is the one Forms gives a draft article");
   }
 
   /**
