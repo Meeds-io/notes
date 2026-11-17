@@ -212,6 +212,43 @@ class NoteUxBindingsTest {
   }
 
   /**
+   * An article's Publication drawer, in its first publication from the
+   * editor, offers the assistant of the article's Properties (EXO-94574):
+   * the same place, the same three requests, administered under Articles ›
+   * Properties. The drawer is told the article kind by the editor, offers
+   * nothing in edit mode (which has no step for the properties), and inserts
+   * the summary in that step's form. The assistant reads an article's view
+   * from its body, the published text, when it has no content.
+   *
+   * @throws Exception when a source cannot be read
+   */
+  @Test
+  void anArticlesPublicationDrawerOffersThePropertiesAssistant() throws Exception {
+    Path components = PROPERTIES_OPENER.getParent().resolveSibling("components");
+    String publication = Files.readString(PROPERTIES_OPENER.getParent()
+                                                          .getParent()
+                                                          .resolveSibling("notes-publication")
+                                                          .resolve("components")
+                                                          .resolve("NotePublicationDrawer.vue"));
+    assertTrue(publication.contains("<note-properties-ask-ai"), "the Publication drawer mounts the assistant");
+    assertTrue(publication.contains(":kind=\"kind\""), "with the kind it is given");
+    assertTrue(publication.contains(":read-only=\"editMode\""), "and none in edit mode, which has no properties step");
+    assertTrue(publication.contains("this.$refs.propertiesForm?.insertSummary(text);"), "the summary goes into the step's form");
+    assertTrue(publication.contains("if (!this.expanded) {\n        this.stepper = 1;\n      }\n      this.$refs.propertiesForm?.insertSummary(text);"),
+               "the step that receives the summary is shown first when the drawer is not expanded");
+    assertTrue(publication.contains("@assistant-opened=\"assistantOpened++\"") && publication.contains("assistantOpened: assistantOpened"),
+               "the step's sections are told when the assistant was opened, so that they read the values it wrote again");
+    String editor = Files.readString(components.resolve("NoteFullRichEditor.vue"));
+    assertTrue(editor.contains("ref=\"editorPublicationDrawer\"\n        :has-featured-image=\"hasFeaturedImage\"\n        :kind=\"contentKind\"\n        :properties-space-id=\"propertiesSpaceId\"\n        :properties-space-resolved=\"spaceResolved\""),
+               "the editor names the article kind and the Properties' space to its Publication drawer");
+    assertTrue(publication.contains("return this.propertiesSpaceId || this.spaceId || null;"),
+               "the assistant is checked against the Properties' space, the article's own");
+    String askAi = Files.readString(components.resolve("note-properties").resolve("NotePropertiesAskAi.vue"));
+    assertTrue(askAi.contains("return this.note?.content ?? this.note?.body ?? '';"),
+               "an article's view, which holds no content, is read from its body; an editor's content, even cleared, is never");
+  }
+
+  /**
    * Each binding's place is registered in the AI administration under
    * Notes, with its label in the administration bundle, so that an
    * administrator finds, turns off, rewords or restores its entries.

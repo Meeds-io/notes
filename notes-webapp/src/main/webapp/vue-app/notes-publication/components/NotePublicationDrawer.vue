@@ -36,6 +36,17 @@
           {{ $t('notes.publication.publish.label') }}
         </div>
       </template>
+      <template slot="titleIcons">
+        <note-properties-ask-ai
+          :note="noteObject"
+          :page-id="pageId"
+          :space-id="assistantSpaceId"
+          :space-resolved="assistantSpaceResolved"
+          :read-only="editMode"
+          :kind="kind"
+          @insert-text="insertText"
+          @assistant-opened="assistantOpened++" />
+      </template>
       <template slot="content">
         <div class="pa-5">
           <v-stepper
@@ -83,7 +94,8 @@
                             :params="{
                               spaceId: spaceId,
                               expanded: expanded,
-                              content: noteObject
+                              content: noteObject,
+                              assistantOpened: assistantOpened
                             }" />
                         </template>
                       </div>
@@ -275,8 +287,12 @@
 </template>
 
 <script>
+import NotePropertiesAskAi from '../../notes-rich-editor/components/note-properties/NotePropertiesAskAi.vue';
 
 export default {
+  components: {
+    'note-properties-ask-ai': NotePropertiesAskAi,
+  },
   data() {
     return {
       stepper: 1,
@@ -284,6 +300,8 @@ export default {
       noteObject: null,
       currentNoteProperties: {},
       expanded: false,
+      // counts the assistant's openings, so that a section reads its values again once the user is back
+      assistantOpened: 0,
       summaryMaxLength: 1300,
       publicationSettings: {
         post: true,
@@ -316,6 +334,31 @@ export default {
     params: {
       type: Object,
       default: null
+    },
+    /**
+     * The kind of content published, `notes` or `news` (an article): an
+     * article's drawer offers the assistant of its Properties, a note's none.
+     */
+    kind: {
+      type: String,
+      default: 'notes'
+    },
+    /**
+     * The space the assistant is checked against, as the caller reads it for
+     * the content's Properties (an article's own space); the publication
+     * parameters' space when the caller names none.
+     */
+    propertiesSpaceId: {
+      type: [Number, String],
+      default: null
+    },
+    /**
+     * Whether the caller knows the space of the content's Properties; false
+     * while it is read or when it could not be.
+     */
+    propertiesSpaceResolved: {
+      type: Boolean,
+      default: true
     }
   },
   provide() {
@@ -339,6 +382,29 @@ export default {
      */
     stickyOptions() {
       return this.expanded && !this.editMode;
+    },
+    /**
+     * @returns {number|string} the page id of the content published, as its
+     *          Properties compute it: a draft's target page, else its own id;
+     *          none for content never saved
+     */
+    pageId() {
+      return (this.noteObject?.draftPage ? this.noteObject?.targetPageId : this.noteObject?.id) || null;
+    },
+    /**
+     * @returns {number|string} the space the assistant is checked against:
+     *          the one of the content's Properties, else the publication's
+     */
+    assistantSpaceId() {
+      return this.propertiesSpaceId || this.spaceId || null;
+    },
+    /**
+     * @returns {boolean} whether that space is known: as the caller says when
+     *          it names the Properties' space, else once the publication
+     *          names one
+     */
+    assistantSpaceResolved() {
+      return this.propertiesSpaceId ? this.propertiesSpaceResolved : !!this.spaceId;
     },
     publishAllowed() {
       return this.canPublish && this.allowedTargets?.length;
@@ -409,6 +475,21 @@ export default {
     document.removeEventListener('content-publication-extensions-updated', this.loadPublishExtensions);
   },
   methods: {
+    /**
+     * Inserts the assistant's text in the summary of the step that checks
+     * the properties, as the Properties drawer does, and shows that step
+     * when the drawer is not expanded, so that the summary is never written
+     * out of sight from the publication step.
+     *
+     * @param {string} text the assistant's answer
+     * @returns {void}
+     */
+    insertText(text) {
+      if (!this.expanded) {
+        this.stepper = 1;
+      }
+      this.$refs.propertiesForm?.insertSummary(text);
+    },
     loadPublishExtensions() {
       this.publishExtensions = extensionRegistry.loadComponents('ContentPublication');
     },
