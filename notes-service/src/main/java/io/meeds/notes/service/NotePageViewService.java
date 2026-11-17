@@ -248,14 +248,32 @@ public class NotePageViewService {
       String oldPageId = matcher.group(1);
       String fileId = matcher.group(2);
       try {
-        createAttachment(pageId, fileId);
-        pageContentReplacement = pageContentReplacement.replace(String.format("wikiPage/%s/%s\"", oldPageId, fileId),
-                                                                String.format("wikiPage/%s/%s\"", pageId, fileId));
+        if (isPageNoteAttachment(oldPageId, fileId)) {
+          createAttachment(pageId, fileId);
+          pageContentReplacement = pageContentReplacement.replace(String.format("wikiPage/%s/%s\"", oldPageId, fileId),
+                                                                  String.format("wikiPage/%s/%s\"", pageId, fileId));
+        }
       } catch (Exception e) {
         LOG.warn("Error while creating File attachment {} for page with id {}", fileId, pageId);
       }
     }
     return pageContentReplacement;
+  }
+
+  /**
+   * Checks whether the file is an attachment of a note page: a note owned by
+   * the system and holding the content of a note page setting.
+   */
+  private boolean isPageNoteAttachment(String notePageId, String fileId) throws WikiException {
+    if (StringUtils.isBlank(notePageId)
+        || StringUtils.isBlank(fileId)
+        || attachmentService.getAttachment(WikiPageAttachmentPlugin.OBJECT_TYPE, notePageId, fileId) == null) {
+      return false;
+    }
+    Page notePage = noteService.getNoteById(notePageId);
+    return notePage != null
+        && StringUtils.equals(notePage.getOwner(), IdentityConstants.SYSTEM)
+        && cmsService.isSettingNameExists(CMS_CONTENT_TYPE, notePage.getName());
   }
 
   private Wiki getNote(PageKey pageKey) throws WikiException {
