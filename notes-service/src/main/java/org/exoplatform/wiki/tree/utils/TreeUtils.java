@@ -150,7 +150,7 @@ public class TreeUtils {
       if (array.length < 3) {
         result.setOwner(array[1]);
       } else if (array.length >= 3) {
-        if (array[0].equals(PortalConfig.GROUP_TYPE)) {
+        if (PortalConfig.GROUP_TYPE.equalsIgnoreCase(array[0])) {
           OrganizationService oService = (OrganizationService) ExoContainerContext.getCurrentContainer()
                                                                                   .getComponentInstanceOfType(OrganizationService.class);
           String groupId = path.substring(path.indexOf("/"));

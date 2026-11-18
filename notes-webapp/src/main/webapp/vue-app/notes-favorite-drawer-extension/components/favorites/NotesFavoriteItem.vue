@@ -86,7 +86,7 @@ export default {
       return this.note?.lang && `${this.note?.url}?translation=${this.note.lang}` || `${this.note?.url}?translation=original`;
     },
     spaceGroupId() {
-      return this.note?.wikiType === 'group' &&  this.note?.wikiOwner?.startsWith?.('/spaces/') ? this.note?.wikiOwner : null;
+      return this.note?.wikiType?.toLowerCase?.() === 'group' &&  this.note?.wikiOwner?.startsWith?.('/spaces/') ? this.note?.wikiOwner : null;
     },
     iconSize() {
       return this.expanded ? 34 : 24;
