@@ -379,6 +379,7 @@
     <version-history-drawer
       :versions="noteVersionsArray"
       :can-manage="this.note.canManage"
+      :disable-restore-version="translationDisplayed"
       :show-load-more="hasMoreVersions"
       @open-version="displayVersion($event)"
       @restore-version="restoreVersion($event)"
@@ -633,6 +634,9 @@ export default {
     },
     targetLang() {
       return this.selectedTranslation?.value || this.lang;
+    },
+    translationDisplayed() {
+      return !!this.selectedTranslation?.value;
     },
     parentPageId() {
       return this.note?.parentPageId;
@@ -1218,8 +1222,12 @@ export default {
       };
       this.note.content = version.content;
       this.note.title = version.title;
-      this.noteSummary = version.properties.summary;
-      this.note.properties = version.properties;
+      // A version carries properties only when metadata was stored for it; the
+      // server then copies them to the note, otherwise it keeps the note's own.
+      if (version.properties) {
+        this.noteSummary = version.properties.summary;
+        this.note.properties = version.properties;
+      }
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
         .catch(e => {
           console.error('Error when restore note version', e);
