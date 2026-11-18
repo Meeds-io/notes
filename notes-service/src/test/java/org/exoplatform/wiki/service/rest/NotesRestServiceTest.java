@@ -496,22 +496,23 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   @Test
   public void testGetNoteTreeDataOfNotebookStoredWithUpperCaseType() throws Exception {
     Page homePage = new Page("home");
-    homePage.setWikiOwner("user");
-    homePage.setWikiType("WIKIHOME");
+    homePage.setWikiOwner("/spaces/test");
+    homePage.setWikiType("GROUP");
     homePage.setOwner("user");
     homePage.setId("1");
     homePage.setParentPageId("0");
     homePage.setHasChild(true);
     Wiki noteBook = new Wiki();
-    noteBook.setOwner("user");
-    noteBook.setType("WIKI");
+    noteBook.setOwner("/spaces/test");
+    noteBook.setType("GROUP");
     noteBook.setId("0");
     noteBook.setWikiHome(homePage);
     Page child = new Page("child");
     child.setTitle("child");
     child.setId("10");
     child.setParentPageId("1");
-    child.setWikiType("PAGE");
+    child.setWikiType("GROUP");
+    child.setWikiOwner("/spaces/test");
     WikiPageParams pageParams = new WikiPageParams("GROUP", "/spaces/test", "home");
     @SuppressWarnings("unchecked")
     Deque<Object> paramsDeque = mock(Deque.class);
@@ -522,7 +523,6 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     when(organizationService.getGroupHandler()).thenReturn(groupHandler);
     when(noteService.getNoteOfNoteBookByName("GROUP", "/spaces/test", "home", identity)).thenReturn(homePage);
     when(noteBookService.getWikiByTypeAndOwner("GROUP", "/spaces/test")).thenReturn(noteBook);
-    when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
     when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
     when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(new ArrayList<>(List.of(child)));
     utilsStatic.when(() -> Utils.getStackParams(homePage)).thenReturn(paramsDeque);
