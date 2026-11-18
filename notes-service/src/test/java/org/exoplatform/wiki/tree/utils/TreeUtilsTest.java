@@ -25,14 +25,68 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
+import org.exoplatform.container.ExoContainer;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.services.organization.Group;
+import org.exoplatform.services.organization.GroupHandler;
+import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.wiki.service.WikiPageParams;
 import org.exoplatform.wiki.tree.JsonNodeData;
+import org.exoplatform.wiki.utils.Utils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Method;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TreeUtilsTest {
+
+  @Test
+  public void testGetPageParamsFromPathOfGroupNotebookWhateverTheTypeCase() throws Exception {
+    OrganizationService organizationService = mock(OrganizationService.class);
+    GroupHandler groupHandler = mock(GroupHandler.class);
+    ExoContainer container = mock(ExoContainer.class);
+    when(container.getComponentInstanceOfType(OrganizationService.class)).thenReturn(organizationService);
+    when(organizationService.getGroupHandler()).thenReturn(groupHandler);
+    when(groupHandler.findGroupById("/spaces/test")).thenReturn(mock(Group.class));
+    try (MockedStatic<ExoContainerContext> containerContext = mockStatic(ExoContainerContext.class)) {
+      containerContext.when(ExoContainerContext::getCurrentContainer).thenReturn(container);
+
+      for (String type : new String[] { "group", "GROUP" }) {
+        WikiPageParams params = TreeUtils.getPageParamsFromPath(type + "/spaces/test/home");
+        assertEquals(type, params.getType());
+        assertEquals("/spaces/test", params.getOwner());
+        assertEquals("home", params.getPageName());
+      }
+
+      WikiPageParams userParams = TreeUtils.getPageParamsFromPath("user/spaces/home");
+      assertEquals("user", userParams.getType());
+      assertEquals("spaces", userParams.getOwner());
+      assertEquals("home", userParams.getPageName());
+    }
+  }
+
+  @Test
+  public void testGetPathFromPageParamsOfGroupNotebookWhateverTheTypeCase() {
+    assertEquals("group/spaces/test/home", TreeUtils.getPathFromPageParams(new WikiPageParams("group", "/spaces/test", "home")));
+    assertEquals("GROUP/spaces/test/home", TreeUtils.getPathFromPageParams(new WikiPageParams("GROUP", "/spaces/test", "home")));
+    assertEquals("user//john/home", TreeUtils.getPathFromPageParams(new WikiPageParams("user", "/john", "home")));
+  }
+
+  @Test
+  public void testValidateWikiOwnerOfGroupNotebookWhateverTheTypeCase() {
+    assertEquals("spaces/test", Utils.validateWikiOwner("group", "/spaces/test/"));
+    assertEquals("spaces/test", Utils.validateWikiOwner("GROUP", "/spaces/test/"));
+    assertEquals("/john/", Utils.validateWikiOwner("user", "/john/"));
+    assertEquals("/spaces/test", Utils.validateWikiOwner(null, "/spaces/test"));
+    assertNull(Utils.validateWikiOwner("GROUP", null));
+  }
 
   @Test
   public void testSortNodesNatural() throws Exception {

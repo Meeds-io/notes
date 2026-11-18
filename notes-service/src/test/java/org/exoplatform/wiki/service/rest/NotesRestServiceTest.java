@@ -45,6 +45,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.gatein.api.EntityNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -472,6 +473,81 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     properties.setSummary("a brand new summary");
 
     Response response = notesRestService.saveNoteMetadata(properties, null);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  public void testGetNoteByIdOfNotebookStoredWithUpperCaseType() throws Exception {
+    Page page = new Page();
+    page.setWikiType("GROUP");
+    page.setWikiOwner("/spaces/test");
+    page.setContent("content");
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(page);
+
+    Response response = notesRestService.getNoteById("1", "group", "/spaces/test", false, "source", "en", false);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+
+    Response otherTypeResponse = notesRestService.getNoteById("1", "user", "/spaces/test", false, "source", "en", false);
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), otherTypeResponse.getStatus());
+  }
+
+  @Test
+  public void testGetNoteTreeDataOfNotebookStoredWithUpperCaseType() throws Exception {
+    Page homePage = new Page("home");
+    homePage.setWikiOwner("user");
+    homePage.setWikiType("WIKIHOME");
+    homePage.setOwner("user");
+    homePage.setId("1");
+    homePage.setParentPageId("0");
+    homePage.setHasChild(true);
+    Wiki noteBook = new Wiki();
+    noteBook.setOwner("user");
+    noteBook.setType("WIKI");
+    noteBook.setId("0");
+    noteBook.setWikiHome(homePage);
+    Page child = new Page("child");
+    child.setTitle("child");
+    child.setId("10");
+    child.setParentPageId("1");
+    child.setWikiType("PAGE");
+    WikiPageParams pageParams = new WikiPageParams("GROUP", "/spaces/test", "home");
+    @SuppressWarnings("unchecked")
+    Deque<Object> paramsDeque = mock(Deque.class);
+    when(paramsDeque.pop()).thenReturn(pageParams);
+    when(identity.getUserId()).thenReturn("1");
+    GroupHandler groupHandler = mock(GroupHandler.class);
+    when(groupHandler.findGroupById("/spaces/test")).thenReturn(mock(Group.class));
+    when(organizationService.getGroupHandler()).thenReturn(groupHandler);
+    when(noteService.getNoteOfNoteBookByName("GROUP", "/spaces/test", "home", identity)).thenReturn(homePage);
+    when(noteBookService.getWikiByTypeAndOwner("GROUP", "/spaces/test")).thenReturn(noteBook);
+    when(noteBookService.getWikiByTypeAndOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenReturn(noteBook);
+    when(noteService.hasChildren(Long.parseLong(homePage.getId()))).thenReturn(true);
+    when(noteService.getChildrenNoteOf(homePage, false, false)).thenReturn(new ArrayList<>(List.of(child)));
+    utilsStatic.when(() -> Utils.getStackParams(homePage)).thenReturn(paramsDeque);
+    utilsStatic.when(() -> Utils.validateWikiOwner(homePage.getWikiType(), homePage.getWikiOwner())).thenCallRealMethod();
+    utilsStatic.when(() -> Utils.getObjectFromParams(pageParams)).thenReturn(homePage);
+    utilsStatic.when(() -> Utils.isDescendantPage(homePage, child)).thenReturn(true);
+    when(spaceService.getSpaceByGroupId(anyString())).thenReturn(mock(Space.class));
+
+    Response response = notesRestService.getNoteTreeData("all", "notes", "GROUP/spaces/test/home");
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    JsonNodeData root = (JsonNodeData) ((BeanToJsons<?>) response.getEntity()).getJsonList().getFirst();
+    assertEquals(1, root.getChildren().size());
+    verify(noteService).getNoteOfNoteBookByName("GROUP", "/spaces/test", "home", identity);
+  }
+
+  @Test
+  public void testGetNoteTreeDataOfMissingNote() throws Exception {
+    GroupHandler groupHandler = mock(GroupHandler.class);
+    when(groupHandler.findGroupById("/spaces/test")).thenReturn(mock(Group.class));
+    when(organizationService.getGroupHandler()).thenReturn(groupHandler);
+    when(noteService.getNoteOfNoteBookByName("group", "/spaces/test", "missing", identity))
+                                                                                         .thenThrow(new EntityNotFoundException("page not found"));
+
+    Response response = notesRestService.getNoteTreeData("all", "notes", "group/spaces/test/missing");
 
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
   }

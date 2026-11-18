@@ -827,7 +827,7 @@ export default {
           this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
-          if (this.note.wikiType === 'group'){
+          if (this.note.wikiType?.toLowerCase?.() === 'group') {
             this.note.wikiOwner = this.note.wikiOwner.substring(1);
           }
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner , this.note.name);
@@ -841,7 +841,7 @@ export default {
           this.note.breadcrumb[0].title = this.noteHomeTitle;
           this.breadcrumb = this.note.breadcrumb;
         }).then(() => {
-          if (this.note.wikiType === 'group') {
+          if (this.note.wikiType?.toLowerCase?.() === 'group') {
             this.note.wikiOwner = this.note.wikiOwner.substring(1);
           }
           this.retrieveNoteTree(this.note.wikiType, this.note.wikiOwner, this.note.parentPageName);

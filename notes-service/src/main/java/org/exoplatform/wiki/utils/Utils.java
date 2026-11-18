@@ -383,7 +383,7 @@ public class Utils {
    * @return wikiOwner after validated.
    */ 
   public static String validateWikiOwner(String wikiType, String wikiOwner){
-    if(wikiType != null && wikiType.equals(PortalConfig.GROUP_TYPE) && StringUtils.isNotEmpty(wikiOwner)) {
+    if (PortalConfig.GROUP_TYPE.equalsIgnoreCase(wikiType) && StringUtils.isNotEmpty(wikiOwner)) {
       if(wikiOwner.startsWith("/")){
         wikiOwner = wikiOwner.substring(1,wikiOwner.length());
       }
