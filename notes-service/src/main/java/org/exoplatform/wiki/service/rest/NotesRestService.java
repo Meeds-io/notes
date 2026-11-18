@@ -325,7 +325,7 @@ public class NotesRestService implements ResourceContainer {
       if (note == null || (note.isDeleted() && !includeDeleted)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      if (StringUtils.isNotEmpty(noteBookType) && !note.getWikiType().equals(noteBookType)) {
+      if (StringUtils.isNotEmpty(noteBookType) && !StringUtils.equalsIgnoreCase(note.getWikiType(), noteBookType)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       if (StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
@@ -1304,6 +1304,9 @@ public class NotesRestService implements ResourceContainer {
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}", path, e);
       return Response.status(Response.Status.UNAUTHORIZED).build();
+    } catch (EntityNotFoundException e) {
+      LOG.debug("Note {} not found", path, e);
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Failed for get tree data by rest service - Cause : " + e.getMessage(), e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
