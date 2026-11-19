@@ -72,7 +72,7 @@
           </v-list-item-icon>
         </v-list-item>
       </v-hover>
-      <!-- plain buttons drawn as Vuetify's x-small icon buttons: no component instance per note, revealed by the
+      <!-- plain buttons and icons drawn as Vuetify's x-small icon buttons: no component instance per note, revealed by the
            platform's hover-reveal helpers on the item's hover or keyboard focus -->
       <div
         v-if="showActions && !isDraftFilter && !isHomePage"
@@ -87,7 +87,10 @@
           class="v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: -1 })">
           <span class="v-btn__content">
-            <v-icon size="14" aria-hidden="true">fas fa-arrow-up</v-icon>
+            <i
+              class="v-icon notranslate fas fa-arrow-up theme--light"
+              style="font-size: 14px;"
+              aria-hidden="true"></i>
           </span>
         </button>
         <button
@@ -99,7 +102,10 @@
           class="ms-1 v-btn v-btn--icon v-btn--round theme--light v-size--x-small"
           @click="$emit('move-note', { item, direction: 1 })">
           <span class="v-btn__content">
-            <v-icon size="14" aria-hidden="true">fas fa-arrow-down</v-icon>
+            <i
+              class="v-icon notranslate fas fa-arrow-down theme--light"
+              style="font-size: 14px;"
+              aria-hidden="true"></i>
           </span>
         </button>
       </div>
