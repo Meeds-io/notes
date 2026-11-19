@@ -422,7 +422,12 @@ export default {
       this.isLoading = true;
       this.items = [];
 
+      // several reads can wait on the same save and answer in any order: only the last one asked is shown
+      const read = this.treeRead = (this.treeRead || 0) + 1;
       return orderSaved.then(() => this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter)).then(data => {
+        if (read !== this.treeRead) {
+          return;
+        }
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
