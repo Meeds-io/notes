@@ -113,7 +113,23 @@ export default {
       isDragging: false
     };
   },
+  created() {
+    this.$root.$on('notes-tree-send-pending-move', this.sendPendingMove);
+  },
+  beforeDestroy() {
+    this.$root.$off('notes-tree-send-pending-move', this.sendPendingMove);
+    // a move still waiting for its save (the tree closed within 600 ms of the last press) is sent to the tree now
+    this.sendPendingMove();
+  },
   methods: {
+    sendPendingMove() {
+      if (this.pendingMove) {
+        window.clearTimeout(this.moveSaveTimer);
+        const moved = this.pendingMove;
+        this.pendingMove = null;
+        this.onDragChange({ moved, announced: true });
+      }
+    },
     isOpen(noteId) {
       return this.openedItems && this.openedItems.includes(noteId);
     },
@@ -148,12 +164,8 @@ export default {
       const firstOldIndex = this.pendingMove?.element?.noteId === item.noteId ? this.pendingMove.oldIndex : oldIndex;
       this.pendingMove = { element: item, oldIndex: firstOldIndex, newIndex };
       window.clearTimeout(this.moveSaveTimer);
-      this.moveSaveTimer = window.setTimeout(() => {
-        const moved = this.pendingMove;
-        this.pendingMove = null;
-        // the move was announced on each press: the save adds no message of its own
-        this.onDragChange({ moved, announced: true });
-      }, 600);
+      // the move was announced on each press: the save adds no message of its own
+      this.moveSaveTimer = window.setTimeout(this.sendPendingMove, 600);
       this.$emit('move-announce', this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]));
       const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
       this.$nextTick(() => document.getElementById(`${keepUp ? 'noteMoveUp' : 'noteMoveDown'}-${item.noteId}`)?.focus());

@@ -409,10 +409,20 @@ export default {
         noteName = this.note?.breadcrumb[0]?.id;
         treeType = 'all';
       }
+      // a move waiting to be saved is saved before the tree is read back, else the tree would show the former order;
+      // not when the tree is read back because a save failed: the orders waiting then are dropped
+      let orderSaved = Promise.resolve();
+      if (!this.reorderRecovering) {
+        this.$root.$emit('notes-tree-send-pending-move');
+        if (this.dragPayload) {
+          this.saveReorder();
+        }
+        orderSaved = this.orderSaved || orderSaved;
+      }
       this.isLoading = true;
       this.items = [];
 
-      return this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter).then(data => {
+      return orderSaved.then(() => this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter)).then(data => {
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
@@ -569,15 +579,20 @@ export default {
       const announced = this.reorderAnnounced;
       this.reorderAnnounced = false;
       const generation = this.reorderGeneration || 0;
+      // settled once this order is stored or refused: a tree read back waits for it (see retrieveNoteTree)
+      let settleOrder = null;
+      this.orderSaved = new Promise(resolve => settleOrder = resolve);
       // each request sends the whole order of the siblings: they are sent one after the other,
       // so that the last order shown is the last one stored
       this.reorderQueue = (this.reorderQueue || Promise.resolve())
         .then(() => {
           // an order computed before a failed save, or before the tree is read back, would store the failed move
           if (generation !== (this.reorderGeneration || 0)) {
+            settleOrder();
             return null;
           }
           return this.$notesService.updateNotesOrder(requestData)
+            .finally(settleOrder)
             .then(() => {
               // a move made with the Move up / Move down buttons is already announced by the tree's live region:
               // a success alert would interrupt it
@@ -588,9 +603,13 @@ export default {
             })
             .catch(() => {
               this.reorderGeneration = generation + 1;
+              this.reorderRecovering = true;
               this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
               return Promise.resolve(this.refreshTree())
-                .finally(() => this.reorderGeneration = generation + 2);
+                .finally(() => {
+                  this.reorderGeneration = generation + 2;
+                  this.reorderRecovering = false;
+                });
             });
         })
         .catch(() => null);
