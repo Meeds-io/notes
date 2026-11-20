@@ -1952,7 +1952,7 @@ public class NoteServiceImpl implements NoteService {
     String noteId = String.valueOf(pageProperties.getNoteId());
     Page note = pageProperties.isDraft() ? getDraftNoteById(noteId, userIdentity.getUserId())
                                         : getNoteById(noteId, userIdentity);
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("note not found");
     }
     if (!note.isCanManage()) {

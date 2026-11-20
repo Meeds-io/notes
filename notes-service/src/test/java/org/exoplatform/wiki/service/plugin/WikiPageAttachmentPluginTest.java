@@ -19,8 +19,10 @@
 package org.exoplatform.wiki.service.plugin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,6 +76,20 @@ public class WikiPageAttachmentPluginTest {
     when(noteService.getNoteById("1", userIdentity)).thenReturn(page);
     when(page.isCanManage()).thenReturn(true);
     assertTrue(plugin.hasEditPermission(userIdentity, "1"));
+  }
+
+  @Test
+  public void testADeletedNoteGrantsNoRightOnItsFiles() throws Exception {
+    org.exoplatform.services.security.Identity userIdentity = mock(org.exoplatform.services.security.Identity.class);
+    Page page = mock(Page.class);
+    // the rights the note would grant if it were not deleted
+    lenient().when(page.isCanView()).thenReturn(true);
+    lenient().when(page.isCanManage()).thenReturn(true);
+    when(page.isDeleted()).thenReturn(true);
+    when(noteService.getNoteById("1", userIdentity)).thenReturn(page);
+
+    assertFalse(plugin.hasAccessPermission(userIdentity, "1"));
+    assertFalse(plugin.hasEditPermission(userIdentity, "1"));
   }
 
   @Test

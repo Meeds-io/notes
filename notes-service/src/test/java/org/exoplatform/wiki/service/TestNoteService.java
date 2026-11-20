@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -77,6 +78,7 @@ import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.NoteToExport;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
@@ -2512,6 +2514,42 @@ public class TestNoteService extends BaseTest {
                     }
                   });
     return draftIds;
+  }
+
+  public void testADeletedNoteIsNeitherExportedNorEdited() throws Exception {
+    startSessionAs("root");
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page kept = noteService.createNote(portalWiki, "Home", new Page("exportKeptNote", "exportKeptNote"), ROOT_IDENTITY);
+    Page deleted = noteService.createNote(portalWiki, "Home", new Page("exportDeletedNote", "exportDeletedNote"), ROOT_IDENTITY);
+    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, PORTAL_NAME, deleted.getName()));
+
+    String[] notes = new String[] { kept.getId(), deleted.getId() };
+    for (boolean exportAll : new boolean[] { true, false }) {
+      int exportId = exportAll ? 200241 : 200242;
+      notesExportService.startExportNotes(exportId, notes, exportAll, ROOT_IDENTITY);
+      while (!"ZIP_CREATED".equals(notesExportService.getStatus(exportId).getStatus())) {
+        Thread.onSpinWait();
+      }
+      String archive = readArchive(notesExportService.getExportedNotes(exportId));
+      assertTrue(archive.contains("exportKeptNote"));
+      assertFalse("exportAll=" + exportAll, archive.contains("exportDeletedNote"));
+    }
+
+    NotePageProperties properties = new NotePageProperties();
+    properties.setNoteId(Long.parseLong(deleted.getId()));
+    properties.setSummary("edited after its deletion");
+    assertThrows(ObjectNotFoundException.class, () -> noteService.saveNoteMetadata(properties, null, ROOT_IDENTITY));
+  }
+
+  private static String readArchive(byte[] zip) throws IOException {
+    StringBuilder content = new StringBuilder();
+    try (java.util.zip.ZipInputStream entries = new java.util.zip.ZipInputStream(new ByteArrayInputStream(zip))) {
+      java.util.zip.ZipEntry entry;
+      while ((entry = entries.getNextEntry()) != null) {
+        content.append(entry.getName()).append('\n').append(new String(entries.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+      }
+    }
+    return content.toString();
   }
 
   private Long getIdentityId(String username) {

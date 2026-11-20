@@ -68,7 +68,9 @@ public class NoteAclPlugin implements AclPlugin {
     default:
       yield null;
     };
+    // A deleted note is answered as a missing one: its deletion ends the rights granted here
     return note != null
+           && !note.isDeleted()
            && permType != null
            && noteService.hasPermissionOnPage(note, permType, identity);
   }
