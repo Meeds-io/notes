@@ -52,7 +52,14 @@
           @fetch-children="fetchChildren"
           @open-note="handleOpenNote"
           @toggle-open="handleToggleOpen"
-          @reorder="handleReorder" />
+          @reorder="handleReorder"
+          @reorder-items="reorderItems"
+          @move-announce="moveAnnouncement = $event" />
+        <output
+          class="d-sr-only"
+          aria-live="polite">
+          {{ moveAnnouncement }}
+        </output>
         <template v-if="!resultSearch">
           <v-card
             flat
@@ -86,6 +93,7 @@ export default {
     },
   },
   data: () => ({
+    moveAnnouncement: '',
     note: {},
     items: [],
     allItems: [],
@@ -401,10 +409,25 @@ export default {
         noteName = this.note?.breadcrumb[0]?.id;
         treeType = 'all';
       }
+      // a move waiting to be saved is saved before the tree is read back, else the tree would show the former order;
+      // not when the tree is read back because a save failed: the orders waiting then are dropped
+      let orderSaved = Promise.resolve();
+      if (!this.reorderRecovering) {
+        this.$root.$emit('notes-tree-send-pending-move');
+        if (this.dragPayload) {
+          this.saveReorder();
+        }
+        orderSaved = this.orderSaved || orderSaved;
+      }
       this.isLoading = true;
       this.items = [];
 
-      this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter).then(data => {
+      // several reads can wait on the same save and answer in any order: only the last one asked is shown
+      const read = this.treeRead = (this.treeRead || 0) + 1;
+      return orderSaved.then(() => this.$notesService.getNoteTree(noteBookType, noteOwner, noteName, treeType, this.filter)).then(data => {
+        if (read !== this.treeRead) {
+          return;
+        }
         if (data?.jsonList?.length) {
           this.home = data.jsonList[0];
           this.home.name = this.homeLabel;
@@ -500,8 +523,18 @@ export default {
         }
       }
     },
+    // a note moved up or down from the keyboard, in the list of the tree's data it belongs to
+    reorderItems({ items, oldIndex, newIndex }) {
+      items.splice(newIndex, 0, items.splice(oldIndex, 1)[0]);
+    },
     handleReorder(payload) {
       const { event, items, parentId } = payload;
+      // a move or a drop in another list while one waits to be saved: the waiting one is saved first,
+      // else this one would replace it
+      if ((event.moved || event.added) && this.dragPayload?.pageId && this.dragPayload.targetParentId
+        && this.dragPayload.targetParentId !== parentId) {
+        this.saveReorder();
+      }
       if (!this.dragPayload) {
         this.dragPayload = {
           pageId: null,
@@ -513,7 +546,12 @@ export default {
           sourceOrderedIds: [],
           targetOrderedIds: []
         };
+        this.reorderPayloadFresh = true;
       }
+      // kept out of the payload, which is sent as the request body: a save merging several moves
+      // stays silent only when every one of them was announced
+      this.reorderAnnounced = (this.reorderPayloadFresh || this.reorderAnnounced) && !!event.announced;
+      this.reorderPayloadFresh = false;
       if (event.moved) {
         this.dragPayload.pageId = event.moved.element.noteId;
         this.dragPayload.pageName = this.selectedNoteName;
@@ -534,25 +572,52 @@ export default {
         this.dragPayload.sourceOrderedIds = items.map(item => item.noteId);
       }
       clearTimeout(this.dragTimer);
-      this.dragTimer = setTimeout(() => {
-        const requestData = { ...this.dragPayload };
-        if (requestData.sourceParentId === this.home.noteId) {requestData.sourceParentId = null;}
-        if (requestData.targetParentId === this.home.noteId) {requestData.targetParentId = null;}
-        this.executeDragAndDropApi(requestData);
-        this.dragPayload = null;
-      }, 100);
+      this.dragTimer = setTimeout(this.saveReorder, 100);
+    },
+    saveReorder() {
+      clearTimeout(this.dragTimer);
+      this.executeDragAndDropApi();
+      this.dragPayload = null;
     },
     executeDragAndDropApi() {
       const requestData = { ...this.dragPayload };
-      this.$notesService.updateNotesOrder(requestData)
+      const announced = this.reorderAnnounced;
+      this.reorderAnnounced = false;
+      const generation = this.reorderGeneration || 0;
+      // settled once this order is stored or refused: a tree read back waits for it (see retrieveNoteTree)
+      let settleOrder = null;
+      this.orderSaved = new Promise(resolve => settleOrder = resolve);
+      // each request sends the whole order of the siblings: they are sent one after the other,
+      // so that the last order shown is the last one stored
+      this.reorderQueue = (this.reorderQueue || Promise.resolve())
         .then(() => {
-          this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
-          this.$root.$emit('reorder-notes', requestData);
+          // an order computed before a failed save, or before the tree is read back, would store the failed move
+          if (generation !== (this.reorderGeneration || 0)) {
+            settleOrder();
+            return null;
+          }
+          return this.$notesService.updateNotesOrder(requestData)
+            .finally(settleOrder)
+            .then(() => {
+              // a move made with the Move up / Move down buttons is already announced by the tree's live region:
+              // a success alert would interrupt it
+              if (!announced) {
+                this.$root.$emit('alert-message', this.$t('notes.reorder.success.message'), 'success');
+              }
+              this.$root.$emit('reorder-notes', requestData);
+            })
+            .catch(() => {
+              this.reorderGeneration = generation + 1;
+              this.reorderRecovering = true;
+              this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
+              return Promise.resolve(this.refreshTree())
+                .finally(() => {
+                  this.reorderGeneration = generation + 2;
+                  this.reorderRecovering = false;
+                });
+            });
         })
-        .catch(() => {
-          this.$root.$emit('alert-message', this.$t('notes.reorder.error.message'), 'error');
-          this.refreshTree();
-        });
+        .catch(() => null);
     },
     fetchChildren(item) {
       if (!item.hasChild) {return;}
@@ -610,7 +675,7 @@ export default {
       }
     },
     refreshTree() {
-      this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner, this.note.name);
+      return this.retrieveNoteTree(this.noteWikiType, this.noteWikiOwner, this.note.name);
     }
   }
 };
