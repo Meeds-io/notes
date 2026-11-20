@@ -19,6 +19,7 @@
 
 <template>
   <v-list
+    :aria-label="level === 0 ? $t('notes.label.breadcrumbTitle') : null"
     dense
     class="py-0 note-tree-list">
     <draggable
@@ -37,7 +38,7 @@
       @end="onDragEnd"
       @change="onDragChange">
       <note-treeview-item
-        v-for="item in items"
+        v-for="(item, index) in items"
         :key="item.noteId"
         :item="item"
         :opened-items="openedItems"
@@ -49,10 +50,15 @@
         :is-draft-filter="isDraftFilter"
         :show-actions="showActions"
         :level="level"
+        :position="index"
+        :siblings-count="items.length"
+        @move-note="moveNote"
+        @reorder-items="$emit('reorder-items', $event)"
         @fetch-children="$emit('fetch-children', $event)"
         @open-note="handleChildOpenNote"
         @toggle-open="$emit('toggle-open', $event)"
         @reorder="$emit('reorder', $event)"
+        @move-announce="$emit('move-announce', $event)"
         @action="$emit('action', $event)" />
     </draggable>
   </v-list>
@@ -107,7 +113,23 @@ export default {
       isDragging: false
     };
   },
+  created() {
+    this.$root.$on('notes-tree-send-pending-move', this.sendPendingMove);
+  },
+  beforeDestroy() {
+    this.$root.$off('notes-tree-send-pending-move', this.sendPendingMove);
+    // a move still waiting for its save (the tree closed within 600 ms of the last press) is sent to the tree now
+    this.sendPendingMove();
+  },
   methods: {
+    sendPendingMove() {
+      if (this.pendingMove) {
+        window.clearTimeout(this.moveSaveTimer);
+        const moved = this.pendingMove;
+        this.pendingMove = null;
+        this.onDragChange({ moved, announced: true });
+      }
+    },
     isOpen(noteId) {
       return this.openedItems && this.openedItems.includes(noteId);
     },
@@ -129,6 +151,24 @@ export default {
     onDragEnd() {
       this.isDragging = false;
       document.body.classList.remove('is-dragging-note');
+    },
+    moveNote({ item, direction }) {
+      const oldIndex = this.items.findIndex(i => i.noteId === item.noteId);
+      const newIndex = oldIndex + direction;
+      if (oldIndex < 0 || newIndex < 0 || newIndex >= this.items.length) {
+        return;
+      }
+      // the tree's owner reorders its own data: a list never changes the items it is given
+      this.$emit('reorder-items', { items: this.items, oldIndex, newIndex });
+      // successive presses are saved once, with the final order, 600 ms after the last one
+      const firstOldIndex = this.pendingMove?.element?.noteId === item.noteId ? this.pendingMove.oldIndex : oldIndex;
+      this.pendingMove = { element: item, oldIndex: firstOldIndex, newIndex };
+      window.clearTimeout(this.moveSaveTimer);
+      // the move was announced on each press: the save adds no message of its own
+      this.moveSaveTimer = window.setTimeout(this.sendPendingMove, 600);
+      this.$emit('move-announce', this.$t('notes.reorder.moved', [item.name, newIndex + 1, this.items.length]));
+      const keepUp = direction < 0 ? newIndex > 0 : newIndex === this.items.length - 1;
+      this.$nextTick(() => document.getElementById(`${keepUp ? 'noteMoveUp' : 'noteMoveDown'}-${item.noteId}`)?.focus());
     },
     onDragChange(evt) {
       if (evt.added || evt.moved || evt.removed) {

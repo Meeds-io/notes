@@ -197,12 +197,13 @@
                                 <v-btn
                                   v-if="categories.length > 2"
                                   :title="$t('categories.remainingCount', {0: categories.length - 2})"
+                                  :aria-label="$t('notes.categories.remainingCount.ariaLabel', {0: categories.length - 2})"
                                   class="flex-shrink-0 px-0 ms-2"
                                   height="24"
                                   width="24"
                                   icon
                                   @click="openMoreCategoriesDrawer(categories)">
-                                  <span class="primary--text text-subtitle-font-size">
+                                  <span class="primary--text text-subtitle-font-size" aria-hidden="true">
                                     {{ $t('categories.remainingCount', {0: categories.length - 2}) }}
                                   </span>
                                 </v-btn>

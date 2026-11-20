@@ -22,6 +22,8 @@
   <v-btn
     v-if="hasChild"
     :loading="isLoading"
+    :aria-label="$t('notes.label.treeview.subNotes', {0: note.name})"
+    :aria-expanded="open ? 'true' : 'false'"
     icon
     small
     @click="$emit('fetch-children', note)">
