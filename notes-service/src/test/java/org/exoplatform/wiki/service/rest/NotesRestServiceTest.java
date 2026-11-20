@@ -483,6 +483,9 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response notFound = notesRestService.getLatestDraftOfPage("1", "en");
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notFound.getStatus());
     assertTrue(String.valueOf(notFound.getMetadata().getFirst("Cache-Control")).contains("no-store"));
+    assertEquals("a missing note answers as a hidden one",
+                 Response.Status.NOT_FOUND.getStatusCode(),
+                 notesRestService.getLatestDraftOfPage("404", "en").getStatus());
 
     Page readOnlyNote = new Page("readOnly");
     readOnlyNote.setId("2");

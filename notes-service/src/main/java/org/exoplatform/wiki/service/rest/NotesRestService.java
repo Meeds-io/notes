@@ -464,7 +464,7 @@ public class NotesRestService implements ResourceContainer {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
           @ApiResponse(responseCode = "403", description = "The user can view the note but cannot edit it"),
-          @ApiResponse(responseCode = "404", description = "The user cannot view the note") })
+          @ApiResponse(responseCode = "404", description = "The note does not exist or the user cannot view it") })
   public Response getLatestDraftOfPage(@Parameter(description = "Note id", required = true)
                                        @PathParam("noteId") String noteId,
                                        @Parameter(description = "draft content language")
@@ -475,7 +475,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Page targetPage = noteService.getNoteById(noteId, ConversationState.getCurrent().getIdentity());
       if (targetPage == null) {
-        return Response.status(Response.Status.BAD_REQUEST).cacheControl(cc).build();
+        return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
       }
       if (!targetPage.isCanManage()) {
         return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
