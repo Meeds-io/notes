@@ -491,7 +491,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     draft.setTargetPageId("1");
     when(noteService.getNoteById("1", identity)).thenThrow(new IllegalAccessException("User does not have view the note."));
-    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
 
     Page readOnlyNote = new Page("readOnly");
     readOnlyNote.setId("2");

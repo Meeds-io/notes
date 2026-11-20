@@ -687,8 +687,11 @@ public class NotesRestService implements ResourceContainer {
       savedDraftPage.setContent(sanitizeAndSubstituteMentions(savedDraftPage.getContent(), draftNoteToSave.getLang()));
       return Response.ok(savedDraftPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      LOG.debug("User does not have view permissions on the note {}", draftNoteToSave.getTargetPageId(), e);
-      return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
+      LOG.debug("User cannot view the target note {} or the parent note {} of the draft",
+                draftNoteToSave.getTargetPageId(),
+                draftNoteToSave.getParentPageId(),
+                e);
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception ex) {
       LOG.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
