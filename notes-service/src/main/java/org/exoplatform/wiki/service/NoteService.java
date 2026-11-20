@@ -24,6 +24,7 @@ import java.util.List;
 import io.meeds.notes.rest.model.NoteReorder;
 import org.gatein.api.EntityNotFoundException;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.wiki.WikiException;
@@ -854,7 +855,9 @@ public interface NoteService {
   DraftPage getLatestDraftPageByUserAndTargetPageAndLang(Long targetPageId, String username, String lang);
 
   /**
-   * Deletes a list of versions of note by language.
+   * Deletes a list of versions of note by language. Performs no permission
+   * check: a deletion on a user's behalf goes through
+   * {@link #deleteTranslation(Long, String, Identity)}.
    *
    * @param noteId Id of the note.
    * @param lang language.
@@ -864,7 +867,9 @@ public interface NoteService {
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang, boolean broadcast) throws Exception;
 
   /**
-   * Deletes a list of versions of note by language.
+   * Deletes a list of versions of note by language. Performs no permission
+   * check: a deletion on a user's behalf goes through
+   * {@link #deleteTranslation(Long, String, Identity)}.
    *
    * @param noteId Id of the note.
    * @param lang language.
@@ -873,7 +878,9 @@ public interface NoteService {
   void deleteVersionsByNoteIdAndLang(Long noteId, String lang) throws Exception;
 
   /**
-   * Deletes a list of versions of note by language.
+   * Deletes a list of versions of note by language. Performs no permission
+   * check: a deletion on a user's behalf goes through
+   * {@link #deleteTranslation(Long, String, Identity)}.
    *
    * @param noteId Id of the note.
    * @param lang language.
@@ -883,6 +890,21 @@ public interface NoteService {
   @Deprecated
   // Use {@link deleteVersionsByNoteIdAndLang(Long noteId, String lang)} instead
   void deleteVersionsByNoteIdAndLang(Long noteId, String username, String lang) throws Exception;
+
+  /**
+   * Deletes the versions, metadata and drafts of a note in a language, for a
+   * user who may edit the note.
+   *
+   * @param noteId Id of the note.
+   * @param lang language of the translation to delete.
+   * @param userIdentity identity of the user deleting the translation.
+   * @throws ObjectNotFoundException when the note does not exist or the user
+   *           cannot view it
+   * @throws IllegalAccessException when the user can view the note but cannot
+   *           edit it
+   * @throws Exception if an error occurred
+   */
+  void deleteTranslation(Long noteId, String lang, Identity userIdentity) throws Exception;
 
 
   /**

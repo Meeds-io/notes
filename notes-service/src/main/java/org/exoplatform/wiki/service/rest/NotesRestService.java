@@ -388,9 +388,11 @@ public class NotesRestService implements ResourceContainer {
   @Path("/note/translation/{noteId}/{lang}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @Operation(summary = "Delete translation by page id and language", method = "GET", description = "This deletes translation by page id and language")
+  @Operation(summary = "Delete translation by page id and language", method = "DELETE", description = "This deletes translation by page id and language if the authenticated user can edit the note")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
       @ApiResponse(responseCode = "400", description = "Invalid query input"),
+      @ApiResponse(responseCode = "403", description = "The user can view the note but cannot edit it"),
+      @ApiResponse(responseCode = "404", description = "The note does not exist or the user cannot view it"),
       @ApiResponse(responseCode = "500", description = "Server internal error") })
   public Response deleteTranslations(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
@@ -400,8 +402,14 @@ public class NotesRestService implements ResourceContainer {
       return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
     }
     try {
-      noteService.deleteVersionsByNoteIdAndLang(noteId, lang, true);
+      noteService.deleteTranslation(noteId, lang, ConversationState.getCurrent().getIdentity());
       return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build();
+    } catch (ObjectNotFoundException e) {
+      LOG.debug("Note {} not found or not viewable by the current user", noteId, e);
+      return Response.status(Response.Status.NOT_FOUND).build();
+    } catch (IllegalAccessException e) {
+      LOG.debug("User does not have edit permissions on the note {}", noteId, e);
+      return Response.status(Response.Status.FORBIDDEN).build();
     } catch (Exception e) {
       LOG.error("Error while deleting translations of language : {} for the page with id : {}", lang, noteId, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
