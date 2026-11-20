@@ -21,7 +21,14 @@ const objects = Object.keys(localStorage);
 for (const index in objects) {
   if (objects[index].startsWith('draftNoteId-')) {
     const draftNote = JSON.parse(localStorage[objects[index]]);
-    notesService.saveDraftNote(draftNote).then(() => localStorage.removeItem(objects[index]));
+    notesService.saveDraftNote(draftNote)
+      .then(() => localStorage.removeItem(objects[index]))
+      .catch(error => {
+        // Refused for good: the user can no longer edit the note (403), or view it or its parent (404)
+        if (error?.status === 403 || error?.status === 404) {
+          localStorage.removeItem(objects[index]);
+        }
+      });
   }
 }
 
