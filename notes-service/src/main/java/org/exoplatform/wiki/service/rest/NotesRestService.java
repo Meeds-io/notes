@@ -459,7 +459,7 @@ public class NotesRestService implements ResourceContainer {
   @Path("/latestDraftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @Operation(summary = "Get latest draft note of page", method = "GET", description = "This returns the latest draft of the note if the authenticated user is the author of the draft.")
+  @Operation(summary = "Get latest draft note of page", method = "GET", description = "This returns the latest draft of the note if the authenticated user can edit the note.")
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
@@ -473,9 +473,12 @@ public class NotesRestService implements ResourceContainer {
       return unreadableLangResponse();
     }
     try {
-      Page targetPage = noteService.getNoteById(noteId);
+      Page targetPage = noteService.getNoteById(noteId, ConversationState.getCurrent().getIdentity());
       if (targetPage == null) {
         return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      if (!targetPage.isCanManage()) {
+        return Response.status(Response.Status.FORBIDDEN).build();
       }
       DraftPage draftNote = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      lang);
@@ -483,6 +486,9 @@ public class NotesRestService implements ResourceContainer {
         draftNote.setContent(sanitizeAndSubstituteMentions(draftNote.getContent(), lang));
       }
       return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
+    } catch (IllegalAccessException e) {
+      LOG.debug("User does not have view permissions on the note {}", noteId, e);
+      return Response.status(Response.Status.FORBIDDEN).build();
     } catch (Exception e) {
       LOG.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).build();

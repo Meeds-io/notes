@@ -478,6 +478,32 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
+  public void testGetLatestDraftOfPageRequiresEditPermission() throws Exception {
+    when(noteService.getNoteById("1", identity)).thenThrow(new IllegalAccessException("User does not have view the note."));
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.getLatestDraftOfPage("1", "en").getStatus());
+
+    Page readOnlyNote = new Page("readOnly");
+    readOnlyNote.setId("2");
+    readOnlyNote.setCanView(true);
+    readOnlyNote.setCanManage(false);
+    when(noteService.getNoteById("2", identity)).thenReturn(readOnlyNote);
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.getLatestDraftOfPage("2", "en").getStatus());
+    verify(noteService, never()).getLatestDraftPageByTargetPageAndLang(any(), any());
+
+    Page editableNote = new Page("editable");
+    editableNote.setId("3");
+    editableNote.setCanView(true);
+    editableNote.setCanManage(true);
+    when(noteService.getNoteById("3", identity)).thenReturn(editableNote);
+    DraftPage draft = new DraftPage();
+    draft.setContent("draft content");
+    when(noteService.getLatestDraftPageByTargetPageAndLang(3L, "en")).thenReturn(draft);
+    Response response = notesRestService.getLatestDraftOfPage("3", "en");
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(draft, response.getEntity());
+  }
+
+  @Test
   public void testGetNoteByIdOfNotebookStoredWithUpperCaseType() throws Exception {
     Page page = new Page();
     page.setWikiType("GROUP");
