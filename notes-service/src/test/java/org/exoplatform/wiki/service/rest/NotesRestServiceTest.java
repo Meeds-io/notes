@@ -906,4 +906,62 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
+
+  /**
+   * A deleted note's versions are answered as a missing note's. Mutation: drop
+   * the deleted check, and this test fails.
+   */
+  @Test
+  public void testGetNoteVersionsOfADeletedNote() throws Exception {
+    Page note = new Page("note");
+    note.setId("12");
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.getNoteVersions("12", null).getStatus());
+    verify(noteService, never()).getVersionsHistoryOfNoteByLang(any(Page.class), anyString(), any());
+  }
+
+  @Test
+  public void testUpdateADeletedNoteAnswersAsAMissingNote() throws Exception {
+    // an editable note, updated with its own title
+    Page note = new Page("note", "note");
+    note.setId("12");
+    note.setWikiType("group");
+    note.setWikiOwner("/spaces/team");
+    note.setContent("<p>content</p>");
+    note.setCanManage(true);
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(noteService.updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class)))
+             .thenReturn(note);
+    PageEntity updateRequest = new PageEntity();
+    updateRequest.setId("12");
+    updateRequest.setName("note");
+    updateRequest.setTitle("note");
+    // a new content: without the deletion, the request would be written
+    updateRequest.setContent("<p>new content</p>");
+    updateRequest.setWikiType("group");
+    updateRequest.setWikiOwner("/spaces/team");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.updateNoteById("12", updateRequest).getStatus());
+    verify(noteService, never()).updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class));
+  }
+
+  @Test
+  public void testRestoreAVersionOfADeletedNoteAnswersAsAMissingNote() throws Exception {
+    Page note = new Page("note");
+    note.setId("12");
+    note.setCanManage(true);
+    note.setDeleted(true);
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(identity.getUserId()).thenReturn("userId");
+    Page restoreRequest = new Page("note");
+    restoreRequest.setId("12");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.RestoreNoteVersion("1", restoreRequest).getStatus());
+    verify(noteService, never()).restoreVersionOfNote(anyString(), any(Page.class), anyString());
+  }
 }
