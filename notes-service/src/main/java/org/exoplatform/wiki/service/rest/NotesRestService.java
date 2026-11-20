@@ -459,33 +459,39 @@ public class NotesRestService implements ResourceContainer {
   @Path("/latestDraftNote/{noteId}")
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
-  @Operation(summary = "Get latest draft note of page", method = "GET", description = "This returns the latest draft of the note if the authenticated user is the author of the draft.")
+  @Operation(summary = "Get latest draft note of page", method = "GET", description = "This returns the latest draft of the note if the authenticated user can edit the note.")
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
-          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
-          @ApiResponse(responseCode = "404", description = "Resource not found") })
+          @ApiResponse(responseCode = "403", description = "The user can view the note but cannot edit it"),
+          @ApiResponse(responseCode = "404", description = "The note does not exist or the user cannot view it") })
   public Response getLatestDraftOfPage(@Parameter(description = "Note id", required = true)
                                        @PathParam("noteId") String noteId,
                                        @Parameter(description = "draft content language")
                                        @QueryParam("lang") String lang) {
     if (!Utils.isReadableLang(lang)) {
-      return unreadableLangResponse();
+      return Response.fromResponse(unreadableLangResponse()).cacheControl(cc).build();
     }
     try {
-      Page targetPage = noteService.getNoteById(noteId);
+      Page targetPage = noteService.getNoteById(noteId, ConversationState.getCurrent().getIdentity());
       if (targetPage == null) {
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
+      }
+      if (!targetPage.isCanManage()) {
+        return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
       }
       DraftPage draftNote = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      lang);
       if (draftNote != null) {
         draftNote.setContent(sanitizeAndSubstituteMentions(draftNote.getContent(), lang));
       }
-      return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
+      return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).cacheControl(cc).build();
+    } catch (IllegalAccessException e) {
+      LOG.debug("User does not have view permissions on the note {}", noteId, e);
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Can't get draft note {}", noteId, e);
-      return Response.serverError().entity(e.getMessage()).build();
+      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
     }
   }
 
