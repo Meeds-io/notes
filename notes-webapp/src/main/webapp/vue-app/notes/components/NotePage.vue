@@ -61,7 +61,7 @@
                   style="min-width: 0;"
                   :note-breadcrumb="notebreadcrumb"
                   :actual-note-id="note.id"
-                  @open-note="getNoteByName($event, 'breadCrumb', true)" />
+                  @open-note="openNoteFromBreadcrumb" />
               </div>
             </v-col>
             <v-col
@@ -89,12 +89,13 @@
                   <v-btn
                     v-if="remainingCategoriesCount > 0"
                     :title="$t('categories.remainingCount', {0: remainingCategoriesCount})"
+                    :aria-label="$t('notes.categories.remainingCount.ariaLabel', {0: remainingCategoriesCount})"
                     class="flex-shrink-0 px-0 ms-2"
                     height="24"
                     width="24"
                     icon
                     @click="openCategoriesListDrawer">
-                    <span class="primary--text text-subtitle-font-size">
+                    <span class="primary--text text-subtitle-font-size" aria-hidden="true">
                       {{ $t('categories.remainingCount', {0: remainingCategoriesCount}) }}
                     </span>
                   </v-btn>
@@ -112,10 +113,10 @@
                 <div
                   class="d-inline-flex flex-shrink-0">
                   <v-tooltip bottom v-if="!hasDraft && isManager">
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ on }">
                       <v-btn
                         v-on="on"
-                        v-bind="attrs"
+                        :aria-label="$t('notes.label.addPage')"
                         class="pa-0 mt-0"
                         :href="addNoteLink"
                         target="_blank"
@@ -133,11 +134,11 @@
                 <div
                   class="d-inline-flex flex-shrink-0 ms-2">
                   <v-tooltip bottom v-if="isManager">
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ on }">
                       <v-btn
                         icon
                         v-on="on"
-                        v-bind="attrs"
+                        :aria-label="$t('notes.label.editPage')"
                         class="pa-0 mt-0"
                         :href="editNoteLink"
                         target="_blank">
@@ -168,9 +169,13 @@
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
                       <v-btn
+                        id="noteActionsMenuButton"
                         v-on="on"
                         @click="$root.$emit('display-action-menu')"
                         v-bind="attrs"
+                        :aria-label="$t('notes.label.noteActions')"
+                        :aria-expanded="actionsMenuOpened ? 'true' : 'false'"
+                        aria-haspopup="menu"
                         class="pa-0 mt-0"
                         icon>
                         <v-icon
@@ -198,7 +203,10 @@
               width="100%" />
           </v-card>
           <div class="notes-title">
-            <p ref="noteTitle" class="title text-color text-break">
+            <p
+              ref="noteTitle"
+              class="title text-color text-break"
+              tabindex="-1">
               <span>
                 {{ noteTitleToDisplay }}
               </span>
@@ -261,12 +269,12 @@
               <p class="notes-welcome-patragraph">
                 <span>{{ $t('notes.label.no-content-no-redactor.content.first') }}</span>
                 <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
+                  <template #activator="{ on }">
                     <v-btn
                       class="pa-0"
                       icon
                       v-on="on"
-                      v-bind="attrs"
+                      :aria-label="$t('notes.label.editPage')"
                       :href="editNoteLink"
                       target="_blank">
                       <v-icon
@@ -280,11 +288,11 @@
                 </v-tooltip>
                 <span v-if="!hasDraft">{{ $t('notes.label.no-content.no-redactor.content.last') }}</span>
                 <v-tooltip bottom v-if="!hasDraft">
-                  <template #activator="{ on, attrs }">
+                  <template #activator="{ on }">
                     <v-btn
                       class="pa-0"
                       v-on="on"
-                      v-bind="attrs"
+                      :aria-label="$t('notes.label.addPage')"
                       :href="addNoteLink"
                       target="_blank"
                       icon>
@@ -423,6 +431,7 @@ export default {
   },
   data() {
     return {
+      actionsMenuOpened: false,
       versionsPageSize: null,
       note: {},
       lastUpdatedTime: '',
@@ -723,6 +732,7 @@ export default {
         this.getDraftNote(noteName);
       }
     });
+    this.$root.$on('action-menu-state-changed', opened => this.actionsMenuOpened = opened);
     this.$root.$on('confirmDeleteNote', () => {
       this.confirmDeleteNote();
     });
@@ -926,6 +936,11 @@ export default {
       } else {
         this.getNoteByName(this.notesPageName,'',true);
       }
+    },
+    openNoteFromBreadcrumb(noteName) {
+      // the breadcrumb link that had the focus is re-rendered with the opened note: the focus goes to its title
+      return this.getNoteByName(noteName, 'breadCrumb', true)
+        .then(() => this.$refs.noteTitle?.focus());
     },
     getHomeTitle(title) {
       return title === 'Home' && this.noteHomeTitle || title;

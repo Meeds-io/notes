@@ -27,6 +27,7 @@
       @click="handleAction(extension)">
       <v-icon
         size="16"
+        aria-hidden="true"
         :class="extension?.iconCssClass"
         class="clickable icon-menu">
         {{ extension?.icon }}
@@ -64,6 +65,8 @@ export default {
       this.extensions = extensionRegistry.loadExtensions('NotesMenu', 'menuActionMenu');
     },
     handleAction(extension) {
+      // the menu closes: a dialog or a side panel the action opens brings the focus back to its button
+      document.getElementById('noteActionsMenuButton')?.focus();
       if (extension?.action) {
         extension.action(this);
       } else {
