@@ -46,6 +46,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -1445,6 +1446,42 @@ public class TestNoteService extends BaseTest {
     userProps.setNoteId(Long.parseLong(note.getId()));
     userProps.setSummary("denied");
     assertThrows(IllegalAccessException.class, () -> noteService.saveNoteMetadata(userProps, null, plainUser));
+  }
+
+  public void testDeleteTranslationChecksEditPermission() throws Exception {
+    Wiki wiki = new Wiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page note = noteService.createNote(wiki, "Home", new Page("testTranslationAcl", "testTranslationAcl"), ROOT_IDENTITY);
+    note.setLang("fr");
+    noteService.createVersionOfNote(note, "root");
+    Long noteId = Long.valueOf(note.getId());
+    Page rootNote = createUserNote("root", ROOT_IDENTITY, "hiddenTranslationNote");
+
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity plainUser = new Identity("plainUser", Arrays.asList(new MembershipEntry(USERS_GROUP, "*")));
+    identityRegistry.register(plainUser);
+    // sanity: the plain user can view the portal note but is not its manager
+    assertNotNull(noteService.getNoteById(note.getId(), plainUser));
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.deleteTranslation(Long.valueOf(rootNote.getId()), "fr", plainUser));
+    assertThrows(ObjectNotFoundException.class, () -> noteService.deleteTranslation(Long.MAX_VALUE, "fr", plainUser));
+    assertThrows(IllegalAccessException.class, () -> noteService.deleteTranslation(noteId, "fr", plainUser));
+    assertTrue(noteService.getPageAvailableTranslationLanguages(noteId, false).contains("fr"));
+
+    noteService.deleteTranslation(noteId, "fr", ROOT_IDENTITY);
+    assertFalse(noteService.getPageAvailableTranslationLanguages(noteId, false).contains("fr"));
+
+    // A page note, owned by the system, is decided on the page's settings rights
+    Page pageNote = new Page("testTranslationPageNote", "testTranslationPageNote");
+    pageNote.setOwner(IdentityConstants.SYSTEM);
+    pageNote = noteService.createNote(wiki, "Home", pageNote, ROOT_IDENTITY);
+    pageNote.setLang("fr");
+    noteService.createVersionOfNote(pageNote, "root");
+    Long pageNoteId = Long.valueOf(pageNote.getId());
+    assertThrows(IllegalAccessException.class, () -> noteService.deleteTranslation(pageNoteId, "fr", plainUser));
+    assertTrue(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
+    noteService.deleteTranslation(pageNoteId, "fr", ROOT_IDENTITY);
+    assertFalse(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
   }
 
   public void testCopiedImageOfAnUnreadableNoteIsNotLinked() throws Exception {

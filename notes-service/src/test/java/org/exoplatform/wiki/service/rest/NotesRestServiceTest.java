@@ -906,4 +906,19 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     response = notesRestService.getFeaturedImageIllustration(request, 1L, false, null, "150x150", 12359547L, null);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
+
+  @Test
+  public void testDeleteTranslationMapsTheServiceRefusals() throws Exception {
+    doThrow(new ObjectNotFoundException("note not found")).when(noteService).deleteTranslation(1L, "fr", identity);
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.deleteTranslations(1L, "fr").getStatus());
+
+    doThrow(new IllegalAccessException("User does not have edit permissions on the note.")).when(noteService)
+                                                                                         .deleteTranslation(2L, "fr", identity);
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.deleteTranslations(2L, "fr").getStatus());
+
+    assertEquals(Response.Status.OK.getStatusCode(), notesRestService.deleteTranslations(3L, "fr").getStatus());
+    verify(noteService).deleteTranslation(3L, "fr", identity);
+    verify(noteService, never()).deleteVersionsByNoteIdAndLang(any(Long.class), any(String.class), any(Boolean.class));
+  }
+
 }
