@@ -20,6 +20,7 @@ package org.exoplatform.wiki.service.rest;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -509,8 +510,36 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     editableNote.setCanManage(true);
     when(noteService.getNoteById("3", identity)).thenReturn(editableNote);
     draft.setTargetPageId("3");
-    notesRestService.saveDraft(draft);
+    DraftPage createdDraft = new DraftPage();
+    createdDraft.setContent("draft content");
+    when(noteService.createDraftForExistPage(any(), eq(editableNote), any(), anyLong(), eq("john"))).thenReturn(createdDraft);
+    assertEquals(Response.Status.OK.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
     verify(noteService).createDraftForExistPage(any(), eq(editableNote), any(), anyLong(), eq("john"));
+
+    DraftPage existingDraft = new DraftPage();
+    existingDraft.setId("7");
+    when(noteService.getLatestDraftPageByTargetPageAndLang(3L, "en")).thenReturn(existingDraft);
+    DraftPage updatedDraft = new DraftPage();
+    updatedDraft.setContent("draft content");
+    when(noteService.updateDraftForExistPage(argThat(savedDraft -> "7".equals(savedDraft.getId())),
+                                             eq(editableNote),
+                                             any(),
+                                             anyLong(),
+                                             eq("john"))).thenReturn(updatedDraft);
+    assertEquals(Response.Status.OK.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+  }
+
+  @Test
+  public void testSaveDraftUnderAHiddenParentNoteIsNotFound() throws Exception {
+    when(identity.getUserId()).thenReturn("john");
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setLang("en");
+    draft.setContent("draft content");
+    draft.setParentPageId("9");
+    when(noteService.getNoteById("9", identity)).thenThrow(new IllegalAccessException("User cannot view the parent note."));
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    verify(noteService, never()).createDraftForNewPage(any(), anyLong(), anyLong());
   }
 
   @Test
