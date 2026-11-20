@@ -625,7 +625,10 @@ public class NotesRestService implements ResourceContainer {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       if (StringUtils.isNoneEmpty(draftNoteToSave.getTargetPageId())) {
-        targetNote = noteService.getNoteById(draftNoteToSave.getTargetPageId());
+        targetNote = noteService.getNoteById(draftNoteToSave.getTargetPageId(), identity);
+        if (targetNote != null && !targetNote.isCanManage()) {
+          return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
+        }
       }
 
       String syntaxId = noteBookService.getDefaultWikiSyntaxId();
@@ -664,6 +667,12 @@ public class NotesRestService implements ResourceContainer {
       }
       savedDraftPage.setContent(sanitizeAndSubstituteMentions(savedDraftPage.getContent(), draftNoteToSave.getLang()));
       return Response.ok(savedDraftPage, MediaType.APPLICATION_JSON).cacheControl(cc).build();
+    } catch (IllegalAccessException e) {
+      LOG.debug("User cannot view the target note {} or the parent note {} of the draft",
+                draftNoteToSave.getTargetPageId(),
+                draftNoteToSave.getParentPageId(),
+                e);
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception ex) {
       LOG.warn("Failed to perform save noteBook draft note {}:{}", noteBookType, noteBookOwner, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
