@@ -476,8 +476,8 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
-          @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
-          @ApiResponse(responseCode = "404", description = "Resource not found") })
+          @ApiResponse(responseCode = "403", description = "The user can view the note but cannot edit it"),
+          @ApiResponse(responseCode = "404", description = "The user cannot view the note") })
   public Response getLatestDraftOfPage(@Parameter(description = "Note id", required = true)
                                        @PathParam("noteId") String noteId,
                                        @Parameter(description = "draft content language")
@@ -501,7 +501,7 @@ public class NotesRestService implements ResourceContainer {
       return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Can't get draft note {}", noteId, e);
       return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
