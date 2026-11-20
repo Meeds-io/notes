@@ -19,6 +19,9 @@
 package io.meeds.notes.plugin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -109,6 +112,24 @@ public class NoteCategoryPluginTest {
     CategoryEntryItem item = noteCategoryPlugin.getEntryItem("1", "testuser");
 
     assertEquals(linkedCategoryIds, item.getCategoryIds());
+  }
+
+  @Test
+  public void testADeletedNoteGrantsNoRightAndHasNoEntry() {
+    Page note = new Page();
+    note.setId("1");
+    note.setTitle("note title");
+    when(noteService.getNoteById("1")).thenReturn(note);
+    when(noteService.canViewNote(note, "testuser")).thenReturn(true);
+    when(noteService.canEditNote(note, "testuser")).thenReturn(true);
+    assertTrue(noteCategoryPlugin.canAccess("1", "testuser"));
+    assertTrue(noteCategoryPlugin.canEdit("1", "testuser"));
+
+    note.setDeleted(true);
+
+    assertFalse(noteCategoryPlugin.canAccess("1", "testuser"));
+    assertFalse(noteCategoryPlugin.canEdit("1", "testuser"));
+    assertNull(noteCategoryPlugin.getEntryItem("1", "testuser"));
   }
 
 }

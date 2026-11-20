@@ -508,7 +508,8 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
-      if (note == null) {
+      // A deleted note's versions are answered as a missing note's
+      if (note == null || note.isDeleted()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       List<PageHistory> pageHistories = noteService.getVersionsHistoryOfNoteByLang(note, identity.getUserId(), lang);
@@ -766,7 +767,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note_ = noteService.getNoteById(noteId, identity);
-      if (note_ == null) {
+      if (note_ == null || note_.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       if (!note_.isCanManage()) {
@@ -933,7 +934,7 @@ public class NotesRestService implements ResourceContainer {
       Identity identity = ConversationState.getCurrent().getIdentity();
       String currentUser = identity.getUserId();
       Page note_ = noteService.getNoteById(note.getId(), identity);
-      if (note_ == null) {
+      if (note_ == null || note_.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       if (!note_.isCanManage()) {
