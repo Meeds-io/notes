@@ -23,6 +23,7 @@
     ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
+    :aria-label="$t('notePageView.label.edit')"
     class="linkSettingDrawer"
     eager
     @opened="stepper = 1"
