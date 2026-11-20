@@ -483,28 +483,28 @@ public class NotesRestService implements ResourceContainer {
                                        @Parameter(description = "draft content language")
                                        @QueryParam("lang") String lang) {
     if (!Utils.isReadableLang(lang)) {
-      return unreadableLangResponse();
+      return Response.fromResponse(unreadableLangResponse()).cacheControl(cc).build();
     }
     try {
       Page targetPage = noteService.getNoteById(noteId, ConversationState.getCurrent().getIdentity());
       if (targetPage == null) {
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        return Response.status(Response.Status.BAD_REQUEST).cacheControl(cc).build();
       }
       if (!targetPage.isCanManage()) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
       }
       DraftPage draftNote = noteService.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPage.getId()),
                                                                                      lang);
       if (draftNote != null) {
         draftNote.setContent(sanitizeAndSubstituteMentions(draftNote.getContent(), lang));
       }
-      return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).build();
+      return Response.ok(draftNote != null ? draftNote : org.json.JSONObject.NULL).cacheControl(cc).build();
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have view permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return Response.status(Response.Status.FORBIDDEN).cacheControl(cc).build();
     } catch (Exception e) {
       LOG.error("Can't get draft note {}", noteId, e);
-      return Response.serverError().entity(e.getMessage()).build();
+      return Response.serverError().entity(e.getMessage()).cacheControl(cc).build();
     }
   }
 

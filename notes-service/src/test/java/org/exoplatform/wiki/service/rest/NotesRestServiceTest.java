@@ -481,14 +481,18 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   @Test
   public void testGetLatestDraftOfPageRequiresEditPermission() throws Exception {
     when(noteService.getNoteById("1", identity)).thenThrow(new IllegalAccessException("User does not have view the note."));
-    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.getLatestDraftOfPage("1", "en").getStatus());
+    Response forbidden = notesRestService.getLatestDraftOfPage("1", "en");
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), forbidden.getStatus());
+    assertTrue(String.valueOf(forbidden.getMetadata().getFirst("Cache-Control")).contains("no-store"));
 
     Page readOnlyNote = new Page("readOnly");
     readOnlyNote.setId("2");
     readOnlyNote.setCanView(true);
     readOnlyNote.setCanManage(false);
     when(noteService.getNoteById("2", identity)).thenReturn(readOnlyNote);
-    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.getLatestDraftOfPage("2", "en").getStatus());
+    forbidden = notesRestService.getLatestDraftOfPage("2", "en");
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), forbidden.getStatus());
+    assertTrue(String.valueOf(forbidden.getMetadata().getFirst("Cache-Control")).contains("no-store"));
     verify(noteService, never()).getLatestDraftPageByTargetPageAndLang(any(), any());
 
     Page editableNote = new Page("editable");
@@ -502,6 +506,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     Response response = notesRestService.getLatestDraftOfPage("3", "en");
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     assertEquals(draft, response.getEntity());
+    assertTrue(String.valueOf(response.getMetadata().getFirst("Cache-Control")).contains("no-store"));
   }
 
   @Test
