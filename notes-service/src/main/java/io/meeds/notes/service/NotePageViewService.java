@@ -517,7 +517,7 @@ public class NotePageViewService {
     }
   }
 
-  private PageKey getPageKey(CMSSetting setting) {
+  public static PageKey getPageKey(CMSSetting setting) {
     String pageReference = setting.getPageReference();
     return PageKey.create(pageReference);
   }
