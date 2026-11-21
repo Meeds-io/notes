@@ -1330,8 +1330,8 @@ public class NoteMcpToolTest {
     runWithStaticMocks(() -> tool.setNoteCover(NOTE_ID, null, PNG_1PX, null, null, "cover", "  FR  "));
 
     verify(noteService).saveNoteMetadata(captor.capture(), eq("fr"), eq(42L));
-    // the translation's OWN file is replaced in place, as for a plain "fr"
-    assertEquals(Long.valueOf(600L), captor.getValue().getFeaturedImage().getId());
+    // an upload names no existing file: the service writes a new one
+    assertNull(captor.getValue().getFeaturedImage().getId());
     verify(frNote).setLang("fr");
   }
 
