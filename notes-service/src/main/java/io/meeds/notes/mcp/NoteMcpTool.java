@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -447,7 +448,8 @@ public class NoteMcpTool implements McpToolPlugin {
     NoteLinks links = new NoteLinks();
     return results.stream()
                   .map(SearchResult::getId)
-                  .map(this::getNoteByIdNoException)
+                  .map(this::getSearchHitNote)
+                  .filter(Objects::nonNull)
                   .map(note -> toNoteModel(note, links))
                   .toList();
   }
@@ -924,9 +926,17 @@ public class NoteMcpTool implements McpToolPlugin {
     return rootNote;
   }
 
+  /**
+   * The index drops a deleted note asynchronously: a hit whose note is deleted,
+   * or gone, is left out instead of failing the whole search.
+   */
   @SneakyThrows
-  private Page getNoteByIdNoException(long noteId) {
-    return getNoteById(noteId);
+  private Page getSearchHitNote(long noteId) {
+    try {
+      return getNoteById(noteId);
+    } catch (ObjectNotFoundException e) {
+      return null;
+    }
   }
 
   private Page getNoteById(long noteId) throws IllegalAccessException, ObjectNotFoundException {
@@ -954,7 +964,7 @@ public class NoteMcpTool implements McpToolPlugin {
                                                getCurrentUserAclIdentity(),
                                                null,
                                                normalizeLanguage(language));
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("Note with id %s doesn't exists".formatted(noteId));
     } else if (!noteService.canViewNote(note, getCurrentUserName())) {
       throw new IllegalAccessException("User can't access the note with id %s".formatted(noteId));

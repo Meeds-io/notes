@@ -257,6 +257,20 @@ public class NoteMcpToolTest {
     tool.getNote(NOTE_ID, null);
   }
 
+  /**
+   * A deleted note is answered as a missing one. Mutation: drop the deleted
+   * check, and this test fails.
+   */
+  @Test(expected = ObjectNotFoundException.class)
+  public void getNoteWhenNoteIsDeletedShouldThrowException() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(note.isDeleted()).thenReturn(true);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    lenient().when(noteService.canViewNote(note, USER)).thenReturn(true);
+
+    tool.getNote(NOTE_ID, null);
+  }
+
   @Test(expected = IllegalAccessException.class)
   public void getNoteWhenUserCannotViewShouldThrowException() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
@@ -597,6 +611,18 @@ public class NoteMcpToolTest {
     verify(noteService).createNote(eq(wiki), eq(parentName), any(Page.class), eq(currentIdentity), eq(false), eq(true));
   }
 
+  @Test
+  public void updateNoteWhenNoteIsDeletedShouldThrowException() throws Exception { // NOSONAR
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+    when(note.isDeleted()).thenReturn(true);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    lenient().when(noteService.canViewNote(note, USER)).thenReturn(true);
+    lenient().when(noteService.canEditNote(note, USER)).thenReturn(true);
+
+    assertThrows(ObjectNotFoundException.class, () -> tool.updateNote(NOTE_ID, OTHER_TITLE, CONTENT, null));
+    verify(noteService, never()).updateNote(any(Page.class), any(PageUpdateType.class), any());
+  }
+
   @Test(expected = IllegalAccessException.class)
   public void updateNoteWhenUserCannotEditShouldThrowException() throws Exception { // NOSONAR
     Page note = mockPage(String.valueOf(NOTE_ID), "Note");
@@ -928,6 +954,32 @@ public class NoteMcpToolTest {
     assertEquals(1, result.size());
     assertEquals(NOTE_ID, result.get(0).noteId());
     verify(noteService).search(any(WikiSearchData.class));
+  }
+
+  @Test
+  @SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
+  public void searchNotesShouldLeaveOutADeletedNoteStillIndexed() throws Exception { // NOSONAR
+    SearchResult deletedHit = mock(SearchResult.class);
+    SearchResult liveHit = mock(SearchResult.class);
+    ObjectPageList wikiSearchResult = mock(ObjectPageList.class);
+    long deletedNoteId = NOTE_ID + 1;
+    Page deletedNote = mockPage(String.valueOf(deletedNoteId), "Deleted");
+    when(deletedNote.isDeleted()).thenReturn(true);
+    Page note = mockPage(String.valueOf(NOTE_ID), "Note");
+
+    when(deletedHit.getId()).thenReturn(deletedNoteId);
+    when(liveHit.getId()).thenReturn(NOTE_ID);
+    when(wikiSearchResult.getAll()).thenReturn(List.of(deletedHit, liveHit));
+    when(noteService.search(any(WikiSearchData.class))).thenReturn(wikiSearchResult);
+    when(noteService.getNoteByIdAndLang(eq(deletedNoteId), eq(currentIdentity), eq(null), eq(null))).thenReturn(deletedNote);
+    when(noteService.getNoteByIdAndLang(eq(NOTE_ID), eq(currentIdentity), eq(null), eq(null))).thenReturn(note);
+    lenient().when(noteService.canViewNote(any(Page.class), eq(USER))).thenReturn(true);
+    lenient().when(noteService.canEditNote(any(Page.class), eq(USER))).thenReturn(true);
+
+    List<NoteModel> result = runWithConversationAndStaticMocks(() -> tool.searchNotes("note", null, null, null, false));
+
+    assertEquals(1, result.size());
+    assertEquals(NOTE_ID, result.get(0).noteId());
   }
 
   /**

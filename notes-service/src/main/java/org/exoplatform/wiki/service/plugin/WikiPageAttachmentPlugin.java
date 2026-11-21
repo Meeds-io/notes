@@ -47,7 +47,7 @@ public class WikiPageAttachmentPlugin extends AttachmentPlugin {
   public boolean hasAccessPermission(Identity identity, String noteId) {
     try {
       Page note = noteService.getNoteById(noteId, identity);
-      return note != null && note.isCanView();
+      return note != null && !note.isDeleted() && note.isCanView();
     } catch (Exception e) {
       return false;
     }
@@ -57,7 +57,7 @@ public class WikiPageAttachmentPlugin extends AttachmentPlugin {
   public boolean hasEditPermission(Identity identity, String noteId) throws ObjectNotFoundException {
     try {
       Page note = noteService.getNoteById(noteId, identity);
-      return note != null && note.isCanManage();
+      return note != null && !note.isDeleted() && note.isCanManage();
     } catch (Exception e) {
       return false;
     }
