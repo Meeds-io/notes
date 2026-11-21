@@ -537,13 +537,7 @@ public class NoteMcpTool implements McpToolPlugin {
       LanguageProperties resolved = resolveProperties(noteId, note, lang);
       NotePageProperties properties = resolved.properties();
       NoteFeaturedImage featuredImage = new NoteFeaturedImage();
-      NoteFeaturedImage existing = properties.getFeaturedImage();
-      // Reuse the id only when this language owns the FILE: on a shared id
-      // saveNoteFeaturedImage takes updateFile and replaces the default's own
-      // binary. Leaving it at 0 writes a new file, as the native draft path does.
-      if (resolved.ownsCoverFile() && existing != null && existing.getId() != null && existing.getId() > 0) {
-        featuredImage.setId(existing.getId()); // update this language's own cover file in place
-      }
+      // saveNoteMetadata writes every uploaded cover to a new file
       featuredImage.setUploadId(uploadId);
       featuredImage.setMimeType(image.mimeType());
       featuredImage.setFileName(image.fileName());

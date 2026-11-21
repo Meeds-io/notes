@@ -275,11 +275,13 @@ public class NoteServiceImpl implements NoteService {
       }
       try {
         if (properties != null) {
+          Long draftFeaturedImageId = getPublishedDraftFeaturedImageId(properties, note.getLang(), userIdentity.getUserId(), null);
           properties.setNoteId(Long.parseLong(createdPage.getId()));
           properties.setDraft(false);
           properties = saveNoteMetadata(properties,
                                         note.getLang(),
-                                        Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()));
+                                        Long.valueOf(identityManager.getOrCreateUserIdentity(userIdentity.getUserId()).getId()),
+                                        draftFeaturedImageId);
         }
       } catch (Exception e) {
         log.error("Failed to save note metadata", e);
@@ -1045,9 +1047,13 @@ public class NoteServiceImpl implements NoteService {
       try {
         NotePageProperties properties = note.getProperties();
         if (properties != null) {
+          Long draftFeaturedImageId = getPublishedDraftFeaturedImageId(properties, note.getLang(), userName, note.getId());
           properties.setNoteId(Long.parseLong(note.getId()));
           properties.setDraft(false);
-          saveNoteMetadata(properties, note.getLang(), Long.valueOf(identityManager.getOrCreateUserIdentity(userName).getId()));
+          saveNoteMetadata(properties,
+                           note.getLang(),
+                           Long.valueOf(identityManager.getOrCreateUserIdentity(userName).getId()),
+                           draftFeaturedImageId);
         }
       } catch (Exception e) {
         log.error("Error while saving note version language metadata", e);
@@ -1166,11 +1172,6 @@ public class NoteServiceImpl implements NoteService {
     NotePageProperties properties = draftNoteToUpdate.getProperties();
     try {
       if (properties != null) {
-        NoteFeaturedImage featuredImage = properties.getFeaturedImage();
-        if (featuredImage != null && featuredImage.getUploadId() != null
-            && isOriginalFeaturedImage(draftNoteToUpdate, targetPage)) {
-          featuredImage.setId(0L);
-        }
         properties = saveNoteMetadata(properties,
                                       newDraftPage.getLang(),
                                       Long.valueOf(identityManager.getOrCreateUserIdentity(username).getId()));
@@ -1189,9 +1190,10 @@ public class NoteServiceImpl implements NoteService {
   public DraftPage updateDraftForNewPage(DraftPage draftNoteToUpdate, long clientTime, long userIdentityId) throws WikiException {
     DraftPage storedDraft = getDraftNoteById(draftNoteToUpdate.getId());
     if (storedDraft != null
-        && !isDraftAuthor(storedDraft, identityManager.getIdentity(userIdentityId).getRemoteId())) {
-      // Another user's draft is left untouched: the content goes to a new
-      // draft of the caller
+        && (!isDraftAuthor(storedDraft, identityManager.getIdentity(userIdentityId).getRemoteId())
+            || StringUtils.isNotBlank(storedDraft.getTargetPageId()))) {
+      // Another user's draft, or a draft of an existing note, is left
+      // untouched: the content goes to a new draft of the caller
       draftNoteToUpdate.setId(null);
       return createDraftForNewPage(draftNoteToUpdate, clientTime, userIdentityId);
     }
@@ -1263,10 +1265,6 @@ public class NoteServiceImpl implements NoteService {
     NotePageProperties properties = draftPage.getProperties();
     try {
       if (properties != null) {
-        NoteFeaturedImage featuredImage = properties.getFeaturedImage();
-        if (featuredImage != null && featuredImage.getUploadId() != null) {
-          featuredImage.setId(0L);
-        }
         properties.setNoteId(Long.parseLong(newDraftPage.getId()));
         properties = saveNoteMetadata(properties, draftPage.getLang(), Long.valueOf(userIdentity.getId()));
       }
@@ -1787,6 +1785,17 @@ public class NoteServiceImpl implements NoteService {
   public NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties,
                                              String lang,
                                              Long userIdentityId) throws Exception {
+    return saveNoteMetadata(notePageProperties, lang, userIdentityId, null);
+  }
+
+  /**
+   * @param publishedDraftFeaturedImageId the cover of the caller's own draft
+   *          being published to this note, accepted besides the note's own
+   */
+  private NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties,
+                                              String lang,
+                                              Long userIdentityId,
+                                              Long publishedDraftFeaturedImageId) throws Exception {
     if (notePageProperties == null) {
       return null;
     }
@@ -1803,14 +1812,47 @@ public class NoteServiceImpl implements NoteService {
       throw new ObjectNotFoundException("note not found");
     }
 
-    if (featuredImage != null && featuredImage.isToDelete()) {
-      removeNoteFeaturedImage(Long.valueOf(note.getId()),
-                              featuredImage.getId(),
-                              lang,
-                              notePageProperties.isDraft(),
-                              userIdentityId);
-    } else {
-      featuredImageId = saveNoteFeaturedImage(note, featuredImage);
+    Long keptFeaturedImageId = null;
+    if (featuredImage != null) {
+      // only the note's own cover, the one it shares with its page or its
+      // default language, or the cover of the caller's draft being published,
+      // is accepted; an upload is always written to a new file
+      String objectType = notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE : NOTE_METADATA_PAGE_OBJECT_TYPE;
+      Long ownFeaturedImageId = getStoredFeaturedImageId(note, lang, objectType);
+      Set<Long> sharedFeaturedImageIds = getSharedFeaturedImageIds(note,
+                                                                   lang,
+                                                                   notePageProperties.isDraft(),
+                                                                   identityManager.getIdentity(userIdentityId).getRemoteId());
+      if (publishedDraftFeaturedImageId != null) {
+        sharedFeaturedImageIds.add(publishedDraftFeaturedImageId);
+      }
+      Long requestedFeaturedImageId = featuredImage.getId();
+      boolean accepted = requestedFeaturedImageId != null
+          && (requestedFeaturedImageId.equals(ownFeaturedImageId) || sharedFeaturedImageIds.contains(requestedFeaturedImageId));
+      boolean ownUnshared = accepted && requestedFeaturedImageId.equals(ownFeaturedImageId)
+          && !sharedFeaturedImageIds.contains(ownFeaturedImageId);
+      if (featuredImage.isToDelete()) {
+        // a removal naming a cover the note does not show leaves its own
+        if (accepted || requestedFeaturedImageId == null || requestedFeaturedImageId <= 0) {
+          removeNoteFeaturedImage(Long.valueOf(note.getId()),
+                                  ownUnshared ? ownFeaturedImageId : null,
+                                  lang,
+                                  notePageProperties.isDraft(),
+                                  userIdentityId);
+        }
+      } else {
+        if (featuredImage.getUploadId() != null) {
+          featuredImage.setId(null);
+        } else if (!accepted && requestedFeaturedImageId != null && requestedFeaturedImageId > 0) {
+          featuredImage.setId(ownFeaturedImageId);
+        }
+        featuredImageId = saveNoteFeaturedImage(note, featuredImage);
+        if (featuredImage.getUploadId() != null && (featuredImageId == null || featuredImageId <= 0)) {
+          // an upload that could not be written leaves the current cover
+          featuredImageId = null;
+          keptFeaturedImageId = ownFeaturedImageId;
+        }
+      }
     }
     NoteMetadataObject noteMetadataObject =
                                           buildNoteMetadataObject(note,
@@ -1842,7 +1884,7 @@ public class NoteServiceImpl implements NoteService {
       metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
     }
     if (featuredImage != null) {
-      featuredImage.setId(featuredImageId);
+      featuredImage.setId(featuredImageId != null ? featuredImageId : keptFeaturedImageId);
       featuredImage.setLastUpdated(Long.valueOf(properties.getOrDefault(FEATURED_IMAGE_UPDATED_DATE, "0")));
       featuredImage.setUploadId(null);
       notePageProperties.setFeaturedImage(featuredImage);
@@ -2372,6 +2414,68 @@ public class NoteServiceImpl implements NoteService {
     return new NoteMetadataObject(objectType, noteId, note.getParentPageId(), spaceId);
   }
 
+  /**
+   * @return the cover of the draft being published: the user's own draft the
+   *         properties come from, or else the page's latest draft in that
+   *         language when the user is its author; null for any other draft
+   * @param targetPageId the page being published, null for a new page
+   */
+  private Long getPublishedDraftFeaturedImageId(NotePageProperties properties,
+                                                String lang,
+                                                String username,
+                                                String targetPageId) {
+    if (properties == null || username == null) {
+      return null;
+    }
+    DraftPage draftPage = properties.isDraft() && properties.getNoteId() > 0 ? getDraftNoteById(String.valueOf(properties.getNoteId()))
+                                                                             : null;
+    if (!isPublishedDraft(draftPage, username, targetPageId) && targetPageId != null) {
+      draftPage = dataStorage.getLatestDraftPageByTargetPageAndLang(Long.valueOf(targetPageId), lang);
+    }
+    return isPublishedDraft(draftPage, username, targetPageId) ? getStoredFeaturedImageId(draftPage,
+                                                                                          lang,
+                                                                                          NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE)
+                                                               : null;
+  }
+
+  private boolean isPublishedDraft(DraftPage draftPage, String username, String targetPageId) {
+    return isDraftAuthor(draftPage, username)
+        && StringUtils.equals(StringUtils.trimToNull(draftPage.getTargetPageId()), targetPageId);
+  }
+
+  private Long getStoredFeaturedImageId(Page note, String lang, String objectType) {
+    MetadataItem metadataItem = getNoteMetadataItem(note, lang, objectType);
+    String featuredImageId = metadataItem == null || metadataItem.getProperties() == null ? null
+                                                                                         : metadataItem.getProperties()
+                                                                                                       .get(FEATURED_IMAGE_ID);
+    return StringUtils.isNumeric(featuredImageId) && Long.parseLong(featuredImageId) > 0 ? Long.valueOf(featuredImageId) : null;
+  }
+
+  /**
+   * @return the covers the note may show without owning them: its page's, for
+   *         a draft of an existing page the user can edit, and its default
+   *         language's
+   */
+  private Set<Long> getSharedFeaturedImageIds(Page note, String lang, boolean isDraft, String username) {
+    Set<Long> featuredImageIds = new HashSet<>();
+    Page page = note;
+    if (isDraft) {
+      String targetPageId = note instanceof DraftPage draftPage ? draftPage.getTargetPageId() : null;
+      page = StringUtils.isBlank(targetPageId) ? null : getNoteById(targetPageId);
+      if (page != null && !canEditNote(page, username)) {
+        page = null;
+      }
+      if (page != null) {
+        featuredImageIds.add(getStoredFeaturedImageId(page, lang, NOTE_METADATA_PAGE_OBJECT_TYPE));
+      }
+    }
+    if (page != null && (isDraft || lang != null)) {
+      featuredImageIds.add(getStoredFeaturedImageId(page, null, NOTE_METADATA_PAGE_OBJECT_TYPE));
+    }
+    featuredImageIds.remove(null);
+    return featuredImageIds;
+  }
+
   private MetadataItem getNoteMetadataItem(Page note, String lang, String objectType) {
     NoteMetadataObject noteMetadataObject = buildNoteMetadataObject(note, lang, objectType);
     return metadataService.getMetadataItemsByMetadataAndObject(NOTES_METADATA_KEY, noteMetadataObject)
@@ -2388,11 +2492,13 @@ public class NoteServiceImpl implements NoteService {
     String updater = userIdentity == null ? null : userIdentity.getUserId();
     if (properties != null && updater != null) {
       try {
+        Long draftFeaturedImageId = getPublishedDraftFeaturedImageId(properties, note.getLang(), updater, updatedPage.getId());
         properties.setNoteId(Long.parseLong(updatedPage.getId()));
         properties.setDraft(false);
         properties = saveNoteMetadata(properties,
                                       note.getLang(),
-                                      Long.valueOf(identityManager.getOrCreateUserIdentity(updater).getId()));
+                                      Long.valueOf(identityManager.getOrCreateUserIdentity(updater).getId()),
+                                      draftFeaturedImageId);
         updatedPage.setProperties(properties);
       } catch (Exception e) {
         log.error("Error while updating note metadata properties", e);
