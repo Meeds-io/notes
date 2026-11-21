@@ -1051,6 +1051,319 @@ public class TestNoteService extends BaseTest {
                                                     null));
   }
 
+  public void testSaveNoteMetadataKeepsAnotherNotesCoverOut() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverOwner", null, ROOT_IDENTITY);
+    Page otherNote = createTestNoteWithVersionLang("testCoverOther", null, ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+
+    NotePageProperties pointing = createNotePageProperties(Long.parseLong(otherNote.getId()), "alt", "summary");
+    pointing.getFeaturedImage().setUploadId(null);
+    pointing.getFeaturedImage().setId(coverId);
+    noteService.saveNoteMetadata(pointing, null, rootIdentityId);
+    assertNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(otherNote.getId()), null, false, null, rootIdentityId, null));
+
+    NotePageProperties uploading = createNotePageProperties(Long.parseLong(otherNote.getId()), "alt", "summary");
+    uploading.getFeaturedImage().setId(coverId);
+    Long otherCoverId = noteService.saveNoteMetadata(uploading, null, rootIdentityId).getFeaturedImage().getId();
+    assertNotNull(otherCoverId);
+    assertFalse(coverId.equals(otherCoverId));
+
+    NotePageProperties deleting = createNotePageProperties(Long.parseLong(otherNote.getId()), "alt", "summary");
+    deleting.getFeaturedImage().setUploadId(null);
+    deleting.getFeaturedImage().setId(coverId);
+    deleting.getFeaturedImage().setToDelete(true);
+    noteService.saveNoteMetadata(deleting, null, rootIdentityId);
+    assertNotNull(fileService.getFileInfo(coverId));
+    assertNotNull(fileService.getFileInfo(otherCoverId));
+    assertEquals(otherCoverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(otherNote.getId()), null, false, null, rootIdentityId, null)
+                            .getId());
+    assertEquals(coverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  public void testSaveNoteMetadataWritesEachUploadToANewFile() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverTranslation", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+
+    NotePageProperties replacing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    replacing.getFeaturedImage().setId(coverId);
+    Long replacedCoverId = noteService.saveNoteMetadata(replacing, null, rootIdentityId).getFeaturedImage().getId();
+    assertFalse(coverId.equals(replacedCoverId));
+    assertNotNull(fileService.getFileInfo(coverId));
+    coverId = replacedCoverId;
+
+    NotePageProperties sharing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    sharing.getFeaturedImage().setUploadId(null);
+    sharing.getFeaturedImage().setId(coverId);
+    assertEquals(coverId, noteService.saveNoteMetadata(sharing, "fr", rootIdentityId).getFeaturedImage().getId());
+
+    NotePageProperties translating = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    translating.getFeaturedImage().setId(coverId);
+    Long translationCoverId = noteService.saveNoteMetadata(translating, "fr", rootIdentityId).getFeaturedImage().getId();
+    assertFalse(coverId.equals(translationCoverId));
+
+    NotePageProperties deleting = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    deleting.getFeaturedImage().setUploadId(null);
+    deleting.getFeaturedImage().setId(coverId);
+    deleting.getFeaturedImage().setToDelete(true);
+    noteService.saveNoteMetadata(deleting, "fr", rootIdentityId);
+    assertNotNull(fileService.getFileInfo(coverId));
+    assertNotNull(fileService.getFileInfo(translationCoverId));
+
+    NotePageProperties deletingOwn = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    deletingOwn.getFeaturedImage().setUploadId(null);
+    deletingOwn.getFeaturedImage().setId(coverId);
+    deletingOwn.getFeaturedImage().setToDelete(true);
+    noteService.saveNoteMetadata(deletingOwn, null, rootIdentityId);
+    assertNull(fileService.getFileInfo(coverId));
+  }
+
+  public void testDraftOfATranslationShowsTheTranslationsCover() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverDraftTranslation", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long translationCoverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                           "fr",
+                                                           rootIdentityId)
+                                         .getFeaturedImage()
+                                         .getId();
+
+    NotePageProperties draftProperties = createNotePageProperties(0L, "alt", "summary");
+    draftProperties.setDraft(true);
+    draftProperties.getFeaturedImage().setUploadId(null);
+    draftProperties.getFeaturedImage().setId(translationCoverId);
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("draft title");
+    draftPage.setContent("draft content");
+    draftPage.setLang("fr");
+    draftPage.setProperties(draftProperties);
+    draftPage = noteService.createDraftForExistPage(draftPage, note, null, new Date().getTime(), "root");
+
+    assertEquals(translationCoverId, draftPage.getProperties().getFeaturedImage().getId());
+  }
+
+  public void testPublishingTheUsersOwnDraftKeepsItsCover() throws Exception {
+    startSessionAs("root");
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    bindMockedUploadService();
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+
+    DraftPage newPageDraft = new DraftPage();
+    newPageDraft.setTitle("draft of a new page");
+    newPageDraft.setContent("content");
+    NotePageProperties newPageDraftProperties = createNotePageProperties(0L, "alt", "summary");
+    newPageDraftProperties.setDraft(true);
+    newPageDraft.setProperties(newPageDraftProperties);
+    newPageDraft = noteService.createDraftForNewPage(newPageDraft, new Date().getTime(), rootIdentityId);
+    Long newPageDraftCoverId = newPageDraft.getProperties().getFeaturedImage().getId();
+    assertTrue(newPageDraftCoverId > 0);
+
+    Page page = new Page("testPublishedDraftCover", "testPublishedDraftCover");
+    page.setContent("content");
+    newPageDraft.getProperties().setDraft(true);
+    page.setProperties(newPageDraft.getProperties());
+    Page note = noteService.createNote(portalWiki, "Home", page, ROOT_IDENTITY);
+    assertEquals(newPageDraftCoverId, note.getProperties().getFeaturedImage().getId());
+
+    DraftPage pageDraft = new DraftPage();
+    pageDraft.setTitle("draft of the page");
+    pageDraft.setContent("new content");
+    NotePageProperties pageDraftProperties = createNotePageProperties(0L, "alt", "summary");
+    pageDraftProperties.setDraft(true);
+    pageDraft.setProperties(pageDraftProperties);
+    pageDraft = noteService.createDraftForExistPage(pageDraft, note, null, new Date().getTime(), "root");
+    Long pageDraftCoverId = pageDraft.getProperties().getFeaturedImage().getId();
+    assertFalse(newPageDraftCoverId.equals(pageDraftCoverId));
+
+    note.setContent("new content");
+    pageDraft.getProperties().setDraft(true);
+    note.setProperties(pageDraft.getProperties());
+    note = noteService.updateNote(note, PageUpdateType.EDIT_PAGE_CONTENT_AND_TITLE, ROOT_IDENTITY);
+    assertEquals(pageDraftCoverId, note.getProperties().getFeaturedImage().getId());
+  }
+
+  public void testPublishingAnotherUsersDraftLeavesItsCoverOut() throws Exception {
+    startSessionAs("root");
+    bindMockedUploadService();
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    identityManager.getOrCreateUserIdentity(USER_IDENTITY.getUserId());
+
+    DraftPage othersDraft = new DraftPage();
+    othersDraft.setTitle("another user's draft");
+    othersDraft.setContent("content");
+    NotePageProperties othersDraftProperties = createNotePageProperties(0L, "alt", "summary");
+    othersDraftProperties.setDraft(true);
+    othersDraft.setProperties(othersDraftProperties);
+    othersDraft = noteService.createDraftForNewPage(othersDraft,
+                                                    new Date().getTime(),
+                                                    getIdentityId(USER_IDENTITY.getUserId()));
+    Long othersDraftCoverId = othersDraft.getProperties().getFeaturedImage().getId();
+    assertTrue(othersDraftCoverId > 0);
+
+    Page page = new Page("testOthersDraftCover", "testOthersDraftCover");
+    page.setContent("content");
+    othersDraft.getProperties().setDraft(true);
+    page.setProperties(othersDraft.getProperties());
+    Page note = noteService.createNote(portalWiki, "Home", page, ROOT_IDENTITY);
+    assertFalse(othersDraftCoverId.equals(note.getProperties().getFeaturedImage().getId()));
+  }
+
+  public void testPublishingADraftOfAnotherPageLeavesItsCoverOut() throws Exception {
+    startSessionAs("root");
+    bindMockedUploadService();
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page otherPage = noteService.createNote(portalWiki, "Home", new Page("testOtherPageDraftCover", "testOtherPageDraftCover"), ROOT_IDENTITY);
+    DraftPage otherPageDraft = createCoverDraft(otherPage, null, "root");
+    Long otherPageDraftCoverId = otherPageDraft.getProperties().getFeaturedImage().getId();
+
+    Page page = new Page("testNewPageFromOtherDraft", "testNewPageFromOtherDraft");
+    page.setContent("content");
+    otherPageDraft.getProperties().setDraft(true);
+    page.setProperties(otherPageDraft.getProperties());
+    Page note = noteService.createNote(portalWiki, "Home", page, ROOT_IDENTITY);
+    assertFalse(otherPageDraftCoverId.equals(note.getProperties().getFeaturedImage().getId()));
+  }
+
+  public void testADraftShowsThePagesCoverOnlyForAUserWhoCanEditThePage() throws Exception {
+    startSessionAs("root");
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    identityManager.getOrCreateUserIdentity(USER_IDENTITY.getUserId());
+    bindMockedUploadService();
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page page = noteService.createNote(portalWiki, "Home", new Page("testPageCoverForDrafts", "testPageCoverForDrafts"), ROOT_IDENTITY);
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(page.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+    assertFalse(noteService.canEditNote(page, USER_IDENTITY.getUserId()));
+
+    assertEquals(coverId, createPageCoverDraft(page, coverId, "root").getProperties().getFeaturedImage().getId());
+    assertFalse(coverId.equals(createPageCoverDraft(page, coverId, USER_IDENTITY.getUserId()).getProperties()
+                                                                                              .getFeaturedImage()
+                                                                                              .getId()));
+  }
+
+  public void testPublishingATranslationDraftKeepsItsCover() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testTranslationDraftCover", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+
+    DraftPage draft = createCoverDraft(note, "fr", "root");
+    Long draftCoverId = draft.getProperties().getFeaturedImage().getId();
+    Page translation = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), "fr");
+    draft.getProperties().setDraft(true);
+    translation.setProperties(draft.getProperties());
+    noteService.createVersionOfNote(translation, "root");
+    assertEquals(draftCoverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, rootIdentityId, null)
+                            .getId());
+
+    // the properties of a client that does not name the draft
+    draft = createCoverDraft(note, "fr", "root");
+    draftCoverId = draft.getProperties().getFeaturedImage().getId();
+    translation = noteService.getNoteByIdAndLang(Long.valueOf(note.getId()), "fr");
+    draft.getProperties().setDraft(false);
+    draft.getProperties().setNoteId(Long.parseLong(note.getId()));
+    translation.setProperties(draft.getProperties());
+    noteService.createVersionOfNote(translation, "root");
+    assertEquals(draftCoverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  private DraftPage createCoverDraft(Page page, String lang, String username) throws Exception {
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("draft title");
+    draftPage.setContent("draft content");
+    draftPage.setLang(lang);
+    NotePageProperties properties = createNotePageProperties(0L, "alt", "summary");
+    properties.setDraft(true);
+    draftPage.setProperties(properties);
+    return noteService.createDraftForExistPage(draftPage, page, null, new Date().getTime(), username);
+  }
+
+  private DraftPage createPageCoverDraft(Page page, Long coverId, String username) throws Exception {
+    DraftPage draftPage = new DraftPage();
+    draftPage.setTitle("draft title");
+    draftPage.setContent("draft content");
+    NotePageProperties properties = createNotePageProperties(0L, "alt", "summary");
+    properties.setDraft(true);
+    properties.getFeaturedImage().setUploadId(null);
+    properties.getFeaturedImage().setId(coverId);
+    draftPage.setProperties(properties);
+    return noteService.createDraftForExistPage(draftPage, page, null, new Date().getTime(), username);
+  }
+
+  public void testAnUploadThatCannotBeReadKeepsTheCurrentCover() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverMissingUpload", null, ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+
+    UploadService uploadService = mock(UploadService.class);
+    Field field = noteService.getClass().getDeclaredField("uploadService");
+    field.setAccessible(true);
+    field.set(noteService, uploadService);
+    NotePageProperties saved = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()),
+                                                                                     "alt",
+                                                                                     "summary"),
+                                                            null,
+                                                            rootIdentityId);
+
+    assertEquals(coverId, saved.getFeaturedImage().getId());
+    assertEquals(coverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  public void testADraftOfAPageIsNotTurnedIntoADraftOfANewPage() throws Exception {
+    startSessionAs("root");
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    bindMockedUploadService();
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page page = noteService.createNote(portalWiki, "Home", new Page("testPageDraftKeepsTarget", "testPageDraftKeepsTarget"), ROOT_IDENTITY);
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(page.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+    DraftPage pageDraft = createPageCoverDraft(page, coverId, "root");
+    assertEquals(coverId, pageDraft.getProperties().getFeaturedImage().getId());
+
+    String pageDraftId = pageDraft.getId();
+    pageDraft.setTargetPageId(null);
+    pageDraft.getProperties().setDraft(true);
+    DraftPage newPageDraft = noteService.updateDraftForNewPage(pageDraft, new Date().getTime(), rootIdentityId);
+
+    assertFalse(pageDraftId.equals(newPageDraft.getId()));
+    assertEquals(page.getId(), noteService.getDraftNoteById(pageDraftId).getTargetPageId());
+    Page newPage = new Page("testNewPageFromRetargetedDraft", "testNewPageFromRetargetedDraft");
+    newPage.setContent("content");
+    newPageDraft.getProperties().setDraft(true);
+    newPage.setProperties(newPageDraft.getProperties());
+    Page note = noteService.createNote(portalWiki, "Home", newPage, ROOT_IDENTITY);
+    assertFalse(coverId.equals(note.getProperties().getFeaturedImage().getId()));
+  }
+
   public void testGetNoteFeaturedImageInfo() throws Exception {
     Page note = createTestNoteWithVersionLang("testGetMetadataInfo", "ar", ROOT_IDENTITY);
 
@@ -1404,7 +1717,7 @@ public class TestNoteService extends BaseTest {
     noteService.updateNotesPosition(validReorder, root);
 
     NoteReorder reorder1 = new NoteReorder();
-    reorder1.setPageId("10");
+    reorder1.setPageId(String.valueOf(Integer.MAX_VALUE));
 
     Exception notFoundException = assertThrows(Exception.class, () -> {
       noteService.updateNotesPosition(reorder1, root);
