@@ -153,6 +153,19 @@ export default {
       return params;
     },
     /**
+     * @returns {string} the saved note or article the chat opens with as its
+     *          selected source, as `<type>:<id>` (EXO-94393), named apart
+     *          from what the requests read, the content on screen, and
+     *          used by the questions the user types only: the note's page, or
+     *          the article, the same for each of its translations; null for
+     *          content never saved, and for an article's draft, which no
+     *          source reads
+     */
+    sourceContentLink() {
+      const objectId = String((this.kind === 'news' ? getArticleObjectId(this.note) : this.pageId) || '');
+      return objectId && !objectId.startsWith('draft-') ? `${this.place.objectType}:${objectId}` : null;
+    },
+    /**
      * @returns {boolean} whether « Ask AI » is offered: the bindings read
      *          last are kept only in a drawer the assistant is offered in, editable, with
      *          the space shared with the assistant, and cleared at once when
@@ -258,11 +271,13 @@ export default {
     },
     /**
      * Opens the assistant with every binding of the place, on the content on
-     * screen, saved or not: the chat gets the content, never the note's id,
-     * whose stored version may be older. The page id reaches the prompts as
-     * {note_id}, or {news_id} and {article_id} for an article, empty for
-     * content never saved. Tells the drawer once the
-     * chat is open.
+     * screen, saved or not: the requests get the content, never the note's
+     * id, whose stored version may be older; the chat opens on the saved note
+     * or article as its selected source, for the questions the user types
+     * only, the requests keeping the current space, or none. The page id
+     * reaches the prompts as {note_id}, or {news_id} and {article_id} for an
+     * article, empty for content never saved. Tells the drawer once the chat
+     * is open.
      *
      * @returns {void}
      */
@@ -278,6 +293,7 @@ export default {
           objectTitle: this.note?.title || this.$t('notes.untitled.title'),
           objectContent: this.noteContent,
           params: this.params,
+          sourceContentLink: this.sourceContentLink,
         },
         insertText: text => this.$emit('insert-text', text),
         insertImage: this.insertImage,
