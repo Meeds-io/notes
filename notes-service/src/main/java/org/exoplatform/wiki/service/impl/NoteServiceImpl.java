@@ -2552,8 +2552,8 @@ public class NoteServiceImpl implements NoteService {
                                         null,
                                         userIdentityId);
       newContent = note.getContent()
-                       .replaceAll("/attachments/" + sourceObjectType + "/" + draftId,
-                                   "/attachments/" + note.getAttachmentObjectType() + "/" + note.getId());
+                       .replace("/attachments/" + sourceObjectType + "/" + draftId + "/",
+                                "/attachments/" + note.getAttachmentObjectType() + "/" + note.getId() + "/");
     }
 
     if (IMAGES_IMPORT_PATTERN.matcher(newContent).find()) {
