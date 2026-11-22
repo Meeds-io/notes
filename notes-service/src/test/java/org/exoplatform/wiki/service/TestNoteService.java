@@ -2022,9 +2022,21 @@ public class TestNoteService extends BaseTest {
     note.setOwner(IdentityConstants.SYSTEM);
     note = noteService.createNote(wiki, wiki.getWikiHome(), note);
 
-    createUserWithMembership("termsPublisher", "/platform/web-contributors", "publisher");
-    assertTrue(noteService.canViewNote(note, "termsPublisher"));
-    assertTrue(noteService.canEditNote(note, "termsPublisher"));
+    createUserWithMembership("termsAdministrator", "/platform/administrators", "manager");
+    assertTrue(noteService.canViewNote(note, "termsAdministrator"));
+    assertTrue(noteService.canEditNote(note, "termsAdministrator"));
+  }
+
+  public void testRightsOfOtherNoteOfTermsAndConditionsNotebook() throws Exception {
+    startSessionAs("root");
+    Wiki wiki = getOrCreateWiki(wikiService, "terms", IdentityConstants.SYSTEM);
+    String noteName = "otherTermsNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+
+    createUserWithMembership("otherTermsAdministrator", "/platform/administrators", "manager");
+    assertFalse(noteService.canEditNote(note, "otherTermsAdministrator"));
   }
 
   public void testEditRightsOfNotebookNoteWithoutSetting() throws Exception {

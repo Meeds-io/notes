@@ -750,7 +750,7 @@ public class NoteServiceImpl implements NoteService {
     if (!StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) && StringUtils.isNotBlank(page.getOwner())) {
       return false;
     }
-    if (TC_NOTE_TYPE.equals(page.getWikiType()) && TC_NOTE_NAME.equals(page.getName())) {
+    if (isTermsAndConditionsNote(page)) {
       return true;
     }
     CMSSetting setting = cmsService.getSetting(NotePageViewService.CMS_CONTENT_TYPE, page.getName());
@@ -761,6 +761,12 @@ public class NoteServiceImpl implements NoteService {
     String wikiType = StringUtils.isBlank(page.getWikiType()) ? WikiType.GROUP.name() : page.getWikiType();
     return StringUtils.equalsIgnoreCase(wikiType, notebookKey.getType())
            && StringUtils.equals(notebookKey.getId(), page.getWikiOwner());
+  }
+
+  private boolean isTermsAndConditionsNote(Page page) {
+    return TC_NOTE_TYPE.equals(page.getWikiType())
+           && StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)
+           && TC_NOTE_NAME.equals(page.getName());
   }
 
   /**
