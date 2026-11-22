@@ -463,6 +463,7 @@ export default {
       isDraft: false,
       noteTitle: '',
       noteSummary: '',
+      storedProperties: null,
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
       childNodes: [],
       exportStatus: '',
@@ -1035,6 +1036,7 @@ export default {
     },
     getNoteById(noteId, source, viewNote) {
       return this.$notesService.getNoteById(noteId,this.targetLang, source, this.noteBookType, this.noteBookOwner).then(data => {
+        this.storeProperties(data?.properties);
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
@@ -1069,6 +1071,7 @@ export default {
     },
     getNoteByName(noteName, source, viewNote) {
       return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.targetLang).then(data => {
+        this.storeProperties(data?.properties);
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
@@ -1092,6 +1095,7 @@ export default {
     },
     getDraftNote(noteId) {
       return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
+        this.storeProperties(data?.properties);
         this.note = {};
         this.note = data || {};
         this.isDraft = true;
@@ -1190,11 +1194,26 @@ export default {
         }
       });
     },
+    storeProperties(properties) {
+      // the note's own stored metadata, which a version snapshot may be behind
+      this.storedProperties = properties ? structuredClone(properties) : null;
+    },
     displayVersion(version) {
+      const latest = version?.versionNumber != null && version.versionNumber === this.noteVersions[0]?.versionNumber;
       this.actualVersion = version;
       this.actualVersion.current = true;
       this.note.content = version?.content;
       this.note.title = version?.title;
+      if (latest && this.storedProperties) {
+        // The newest version, opened on load or from the history, is the note as
+        // stored: its summary, cover and flags come from the note's own
+        // properties, never from the version snapshot, which a Properties save
+        // does not update and which would be written back.
+        this.note.properties = structuredClone(this.storedProperties);
+        this.noteSummary = this.note.properties.summary;
+        this.noteTitle = version?.title;
+        return;
+      }
       // The summary and featured image (cover) are metadata stored per
       // note/translation, not per content version, so a version's properties may
       // not carry them. Preserve the note's current metadata (already resolved for
@@ -1229,6 +1248,11 @@ export default {
         this.note.properties = version.properties;
       }
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
+        .then(() => {
+          if (version.properties) {
+            this.storeProperties(version.properties);
+          }
+        })
         .catch(e => {
           console.error('Error when restore note version', e);
           this.$root.$emit('version-restore-error');
@@ -1334,6 +1358,7 @@ export default {
           this.note.latestVersionId = note.latestVersionId;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
           this.note.properties = note?.properties;
+          this.storeProperties(note?.properties);
           this.noteSummary = note?.properties?.summary;
         }
         this.updateURL();
@@ -1351,6 +1376,7 @@ export default {
       const lang = this.note.lang || this.selectedTranslation?.value || '';
       this.$notesService.saveNoteMetadata(properties, lang).then(savedProperties => {
         this.note.properties = savedProperties;
+        this.storeProperties(savedProperties);
         this.noteSummary = savedProperties?.summary;
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.propertiesUpdated')});
       }).catch(e => {
