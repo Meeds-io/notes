@@ -38,8 +38,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.io.FileUtils;
@@ -57,6 +59,7 @@ import org.exoplatform.portal.mop.page.PageState;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -518,6 +521,64 @@ public class TestNoteService extends BaseTest {
 
     assertNotNull(langs);
     assertEquals(3, langs.size());
+  }
+
+  public void testGetPageAvailableTranslationLanguagesForIdentity() throws Exception {
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity adminIdentity = new Identity("admin",
+                                          Arrays.asList(new MembershipEntry(USERS_GROUP, "*"),
+                                                        new MembershipEntry("/platform/administrators", "*")));
+    identityRegistry.register(adminIdentity);
+    Identity userIdentity = new Identity("user", Arrays.asList(new MembershipEntry(USERS_GROUP, "*")));
+    identityRegistry.register(userIdentity);
+
+    NoteDataStorage storage = getContainer().getComponentInstanceOfType(NoteDataStorage.class);
+    Wiki wiki = new Wiki();
+    wiki.setType("portal");
+    wiki.setOwner("testTranslationLanguagesOfNote");
+    wiki = storage.createWiki(wiki);
+
+    Page hiddenNote = new Page();
+    hiddenNote.setWikiId(wiki.getId());
+    hiddenNote.setWikiType(wiki.getType());
+    hiddenNote.setWikiOwner(wiki.getOwner());
+    hiddenNote.setName("hiddenNote");
+    hiddenNote.setTitle("Hidden note");
+    hiddenNote.setOwner(IdentityConstants.SYSTEM);
+    hiddenNote = storage.createPage(wiki, wiki.getWikiHome(), hiddenNote);
+    Long hiddenNoteId = Long.valueOf(hiddenNote.getId());
+
+    Page viewableNote = noteService.createNote(new Wiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME),
+                                           "Home",
+                                           new Page("langNote", "langNote"),
+                                           ROOT_IDENTITY);
+    viewableNote.setLang("fr");
+    noteService.createVersionOfNote(viewableNote, "root");
+    Long viewableNoteId = Long.valueOf(viewableNote.getId());
+    DraftPage draft = new DraftPage();
+    draft.setContent("draft");
+    draft.setTitle("draft");
+    draft.setLang("ar");
+    noteService.createDraftForExistPage(draft, viewableNote, "", new Date().getTime(), "root");
+
+    // Missing note
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getPageAvailableTranslationLanguages(Long.MAX_VALUE, adminIdentity, true));
+    // A hidden note answers like a missing one, whatever the drafts flag
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getPageAvailableTranslationLanguages(hiddenNoteId, userIdentity, false));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getPageAvailableTranslationLanguages(hiddenNoteId, userIdentity, true));
+
+    // An editor gets the languages of the note only when the drafts are not requested
+    assertEquals(List.of("fr"), noteService.getPageAvailableTranslationLanguages(viewableNoteId, adminIdentity, false));
+    // A viewer who cannot edit never gets the languages of the drafts
+    assertFalse(noteService.canEditNote(viewableNote, userIdentity.getUserId()));
+    assertEquals(List.of("fr"), noteService.getPageAvailableTranslationLanguages(viewableNoteId, userIdentity, true));
+    // An editor gets them when requested
+    assertTrue(noteService.canEditNote(viewableNote, adminIdentity.getUserId()));
+    assertEquals(Set.of("fr", "ar"),
+                 new HashSet<>(noteService.getPageAvailableTranslationLanguages(viewableNoteId, adminIdentity, true)));
   }
 
   public void testGetVersionsHistoryOfNoteByLang() throws WikiException, IllegalAccessException {

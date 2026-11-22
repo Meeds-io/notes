@@ -42,6 +42,7 @@ import java.util.ResourceBundle;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
@@ -742,20 +743,45 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
-  public void testGetPageAvailableTranslationLanguages() throws WikiException {
+  public void testGetPageAvailableTranslationLanguages() throws Exception {
     List<String> langs = new ArrayList<>();
     langs.add("ar");
     langs.add("en");
     Response response = notesRestService.getPageAvailableTranslationLanguages(null, false);
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     when(identity.getUserId()).thenReturn("1");
-    when(noteService.getPageAvailableTranslationLanguages(1L, false)).thenReturn(langs);
+    when(noteService.getPageAvailableTranslationLanguages(1L, identity, false)).thenReturn(langs);
     response = notesRestService.getPageAvailableTranslationLanguages(1L, false);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    doThrow(new WikiException()).when(noteService).getPageAvailableTranslationLanguages(2L, false);
+    assertEquals(langs, response.getEntity());
+    assertTrue(((CacheControl) response.getMetadata().getFirst("Cache-Control")).isNoStore());
+    doThrow(new WikiException()).when(noteService).getPageAvailableTranslationLanguages(2L, identity, false);
     response = notesRestService.getPageAvailableTranslationLanguages(2L, false);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+    assertTrue(((CacheControl) response.getMetadata().getFirst("Cache-Control")).isNoStore());
+  }
 
+  @Test
+  public void testGetPageAvailableTranslationLanguagesNotFound() throws Exception {
+    when(identity.getUserId()).thenReturn("1");
+    when(noteService.getPageAvailableTranslationLanguages(3L, identity, true)).thenThrow(new ObjectNotFoundException("note not found"));
+
+    Response response = notesRestService.getPageAvailableTranslationLanguages(3L, true);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    assertNull(response.getEntity());
+    assertTrue(((CacheControl) response.getMetadata().getFirst("Cache-Control")).isNoStore());
+  }
+
+  @Test
+  public void testGetPageAvailableTranslationLanguagesPassesDraftsFlag() throws Exception {
+    when(identity.getUserId()).thenReturn("1");
+    when(noteService.getPageAvailableTranslationLanguages(5L, identity, true)).thenReturn(List.of("en", "fr"));
+    when(noteService.getPageAvailableTranslationLanguages(5L, identity, false)).thenReturn(List.of("en"));
+
+    assertEquals(List.of("en", "fr"), notesRestService.getPageAvailableTranslationLanguages(5L, true).getEntity());
+    assertEquals(List.of("en"), notesRestService.getPageAvailableTranslationLanguages(5L, false).getEntity());
+    assertEquals(List.of("en"), notesRestService.getPageAvailableTranslationLanguages(5L, null).getEntity());
   }
 
   @Test
