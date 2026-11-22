@@ -741,17 +741,16 @@ public class NoteServiceImpl implements NoteService {
 
   /**
    * Checks whether a note is ruled by the CMS content type: a note owned by
-   * the system or without owner. In a group notebook, such a note is ruled by
-   * the CMS content type only when a CMS setting of this notebook is named
-   * after it; the other ones follow the rules of the group.
+   * the system or without owner that holds a page's content, meaning a CMS
+   * setting of its notebook is named after it. The other ones, a Home note
+   * included, follow the rules of their notebook. The terms and conditions
+   * note is the only one ruled without such a setting.
    */
   private boolean isCmsNote(Page page) {
     if (!StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) && StringUtils.isNotBlank(page.getOwner())) {
       return false;
     }
-    boolean groupNote = StringUtils.isBlank(page.getWikiType())
-                        || StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), page.getWikiType());
-    if (!groupNote) {
+    if (TC_NOTE_TYPE.equals(page.getWikiType()) && TC_NOTE_NAME.equals(page.getName())) {
       return true;
     }
     CMSSetting setting = cmsService.getSetting(NotePageViewService.CMS_CONTENT_TYPE, page.getName());
@@ -759,7 +758,8 @@ public class NoteServiceImpl implements NoteService {
       return false;
     }
     PageKey notebookKey = NotePageViewService.getPageKey(setting);
-    return StringUtils.equalsIgnoreCase(WikiType.GROUP.name(), notebookKey.getType())
+    String wikiType = StringUtils.isBlank(page.getWikiType()) ? WikiType.GROUP.name() : page.getWikiType();
+    return StringUtils.equalsIgnoreCase(wikiType, notebookKey.getType())
            && StringUtils.equals(notebookKey.getId(), page.getWikiOwner());
   }
 

@@ -314,13 +314,19 @@ public class TestNoteService extends BaseTest {
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, currentNotePage2.getName()));
   }
 
-  public void testHasPermisionOnSystemPage() throws WikiException, IllegalAccessException {
+  public void testHasPermisionOnSystemPage() throws Exception {
     NoteDataStorage storage = getContainer().getComponentInstanceOfType(NoteDataStorage.class);
 
     Wiki wiki = new Wiki();
     wiki.setType("portal");
     wiki.setOwner("testHasPermisionOnSystemPage");
     wiki = storage.createWiki(wiki);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                                   "page1",
+                                   "portal::testHasPermisionOnSystemPage::sitePage",
+                                   0L,
+                                   1L);
 
     IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
 
@@ -1977,6 +1983,48 @@ public class TestNoteService extends BaseTest {
     assertFalse(wikiService.canManageWiki(wiki.getType(), wiki.getOwner(), "portalNotePublisher"));
     assertTrue(noteService.canEditNote(note, "portalNotePublisher"));
     assertTrue(noteService.canViewNote(note, "portalNotePublisher"));
+  }
+
+  public void testRightsOfHomeNoteOfUserNotebook() throws Exception {
+    startSessionAs("root");
+    createUserWithMembership("userHomePublisher", "/platform/web-contributors", "publisher");
+    createUserWithMembership("userHomeAdministrator", "/platform/administrators", "member");
+    createUserWithMembership("userHomeOwner", "/platform/users", "member");
+    getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "userHomeOwner");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "userHomeOwner", "Home");
+    assertNotNull(home);
+    assertTrue(StringUtils.isBlank(home.getOwner()));
+
+    assertFalse(noteService.canViewNote(home, "userHomePublisher"));
+    assertFalse(noteService.canEditNote(home, "userHomePublisher"));
+    assertFalse(noteService.canViewNote(home, "userHomeAdministrator"));
+    assertFalse(noteService.canEditNote(home, "userHomeAdministrator"));
+    assertTrue(noteService.canViewNote(home, "userHomeOwner"));
+    assertTrue(noteService.canEditNote(home, "userHomeOwner"));
+  }
+
+  public void testRightsOfHomeNoteOfPortalNotebook() throws Exception {
+    startSessionAs("root");
+    getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "Home");
+    assertNotNull(home);
+    assertTrue(StringUtils.isBlank(home.getOwner()));
+
+    createUserWithMembership("portalHomePublisher", "/platform/web-contributors", "publisher");
+    assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "portalHomePublisher"));
+    assertFalse(noteService.canEditNote(home, "portalHomePublisher"));
+  }
+
+  public void testRightsOfTermsAndConditionsNote() throws Exception {
+    startSessionAs("root");
+    Wiki wiki = getOrCreateWiki(wikiService, "terms", IdentityConstants.SYSTEM);
+    Page note = new Page("termsAndConditions", "");
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+
+    createUserWithMembership("termsPublisher", "/platform/web-contributors", "publisher");
+    assertTrue(noteService.canViewNote(note, "termsPublisher"));
+    assertTrue(noteService.canEditNote(note, "termsPublisher"));
   }
 
   public void testEditRightsOfNotebookNoteWithoutSetting() throws Exception {
