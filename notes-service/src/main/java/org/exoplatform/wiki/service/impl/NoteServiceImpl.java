@@ -757,7 +757,7 @@ public class NoteServiceImpl implements NoteService {
     if (setting == null) {
       return false;
     }
-    PageKey notebookKey = NotePageViewService.getPageKey(setting);
+    PageKey notebookKey = PageKey.create(setting.getPageReference());
     String wikiType = StringUtils.isBlank(page.getWikiType()) ? WikiType.GROUP.name() : page.getWikiType();
     return StringUtils.equalsIgnoreCase(wikiType, notebookKey.getType())
            && StringUtils.equals(notebookKey.getId(), page.getWikiOwner());

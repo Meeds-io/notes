@@ -1895,6 +1895,7 @@ public class TestNoteService extends BaseTest {
 
     createUserWithMembership("homeNotePublisher", "/platform/web-contributors", "publisher");
     assertFalse(noteService.canViewNote(home, "homeNotePublisher"));
+    // pins the service answer only: no edit path reaches it while canViewNote is false
     assertTrue(noteService.canEditNote(home, "homeNotePublisher"));
 
     createUserWithMembership("homeNoteAdministrator", "/platform/administrators", "member");
@@ -2013,6 +2014,10 @@ public class TestNoteService extends BaseTest {
     createUserWithMembership("portalHomePublisher", "/platform/web-contributors", "publisher");
     assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "portalHomePublisher"));
     assertFalse(noteService.canEditNote(home, "portalHomePublisher"));
+    assertFalse(noteService.canViewNote(home, "portalHomePublisher"));
+    createUserWithMembership("portalHomeAdministrator", "/platform/administrators", "member");
+    assertTrue(noteService.canViewNote(home, "portalHomeAdministrator"));
+    assertTrue(noteService.canEditNote(home, "portalHomeAdministrator"));
   }
 
   public void testRightsOfTermsAndConditionsNote() throws Exception {
