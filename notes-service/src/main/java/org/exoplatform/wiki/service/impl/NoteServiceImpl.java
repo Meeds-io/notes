@@ -1195,7 +1195,15 @@ public class NoteServiceImpl implements NoteService {
       // Another user's draft, or a draft of an existing note, is left
       // untouched: the content goes to a new draft of the caller
       draftNoteToUpdate.setId(null);
-      return createDraftForNewPage(draftNoteToUpdate, clientTime, userIdentityId);
+      String username = identityManager.getIdentity(userIdentityId).getRemoteId();
+      return createDraftForNewPage(draftNoteToUpdate,
+                                   clientTime,
+                                   userIdentityId,
+                                   StringUtils.isBlank(storedDraft.getTargetPageId()) && canEditNote(storedDraft, username) ?
+                                                                      getStoredFeaturedImageId(storedDraft,
+                                                                                               draftNoteToUpdate.getLang(),
+                                                                                               NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE) :
+                                                                      null);
     }
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
@@ -1291,6 +1299,17 @@ public class NoteServiceImpl implements NoteService {
    */
   @Override
   public DraftPage createDraftForNewPage(DraftPage draftPage, long clientTime, long userIdentityId) throws WikiException {
+    return createDraftForNewPage(draftPage, clientTime, userIdentityId, null);
+  }
+
+  /**
+   * @param acceptedFeaturedImageId the cover of the draft this one is forked
+   *          from, when the user may edit that draft
+   */
+  private DraftPage createDraftForNewPage(DraftPage draftPage,
+                                          long clientTime,
+                                          long userIdentityId,
+                                          Long acceptedFeaturedImageId) throws WikiException {
     // Create suffix for draft name
     String draftSuffix = getDraftNameSuffix(clientTime);
 
@@ -1314,7 +1333,7 @@ public class NoteServiceImpl implements NoteService {
     try {
       if (properties != null) {
         properties.setNoteId(Long.parseLong(newDraftPage.getId()));
-        properties = saveNoteMetadata(properties, draftPage.getLang(), userIdentityId);
+        properties = saveNoteMetadata(properties, draftPage.getLang(), userIdentityId, acceptedFeaturedImageId);
       }
     } catch (Exception e) {
       log.error("Failed to save draft note metadata", e);
@@ -1761,13 +1780,17 @@ public class NoteServiceImpl implements NoteService {
     if (note == null) {
       throw new ObjectNotFoundException("note not found");
     }
-    if (removeFeaturedImageFile && featuredImageId != null && featuredImageId > 0) {
-      fileService.deleteFile(featuredImageId);
-    }
     MetadataItem metadataItem = getNoteMetadataItem(note,
                                                     lang,
                                                     isDraft ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE :
                                                             NOTE_METADATA_PAGE_OBJECT_TYPE);
+    // The file is kept while another note or draft still names it. A draft's
+    // cover may also be named by a version of its page, which a published
+    // note's own removal never counts: its versions hold the cover it replaced.
+    if (removeFeaturedImageFile && featuredImageId != null && featuredImageId > 0
+        && !isFeaturedImageReferenced(featuredImageId, metadataItem, isDraft)) {
+      fileService.deleteFile(featuredImageId);
+    }
     if (metadataItem != null) {
       Map<String, String> properties = metadataItem.getProperties();
       properties.remove(FEATURED_IMAGE_ID);
@@ -1789,8 +1812,9 @@ public class NoteServiceImpl implements NoteService {
   }
 
   /**
-   * @param publishedDraftFeaturedImageId the cover of the caller's own draft
-   *          being published to this note, accepted besides the note's own
+   * @param publishedDraftFeaturedImageId the cover of the draft being
+   *          published to this note, when the caller wrote it or may edit it,
+   *          accepted besides the note's own
    */
   private NotePageProperties saveNoteMetadata(NotePageProperties notePageProperties,
                                               String lang,
@@ -1813,10 +1837,11 @@ public class NoteServiceImpl implements NoteService {
     }
 
     Long keptFeaturedImageId = null;
+    Long replacedFeaturedImageId = null;
     if (featuredImage != null) {
       // only the note's own cover, the one it shares with its page or its
-      // default language, or the cover of the caller's draft being published,
-      // is accepted; an upload is always written to a new file
+      // default language, or the cover of the draft being published, is
+      // accepted; an upload is always written to a new file
       String objectType = notePageProperties.isDraft() ? NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE : NOTE_METADATA_PAGE_OBJECT_TYPE;
       Long ownFeaturedImageId = getStoredFeaturedImageId(note, lang, objectType);
       Set<Long> sharedFeaturedImageIds = getSharedFeaturedImageIds(note,
@@ -1829,13 +1854,11 @@ public class NoteServiceImpl implements NoteService {
       Long requestedFeaturedImageId = featuredImage.getId();
       boolean accepted = requestedFeaturedImageId != null
           && (requestedFeaturedImageId.equals(ownFeaturedImageId) || sharedFeaturedImageIds.contains(requestedFeaturedImageId));
-      boolean ownUnshared = accepted && requestedFeaturedImageId.equals(ownFeaturedImageId)
-          && !sharedFeaturedImageIds.contains(ownFeaturedImageId);
       if (featuredImage.isToDelete()) {
         // a removal naming a cover the note does not show leaves its own
         if (accepted || requestedFeaturedImageId == null || requestedFeaturedImageId <= 0) {
           removeNoteFeaturedImage(Long.valueOf(note.getId()),
-                                  ownUnshared ? ownFeaturedImageId : null,
+                                  accepted && requestedFeaturedImageId.equals(ownFeaturedImageId) ? ownFeaturedImageId : null,
                                   lang,
                                   notePageProperties.isDraft(),
                                   userIdentityId);
@@ -1851,6 +1874,12 @@ public class NoteServiceImpl implements NoteService {
           // an upload that could not be written leaves the current cover
           featuredImageId = null;
           keptFeaturedImageId = ownFeaturedImageId;
+        } else if (featuredImage.getUploadId() != null && (notePageProperties.isDraft() || lang != null)
+            && ownFeaturedImageId != null && !ownFeaturedImageId.equals(featuredImageId)
+            && !sharedFeaturedImageIds.contains(ownFeaturedImageId)) {
+          // the cover a draft or a translation replaces is released once the
+          // new one is saved, unless something still names it
+          replacedFeaturedImageId = ownFeaturedImageId;
         }
       }
     }
@@ -1882,6 +1911,9 @@ public class NoteServiceImpl implements NoteService {
     } else {
       metadataItem.setProperties(properties);
       metadataService.updateMetadataItem(metadataItem, userIdentityId, false);
+    }
+    if (replacedFeaturedImageId != null && !isFeaturedImageReferenced(replacedFeaturedImageId, null, true)) {
+      fileService.deleteFile(replacedFeaturedImageId);
     }
     if (featuredImage != null) {
       featuredImage.setId(featuredImageId != null ? featuredImageId : keptFeaturedImageId);
@@ -2061,23 +2093,44 @@ public class NoteServiceImpl implements NoteService {
         } else if (note.isDraftPage()) {
           // When delete a draft of non-existing page
           // check if its featured image was linked to a saved page
-          List<MetadataItem> metadataItems =
-                                           metadataService.getMetadataItemsByMetadataNameAndTypeAndObjectAndMetadataItemProperty(NOTES_METADATA_TYPE.getName(),
-                                                                                                                                 NOTES_METADATA_TYPE.getName(),
-                                                                                                                                 NOTE_METADATA_PAGE_OBJECT_TYPE,
-                                                                                                                                 FEATURED_IMAGE_ID,
-                                                                                                                                 featuredImageId,
-                                                                                                                                 0,
-                                                                                                                                 0);
-          if (metadataItems == null || metadataItems.isEmpty()) {
+          if (!isFeaturedImageReferenced(Long.parseLong(featuredImageId), draftNoteMetadataItem, true)) {
             fileService.deleteFile(Long.parseLong(featuredImageId));
           }
-        } else {
+        } else if (!isFeaturedImageReferenced(Long.parseLong(featuredImageId), draftNoteMetadataItem, false)) {
           fileService.deleteFile(Long.parseLong(featuredImageId));
         }
       }
       metadataService.deleteMetadataItem(draftNoteMetadataItem.getId(), false);
     }
+  }
+
+  /**
+   * @return true when a note or a draft metadata item other than the excluded
+   *         one still names the cover file, or, with includeVersions, a
+   *         version of a note does
+   */
+  private boolean isFeaturedImageReferenced(Long featuredImageId, MetadataItem excludedItem, boolean includeVersions) {
+    if (featuredImageId == null) {
+      return false;
+    }
+    List<String> objectTypes = includeVersions ? List.of(NOTE_METADATA_PAGE_OBJECT_TYPE,
+                                                         NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE,
+                                                         NOTE_METADATA_VERSION_PAGE_OBJECT_TYPE) :
+                                               List.of(NOTE_METADATA_PAGE_OBJECT_TYPE, NOTE_METADATA_DRAFT_PAGE_OBJECT_TYPE);
+    for (String objectType : objectTypes) {
+      List<MetadataItem> items =
+                               metadataService.getMetadataItemsByMetadataNameAndTypeAndObjectAndMetadataItemProperty(NOTES_METADATA_TYPE.getName(),
+                                                                                                                     NOTES_METADATA_TYPE.getName(),
+                                                                                                                     objectType,
+                                                                                                                     FEATURED_IMAGE_ID,
+                                                                                                                     String.valueOf(featuredImageId),
+                                                                                                                     0,
+                                                                                                                     0);
+      if (items != null && items.stream().anyMatch(item -> excludedItem == null || item.getId() != excludedItem.getId())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void importNote(Page note,
@@ -2415,9 +2468,9 @@ public class NoteServiceImpl implements NoteService {
   }
 
   /**
-   * @return the cover of the draft being published: the user's own draft the
-   *         properties come from, or else the page's latest draft in that
-   *         language when the user is its author; null for any other draft
+   * @return the cover of the draft being published: the draft the properties
+   *         come from, or else the page's latest draft in that language, when
+   *         the user is its author or may edit it; null for any other draft
    * @param targetPageId the page being published, null for a new page
    */
   private Long getPublishedDraftFeaturedImageId(NotePageProperties properties,
@@ -2439,7 +2492,7 @@ public class NoteServiceImpl implements NoteService {
   }
 
   private boolean isPublishedDraft(DraftPage draftPage, String username, String targetPageId) {
-    return isDraftAuthor(draftPage, username)
+    return (isDraftAuthor(draftPage, username) || canEditNote(draftPage, username))
         && StringUtils.equals(StringUtils.trimToNull(draftPage.getTargetPageId()), targetPageId);
   }
 

@@ -1052,6 +1052,20 @@ public class TestNoteService extends BaseTest {
                                                     null,
                                                     getIdentityId(ROOT_IDENTITY.getUserId()),
                                                     null));
+    // the translation still shows the file, which is kept while it does
+    assertEquals(noteFeaturedImageInfoFr.getId(),
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
+                                                      "fr",
+                                                      false,
+                                                      null,
+                                                      getIdentityId(ROOT_IDENTITY.getUserId()),
+                                                      null)
+                            .getId());
+    noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()),
+                                        noteFeaturedImageInfoFr.getId(),
+                                        "fr",
+                                        false,
+                                        getIdentityId(ROOT_IDENTITY.getUserId()));
     assertNull(noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()),
                                                     "fr",
                                                     false,
@@ -1205,32 +1219,6 @@ public class TestNoteService extends BaseTest {
     assertEquals(pageDraftCoverId, note.getProperties().getFeaturedImage().getId());
   }
 
-  public void testPublishingAnotherUsersDraftLeavesItsCoverOut() throws Exception {
-    startSessionAs("root");
-    bindMockedUploadService();
-    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
-    identityManager.getOrCreateUserIdentity(USER_IDENTITY.getUserId());
-
-    DraftPage othersDraft = new DraftPage();
-    othersDraft.setTitle("another user's draft");
-    othersDraft.setContent("content");
-    NotePageProperties othersDraftProperties = createNotePageProperties(0L, "alt", "summary");
-    othersDraftProperties.setDraft(true);
-    othersDraft.setProperties(othersDraftProperties);
-    othersDraft = noteService.createDraftForNewPage(othersDraft,
-                                                    new Date().getTime(),
-                                                    getIdentityId(USER_IDENTITY.getUserId()));
-    Long othersDraftCoverId = othersDraft.getProperties().getFeaturedImage().getId();
-    assertTrue(othersDraftCoverId > 0);
-
-    Page page = new Page("testOthersDraftCover", "testOthersDraftCover");
-    page.setContent("content");
-    othersDraft.getProperties().setDraft(true);
-    page.setProperties(othersDraft.getProperties());
-    Page note = noteService.createNote(portalWiki, "Home", page, ROOT_IDENTITY);
-    assertFalse(othersDraftCoverId.equals(note.getProperties().getFeaturedImage().getId()));
-  }
-
   public void testPublishingADraftOfAnotherPageLeavesItsCoverOut() throws Exception {
     startSessionAs("root");
     bindMockedUploadService();
@@ -1293,6 +1281,259 @@ public class TestNoteService extends BaseTest {
     assertEquals(draftCoverId,
                  noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, rootIdentityId, null)
                             .getId());
+  }
+
+  public void testRemovingACoverASharingLanguageStillUsesKeepsItsFile() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverSharedRemoval", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+    NotePageProperties sharing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    sharing.getFeaturedImage().setUploadId(null);
+    sharing.getFeaturedImage().setId(coverId);
+    assertEquals(coverId, noteService.saveNoteMetadata(sharing, "fr", rootIdentityId).getFeaturedImage().getId());
+
+    NotePageProperties deleting = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    deleting.getFeaturedImage().setUploadId(null);
+    deleting.getFeaturedImage().setId(coverId);
+    deleting.getFeaturedImage().setToDelete(true);
+    noteService.saveNoteMetadata(deleting, null, rootIdentityId);
+
+    assertNotNull(fileService.getFileInfo(coverId));
+    assertEquals(coverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  public void testDeletingATranslationKeepsTheCoverFileItSharesWithTheDefaultLanguage() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverSharedTranslation", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+    NotePageProperties sharing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    sharing.getFeaturedImage().setUploadId(null);
+    sharing.getFeaturedImage().setId(coverId);
+    noteService.saveNoteMetadata(sharing, "fr", rootIdentityId);
+
+    noteService.deleteVersionsByNoteIdAndLang(Long.valueOf(note.getId()), "fr", false);
+
+    assertNotNull(fileService.getFileInfo(coverId));
+    assertEquals(coverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), null, false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  public void testReplacingADraftsCoverReleasesItsPreviousFile() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testDraftCoverReplaced", null, ROOT_IDENTITY);
+    bindMockedUploadService();
+    DraftPage draft = createCoverDraft(note, null, "root");
+    Long firstCoverId = draft.getProperties().getFeaturedImage().getId();
+    assertTrue(firstCoverId > 0);
+
+    NotePageProperties replacing = createNotePageProperties(Long.parseLong(draft.getId()), "alt", "summary");
+    replacing.setDraft(true);
+    replacing.getFeaturedImage().setId(firstCoverId);
+    Long secondCoverId = noteService.saveNoteMetadata(replacing, null, rootIdentityId).getFeaturedImage().getId();
+
+    assertFalse(firstCoverId.equals(secondCoverId));
+    assertNull(fileService.getFileInfo(firstCoverId));
+    assertNotNull(fileService.getFileInfo(secondCoverId));
+  }
+
+  private Space createCoverSpace(String displayName, String manager) {
+    Space space = new Space();
+    space.setDisplayName(displayName);
+    space.setPrettyName(displayName);
+    space.setRegistration(Space.OPEN);
+    space.setVisibility(Space.PUBLIC);
+    return spaceService.createSpace(space, manager);
+  }
+
+  /** A draft of a new page of the space's wiki, written by root, with a cover. */
+  private DraftPage createSpaceWikiCoverDraft(Space space) throws Exception {
+    bindMockedUploadService();
+    Wiki spaceWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    DraftPage draft = new DraftPage();
+    draft.setTitle("a draft of another member");
+    draft.setContent("content");
+    draft.setParentPageId(noteService.getNoteOfNoteBookByName(spaceWiki.getType(), spaceWiki.getOwner(), "Home").getId());
+    NotePageProperties properties = createNotePageProperties(0L, "alt", "summary");
+    properties.setDraft(true);
+    draft.setProperties(properties);
+    draft = noteService.createDraftForNewPage(draft, new Date().getTime(), getIdentityId(ROOT_IDENTITY.getUserId()));
+    assertTrue(draft.getProperties().getFeaturedImage().getId() > 0);
+    return draft;
+  }
+
+  private Page publishDraft(DraftPage draft, Wiki wiki, String name, Identity publisher) throws Exception {
+    Page page = new Page(name, name);
+    page.setContent("content");
+    draft.getProperties().setDraft(true);
+    page.setProperties(draft.getProperties());
+    return noteService.createNote(wiki, "Home", page, publisher);
+  }
+
+  private DraftPage forkDraft(DraftPage draft, Long coverId, String username) throws Exception {
+    DraftPage edited = new DraftPage();
+    edited.setId(draft.getId());
+    edited.setTitle("edited");
+    edited.setContent("content");
+    NotePageProperties properties = createNotePageProperties(Long.parseLong(draft.getId()), "alt", "summary");
+    properties.setDraft(true);
+    properties.getFeaturedImage().setUploadId(null);
+    properties.getFeaturedImage().setId(coverId);
+    edited.setProperties(properties);
+    return noteService.updateDraftForNewPage(edited, new Date().getTime(), getIdentityId(username));
+  }
+
+  public void testARedactorWhoIsNotAdministratorKeepsTheCoverOfAnotherMembersDraft() throws Exception {
+    startSessionAs("root");
+    Space space = createCoverSpace("coverRedactors", "root");
+    identityManager.getOrCreateUserIdentity("mary");
+    spaceService.addMember(space, "mary");
+    spaceService.addRedactor(space, "mary");
+    assertFalse(spaceService.isSuperManager("mary"));
+    DraftPage draft = createSpaceWikiCoverDraft(space);
+    Long coverId = draft.getProperties().getFeaturedImage().getId();
+    Wiki spaceWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    assertTrue(noteService.canEditNote(noteService.getDraftNoteById(draft.getId()), "mary"));
+
+    // publication
+    Page note = publishDraft(draft, spaceWiki, "testRedactorPublishesCover", USER_IDENTITY);
+    assertEquals(coverId, note.getProperties().getFeaturedImage().getId());
+
+    // edition of the draft by the redactor
+    DraftPage fork = forkDraft(draft, coverId, "mary");
+    assertFalse(draft.getId().equals(fork.getId()));
+    assertEquals(coverId, fork.getProperties().getFeaturedImage().getId());
+  }
+
+  public void testAMemberWhoCannotRedactLeavesTheCoverOfAnotherMembersDraftOut() throws Exception {
+    startSessionAs("root");
+    Space space = createCoverSpace("coverMembers", "root");
+    identityManager.getOrCreateUserIdentity("mary");
+    identityManager.getOrCreateUserIdentity("demo");
+    spaceService.addMember(space, "mary");
+    spaceService.addRedactor(space, "mary");
+    spaceService.addMember(space, "demo");
+    DraftPage draft = createSpaceWikiCoverDraft(space);
+    Long coverId = draft.getProperties().getFeaturedImage().getId();
+    assertTrue(spaceService.isRedactor(space, "mary"));
+    assertTrue(spaceService.hasRedactor(space));
+    assertFalse(wikiService.canManageWiki(PortalConfig.GROUP_TYPE, space.getGroupId(), "demo"));
+    assertFalse(noteService.canEditNote(noteService.getDraftNoteById(draft.getId()), "demo"));
+
+    DraftPage fork = forkDraft(draft, coverId, "demo");
+    assertFalse(draft.getId().equals(fork.getId()));
+    assertFalse(coverId.equals(fork.getProperties().getFeaturedImage().getId()));
+  }
+
+  public void testAUserOfAnotherWikiLeavesTheCoverOfADraftOut() throws Exception {
+    startSessionAs("root");
+    Space space = createCoverSpace("coverDraftWiki", "root");
+    identityManager.getOrCreateUserIdentity("demo");
+    Space otherSpace = createCoverSpace("coverOtherWiki", "demo");
+    DraftPage draft = createSpaceWikiCoverDraft(space);
+    Long coverId = draft.getProperties().getFeaturedImage().getId();
+    Wiki otherWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, otherSpace.getGroupId());
+    assertTrue(wikiService.canManageWiki(otherWiki.getType(), otherWiki.getOwner(), "demo"));
+    assertFalse(noteService.canEditNote(noteService.getDraftNoteById(draft.getId()), "demo"));
+
+    // publication into the wiki the user manages
+    Page note = publishDraft(draft, otherWiki, "testOtherWikiPublishesCover", new Identity("demo"));
+    assertFalse(coverId.equals(note.getProperties().getFeaturedImage().getId()));
+
+    // edition of the draft
+    DraftPage fork = forkDraft(draft, coverId, "demo");
+    assertFalse(coverId.equals(fork.getProperties().getFeaturedImage().getId()));
+  }
+
+  public void testReplacingADraftsCoverKeepsTheFileAVersionOfItsPageStillNames() throws Exception {
+    startSessionAs("root");
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testDraftCoverNamedByVersion", null, ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long oldCoverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                   null,
+                                                   rootIdentityId)
+                                 .getFeaturedImage()
+                                 .getId();
+    noteService.createVersionOfNote(noteService.getNoteById(note.getId()), "root");
+    DraftPage draft = createPageCoverDraft(note, oldCoverId, "root");
+    assertEquals(oldCoverId, draft.getProperties().getFeaturedImage().getId());
+    // the page moves on: its old cover is now named by its version only
+    noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"), null, rootIdentityId);
+
+    NotePageProperties replacing = createNotePageProperties(Long.parseLong(draft.getId()), "alt", "summary");
+    replacing.setDraft(true);
+    replacing.getFeaturedImage().setId(oldCoverId);
+    Long newCoverId = noteService.saveNoteMetadata(replacing, null, rootIdentityId).getFeaturedImage().getId();
+
+    assertFalse(oldCoverId.equals(newCoverId));
+    assertNotNull(fileService.getFileInfo(oldCoverId));
+  }
+
+  public void testRemovingTheDefaultLanguagesCoverKeepsTheFileATranslationShares() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testCoverRemovedByService", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long coverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                null,
+                                                rootIdentityId)
+                              .getFeaturedImage()
+                              .getId();
+    NotePageProperties sharing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    sharing.getFeaturedImage().setUploadId(null);
+    sharing.getFeaturedImage().setId(coverId);
+    noteService.saveNoteMetadata(sharing, "fr", rootIdentityId);
+
+    noteService.removeNoteFeaturedImage(Long.parseLong(note.getId()), coverId, null, false, rootIdentityId);
+
+    assertNotNull(fileService.getFileInfo(coverId));
+    assertEquals(coverId,
+                 noteService.getNoteFeaturedImageInfo(Long.parseLong(note.getId()), "fr", false, null, rootIdentityId, null)
+                            .getId());
+  }
+
+  public void testReplacingATranslationsCoverReleasesItsPreviousFile() throws Exception {
+    long rootIdentityId = getIdentityId(ROOT_IDENTITY.getUserId());
+    Page note = createTestNoteWithVersionLang("testTranslationCoverReplaced", "fr", ROOT_IDENTITY);
+    bindMockedUploadService();
+    Long defaultCoverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                       null,
+                                                       rootIdentityId)
+                                     .getFeaturedImage()
+                                     .getId();
+    Long firstCoverId = noteService.saveNoteMetadata(createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary"),
+                                                     "fr",
+                                                     rootIdentityId)
+                                   .getFeaturedImage()
+                                   .getId();
+    NotePageProperties replacing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    replacing.getFeaturedImage().setId(firstCoverId);
+    Long secondCoverId = noteService.saveNoteMetadata(replacing, "fr", rootIdentityId).getFeaturedImage().getId();
+    assertFalse(firstCoverId.equals(secondCoverId));
+    assertNull(fileService.getFileInfo(firstCoverId));
+    assertNotNull(fileService.getFileInfo(secondCoverId));
+
+    // a translation that shows the default language's cover leaves its file
+    NotePageProperties sharing = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    sharing.getFeaturedImage().setUploadId(null);
+    sharing.getFeaturedImage().setId(defaultCoverId);
+    noteService.saveNoteMetadata(sharing, "fr", rootIdentityId);
+    NotePageProperties replacingShared = createNotePageProperties(Long.parseLong(note.getId()), "alt", "summary");
+    replacingShared.getFeaturedImage().setId(defaultCoverId);
+    noteService.saveNoteMetadata(replacingShared, "fr", rootIdentityId);
+    assertNotNull(fileService.getFileInfo(defaultCoverId));
   }
 
   private DraftPage createCoverDraft(Page page, String lang, String username) throws Exception {
