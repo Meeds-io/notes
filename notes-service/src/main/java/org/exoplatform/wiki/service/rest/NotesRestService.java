@@ -331,6 +331,14 @@ public class NotesRestService implements ResourceContainer {
       if (StringUtils.isNotEmpty(noteBookOwner) && !note.getWikiOwner().equals(noteBookOwner)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
+      if (note.isDeleted()) {
+        // a deleted note only tells its identity and title, as its analytics need
+        Page deletedNote = new Page();
+        deletedNote.setId(note.getId());
+        deletedNote.setTitle(note.getTitle());
+        deletedNote.setDeleted(true);
+        return Response.ok(deletedNote).build();
+      }
       if (BooleanUtils.isTrue(withChildren)) {
         note.setChildren(noteService.getChildrenNoteOf(note, false, withChildren));
       }
@@ -627,6 +635,9 @@ public class NotesRestService implements ResourceContainer {
       }
       if (StringUtils.isNoneEmpty(draftNoteToSave.getTargetPageId())) {
         targetNote = noteService.getNoteById(draftNoteToSave.getTargetPageId());
+        if (targetNote != null && targetNote.isDeleted()) {
+          return Response.status(Response.Status.BAD_REQUEST).build();
+        }
       }
 
       String syntaxId = noteBookService.getDefaultWikiSyntaxId();
