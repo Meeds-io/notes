@@ -1740,6 +1740,27 @@ public class TestNoteService extends BaseTest {
     assertFalse(noteContent.contains("/wikiPage/" + sourceNote.getId() + "/"));
   }
 
+  public void testPublishedDraftRewritesOnlyItsOwnImageLinks() throws Exception {
+    registerNoteAttachmentPlugins();
+    DraftPage draft = createNewPageDraft("publishedDraft", getIdentityId("root"));
+    String draftId = draft.getId();
+    // another draft whose id starts with the same digits as the published one
+    String otherDraftId = draftId + "3";
+    String ownImage = "<img src=\"/portal/rest/v1/social/attachments/wikiDraft/" + draftId + "/11\">";
+    String otherImage = "<img src=\"/portal/rest/v1/social/attachments/wikiDraft/" + otherDraftId + "/22\">";
+
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    Page note = new Page("publishedDraftNote", "publishedDraftNote");
+    note.setContent(ownImage + otherImage);
+    note.setProperties(new NotePageProperties(Long.parseLong(draftId), null, null, false, false, true));
+    Page created = noteService.createNote(userWiki, "Home", note, ROOT_IDENTITY);
+
+    String content = noteService.getNoteById(created.getId()).getContent();
+    assertTrue(content.contains("/attachments/wikiPage/" + created.getId() + "/11"));
+    assertFalse(content.contains("/attachments/wikiDraft/" + draftId + "/"));
+    assertTrue(content.contains("/attachments/wikiDraft/" + otherDraftId + "/22"));
+  }
+
   private AttachmentService registerNoteAttachmentPlugins() {
     // The webapp's configuration registers them, which the test container
     // lacks; they stay registered for the next tests, as in production
