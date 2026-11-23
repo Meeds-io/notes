@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +44,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.io.FileUtils;
@@ -78,7 +81,6 @@ import org.exoplatform.wiki.jpa.dao.DraftPageDAO;
 import org.exoplatform.wiki.jpa.entity.DraftPageEntity;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.NoteToExport;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
 import org.exoplatform.wiki.model.PageVersion;
@@ -2527,7 +2529,11 @@ public class TestNoteService extends BaseTest {
     for (boolean exportAll : new boolean[] { true, false }) {
       int exportId = exportAll ? 200241 : 200242;
       notesExportService.startExportNotes(exportId, notes, exportAll, ROOT_IDENTITY);
+      long deadline = System.currentTimeMillis() + 30_000;
       while (!"ZIP_CREATED".equals(notesExportService.getStatus(exportId).getStatus())) {
+        if (System.currentTimeMillis() > deadline) {
+          fail("The export " + exportId + " did not complete within 30 seconds");
+        }
         Thread.onSpinWait();
       }
       String archive = readArchive(notesExportService.getExportedNotes(exportId));
@@ -2543,10 +2549,10 @@ public class TestNoteService extends BaseTest {
 
   private static String readArchive(byte[] zip) throws IOException {
     StringBuilder content = new StringBuilder();
-    try (java.util.zip.ZipInputStream entries = new java.util.zip.ZipInputStream(new ByteArrayInputStream(zip))) {
-      java.util.zip.ZipEntry entry;
+    try (ZipInputStream entries = new ZipInputStream(new ByteArrayInputStream(zip))) {
+      ZipEntry entry;
       while ((entry = entries.getNextEntry()) != null) {
-        content.append(entry.getName()).append('\n').append(new String(entries.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        content.append(entry.getName()).append('\n').append(new String(entries.readAllBytes(), StandardCharsets.UTF_8));
       }
     }
     return content.toString();

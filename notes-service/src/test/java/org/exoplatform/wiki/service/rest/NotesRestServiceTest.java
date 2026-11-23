@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -1088,6 +1089,56 @@ public class NotesRestServiceTest extends AbstractKernelTest {
 
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.updateNoteById("12", updateRequest).getStatus());
     verify(noteService, never()).updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class));
+  }
+
+  /**
+   * A deleted note is read as its identity and title only, with or without the
+   * includeDeleted option. Mutation: drop the deleted branch, and the option
+   * returns the content again.
+   */
+  @Test
+  public void testGetNoteByIdOfADeletedNoteReturnsItsTitleOnly() throws Exception {
+    Page note = newReadableNote();
+    note.setTitle("deleted title");
+    note.setDeleted(true);
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(note);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(),
+                 notesRestService.getNoteById("1", "note", "user", false, "source", "en", false).getStatus());
+
+    Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "en", true);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    Page returned = (Page) response.getEntity();
+    assertEquals("1", returned.getId());
+    assertEquals("deleted title", returned.getTitle());
+    assertTrue(returned.isDeleted());
+    assertNull(returned.getContent());
+    assertNull(returned.getWikiOwner());
+  }
+
+  @Test
+  public void testSaveDraftOfADeletedNoteAnswersAsAMissingNote() throws Exception {
+    Page parent = new Page("parent");
+    parent.setId("5");
+    parent.setWikiType("group");
+    parent.setWikiOwner("/spaces/team");
+    Page note = new Page("note");
+    note.setId("12");
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("5", identity)).thenReturn(parent);
+    when(noteService.getNoteById("12")).thenReturn(note);
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(noteBookService.getWikiByTypeAndOwner("group", "/spaces/team")).thenReturn(new Wiki("group", "/spaces/team"));
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setParentPageId("5");
+    draft.setTargetPageId("12");
+    draft.setWikiType("group");
+    draft.setWikiOwner("/spaces/team");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    verify(noteService, never()).createDraftForExistPage(any(), any(), any(), anyLong(), any());
+    verify(noteService, never()).updateDraftForExistPage(any(), any(), any(), anyLong(), any());
   }
 
   @Test
