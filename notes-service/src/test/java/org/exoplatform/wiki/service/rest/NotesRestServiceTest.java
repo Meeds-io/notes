@@ -952,8 +952,8 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   /**
-   * A deleted note is read as its identity and title only, with or without the
-   * includeDeleted option. Mutation: drop the deleted branch, and the option
+   * A deleted note answers 404 without the includeDeleted option; with it, the
+   * note's id and title only. Mutation: drop the deleted branch, and the option
    * returns the content again.
    */
   @Test

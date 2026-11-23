@@ -147,11 +147,10 @@ export function saveDraftNote(draftNote, parentPageId) {
     body: JSON.stringify(draftNote)
   }).then((resp) => {
     if (!resp || !resp.ok) {
-      if (resp.status === 409) {
-        throw new Error('error.duplicate.title', resp);
-      } else {
-        throw new Error('error', resp);
-      }
+      const error = new Error(resp?.status === 409 ? 'error.duplicate.title' : 'error', resp);
+      // lets the caller tell a refused draft (400) from a failure worth retrying
+      error.status = resp?.status;
+      throw error;
     } else {
       return resp.json();
     }

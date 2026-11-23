@@ -21,7 +21,11 @@ const objects = Object.keys(localStorage);
 for (const index in objects) {
   if (objects[index].startsWith('draftNoteId-')) {
     const draftNote = JSON.parse(localStorage[objects[index]]);
-    notesService.saveDraftNote(draftNote).then(() => localStorage.removeItem(objects[index]));
+    const draftKey = objects[index];
+    notesService.saveDraftNote(draftNote)
+      .then(() => localStorage.removeItem(draftKey))
+      // a 400 answer does not change when the draft is sent again: drop it. Other failures keep it for a later load.
+      .catch(error => error?.status === 400 && localStorage.removeItem(draftKey));
   }
 }
 
