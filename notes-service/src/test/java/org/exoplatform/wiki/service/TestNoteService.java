@@ -57,6 +57,7 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.listener.ListenerService;
@@ -1895,7 +1896,7 @@ public class TestNoteService extends BaseTest {
 
     createUserWithMembership("homeNotePublisher", "/platform/web-contributors", "publisher");
     assertFalse(noteService.canViewNote(home, "homeNotePublisher"));
-    // pins the service answer only: no edit path reaches it while canViewNote is false
+    // canManageWiki grants edit through the space publishing right; the paths that load the note with the user's identity refuse it, since canViewNote is false
     assertTrue(noteService.canEditNote(home, "homeNotePublisher"));
 
     createUserWithMembership("homeNoteAdministrator", "/platform/administrators", "member");
@@ -2006,18 +2007,34 @@ public class TestNoteService extends BaseTest {
 
   public void testRightsOfHomeNoteOfPortalNotebook() throws Exception {
     startSessionAs("root");
-    getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
-    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "Home");
-    assertNotNull(home);
-    assertTrue(StringUtils.isBlank(home.getOwner()));
+    // A site of this test's own: the site "classic" is created open to Everyone by other
+    // test classes of the module and is never removed, so it cannot pin a refusal.
+    String siteName = "homeRightsSite" + System.nanoTime();
+    LayoutService layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
+    PortalConfig site = new PortalConfig();
+    site.setType(PortalConfig.PORTAL_TYPE);
+    site.setName(siteName);
+    site.setLocale("en");
+    site.setLabel(siteName);
+    site.setAccessPermissions(new String[] { "*:/platform/administrators" });
+    site.setEditPermission("*:/platform/administrators");
+    layoutService.create(site);
+    try {
+      getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, siteName);
+      Page home = noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, siteName, "Home");
+      assertNotNull(home);
+      assertTrue(StringUtils.isBlank(home.getOwner()));
 
-    createUserWithMembership("portalHomePublisher", "/platform/web-contributors", "publisher");
-    assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "portalHomePublisher"));
-    assertFalse(noteService.canEditNote(home, "portalHomePublisher"));
-    assertFalse(noteService.canViewNote(home, "portalHomePublisher"));
-    createUserWithMembership("portalHomeAdministrator", "/platform/administrators", "member");
-    assertTrue(noteService.canViewNote(home, "portalHomeAdministrator"));
-    assertTrue(noteService.canEditNote(home, "portalHomeAdministrator"));
+      createUserWithMembership("portalHomePublisher", "/platform/web-contributors", "publisher");
+      assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, siteName, "portalHomePublisher"));
+      assertFalse(noteService.canEditNote(home, "portalHomePublisher"));
+      assertFalse(noteService.canViewNote(home, "portalHomePublisher"));
+      createUserWithMembership("portalHomeAdministrator", "/platform/administrators", "member");
+      assertTrue(noteService.canViewNote(home, "portalHomeAdministrator"));
+      assertTrue(noteService.canEditNote(home, "portalHomeAdministrator"));
+    } finally {
+      layoutService.remove(site);
+    }
   }
 
   public void testRightsOfTermsAndConditionsNote() throws Exception {
