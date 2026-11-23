@@ -393,7 +393,7 @@
       :has-featured-image="hasFeaturedImage" />
     <note-editor-metadata-drawer
       ref="metadataDrawer"
-      :has-featured-image="hasFeaturedImage"
+      :has-featured-image="storedHasFeaturedImage"
       @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer
@@ -552,6 +552,9 @@ export default {
     },
     noteFeatureImageUpdatedDate() {
       return this.note?.properties?.featuredImage?.lastUpdated || 0;
+    },
+    storedHasFeaturedImage() {
+      return this.storedProperties ? !!this.storedProperties.featuredImage?.id : this.hasFeaturedImage;
     },
     hasFeaturedImage() {
       return !!this.note?.properties?.featuredImage?.id;
