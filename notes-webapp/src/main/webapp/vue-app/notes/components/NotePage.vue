@@ -398,7 +398,7 @@
     <note-publication-target-drawer />
     <note-publication-drawer
       ref="publicationDrawer"
-      :has-featured-image="hasFeaturedImage"
+      :has-featured-image="storedHasFeaturedImage"
       :is-publishing="isPublishing"
       :params="{
         spaceId: spaceId,
@@ -807,6 +807,13 @@ export default {
       this.isPublishing = true;
       if (note) {
         this.$notesService.updateNoteById(note).then(() => {
+          if (this.storedProperties && note.properties) {
+            // what the publication wrote is now the stored state
+            this.storeProperties(note.properties);
+            if (this.actualVersion) {
+              this.displayVersion(this.actualVersion);
+            }
+          }
           document.dispatchEvent(new CustomEvent('publish-note', {
             detail: {
               editPublication: false,
@@ -835,8 +842,11 @@ export default {
       this.canSchedule = publicationParams?.canSchedule;
       this.note = Object.assign(this.note, savedSettings);
       this.note.categories = this.note.categoryIds;
+      // Like the Properties drawer, it opens from the note's stored properties: it
+      // saves them, so the displayed version's snapshot must not reach it
+      const publicationNote = this.storedProperties ? {...this.note, properties: structuredClone(this.storedProperties)} : this.note;
       setTimeout(() => {
-        this.$refs.publicationDrawer.open(this.note);
+        this.$refs.publicationDrawer.open(publicationNote);
       },200);
     },
     closeMobileActionMenu() {
