@@ -49,7 +49,12 @@ import org.junit.runners.MethodSorters;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.mop.page.PageContext;
+import org.exoplatform.portal.mop.page.PageKey;
+import org.exoplatform.portal.mop.page.PageState;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.listener.ListenerService;
@@ -80,6 +85,9 @@ import org.exoplatform.wiki.storage.NoteDataStorage;
 
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
+import io.meeds.notes.service.NotePageViewService;
+import io.meeds.social.cms.service.CMSService;
+import io.meeds.social.cms.service.CMSServiceImpl;
 
 import lombok.SneakyThrows;
 
@@ -1472,15 +1480,40 @@ public class TestNoteService extends BaseTest {
     assertFalse(noteService.getPageAvailableTranslationLanguages(noteId, false).contains("fr"));
 
     // A page note, owned by the system, is decided on the page's settings rights
+    LayoutService layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
+    CMSService cmsService = getContainer().getComponentInstanceOfType(CMSServiceImpl.class);
+    String pageName = "testTranslationPage";
+    PageKey pageKey = new PageKey("portal", PORTAL_NAME, pageName);
+    layoutService.save(new PageContext(pageKey,
+                                       new PageState(pageName,
+                                                     null,
+                                                     false,
+                                                     null,
+                                                     Collections.singletonList(UserACL.EVERYONE),
+                                                     "*:/platform/web-contributors")));
     Page pageNote = new Page("testTranslationPageNote", "testTranslationPageNote");
     pageNote.setOwner(IdentityConstants.SYSTEM);
-    pageNote = noteService.createNote(wiki, "Home", pageNote, ROOT_IDENTITY);
+    // the 3-argument creation keeps the owner, as NotePageViewService creates a page note
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "Home");
+    pageNote = noteService.createNote(wiki, home, pageNote);
+    assertEquals(IdentityConstants.SYSTEM, pageNote.getOwner());
+    cmsService.saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                               pageNote.getName(),
+                               pageKey.format(),
+                               0l,
+                               getIdentityId("root"));
     pageNote.setLang("fr");
     noteService.createVersionOfNote(pageNote, "root");
     Long pageNoteId = Long.valueOf(pageNote.getId());
+    Identity pageEditor = new Identity("pageEditor", Arrays.asList(new MembershipEntry("/platform/web-contributors", "*")));
+    identityRegistry.register(pageEditor);
+    // sanity: the page's editor has no edit right on the portal, only the page setting's
+    assertFalse(noteService.canEditNote(note, "pageEditor"));
+    assertTrue(noteService.canEditNote(pageNote, "pageEditor"));
+
     assertThrows(IllegalAccessException.class, () -> noteService.deleteTranslation(pageNoteId, "fr", plainUser));
     assertTrue(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
-    noteService.deleteTranslation(pageNoteId, "fr", ROOT_IDENTITY);
+    noteService.deleteTranslation(pageNoteId, "fr", pageEditor);
     assertFalse(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
   }
 
