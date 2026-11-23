@@ -765,7 +765,7 @@ export default {
     this.$root.$on('open-note-treeview', this.openNoteTreeView);
     this.$root.$on('note-export-pdf', this.createPDF);
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
-    this.$root.$on('open-note-properties', () => this.$refs.metadataDrawer.open(this.note));
+    this.$root.$on('open-note-properties', () => this.$refs.metadataDrawer.open(this.storedProperties ? {...this.note, properties: this.storedProperties} : this.note));
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
