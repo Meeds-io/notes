@@ -807,13 +807,7 @@ export default {
       this.isPublishing = true;
       if (note) {
         this.$notesService.updateNoteById(note).then(() => {
-          if (this.storedProperties && note.properties) {
-            // what the publication wrote is now the stored state
-            this.storeProperties(note.properties);
-            if (this.actualVersion) {
-              this.displayVersion(this.actualVersion);
-            }
-          }
+          this.reloadStoredProperties(note.id);
           document.dispatchEvent(new CustomEvent('publish-note', {
             detail: {
               editPublication: false,
@@ -842,9 +836,11 @@ export default {
       this.canSchedule = publicationParams?.canSchedule;
       this.note = Object.assign(this.note, savedSettings);
       this.note.categories = this.note.categoryIds;
-      // Like the Properties drawer, it opens from the note's stored properties: it
-      // saves them, so the displayed version's snapshot must not reach it
-      const publicationNote = this.storedProperties ? {...this.note, properties: structuredClone(this.storedProperties)} : this.note;
+      // A first publish opens, like the Properties drawer, from the note's stored
+      // properties: it saves them, so the displayed version's snapshot must not
+      // reach it. An existing publication keeps this.note, which the merge above
+      // gave the article's properties, and where its edit save reads the toggles.
+      const publicationNote = this.storedProperties && !savedSettings ? {...this.note, properties: structuredClone(this.storedProperties)} : this.note;
       setTimeout(() => {
         this.$refs.publicationDrawer.open(publicationNote);
       },200);
@@ -1211,6 +1207,20 @@ export default {
       // the note's own stored metadata, which a version snapshot may be behind
       this.storedProperties = properties ? structuredClone(properties) : null;
     },
+    reloadStoredProperties(noteId) {
+      // After a save that wrote the properties, the stored state is what the server
+      // holds, not the request: an uploaded cover gets its file id there, and a
+      // removed one is gone. The save's response may echo the request instead.
+      return this.$notesService.getNoteById(noteId, this.targetLang, '', this.noteBookType, this.noteBookOwner).then(data => {
+        if (String(this.note?.id) !== String(noteId)) {
+          return;
+        }
+        this.storeProperties(data?.properties);
+        if (this.actualVersion) {
+          this.displayVersion(this.actualVersion);
+        }
+      }).catch(e => console.error('Error when reloading the note properties', e));
+    },
     displayVersion(version) {
       const latest = version?.versionNumber != null && version.versionNumber === this.noteVersions[0]?.versionNumber;
       this.actualVersion = version;
@@ -1412,6 +1422,8 @@ export default {
       const {editPublication, isPublishSchedule, link} = event.detail;
       this.isPublishing = false;
       this.$refs.publicationDrawer.close();
+      // the publication wrote the note's properties, its hide flags included
+      this.reloadStoredProperties(this.note.id);
       document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
         alertType: 'success',
         alertMessage: isPublishSchedule && this.$t('notes.schedule.success.message')
