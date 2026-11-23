@@ -749,6 +749,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     langs.add("en");
     Response response = notesRestService.getPageAvailableTranslationLanguages(null, false);
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    assertTrue(((CacheControl) response.getMetadata().getFirst("Cache-Control")).isNoStore());
     when(identity.getUserId()).thenReturn("1");
     when(noteService.getPageAvailableTranslationLanguages(1L, identity, false)).thenReturn(langs);
     response = notesRestService.getPageAvailableTranslationLanguages(1L, false);

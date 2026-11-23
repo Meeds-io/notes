@@ -373,7 +373,7 @@ public class NotesRestService implements ResourceContainer {
   Long noteId, @QueryParam("withDrafts")
   Boolean withDrafts) {
     if (noteId == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
+      return Response.status(Response.Status.BAD_REQUEST).entity("Note id is mandatory").cacheControl(cc).build();
     }
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();

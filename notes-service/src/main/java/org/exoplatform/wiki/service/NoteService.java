@@ -847,7 +847,7 @@ public interface NoteService {
    *             
    */
   @Deprecated
-  // Use {@link getPageAvailableTranslationLanguages(Long pageId, boolean withDrafts)} instead
+  // Use {@link #getPageAvailableTranslationLanguages(Long, Identity, boolean)} instead
   List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException;
 
   /**
