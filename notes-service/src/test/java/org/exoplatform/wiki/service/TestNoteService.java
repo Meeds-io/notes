@@ -49,6 +49,7 @@ import java.util.zip.ZipInputStream;
 
 import io.meeds.notes.rest.model.NoteReorder;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 
@@ -65,6 +66,7 @@ import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.services.listener.ListenerService;
+import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.security.IdentityRegistry;
@@ -321,13 +323,19 @@ public class TestNoteService extends BaseTest {
     assertNotNull(noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, PORTAL_NAME, currentNotePage2.getName()));
   }
 
-  public void testHasPermisionOnSystemPage() throws WikiException, IllegalAccessException {
+  public void testHasPermisionOnSystemPage() throws Exception {
     NoteDataStorage storage = getContainer().getComponentInstanceOfType(NoteDataStorage.class);
 
     Wiki wiki = new Wiki();
     wiki.setType("portal");
     wiki.setOwner("testHasPermisionOnSystemPage");
     wiki = storage.createWiki(wiki);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                                   "page1",
+                                   "portal::testHasPermisionOnSystemPage::sitePage",
+                                   0L,
+                                   1L);
 
     IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
 
@@ -2556,6 +2564,225 @@ public class TestNoteService extends BaseTest {
       }
     }
     return content.toString();
+  }
+
+  public void testViewRightsOfSpaceHomeNote() throws Exception {
+    startSessionAs("root");
+    Space space = createHiddenSpace("homeNoteRights");
+    getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, space.getGroupId(), "Home");
+    assertNotNull(home);
+    assertTrue(StringUtils.isBlank(home.getOwner()));
+    spaceService.addMember(space, "mary");
+
+    createUserWithMembership("homeNotePublisher", "/platform/web-contributors", "publisher");
+    assertFalse(noteService.canViewNote(home, "homeNotePublisher"));
+    // canManageWiki grants edit through the space publishing right; the paths that load the note with the user's identity refuse it, since canViewNote is false
+    assertTrue(noteService.canEditNote(home, "homeNotePublisher"));
+
+    createUserWithMembership("homeNoteAdministrator", "/platform/administrators", "member");
+    assertFalse(noteService.canViewNote(home, "homeNoteAdministrator"));
+    assertFalse(noteService.canEditNote(home, "homeNoteAdministrator"));
+
+    assertTrue(noteService.canViewNote(home, "mary"));
+    assertTrue(noteService.canViewNote(home, "root"));
+    assertTrue(noteService.canEditNote(home, "root"));
+  }
+
+  public void testViewRightsOfSiteNoteOfSpace() throws Exception {
+    startSessionAs("root");
+    Space space = createHiddenSpace("siteNoteRights");
+    Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    String noteName = "siteNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                                   noteName,
+                                   "group::" + space.getGroupId() + "::sitePage",
+                                   0L,
+                                   1L);
+
+    createUserWithMembership("siteNotePublisher", "/platform/web-contributors", "publisher");
+    assertTrue(noteService.canViewNote(note, "siteNotePublisher"));
+    assertTrue(noteService.canEditNote(note, "siteNotePublisher"));
+
+    createUserWithMembership("siteNoteAdministrator", "/platform/administrators", "member");
+    assertFalse(wikiService.canManageWiki(wiki.getType(), wiki.getOwner(), "siteNoteAdministrator"));
+    assertTrue(noteService.canEditNote(note, "siteNoteAdministrator"));
+  }
+
+  public void testViewRightsOfSpaceNoteNamedLikeSettingOfAnotherSite() throws Exception {
+    startSessionAs("root");
+    Space space = createHiddenSpace("otherSiteRights");
+    Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    String noteName = "otherSiteNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE, noteName, "portal::" + space.getGroupId() + "::otherSitePage", 0L, 1L);
+
+    createUserWithMembership("otherSitePublisher", "/platform/web-contributors", "publisher");
+    assertFalse(noteService.canViewNote(note, "otherSitePublisher"));
+  }
+
+  public void testViewRightsOfSpaceNoteNamedLikeSettingOfAnotherSpace() throws Exception {
+    startSessionAs("root");
+    Space space = createHiddenSpace("sameNameSpaceRights");
+    Space otherSpace = createHiddenSpace("sameNameOtherSpaceRights");
+    Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, space.getGroupId());
+    String noteName = "otherSpaceNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                                   noteName,
+                                   "group::" + otherSpace.getGroupId() + "::page",
+                                   0L,
+                                   1L);
+
+    createUserWithMembership("otherSpacePublisher", "/platform/web-contributors", "publisher");
+    assertFalse(noteService.canViewNote(note, "otherSpacePublisher"));
+  }
+
+  public void testRightsOfSiteNoteOfPortalNotebook() throws Exception {
+    startSessionAs("root");
+    Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    String noteName = "portalSiteNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+    getContainer().getComponentInstanceOfType(CMSService.class)
+                  .saveSettingName(NotePageViewService.CMS_CONTENT_TYPE,
+                                   noteName,
+                                   "portal::" + PORTAL_NAME + "::sitePage",
+                                   0L,
+                                   1L);
+
+    createUserWithMembership("portalNotePublisher", "/platform/web-contributors", "publisher");
+    assertFalse(wikiService.canManageWiki(wiki.getType(), wiki.getOwner(), "portalNotePublisher"));
+    assertTrue(noteService.canEditNote(note, "portalNotePublisher"));
+    assertTrue(noteService.canViewNote(note, "portalNotePublisher"));
+  }
+
+  public void testRightsOfHomeNoteOfUserNotebook() throws Exception {
+    startSessionAs("root");
+    createUserWithMembership("userHomePublisher", "/platform/web-contributors", "publisher");
+    createUserWithMembership("userHomeAdministrator", "/platform/administrators", "member");
+    createUserWithMembership("userHomeOwner", "/platform/users", "member");
+    getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "userHomeOwner");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "userHomeOwner", "Home");
+    assertNotNull(home);
+    assertTrue(StringUtils.isBlank(home.getOwner()));
+
+    assertFalse(noteService.canViewNote(home, "userHomePublisher"));
+    assertFalse(noteService.canEditNote(home, "userHomePublisher"));
+    assertFalse(noteService.canViewNote(home, "userHomeAdministrator"));
+    assertFalse(noteService.canEditNote(home, "userHomeAdministrator"));
+    assertTrue(noteService.canViewNote(home, "userHomeOwner"));
+    assertTrue(noteService.canEditNote(home, "userHomeOwner"));
+  }
+
+  public void testRightsOfHomeNoteOfPortalNotebook() throws Exception {
+    startSessionAs("root");
+    // A site of this test's own: the site "classic" is created open to Everyone by other
+    // test classes of the module and is never removed, so it cannot pin a refusal.
+    String siteName = "homeRightsSite" + System.nanoTime();
+    LayoutService layoutService = getContainer().getComponentInstanceOfType(LayoutService.class);
+    PortalConfig site = new PortalConfig();
+    site.setType(PortalConfig.PORTAL_TYPE);
+    site.setName(siteName);
+    site.setLocale("en");
+    site.setLabel(siteName);
+    site.setAccessPermissions(new String[] { "*:/platform/administrators" });
+    site.setEditPermission("*:/platform/administrators");
+    layoutService.create(site);
+    try {
+      getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, siteName);
+      Page home = noteService.getNoteOfNoteBookByName(PortalConfig.PORTAL_TYPE, siteName, "Home");
+      assertNotNull(home);
+      assertTrue(StringUtils.isBlank(home.getOwner()));
+
+      createUserWithMembership("portalHomePublisher", "/platform/web-contributors", "publisher");
+      assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, siteName, "portalHomePublisher"));
+      assertFalse(noteService.canEditNote(home, "portalHomePublisher"));
+      assertFalse(noteService.canViewNote(home, "portalHomePublisher"));
+      createUserWithMembership("portalHomeAdministrator", "/platform/administrators", "member");
+      assertTrue(noteService.canViewNote(home, "portalHomeAdministrator"));
+      assertTrue(noteService.canEditNote(home, "portalHomeAdministrator"));
+    } finally {
+      layoutService.remove(site);
+    }
+  }
+
+  public void testRightsOfTermsAndConditionsNote() throws Exception {
+    startSessionAs("root");
+    Wiki wiki = getOrCreateWiki(wikiService, "terms", IdentityConstants.SYSTEM);
+    Page note = new Page("termsAndConditions", "");
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+
+    createUserWithMembership("termsAdministrator", "/platform/administrators", "manager");
+    assertTrue(noteService.canViewNote(note, "termsAdministrator"));
+    assertTrue(noteService.canEditNote(note, "termsAdministrator"));
+  }
+
+  public void testRightsOfOtherNoteOfTermsAndConditionsNotebook() throws Exception {
+    startSessionAs("root");
+    Wiki wiki = getOrCreateWiki(wikiService, "terms", IdentityConstants.SYSTEM);
+    String noteName = "otherTermsNote" + System.nanoTime();
+    Page note = new Page(noteName, noteName);
+    note.setOwner(IdentityConstants.SYSTEM);
+    note = noteService.createNote(wiki, wiki.getWikiHome(), note);
+
+    createUserWithMembership("otherTermsAdministrator", "/platform/administrators", "manager");
+    assertFalse(noteService.canEditNote(note, "otherTermsAdministrator"));
+  }
+
+  public void testEditRightsOfNotebookNoteWithoutSetting() throws Exception {
+    startSessionAs("root");
+    String groupId = "/platform/notebookWithoutSpace";
+    Wiki wiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, groupId);
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.GROUP_TYPE, groupId, "Home");
+    assertNotNull(home);
+
+    createUserWithMembership("notebookPublisher", "/platform/web-contributors", "publisher");
+    assertFalse(wikiService.canManageWiki(wiki.getType(), wiki.getOwner(), "notebookPublisher"));
+    assertFalse(noteService.canEditNote(home, "notebookPublisher"));
+  }
+
+  private Space createHiddenSpace(String displayName) {
+    Space space = new Space();
+    space.setDisplayName(displayName);
+    space.setRegistration(Space.CLOSED);
+    space.setVisibility(Space.HIDDEN);
+    return spaceService.createSpace(space, "root");
+  }
+
+  private void createUserWithMembership(String username, String groupId, String membershipType) throws Exception {
+    OrganizationService organizationService = getContainer().getComponentInstanceOfType(OrganizationService.class);
+    if (organizationService.getUserHandler().findUserByName(username) == null) {
+      organizationService.getUserHandler().createUser(organizationService.getUserHandler().createUserInstance(username), true);
+    }
+    org.exoplatform.services.organization.Group group = organizationService.getGroupHandler().findGroupById(groupId);
+    if (group == null) {
+      group = organizationService.getGroupHandler().createGroupInstance();
+      group.setGroupName(groupId.substring(groupId.lastIndexOf('/') + 1));
+      organizationService.getGroupHandler().addChild(organizationService.getGroupHandler().findGroupById("/platform"), group, true);
+    }
+    org.exoplatform.services.organization.MembershipType type =
+                                                              organizationService.getMembershipTypeHandler()
+                                                                                 .findMembershipType(membershipType);
+    if (type == null) {
+      type = organizationService.getMembershipTypeHandler().createMembershipTypeInstance();
+      type.setName(membershipType);
+      organizationService.getMembershipTypeHandler().createMembershipType(type, true);
+    }
+    organizationService.getMembershipHandler()
+                       .linkMembership(organizationService.getUserHandler().findUserByName(username), group, type, true);
   }
 
   private Long getIdentityId(String username) {
