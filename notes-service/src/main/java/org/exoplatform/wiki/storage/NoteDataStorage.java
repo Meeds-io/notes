@@ -398,7 +398,7 @@ public class NoteDataStorage {
    *
    * @param currentLocationParams location of the page to move
    * @param newLocationParams location of the destination page
-   * @param destinationWikiCheck accepts a wiki (type, owner) the caller may
+   * @param wikiCheck accepts a wiki (type, owner) the caller may
    *          edit, or null to accept any
    * @throws IllegalAccessException when the wiki of the page or the destination
    *           wiki is not accepted
@@ -408,13 +408,13 @@ public class NoteDataStorage {
   @ExoTransactional
   public void movePage(WikiPageParams currentLocationParams,
                        WikiPageParams newLocationParams,
-                       BiPredicate<String, String> destinationWikiCheck) throws WikiException, IllegalAccessException {
-    doMovePage(currentLocationParams, newLocationParams, destinationWikiCheck);
+                       BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
+    doMovePage(currentLocationParams, newLocationParams, wikiCheck);
   }
 
   private void doMovePage(WikiPageParams currentLocationParams,
                           WikiPageParams newLocationParams,
-                          BiPredicate<String, String> destinationWikiCheck) throws WikiException, IllegalAccessException {
+                          BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(currentLocationParams.getType(),
                                                         currentLocationParams.getOwner(),
                                                         currentLocationParams.getPageName());
@@ -432,7 +432,7 @@ public class NoteDataStorage {
           newLocationParams.getOwner() + ":" + newLocationParams.getPageName() + " because destination page does not exist.");
     }
 
-    BiPredicate<String, String> checkOnce = oncePerWiki(destinationWikiCheck);
+    BiPredicate<String, String> checkOnce = oncePerWiki(wikiCheck);
     // the right to edit one note is not the right to take it out of its notebook
     checkWikiAllowed(pageEntity.getWiki(), checkOnce);
     checkDestination(pageEntity, destinationPageEntity, checkOnce);

@@ -2185,8 +2185,8 @@ public class TestNoteService extends BaseTest {
     Wiki openWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, open.getGroupId());
     Page restrictedNote = noteService.createNote(restrictedWiki, "Home", new Page("moveSpaceRestricted", "moveSpaceRestricted"), ROOT_IDENTITY);
     Page openNote = noteService.createNote(openWiki, "Home", new Page("moveSpaceOpen", "moveSpaceOpen"), ROOT_IDENTITY);
-    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
     Page refused = createUserNote("mary", USER_IDENTITY, "moveToRestrictedSpace");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
     Page allowed = createUserNote("mary", USER_IDENTITY, "moveToOpenSpace");
 
     assertThrows(IllegalAccessException.class,
@@ -2220,8 +2220,8 @@ public class TestNoteService extends BaseTest {
   public void testUserNoteMoveIntoSiteNotebookNeedsItsEditPermission() throws Exception {
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page siteNote = noteService.createNote(portalWiki, "Home", new Page("moveSiteTarget", "moveSiteTarget"), ROOT_IDENTITY);
-    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
     Page maryNote = createUserNote("mary", USER_IDENTITY, "moveToSite");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
     WikiPageParams site = new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, siteNote.getName());
 
     assertThrows(IllegalAccessException.class, () -> noteService.moveNote(noteParams("mary", maryNote), site, USER_IDENTITY));
