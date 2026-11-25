@@ -18,6 +18,8 @@
  */
 package org.exoplatform.wiki.storage;
 
+import static org.junit.Assert.assertThrows;
+
 import java.util.*;
 
 import io.meeds.notes.rest.model.NoteReorder;
@@ -256,6 +258,116 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
 
     // Then
     assertEquals(1, pageDAO.findAllIds(0, 0).size());
+  }
+
+  @Test
+  public void testMovePageRefusesItselfAndDescendantsAsDestination() throws Exception {
+    Wiki wiki = createWiki("moveTreeWiki");
+    Page parent = storage.createPage(wiki, wiki.getWikiHome(), newPage("moveParent"));
+    Page child = storage.createPage(wiki, parent, newPage("moveChild"));
+    Page grandChild = storage.createPage(wiki, child, newPage("moveGrandChild"));
+
+    for (Page destination : List.of(parent, child, grandChild)) {
+      assertThrows(IllegalArgumentException.class,
+                   () -> storage.movePage(params(wiki, parent), params(wiki, destination), (type, owner) -> true));
+      assertThrows(IllegalArgumentException.class, () -> storage.movePage(params(wiki, parent), params(wiki, destination)));
+      NoteReorder reorder = reorder(parent, wiki.getWikiHome(), destination);
+      assertThrows(IllegalArgumentException.class, () -> storage.updateNotesPosition(reorder, (type, owner) -> true));
+    }
+    assertEquals(wiki.getWikiHome().getId(), storage.getPageById(parent.getId()).getParentPageId());
+  }
+
+  @Test
+  public void testMovePageChecksTheDestinationWikiInTheTransaction() throws Exception {
+    Wiki source = createWiki("moveSourceWiki");
+    Wiki target = createWiki("moveTargetWiki");
+    Page note = storage.createPage(source, source.getWikiHome(), newPage("moveChecked"));
+    List<String[]> checked = new ArrayList<>();
+
+    assertThrows(IllegalAccessException.class, () -> storage.movePage(params(source, note),
+                                                                      new WikiPageParams(target.getType(),
+                                                                                         target.getOwner(),
+                                                                                         target.getWikiHome().getName()),
+                                                                      (type, owner) -> false));
+    assertEquals(source.getWikiHome().getId(), storage.getPageById(note.getId()).getParentPageId());
+
+    storage.movePage(params(source, note),
+                     new WikiPageParams(target.getType(), target.getOwner(), target.getWikiHome().getName()),
+                     (type, owner) -> checked.add(new String[] { type, owner }));
+    assertEquals(1, checked.size());
+    assertEquals(target.getOwner(), checked.get(0)[1]);
+    assertEquals(target.getWikiHome().getId(), storage.getPageById(note.getId()).getParentPageId());
+  }
+
+  @Test
+  public void testUpdateNotesPositionChecksEveryWikiOfTheRequest() throws Exception {
+    Wiki own = createWiki("reorderOwnWiki");
+    Wiki foreign = createWiki("reorderForeignWiki");
+    Page note = storage.createPage(own, own.getWikiHome(), newPage("reorderNote"));
+    Page ownSibling = storage.createPage(own, own.getWikiHome(), newPage("reorderOwnSibling"));
+    Page foreignNote = storage.createPage(foreign, foreign.getWikiHome(), newPage("reorderForeignNote"));
+    java.util.function.BiPredicate<String, String> ownOnly = (type, owner) -> own.getOwner().equals(owner);
+
+    NoteReorder withForeignTarget = reorder(note, own.getWikiHome(), own.getWikiHome());
+    withForeignTarget.setTargetOrderedIds(List.of(note.getId(), foreignNote.getId()));
+    assertThrows(IllegalAccessException.class, () -> storage.updateNotesPosition(withForeignTarget, ownOnly));
+
+    NoteReorder withForeignSource = reorder(note, own.getWikiHome(), ownSibling);
+    withForeignSource.setSourceOrderedIds(List.of(foreignNote.getId()));
+    assertThrows(IllegalAccessException.class, () -> storage.updateNotesPosition(withForeignSource, ownOnly));
+    assertEquals(own.getWikiHome().getId(), storage.getPageById(note.getId()).getParentPageId());
+
+    NoteReorder ownOnlyIds = reorder(note, own.getWikiHome(), ownSibling);
+    ownOnlyIds.setSourceOrderedIds(List.of(ownSibling.getId()));
+    storage.updateNotesPosition(ownOnlyIds, ownOnly);
+    assertEquals(ownSibling.getId(), storage.getPageById(note.getId()).getParentPageId());
+  }
+
+  @Test
+  public void testUpdateNotesPositionChecksTheNotebookOfTheMovedNoteOncePerNotebook() throws Exception {
+    Wiki own = createWiki("reorderSameBookWiki");
+    Page note = storage.createPage(own, own.getWikiHome(), newPage("sameBookNote"));
+    Page sibling = storage.createPage(own, own.getWikiHome(), newPage("sameBookSibling"));
+    Page other = storage.createPage(own, own.getWikiHome(), newPage("sameBookOther"));
+
+    NoteReorder insideTheNotebook = reorder(note, own.getWikiHome(), own.getWikiHome());
+    insideTheNotebook.setSourceParentId(null);
+    insideTheNotebook.setTargetOrderedIds(List.of(sibling.getId(), note.getId(), other.getId()));
+    assertThrows(IllegalAccessException.class,
+                 () -> storage.updateNotesPosition(insideTheNotebook, (type, owner) -> false));
+
+    List<String> checked = new ArrayList<>();
+    storage.updateNotesPosition(insideTheNotebook, (type, owner) -> checked.add(owner));
+    assertEquals(List.of(own.getOwner()), checked);
+  }
+
+  private Wiki createWiki(String owner) throws WikiException {
+    Wiki wiki = new Wiki();
+    wiki.setType(WIKI_TYPE_PORTAL);
+    wiki.setOwner(owner);
+    return storage.createWiki(wiki);
+  }
+
+  private Page newPage(String name) {
+    Page page = new Page();
+    page.setName(name);
+    page.setTitle(name);
+    return page;
+  }
+
+  private WikiPageParams params(Wiki wiki, Page page) {
+    return new WikiPageParams(wiki.getType(), wiki.getOwner(), page.getName());
+  }
+
+  private NoteReorder reorder(Page note, Page source, Page target) {
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId(note.getId());
+    reorder.setWikiType(WIKI_TYPE_PORTAL);
+    reorder.setWikiOwner(WIKI_OWNER);
+    reorder.setSourceParentId(source.getId());
+    reorder.setTargetParentId(target.getId());
+    reorder.setTargetOrderedIds(List.of(note.getId()));
+    return reorder;
   }
 
   @Test

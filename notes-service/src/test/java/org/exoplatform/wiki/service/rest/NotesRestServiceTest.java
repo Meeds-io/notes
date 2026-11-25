@@ -94,6 +94,7 @@ import org.exoplatform.wiki.tree.JsonNodeData;
 import org.exoplatform.wiki.utils.NoteConstants;
 import org.exoplatform.wiki.utils.Utils;
 
+import io.meeds.notes.rest.model.NoteReorder;
 import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
@@ -774,6 +775,42 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertTrue(parentNode.isHasChild());
     assertEquals(1, parentNode.getChildren().size());
     assertEquals(childDraft.getId(), parentNode.getChildren().getFirst().getNoteId());
+  }
+
+  @Test
+  public void testMoveNoteAnswersRefusalsWithoutBody() throws Exception {
+    Page note = new Page("moved", "moved");
+    note.setWikiType("group");
+    note.setWikiOwner("/spaces/a");
+    Page destination = new Page("destination", "destination");
+    destination.setWikiType("group");
+    destination.setWikiOwner("/spaces/a");
+    when(noteService.getNoteById("1", identity)).thenReturn(note);
+    when(noteService.getNoteById("2")).thenReturn(destination);
+
+    when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
+                                                                                                  .thenThrow(new IllegalArgumentException("notes.move.destination.isDescendant"));
+    Response response = notesRestService.moveNote("1", "2");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    assertNull(response.getEntity());
+
+    when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
+                                                                                                  .thenThrow(new IllegalAccessException());
+    response = notesRestService.moveNote("1", "2");
+    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  public void testReorderNotesAnswersRefusals() throws Exception {
+    NoteReorder request = new NoteReorder();
+    request.setPageId("1");
+
+    doThrow(new IllegalAccessException()).when(noteService).updateNotesPosition(eq(request), any());
+    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), notesRestService.reorderNotes(request).getStatus());
+
+    doThrow(new IllegalArgumentException("notes.move.destination.isDescendant")).when(noteService)
+                                                                                .updateNotesPosition(eq(request), any());
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.reorderNotes(request).getStatus());
   }
 
   @Test

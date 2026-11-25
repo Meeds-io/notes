@@ -68,6 +68,7 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.attachment.AttachmentService;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
@@ -2002,6 +2003,8 @@ public class TestNoteService extends BaseTest {
     file1.delete();
   }
 
+  // Methods run in name order: a test creating a note must sort after this one, which hard-codes
+  // page id "10" as non-existent.
   @SneakyThrows
   public void testUpdateNotesPosition() {
     Identity root = ROOT_IDENTITY;
@@ -2044,10 +2047,6 @@ public class TestNoteService extends BaseTest {
     assertEquals("User does not have edit the note.", accessException.getMessage());
   }
 
-  // Declared last: this class extends junit.framework.TestCase (JUnit 3), whose reflection-based
-  // TestSuite ignores @FixMethodOrder and runs methods in declaration order, so a test creating a
-  // note must not run before testUpdateNotesPosition, which hard-codes page id "10" as
-  // non-existent and breaks if an earlier test shifts the id sequence.
   public void testSaveNoteMetadataChecksEditPermission() throws Exception {
     Wiki wiki = new Wiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME);
     Page note = noteService.createNote(wiki, "Home", new Page("testMetadataAcl", "testMetadataAcl"), ROOT_IDENTITY);
@@ -2130,6 +2129,168 @@ public class TestNoteService extends BaseTest {
     assertTrue(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
     noteService.deleteTranslation(pageNoteId, "fr", pageEditor);
     assertFalse(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
+  }
+
+  // Named testUserNote*: sorted after testUpdateNotesPosition, whose hard-coded page id must stay unused.
+  public void testUserNoteMoveRefusedUnderNoteTheUserCannotEdit() throws Exception {
+    Page maryNote = createUserNote("mary", USER_IDENTITY, "moveRefusedOwn");
+    Page rootNote = createUserNote("root", ROOT_IDENTITY, "moveRefusedForeign");
+
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.moveNote(noteParams("mary", maryNote), noteParams("root", rootNote), USER_IDENTITY));
+    assertEquals(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home").getId(),
+                 noteService.getNoteById(maryNote.getId()).getParentPageId());
+
+    NoteReorder reorder = reorder(maryNote, noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home"), rootNote);
+    assertThrows(IllegalAccessException.class, () -> noteService.updateNotesPosition(reorder, USER_IDENTITY));
+    assertEquals(noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home").getId(),
+                 noteService.getNoteById(maryNote.getId()).getParentPageId());
+  }
+
+  public void testUserNoteMoveRefusedUnderItselfOrItsDescendants() throws Exception {
+    Page parent = createUserNote("mary", USER_IDENTITY, "moveTreeParent");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
+    Wiki maryWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "mary");
+    Page child = noteService.createNote(maryWiki, parent.getName(), new Page("moveTreeChild", "moveTreeChild"), USER_IDENTITY);
+    Page grandChild = noteService.createNote(maryWiki, child.getName(), new Page("moveTreeGrandChild", "moveTreeGrandChild"), USER_IDENTITY);
+
+    for (Page destination : List.of(parent, child, grandChild)) {
+      assertThrows(IllegalArgumentException.class,
+                   () -> noteService.moveNote(noteParams("mary", parent), noteParams("mary", destination), USER_IDENTITY));
+      NoteReorder reorder = reorder(parent, home, destination);
+      assertThrows(IllegalArgumentException.class, () -> noteService.updateNotesPosition(reorder, USER_IDENTITY));
+    }
+    assertEquals(home.getId(), noteService.getNoteById(parent.getId()).getParentPageId());
+    assertEquals(parent.getId(), noteService.getNoteById(child.getId()).getParentPageId());
+    assertEquals(child.getId(), noteService.getNoteById(grandChild.getId()).getParentPageId());
+  }
+
+  public void testUserNoteMoveAllowedBetweenNotesTheUserCanEdit() throws Exception {
+    Page moved = createUserNote("mary", USER_IDENTITY, "moveAllowedMoved");
+    Page target = createUserNote("mary", USER_IDENTITY, "moveAllowedTarget");
+    Page reordered = createUserNote("mary", USER_IDENTITY, "moveAllowedReordered");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
+
+    assertTrue(noteService.moveNote(noteParams("mary", moved), noteParams("mary", target), USER_IDENTITY));
+    assertEquals(target.getId(), noteService.getNoteById(moved.getId()).getParentPageId());
+
+    noteService.updateNotesPosition(reorder(reordered, home, target), USER_IDENTITY);
+    assertEquals(target.getId(), noteService.getNoteById(reordered.getId()).getParentPageId());
+  }
+
+  public void testUserNoteMoveIntoSpaceNotebookFollowsTheRedactRight() throws Exception {
+    Space restricted = createMarySpace("moveRestrictedSpace", true);
+    Space open = createMarySpace("moveOpenSpace", false);
+    Wiki restrictedWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, restricted.getGroupId());
+    Wiki openWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, open.getGroupId());
+    Page restrictedNote = noteService.createNote(restrictedWiki, "Home", new Page("moveSpaceRestricted", "moveSpaceRestricted"), ROOT_IDENTITY);
+    Page openNote = noteService.createNote(openWiki, "Home", new Page("moveSpaceOpen", "moveSpaceOpen"), ROOT_IDENTITY);
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
+    Page refused = createUserNote("mary", USER_IDENTITY, "moveToRestrictedSpace");
+    Page allowed = createUserNote("mary", USER_IDENTITY, "moveToOpenSpace");
+
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.moveNote(noteParams("mary", refused),
+                                            spaceNoteParams(restricted, restrictedNote),
+                                            USER_IDENTITY));
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.updateNotesPosition(reorder(refused, home, restrictedNote), USER_IDENTITY));
+    assertEquals(home.getId(), noteService.getNoteById(refused.getId()).getParentPageId());
+
+    assertTrue(noteService.moveNote(noteParams("mary", allowed), spaceNoteParams(open, openNote), USER_IDENTITY));
+    assertEquals(openNote.getId(), noteService.getNoteById(allowed.getId()).getParentPageId());
+  }
+
+  public void testUserNoteMoveIntoSpaceNotebookAllowsAPlatformPublisherWhoIsNotAMember() throws Exception {
+    Space restricted = createMarySpace("movePublisherSpace", true);
+    Wiki restrictedWiki = getOrCreateWiki(wikiService, PortalConfig.GROUP_TYPE, restricted.getGroupId());
+    Page spaceNote = noteService.createNote(restrictedWiki, "Home", new Page("movePublisherTarget", "movePublisherTarget"), ROOT_IDENTITY);
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity publisher = new Identity("movePublisher",
+                                      Arrays.asList(new MembershipEntry(SpaceUtils.PLATFORM_PUBLISHER_GROUP, "publisher")));
+    identityRegistry.register(publisher);
+    assertFalse(spaceService.canRedactOnSpace(restricted, "movePublisher"));
+    assertTrue(spaceService.canPublishOnSpace(restricted, "movePublisher"));
+    Page note = createUserNote("movePublisher", publisher, "moveByPublisher");
+
+    assertTrue(noteService.moveNote(noteParams("movePublisher", note), spaceNoteParams(restricted, spaceNote), publisher));
+    assertEquals(spaceNote.getId(), noteService.getNoteById(note.getId()).getParentPageId());
+  }
+
+  public void testUserNoteMoveIntoSiteNotebookNeedsItsEditPermission() throws Exception {
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page siteNote = noteService.createNote(portalWiki, "Home", new Page("moveSiteTarget", "moveSiteTarget"), ROOT_IDENTITY);
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
+    Page maryNote = createUserNote("mary", USER_IDENTITY, "moveToSite");
+    WikiPageParams site = new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, siteNote.getName());
+
+    assertThrows(IllegalAccessException.class, () -> noteService.moveNote(noteParams("mary", maryNote), site, USER_IDENTITY));
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.updateNotesPosition(reorder(maryNote, home, siteNote), USER_IDENTITY));
+    assertEquals(home.getId(), noteService.getNoteById(maryNote.getId()).getParentPageId());
+  }
+
+  public void testUserNoteReorderRefusedWithNotesOfAnotherNotebook() throws Exception {
+    Page maryNote = createUserNote("mary", USER_IDENTITY, "reorderOwn");
+    Page marySibling = createUserNote("mary", USER_IDENTITY, "reorderOwnSibling");
+    Page rootNote = createUserNote("root", ROOT_IDENTITY, "reorderForeign");
+    Page home = noteService.getNoteOfNoteBookByName(PortalConfig.USER_TYPE, "mary", "Home");
+
+    NoteReorder foreignTarget = reorder(maryNote, home, home);
+    foreignTarget.setTargetOrderedIds(List.of(maryNote.getId(), rootNote.getId()));
+    assertThrows(IllegalAccessException.class, () -> noteService.updateNotesPosition(foreignTarget, USER_IDENTITY));
+
+    NoteReorder foreignSource = reorder(maryNote, home, marySibling);
+    foreignSource.setSourceOrderedIds(List.of(rootNote.getId()));
+    assertThrows(IllegalAccessException.class, () -> noteService.updateNotesPosition(foreignSource, USER_IDENTITY));
+    assertEquals(home.getId(), noteService.getNoteById(maryNote.getId()).getParentPageId());
+
+    NoteReorder ownIds = reorder(maryNote, home, marySibling);
+    ownIds.setSourceOrderedIds(List.of(marySibling.getId()));
+    noteService.updateNotesPosition(ownIds, USER_IDENTITY);
+    assertEquals(marySibling.getId(), noteService.getNoteById(maryNote.getId()).getParentPageId());
+  }
+
+  private Space createMarySpace(String name, boolean restrictedToRedactors) throws Exception {
+    Space space = new Space();
+    space.setDisplayName(name);
+    space.setPrettyName(name);
+    space.setRegistration(Space.OPEN);
+    space.setVisibility(Space.PUBLIC);
+    space = spaceService.createSpace(space, "root");
+    spaceService.addMember(space, "mary");
+    if (restrictedToRedactors) {
+      space.setRedactors(new String[] { "root" });
+      space = spaceService.updateSpace(space);
+    }
+    return space;
+  }
+
+  private WikiPageParams spaceNoteParams(Space space, Page note) {
+    WikiPageParams params = new WikiPageParams();
+    params.setType(PortalConfig.GROUP_TYPE);
+    params.setOwner(space.getGroupId());
+    params.setPageName(note.getName());
+    return params;
+  }
+
+  private WikiPageParams noteParams(String owner, Page note) {
+    WikiPageParams params = new WikiPageParams();
+    params.setType(PortalConfig.USER_TYPE);
+    params.setOwner(owner);
+    params.setPageName(note.getName());
+    return params;
+  }
+
+  private NoteReorder reorder(Page note, Page source, Page target) {
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId(note.getId());
+    reorder.setWikiType(note.getWikiType());
+    reorder.setWikiOwner(note.getWikiOwner());
+    reorder.setSourceParentId(source.getId());
+    reorder.setTargetParentId(target.getId());
+    reorder.setTargetOrderedIds(List.of(note.getId()));
+    return reorder;
   }
 
   public void testCopiedImageOfAnUnreadableNoteIsNotLinked() throws Exception {

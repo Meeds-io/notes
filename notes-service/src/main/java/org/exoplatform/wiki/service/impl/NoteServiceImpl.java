@@ -523,7 +523,9 @@ public class NoteServiceImpl implements NoteService {
       } else if (userIdentity == null || !canEditNote(moveNote, userIdentity.getUserId())) {
         throw new IllegalAccessException("User does not have edit the note.");
       }
-      moveNote(currentLocationParams, newLocationParams);
+      dataStorage.movePage(currentLocationParams,
+                           newLocationParams,
+                           (type, owner) -> canMoveIntoWiki(type, owner, userIdentity.getUserId()));
 
       Page note = new Page(currentLocationParams.getPageName());
       note.setWikiType(currentLocationParams.getType());
@@ -2079,7 +2081,7 @@ public class NoteServiceImpl implements NoteService {
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
-    dataStorage.updateNotesPosition(noteReorder);
+    dataStorage.updateNotesPosition(noteReorder, (type, owner) -> canMoveIntoWiki(type, owner, userIdentity.getUserId()));
     Page updatedPage = getNoteById(noteReorder.getPageId());
     PageUpdateType updateType = StringUtils.equals(existingNote.getParentPageId(),
                                                    updatedPage.getParentPageId()) ? PageUpdateType.EDIT_PAGE_PROPERTIES :
@@ -2092,6 +2094,15 @@ public class NoteServiceImpl implements NoteService {
   }
 
   /******* Private methods *******/
+
+  /**
+   * Whether a user may put notes into a notebook: the notebook's own edit
+   * check, {@link WikiService#canManageWiki(String, String, String)}, the one
+   * that governs creating a note in it.
+   */
+  private boolean canMoveIntoWiki(String wikiType, String wikiOwner, String username) {
+    return wikiService.canManageWiki(wikiType, wikiOwner, username);
+  }
 
   private void deleteNoteMetadataProperties(Page note, String lang, String objectType) throws Exception {
     MetadataItem draftNoteMetadataItem = getNoteMetadataItem(note, lang, objectType);
