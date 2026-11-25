@@ -1207,12 +1207,18 @@ export default {
       // the note's own stored metadata, which a version snapshot may be behind
       this.storedProperties = properties ? structuredClone(properties) : null;
     },
+    propertiesLang() {
+      return this.note?.lang || this.selectedTranslation?.value || '';
+    },
     reloadStoredProperties(noteId) {
       // After a save that wrote the properties, the stored state is what the server
       // holds, not the request: an uploaded cover gets its file id there, and a
       // removed one is gone. The save's response may echo the request instead.
-      return this.$notesService.getNoteById(noteId, this.targetLang, '', this.noteBookType, this.noteBookOwner).then(data => {
-        if (String(this.note?.id) !== String(noteId)) {
+      // read in the language the next Properties save writes to, the original
+      // version included, and drop an answer for a language switched meanwhile
+      const lang = this.propertiesLang();
+      return this.$notesService.getNoteById(noteId, lang, '', this.noteBookType, this.noteBookOwner).then(data => {
+        if (String(this.note?.id) !== String(noteId) || this.propertiesLang() !== lang) {
           return;
         }
         this.storeProperties(data?.properties);
@@ -1396,7 +1402,7 @@ export default {
       if (!properties) {
         return;
       }
-      const lang = this.note.lang || this.selectedTranslation?.value || '';
+      const lang = this.propertiesLang();
       this.$notesService.saveNoteMetadata(properties, lang).then(savedProperties => {
         this.note.properties = savedProperties;
         this.storeProperties(savedProperties);
