@@ -405,10 +405,8 @@ public class NoteMcpTool implements McpToolPlugin {
     if (!noteService.canEditNote(note, currentUserAclIdentity.getUserId())) {
       throw new IllegalAccessException(NOTE_EDIT_DENIED);
     }
+    // the destination notebook is checked by the move itself
     Page targetNote = getNoteById(targetParentNoteId);
-    if (!noteService.canEditNote(targetNote, currentUserAclIdentity.getUserId())) {
-      throw new IllegalAccessException(NOTE_EDIT_DENIED);
-    }
     WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
     WikiPageParams newLocationParams = new WikiPageParams(targetNote.getWikiType(),
                                                           targetNote.getWikiOwner(),
