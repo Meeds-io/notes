@@ -32,13 +32,15 @@ if (extensionRegistry) {
 const lang = eXo.env.portal.language;
 const url = `/notes/i18n/locale.portlet.NotePageView?lang=${lang}`;
 
-export function init(appId, name, canEdit) {
+export function init(appId, name, canEdit, allowHide, hidden) {
   exoi18n.loadLanguageAsync(lang, url)
     .then(i18n => {
       Vue.createApp({
         data: {
           name,
           canEdit,
+          allowHide: !!allowHide,
+          hidden: !!hidden,
           page: null,
           language: lang,
           defaultLanguage: 'en',

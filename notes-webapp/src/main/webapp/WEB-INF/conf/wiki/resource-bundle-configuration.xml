@@ -43,6 +43,22 @@
         </values-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <!-- Resolves, in the user settings, the title of a hidden block of content -->
+      <name>Note Page View ResourceBundle Plugin</name>
+      <set-method>addResourceBundle</set-method>
+      <type>org.exoplatform.services.resources.impl.BaseResourceBundlePlugin</type>
+      <init-params>
+        <values-param>
+          <name>classpath.resources</name>
+          <value>locale.portlet.NotePageView</value>
+        </values-param>
+        <values-param>
+          <name>portal.resource.names</name>
+          <value>locale.portlet.NotePageView</value>
+        </values-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
 </configuration>

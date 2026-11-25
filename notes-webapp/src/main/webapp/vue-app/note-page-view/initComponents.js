@@ -19,6 +19,8 @@
 
 import NotePageViewApp from './components/NotePageViewApp.vue';
 import NotePageHeader from './components/NotePageHeader.vue';
+import NotePageActions from './components/NotePageActions.vue';
+import NotePageSettingsDrawer from './components/NotePageSettingsDrawer.vue';
 import NotePageView from './components/NotePageView.vue';
 import NotePageEdit from './components/NotePageEdit.vue';
 import NotePageEditDrawer from './components/NotePageEditDrawer.vue';
@@ -27,6 +29,8 @@ import NoteRichEditor from './components/NoteRichEditor.vue';
 const components = {
   'note-page-view-app': NotePageViewApp,
   'note-page-header': NotePageHeader,
+  'note-page-actions': NotePageActions,
+  'note-page-settings-drawer': NotePageSettingsDrawer,
   'note-page-view': NotePageView,
   'note-page-edit': NotePageEdit,
   'note-page-edit-drawer': NotePageEditDrawer,

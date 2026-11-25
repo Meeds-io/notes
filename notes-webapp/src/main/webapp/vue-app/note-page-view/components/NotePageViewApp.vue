@@ -51,11 +51,17 @@
             @cancel="closeEditor" />
         </template>
         <template v-if="!hideViewMode">
+          <note-page-actions
+            v-if="$root.initialized && !edit"
+            :can-edit="canEdit"
+            :hover="hover"
+            @open-settings="$refs.settingsDrawer.open()" />
           <note-page-header
             v-if="displayEditMode"
             ref="header"
             :hover="hover || editorLoading"
             :loading="editorLoading"
+            :offset="actionsWidth"
             @edit="openEditor" />
           <note-page-view
             v-if="hasNote"
@@ -64,6 +70,9 @@
         </template>
       </v-card>
     </v-hover>
+    <note-page-settings-drawer
+      v-if="canEdit"
+      ref="settingsDrawer" />
   </v-app>
 </template>
 <script>
@@ -74,6 +83,7 @@ export default {
     previewMode: false,
     hover: false,
     tabindex: '0',
+    inLayoutEditor: false,
   }),
   computed: {
     hasNote() {
@@ -83,7 +93,16 @@ export default {
       return this.$root.initialized && this.canEdit;
     },
     canView() {
-      return this.canEdit || (this.$root.initialized && this.hasNote);
+      return (this.canEdit || (this.$root.initialized && this.hasNote))
+        && (!this.hiddenByUser || this.inLayoutEditor);
+    },
+    // The current user hid the block, which the page layout editor still displays
+    hiddenByUser() {
+      return this.$root.allowHide && this.$root.hidden;
+    },
+    // The width the settings and hide buttons take at the top end, where the actions menu follows them
+    actionsWidth() {
+      return ((this.canEdit ? 1 : 0) + (this.$root.allowHide ? 1 : 0)) * 36;
     },
     canEdit() {
       return !this.previewMode && this.$root.canEdit;
@@ -115,13 +134,21 @@ export default {
     },
     canView() {
       this.$root.$updateApplicationVisibility(this.canView);
-    }
+    },
+    '$root.initialized'() {
+      // canView stays false for a user who hid the block: apply it once loaded
+      this.$root.$updateApplicationVisibility(this.canView);
+    },
   },
   created() {
     document.addEventListener('cms-preview-mode', this.switchToPreview);
     document.addEventListener('cms-edit-mode', this.switchToEdit);
     this.$root.$on('notes-editor-ready', this.setEditorReady);
     this.$root.$on('notes-editor-unloaded', this.setEditorNotReady);
+  },
+  mounted() {
+    const element = this.$el?.closest ? this.$el : this.$el?.parentElement;
+    this.inLayoutEditor = !!element?.closest?.('.layout-application[data-storage-id]');
   },
   beforeDestroy() {
     document.removeEventListener('cms-edit-mode', this.switchToEdit);
