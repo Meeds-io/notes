@@ -472,7 +472,6 @@ public class NoteDataStorage {
 
   private void checkWikiAllowed(WikiEntity wiki,
                                 BiPredicate<String, String> wikiCheck) throws IllegalAccessException {
-    // the wiki of the moved note is checked too: the right to edit one note is not the right to edit its notebook
     if (wikiCheck != null && wiki != null && !wikiCheck.test(wiki.getType(), wiki.getOwner())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
@@ -1110,6 +1109,8 @@ public class NoteDataStorage {
         && !noteReorder.getSourceParentId().equals(noteReorder.getTargetParentId());
 
     BiPredicate<String, String> checkOnce = oncePerWiki(wikiCheck);
+    // the right to edit one note is not the right to reorder or move it in its notebook
+    checkWikiAllowed(pageToMove.getWiki(), checkOnce);
     checkOrderedIdsWikis(noteReorder.getTargetOrderedIds(), checkOnce);
     if (isCrossFolderMove) {
       checkOrderedIdsWikis(noteReorder.getSourceOrderedIds(), checkOnce);

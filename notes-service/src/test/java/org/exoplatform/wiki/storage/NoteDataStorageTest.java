@@ -341,6 +341,20 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     assertEquals(List.of(own.getOwner()), checked);
   }
 
+  @Test
+  public void testUpdateNotesPositionChecksTheNotebookOfTheMovedNoteWithNoIdListNorTargetParent() throws Exception {
+    Wiki own = createWiki("reorderBareRequestWiki");
+    Page parent = storage.createPage(own, own.getWikiHome(), newPage("bareRequestParent"));
+    Page note = storage.createPage(own, parent, newPage("bareRequestNote"));
+
+    NoteReorder bare = reorder(note, parent, parent);
+    bare.setTargetParentId(null);
+    bare.setTargetOrderedIds(List.of());
+    bare.setSourceOrderedIds(null);
+    assertThrows(IllegalAccessException.class, () -> storage.updateNotesPosition(bare, (type, owner) -> false));
+    assertEquals(parent.getId(), storage.getPageById(note.getId()).getParentPageId());
+  }
+
   private Wiki createWiki(String owner) throws WikiException {
     Wiki wiki = new Wiki();
     wiki.setType(WIKI_TYPE_PORTAL);
