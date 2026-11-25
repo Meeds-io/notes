@@ -294,8 +294,9 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     storage.movePage(params(source, note),
                      new WikiPageParams(target.getType(), target.getOwner(), target.getWikiHome().getName()),
                      (type, owner) -> checked.add(new String[] { type, owner }));
-    assertEquals(1, checked.size());
-    assertEquals(target.getOwner(), checked.get(0)[1]);
+    assertEquals(2, checked.size());
+    assertEquals(source.getOwner(), checked.get(0)[1]);
+    assertEquals(target.getOwner(), checked.get(1)[1]);
     assertEquals(target.getWikiHome().getId(), storage.getPageById(note.getId()).getParentPageId());
   }
 

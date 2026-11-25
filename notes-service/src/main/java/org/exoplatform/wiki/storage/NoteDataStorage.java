@@ -393,13 +393,15 @@ public class NoteDataStorage {
   /**
    * Moves a page under a destination page, checking in the same transaction
    * that the destination is neither the page itself nor one of its descendants
-   * and that the destination wiki is one the caller accepts.
+   * and that the wiki of the page and the destination wiki are ones the caller
+   * accepts (checked once per wiki).
    *
    * @param currentLocationParams location of the page to move
    * @param newLocationParams location of the destination page
    * @param destinationWikiCheck accepts a wiki (type, owner) the caller may
    *          edit, or null to accept any
-   * @throws IllegalAccessException when the destination wiki is not accepted
+   * @throws IllegalAccessException when the wiki of the page or the destination
+   *           wiki is not accepted
    * @throws IllegalArgumentException when the destination is the page or one of
    *           its descendants
    */
@@ -430,7 +432,10 @@ public class NoteDataStorage {
           newLocationParams.getOwner() + ":" + newLocationParams.getPageName() + " because destination page does not exist.");
     }
 
-    checkDestination(pageEntity, destinationPageEntity, destinationWikiCheck);
+    BiPredicate<String, String> checkOnce = oncePerWiki(destinationWikiCheck);
+    // the right to edit one note is not the right to take it out of its notebook
+    checkWikiAllowed(pageEntity.getWiki(), checkOnce);
+    checkDestination(pageEntity, destinationPageEntity, checkOnce);
 
     // save the move in the page moves history
     List<PageMoveEntity> pageMoves = pageEntity.getMoves();

@@ -2230,6 +2230,33 @@ public class TestNoteService extends BaseTest {
     assertEquals(home.getId(), noteService.getNoteById(maryNote.getId()).getParentPageId());
   }
 
+  public void testUserNoteMoveRefusedOutOfANotebookTheUserCannotEdit() throws Exception {
+    NoteDataStorage storage = getContainer().getComponentInstanceOfType(NoteDataStorage.class);
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page systemNote = new Page();
+    systemNote.setWikiId(portalWiki.getId());
+    systemNote.setWikiType(portalWiki.getType());
+    systemNote.setWikiOwner(portalWiki.getOwner());
+    systemNote.setName("movePageNote");
+    systemNote.setTitle("movePageNote");
+    systemNote.setOwner(IdentityConstants.SYSTEM);
+    Page pageNote = storage.createPage(portalWiki, portalWiki.getWikiHome(), systemNote);
+    IdentityRegistry identityRegistry = getContainer().getComponentInstanceOfType(IdentityRegistry.class);
+    Identity editor = new Identity("movePageNoteEditor",
+                                   Arrays.asList(new MembershipEntry(SpaceUtils.PLATFORM_PUBLISHER_GROUP, SpaceUtils.PUBLISHER)));
+    identityRegistry.register(editor);
+    Page editorNote = createUserNote("movePageNoteEditor", editor, "movePageNoteTarget");
+    // a page note's editor who cannot edit the site notebook
+    assertTrue(noteService.canEditNote(pageNote, "movePageNoteEditor"));
+    assertFalse(wikiService.canManageWiki(PortalConfig.PORTAL_TYPE, PORTAL_NAME, "movePageNoteEditor"));
+
+    assertThrows(IllegalAccessException.class,
+                 () -> noteService.moveNote(new WikiPageParams(PortalConfig.PORTAL_TYPE, PORTAL_NAME, pageNote.getName()),
+                                            noteParams("movePageNoteEditor", editorNote),
+                                            editor));
+    assertEquals(portalWiki.getWikiHome().getId(), noteService.getNoteById(pageNote.getId()).getParentPageId());
+  }
+
   public void testUserNoteReorderRefusedWithNotesOfAnotherNotebook() throws Exception {
     Page maryNote = createUserNote("mary", USER_IDENTITY, "reorderOwn");
     Page marySibling = createUserNote("mary", USER_IDENTITY, "reorderOwnSibling");

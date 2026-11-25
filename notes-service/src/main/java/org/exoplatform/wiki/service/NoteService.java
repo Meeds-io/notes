@@ -181,7 +181,7 @@ public interface NoteService {
    * @return "True" if moving the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    * @throws IllegalAccessException if the user don't have edit rights on the
-   *           note, or may not edit the destination notebook
+   *           note, or may not edit its notebook or the destination notebook
    * @throws IllegalArgumentException with message
    *           "notes.move.destination.isDescendant" if the destination is the
    *           note itself or one of its descendants
