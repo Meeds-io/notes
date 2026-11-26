@@ -49,6 +49,7 @@
           </v-list-item-avatar>
           <v-list-item-content :class="showActions && 'pe-16 me-3'">
             <a
+              :id="`noteTreeLink-${item.noteId}`"
               :href="noteUrl"
               :aria-current="isActive(item) ? 'page' : null"
               class="note-tree-link d-block text-truncate text-decoration-none">
