@@ -29,7 +29,7 @@
         class="border-bottom-color"
         compact-display
         @keyword-changed="search = $event" />
-      <v-card-text class="px-0 py-2 notes-tree-container">
+      <v-card-text id="notesTree" class="px-0 py-2 notes-tree-container">
         <div v-if="isLoading" class="d-flex justify-center py-4">
           <v-progress-circular
             indeterminate
