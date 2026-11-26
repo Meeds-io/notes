@@ -52,7 +52,7 @@
             <div class="notes-content-form">
               <div
                 v-show="!webPageNote"
-                class="formInputGroup title notesTitle white px-5 pt-5 ">
+                class="formInputGroup title notesTitle application-background-color px-5 pt-5 ">
                 <input
                   id="notesTitle"
                   :ref="editorTitleInputRef"
@@ -64,7 +64,7 @@
                   @input="waitUserTyping()"
                   @keydown.enter.prevent="focusEditor">
               </div>
-              <div class="formInputGroup white overflow-auto flex notes-content-wrapper px-5 pb-5">
+              <div class="formInputGroup application-background-color overflow-auto flex notes-content-wrapper px-5 pb-5">
                 <textarea
                   :id="editorBodyInputRef"
                   :ref="editorBodyInputRef"
