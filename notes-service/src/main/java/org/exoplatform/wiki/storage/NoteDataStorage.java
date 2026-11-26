@@ -405,6 +405,9 @@ public class NoteDataStorage {
    * @throws IllegalArgumentException when the destination is the page or one of
    *           its descendants
    */
+  // @ExoTransactional opens (or joins) the JPA transaction the checks and the
+  // writes share; it commits even when the method throws, so every check runs
+  // before the first write
   @ExoTransactional
   public void movePage(WikiPageParams currentLocationParams,
                        WikiPageParams newLocationParams,
@@ -1097,6 +1100,9 @@ public class NoteDataStorage {
    * @throws IllegalArgumentException when the destination is the note or one of
    *           its descendants
    */
+  // @ExoTransactional opens (or joins) the JPA transaction the checks and the
+  // writes share; it commits even when the method throws, so every check runs
+  // before the first write
   @ExoTransactional
   public void updateNotesPosition(NoteReorder noteReorder,
                                   BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {

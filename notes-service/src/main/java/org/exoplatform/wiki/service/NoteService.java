@@ -1060,8 +1060,9 @@ public interface NoteService {
    * @param noteReorder the payload object encapsulating the reordering details.
    * @param userIdentity user Identity
    * @throws IllegalAccessException if the user may not edit the note or its
-   *           notebook, may not edit the destination notebook, or the ordered
-   *           id lists hold notes of a notebook the user may not edit
+   *           notebook, may not edit the destination notebook, or its target
+   *           id list, or its source id list when the note changes parent,
+   *           holds notes of a notebook the user may not edit
    * @throws IllegalArgumentException with message
    *           "notes.move.destination.isDescendant" if the new parent is the
    *           note itself or one of its descendants
