@@ -89,6 +89,7 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
+import org.exoplatform.wiki.storage.NoteDataStorage;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -1070,9 +1071,10 @@ public class NotesRestService implements ResourceContainer {
   @PATCH
   @Path("/note/move/{noteId}/{destinationNoteId}")
   @RolesAllowed("users")
-  @Operation(summary = "Move note under the destination one", method = "PUT", description = "This moves the note if the authenticated user has EDIT permissions.")
+  @Operation(summary = "Move note under the destination one", method = "PUT", description = "This moves the note if the authenticated user may edit the notebooks of the note and of the destination.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-      @ApiResponse(responseCode = "400", description = "Invalid query input"), @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
+      @ApiResponse(responseCode = "400", description = "Invalid query input; the body is notes.move.destination.isDescendant when the destination is the note itself or under it"),
+      @ApiResponse(responseCode = "403", description = "Unauthorized operation"),
       @ApiResponse(responseCode = "404", description = "Resource not found") })
   public Response moveNote(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
@@ -1101,10 +1103,10 @@ public class NotesRestService implements ResourceContainer {
       }
     } catch (IllegalAccessException e) {
       LOG.debug("User does not have move permissions on the note {}", noteId, e);
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return Response.status(Response.Status.FORBIDDEN).build();
     } catch (IllegalArgumentException e) {
       LOG.debug("Invalid move of the note {} under {}", noteId, toNoteId, e);
-      return Response.status(Response.Status.BAD_REQUEST).build();
+      return moveRefusal(e);
     } catch (Exception ex) {
       LOG.warn("Failed to perform move of noteBook note {} under {}", noteId, toNoteId, ex);
       return Response.status(HTTPStatus.INTERNAL_ERROR).cacheControl(cc).build();
@@ -1576,17 +1578,31 @@ public class NotesRestService implements ResourceContainer {
   @Path("/reorder")
   @Operation(summary = "Reorder a note", method = "POST", description = "This reorder a note.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "401", description = "User not authorized to get the note"),
+                          @ApiResponse(responseCode = "400", description = "Invalid query input; the body is notes.move.destination.isDescendant when a note would go under itself"),
+                          @ApiResponse(responseCode = "403", description = "User not authorized to edit a notebook the reorder touches"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
   public Response reorderNotes(@RequestBody NoteReorder request) {
     try {
       noteService.updateNotesPosition(request, ConversationState.getCurrent().getIdentity());
       return Response.ok().build();
     } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST).build();
+      return moveRefusal(e);
     } catch (IllegalAccessException e) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return Response.status(Response.Status.FORBIDDEN).build();
     }
+  }
+
+  /**
+   * @param e the refusal of a move or a reorder
+   * @return a 400 whose body is the message code when the note would go under
+   *         itself, and a bodiless 400 otherwise: any other message may echo
+   *         the request
+   */
+  private static Response moveRefusal(IllegalArgumentException e) {
+    if (NoteDataStorage.MOVE_DESTINATION_IS_DESCENDANT.equals(e.getMessage())) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(NoteDataStorage.MOVE_DESTINATION_IS_DESCENDANT).build();
+    }
+    return Response.status(Response.Status.BAD_REQUEST).build();
   }
 
   private List<JsonNodeData> getJsonTree(WikiPageParams params, Map<String, Object> context, Identity identity, Locale locale) throws Exception {

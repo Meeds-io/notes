@@ -1149,7 +1149,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
   }
 
   @Test
-  public void testUpdateNotesPosition() {
+  public void testUpdateNotesPosition() throws Exception {
     Wiki wiki = new Wiki();
     wiki.setType(WIKI_TYPE_PORTAL);
     wiki.setOwner(WIKI_OWNER);
@@ -1183,7 +1183,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     sameFolderReorder.setTargetParentId(homePage.getId());
     sameFolderReorder.setTargetOrderedIds(Arrays.asList(note2.getId(), note1.getId()));
 
-    storage.updateNotesPosition(sameFolderReorder);
+    storage.updateNotesPosition(sameFolderReorder, null);
 
     restartTransaction();
 
@@ -1204,7 +1204,7 @@ public class NoteDataStorageTest extends BaseWikiJPAIntegrationTest {
     crossFolderReorder.setTargetOrderedIds(Collections.singletonList(note1.getId()));
     crossFolderReorder.setSourceOrderedIds(Collections.singletonList(note2.getId()));
 
-    storage.updateNotesPosition(crossFolderReorder);
+    storage.updateNotesPosition(crossFolderReorder, null);
 
     restartTransaction();
 

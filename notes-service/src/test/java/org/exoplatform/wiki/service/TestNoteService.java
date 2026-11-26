@@ -2003,8 +2003,6 @@ public class TestNoteService extends BaseTest {
     file1.delete();
   }
 
-  // Methods run in name order: a test creating a note must sort after this one, which hard-codes
-  // page id "10" as non-existent.
   @SneakyThrows
   public void testUpdateNotesPosition() {
     Identity root = ROOT_IDENTITY;
@@ -2131,7 +2129,6 @@ public class TestNoteService extends BaseTest {
     assertFalse(noteService.getPageAvailableTranslationLanguages(pageNoteId, false).contains("fr"));
   }
 
-  // Named testUserNote*: sorted after testUpdateNotesPosition, whose hard-coded page id must stay unused.
   public void testUserNoteMoveRefusedUnderNoteTheUserCannotEdit() throws Exception {
     Page maryNote = createUserNote("mary", USER_IDENTITY, "moveRefusedOwn");
     Page rootNote = createUserNote("root", ROOT_IDENTITY, "moveRefusedForeign");

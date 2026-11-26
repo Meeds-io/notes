@@ -81,7 +81,7 @@ public class NoteDataStorage {
 
   public static final String     WIKI_FILES_NAMESPACE_NAME = "wiki";
 
-  private static final String    MOVE_DESTINATION_IS_DESCENDANT = "notes.move.destination.isDescendant";
+  public static final String     MOVE_DESTINATION_IS_DESCENDANT = "notes.move.destination.isDescendant";
 
   private static final int       MAX_NOTE_TREE_DEPTH = 1000;
 
@@ -1075,15 +1075,6 @@ public class NoteDataStorage {
     List<DraftPageEntity> draftPageEntities = new ArrayList<>();
     getDraftsOfPage(pageEntity, draftPageEntities);
     return convertDraftPageEntitiesToDraftPages(draftPageEntities);
-  }
-
-  @ExoTransactional
-  public void updateNotesPosition(NoteReorder noteReorder) throws WikiException {
-    try {
-      doUpdateNotesPosition(noteReorder, null);
-    } catch (IllegalAccessException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   /**

@@ -778,7 +778,7 @@ public class NotesRestServiceTest extends AbstractKernelTest {
   }
 
   @Test
-  public void testMoveNoteAnswersRefusalsWithoutBody() throws Exception {
+  public void testMoveNoteAnswersTheDescendantCodeAnd403() throws Exception {
     Page note = new Page("moved", "moved");
     note.setWikiType("group");
     note.setWikiOwner("/spaces/a");
@@ -792,12 +792,18 @@ public class NotesRestServiceTest extends AbstractKernelTest {
                                                                                                   .thenThrow(new IllegalArgumentException("notes.move.destination.isDescendant"));
     Response response = notesRestService.moveNote("1", "2");
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    assertNull(response.getEntity());
+    assertEquals("notes.move.destination.isDescendant", response.getEntity());
+
+    when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
+                                                                                                  .thenThrow(new NumberFormatException("For input string: \"<script>\""));
+    response = notesRestService.moveNote("1", "2");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    assertNull("another refusal's message may echo the request", response.getEntity());
 
     when(noteService.moveNote(any(WikiPageParams.class), any(WikiPageParams.class), eq(identity)))
                                                                                                   .thenThrow(new IllegalAccessException());
     response = notesRestService.moveNote("1", "2");
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
   }
 
   @Test
@@ -806,11 +812,13 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     request.setPageId("1");
 
     doThrow(new IllegalAccessException()).when(noteService).updateNotesPosition(eq(request), any());
-    assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), notesRestService.reorderNotes(request).getStatus());
+    assertEquals(Response.Status.FORBIDDEN.getStatusCode(), notesRestService.reorderNotes(request).getStatus());
 
     doThrow(new IllegalArgumentException("notes.move.destination.isDescendant")).when(noteService)
                                                                                 .updateNotesPosition(eq(request), any());
-    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.reorderNotes(request).getStatus());
+    Response response = notesRestService.reorderNotes(request);
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    assertEquals("notes.move.destination.isDescendant", response.getEntity());
   }
 
   @Test

@@ -64,7 +64,8 @@ extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   cssClass: 'ps-2 pe-4 action-menu-item',
   rank: 50,
   actionEvent: 'open-note-treeview',
-  enabled: (note) => note?.parentPageId && note?.canManage
+  // canImport: the user may edit the note's notebook, which a move requires
+  enabled: (note) => note?.parentPageId && note?.canImport
 });
 extensionRegistry.registerExtension('NotesMenu', 'menuActionMenu', {
   id: 'exportNotes',
