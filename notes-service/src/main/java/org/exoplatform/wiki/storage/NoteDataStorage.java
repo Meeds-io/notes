@@ -407,7 +407,9 @@ public class NoteDataStorage {
    */
   // @ExoTransactional opens (or joins) the JPA transaction the checks and the
   // writes share; it commits even when the method throws, so every check runs
-  // before the first write
+  // before the first write. It is the deprecated annotation because every
+  // write of this storage runs under it: EXO-95582 moves the whole class to
+  // @ContainerTransactional, so that its methods keep one transaction behaviour
   @ExoTransactional
   public void movePage(WikiPageParams currentLocationParams,
                        WikiPageParams newLocationParams,
@@ -1093,7 +1095,9 @@ public class NoteDataStorage {
    */
   // @ExoTransactional opens (or joins) the JPA transaction the checks and the
   // writes share; it commits even when the method throws, so every check runs
-  // before the first write
+  // before the first write. It is the deprecated annotation because every
+  // write of this storage runs under it: EXO-95582 moves the whole class to
+  // @ContainerTransactional, so that its methods keep one transaction behaviour
   @ExoTransactional
   public void updateNotesPosition(NoteReorder noteReorder,
                                   BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
