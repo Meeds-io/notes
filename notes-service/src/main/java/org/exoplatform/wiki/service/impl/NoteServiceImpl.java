@@ -1609,6 +1609,27 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
+  public void deleteTranslation(Long noteId, String lang, Identity userIdentity) throws Exception {
+    Page note;
+    try {
+      note = getNoteById(String.valueOf(noteId), userIdentity);
+    } catch (IllegalAccessException e) {
+      // A note the user cannot view is answered as a missing one
+      throw new ObjectNotFoundException("note not found");
+    }
+    if (note == null) {
+      throw new ObjectNotFoundException("note not found");
+    }
+    if (!note.isCanManage()) {
+      throw new IllegalAccessException("User does not have edit permissions on the note.");
+    }
+    deleteVersionsByNoteIdAndLang(noteId, lang, true);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public List<DraftPage> getDraftsOfWiki(String wikiOwner, String wikiType, String wikiHome) {
     return dataStorage.getDraftsOfWiki(wikiOwner, wikiType, wikiHome);
   }
