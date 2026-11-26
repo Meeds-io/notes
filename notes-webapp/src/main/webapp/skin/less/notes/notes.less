@@ -218,7 +218,7 @@
 
     .cke_toolbox {
       flex-flow: wrap;
-      background: #fdfdfd !important;
+      background: var(--skinGreyLighten4, #fdfdfd) !important;
       background-image: none !important;
       border-bottom: 0;
     }
@@ -1314,5 +1314,47 @@ ul.note-manual-child  {
         display: none;
       }
     }
+  }
+}
+
+// In dark, the area around the editor takes the page background, darker than the title and content blocks, as
+// #eeeeee is around the white blocks in light. The CKEditor skin draws its toolbar for a light bar: dark grey icons,
+// #474747 combo texts and arrows, a #c5c5c5 pressed button. On the toolbar of the dark mode, the icons are inverted,
+// their hue kept, and the texts, arrows and pressed button take the dark greys of the skin
+.notes-dark-editor() {
+  .notesEditor #notesEditor {
+    background-color: var(--allPagesBackgroundColor, #14181b);
+
+    .notes-content {
+      background-color: var(--allPagesBackgroundColor, #14181b);
+    }
+  }
+  #notesTop .cke_toolbox {
+    .cke_button_icon {
+      filter: invert(1) hue-rotate(180deg);
+    }
+    .cke_combo_text {
+      color: var(--skinGreyDarken3, #c9ced2);
+    }
+    .cke_combo_arrow, .cke_button_arrow {
+      border-top-color: var(--skinGreyDarken3, #c9ced2);
+    }
+    a.cke_button_on, .cke_combo_on a.cke_combo_button {
+      background-color: var(--skinGreyLighten1, #4a535b);
+    }
+    a.cke_button_on:hover, a.cke_button_on:focus, a.cke_button_on:active,
+    .cke_combo_on a.cke_combo_button:hover, .cke_combo_on a.cke_combo_button:focus, .cke_combo_on a.cke_combo_button:active {
+      background-color: var(--skinGreyLighten2, #3a424a);
+    }
+  }
+}
+
+:root[data-display-mode="dark"] {
+  .notes-dark-editor();
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-display-mode="auto"] {
+    .notes-dark-editor();
   }
 }

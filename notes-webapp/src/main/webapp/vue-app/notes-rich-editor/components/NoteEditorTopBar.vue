@@ -21,7 +21,7 @@
   <div class="notes-topbar">
     <div
       v-if="!showTranslationBar"
-      class="notesActions white">
+      class="notesActions application-background-color">
       <div class="notesFormButtons d-inline-flex flex-wrap width-full py-3 px-5 ma-0">
         <div class="notesFormLeftActions d-inline-flex align-center me-10">
           <v-icon
