@@ -20,8 +20,8 @@
 -->
 <template>
   <exo-drawer
-    id="notePageSettingsDrawer"
     ref="drawer"
+    class="note-page-settings-drawer"
     right>
     <template #title>
       {{ $t('notePageView.label.settingsTitle') }}
@@ -32,10 +32,9 @@
           {{ $t('notePageView.label.allowHide') }}
         </div>
         <v-switch
-          id="notePageAllowHideSwitch"
           v-model="allowHide"
           :aria-label="$t('notePageView.label.allowHide')"
-          class="my-0 me-n2"
+          class="note-page-allow-hide-switch my-0 me-n2"
           dense
           hide-details />
       </div>

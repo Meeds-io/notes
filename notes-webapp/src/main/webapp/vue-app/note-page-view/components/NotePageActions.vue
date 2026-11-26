@@ -29,11 +29,10 @@
     <!-- always rendered for an editor, so the keyboard reaches it: hidden until the block is hovered or has the focus -->
     <v-btn
       v-if="canEdit"
-      id="notePageSettingsButton"
       :title="$t('notePageView.label.openSettings')"
       :aria-label="$t('notePageView.label.openSettings')"
       :class="!hover && 'd-sr-only-focusable'"
-      class="ma-1"
+      class="note-page-settings-button ma-1"
       small
       icon
       @click="$emit('open-settings')">
