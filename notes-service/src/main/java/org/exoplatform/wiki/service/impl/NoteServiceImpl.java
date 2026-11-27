@@ -1546,6 +1546,21 @@ public class NoteServiceImpl implements NoteService {
    * {@inheritDoc}
    */
   @Override
+  public List<String> getPageAvailableTranslationLanguages(Long pageId,
+                                                           Identity identity,
+                                                           boolean withDrafts) throws ObjectNotFoundException, WikiException {
+    Page note = pageId == null ? null : getNoteById(String.valueOf(pageId));
+    if (note == null || !canViewNote(note, identity.getUserId())) {
+      // A note the user cannot view is answered like a missing one
+      throw new ObjectNotFoundException("note not found");
+    }
+    return getPageAvailableTranslationLanguages(pageId, withDrafts && canEditNote(note, identity.getUserId()));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException {
     return getPageAvailableTranslationLanguages(pageId, withDrafts);
   }

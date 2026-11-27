@@ -819,6 +819,25 @@ public interface NoteService {
   List<String> getPageAvailableTranslationLanguages(Long pageId, boolean withDrafts) throws WikiException;
 
   /**
+   * Retrieves the available translations languages of a page for a user. A
+   * note the user cannot view is answered like a missing one, and the
+   * languages of the drafts of the note are returned only when they are
+   * requested and the user can edit the note.
+   *
+   * @param pageId page id
+   * @param identity identity of the user requesting the languages
+   * @param withDrafts if set to true returns also languages of draft notes,
+   *          for a user who can edit the note
+   * @return {@link List} of {@link String}
+   * @throws ObjectNotFoundException when the note does not exist or the user
+   *           cannot view it
+   * @throws WikiException when an error occurs while reading the languages
+   */
+  List<String> getPageAvailableTranslationLanguages(Long pageId,
+                                                    Identity identity,
+                                                    boolean withDrafts) throws ObjectNotFoundException, WikiException;
+
+  /**
    * Retrieves list of available translations languages of a page
    *
    * @param pageId page id
@@ -828,7 +847,7 @@ public interface NoteService {
    *             
    */
   @Deprecated
-  // Use {@link getPageAvailableTranslationLanguages(Long pageId, boolean withDrafts)} instead
+  // Use {@link #getPageAvailableTranslationLanguages(Long, Identity, boolean)} instead
   List<String> getPageAvailableTranslationLanguages(Long pageId, String userId, boolean withDrafts) throws WikiException;
 
   /**
