@@ -142,7 +142,7 @@ export default {
       return this.home?.name === 'Home' && this.noteHomeTitle || this.home.name;
     },
     isSpaceNote() {
-      return this.noteWikiType === 'group';
+      return this.noteWikiType?.toLowerCase?.() === 'group';
     },
     noteHomeTitle() {
       return this.spaceId ? this.$t('notes.label.noteHome') : this.$t('notes.label.myNotes');
