@@ -22,12 +22,13 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "space_arg": "space_id" }
     },
     {
       "name": "get_note",
       "title": "Get a note",
-      "description": "Get a single note by its ID.",
+      "description": "Get a single note by its ID, with its HTML content (html_content). A long note is read part by part: pass offset (0 first) or max_chars; while next_offset is present, call again with offset=next_offset and the version_number the first part gave, so every part comes from the same version.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -38,6 +39,18 @@
           "language": {
             "type": "string",
             "description": "Optional language/translation to read (e.g. 'fr', 'de'); omit for the note's default content. Use get_note_translations to list which languages exist."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Optional first character of the HTML content to read."
+          },
+          "max_chars": {
+            "type": "integer",
+            "description": "Optional part size: default 40000 with offset, max 200000."
+          },
+          "version_number": {
+            "type": "integer",
+            "description": "Optional version to read, from get_note_versions."
           }
         },
         "required": [
@@ -49,7 +62,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language", "offset", "max_chars", "version_number"] }
     },
     {
       "name": "create_space_note",
@@ -87,6 +101,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "space_arg": "space_id", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -158,6 +173,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "parent_note_id", "resolver": "note", "allowed_args": ["title", "summary", "html_content"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -206,6 +222,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["title", "html_content", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -230,6 +247,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -254,6 +272,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -283,12 +302,13 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["target_parent_note_id"], "space_role": "redactor" },
       "require_approval": true
     },
     {
       "name": "search_notes",
       "title": "Search for notes",
-      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook), returning matching notes with their ids. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax.",
+      "description": "Full-text search over the notes the current user can read (space notebooks and their own personal notebook). Compact hits without content: read it with get_note. Use it to find a note id from words in its title or content. A note matches only if it contains ALL the words given (AND), so pass one short phrase of keywords, without boolean syntax. While has_more, call again with offset=next_offset.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -306,7 +326,7 @@
           },
           "limit": {
             "type": "integer",
-            "description": "Optional maximum number of results to return (default 10)."
+            "description": "Optional maximum number of results to return (default 10, max 100)."
           },
           "is_favorites": {
             "type": "boolean",
@@ -322,12 +342,13 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "space_arg": "space_id", "when_absent": "use_scope", "allowed_args": ["query", "offset", "limit"], "false_only_args": ["is_favorites"] }
     },
     {
       "name": "get_note_versions",
       "title": "Get a note's version history",
-      "description": "List the version history of a note: each version's number, id, title, content, date and author. Use restore_note_version to roll back to one.",
+      "description": "List the version history of a note, newest first: each version's version_number, id, title, date and author, without content (get_note with version_number reads it). While has_more, call again with offset=next_offset. Use restore_note_version to roll back to one.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -338,6 +359,14 @@
           "language": {
             "type": "string",
             "description": "Optional note language/translation to target (e.g. 'en', 'fr'); omit for the default note. Use get_note_translations to list which languages exist."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Optional number of versions to skip (default 0)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Optional maximum number of versions to return (default 10, max 100)."
           }
         },
         "required": [
@@ -349,7 +378,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language", "offset", "limit"] }
     },
     {
       "name": "restore_note_version",
@@ -382,12 +412,13 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["version_number", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
       "name": "set_note_cover",
       "title": "Set a note's cover image",
-      "description": "Set a note's cover (featured) image from a public image URL or base64 bytes. The image is wired into the note so it actually renders as the note's illustration.",
+      "description": "Set a note's cover (featured) image from an image (png, jpeg, gif or webp, up to 10 MB). The image comes from exactly one source, in order of choice: an image already attached in the platform (attachment_object_type + attachment_object_id); a public URL that serves it (image_url); an image on your machine, sent with start_upload and its curl command, then passed as upload_id; a small image as image_base64 only when you have no shell. The image is wired into the note so it actually renders as the note's illustration.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -397,19 +428,23 @@
           },
           "image_url": {
             "type": "string",
-            "description": "Direct http(s) URL of an image to use as the cover. Provide exactly one image source."
+            "description": "Direct http(s) URL where the image is publicly served, fetched by the server. Use it only for a URL that really serves the image: never guess or invent one. One image source per call: attachment_object_id, image_url, upload_id or image_base64."
           },
           "image_base64": {
             "type": "string",
-            "description": "Base64-encoded image bytes (png, jpeg, gif or webp), optionally as a data: URI. Provide exactly one image source."
+            "description": "Base64-encoded image bytes (png, jpeg, gif or webp), optionally as a data: URI. Last resort, for a small image when you have no shell to run start_upload's curl command or curl cannot reach the platform: every byte goes through the conversation. One image source per call."
           },
           "attachment_object_type": {
             "type": "string",
-            "description": "Internal: object type of an existing platform attachment to use as the cover (set automatically by the client from the user's attached image — do not fill this yourself). Read as the current user, so its ACL is enforced."
+            "description": "Type of the platform object holding an image already attached in the platform (e.g. 'activity'), read as the current user, so its ACL is enforced. Set automatically by the in-platform assistant from the image the user attached; otherwise set it only to reuse an attachment of an object you can read, never an invented one. Goes with attachment_object_id."
           },
           "attachment_object_id": {
             "type": "string",
-            "description": "Internal: object id of an existing platform attachment to use as the cover (set automatically by the client — do not fill this yourself). Provide exactly one image source: attachment_object_id, image_url or image_base64."
+            "description": "Id of the platform object holding that image (its first attached file is used). The first choice when the image is already in the platform. One image source per call: attachment_object_id, image_url, upload_id or image_base64."
+          },
+          "upload_id": {
+            "type": "string",
+            "description": "The upload_id start_upload returned, once its curl command answered {\"status\":\"uploaded\"}: the way to send an image that is on your machine (png, jpeg, gif or webp, up to 10 MB). Only your own uploads are accepted; this call consumes it. One image source per call."
           },
           "alt_text": {
             "type": "string",
@@ -458,6 +493,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -491,6 +527,7 @@
         "idempotentHint": true,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["summary", "language"], "space_role": "redactor" },
       "require_approval": true
     },
     {
@@ -514,7 +551,8 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
+      },
+      "space_scope": { "object_arg": "note_id", "resolver": "note" }
     },
     {
       "name": "remove_note_translation",
@@ -543,6 +581,7 @@
         "idempotentHint": false,
         "openWorldHint": false
       },
+      "space_scope": { "object_arg": "note_id", "resolver": "note", "allowed_args": ["language"], "space_role": "redactor" },
       "require_approval": true
     }
   ]
