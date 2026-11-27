@@ -1766,9 +1766,8 @@ public class NoteServiceImpl implements NoteService {
     } else {
       note = getNoteByIdAndLang(noteId, lang);
     }
-    // A deleted note, or one the user cannot view, is answered like a missing one
-    if (note == null || note.isDeleted()
-        || (!isDraft && !canViewNote(note, identity == null ? null : identity.getRemoteId()))) {
+    // A deleted note is answered like a missing one
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
     if (versionNumber != null) {
