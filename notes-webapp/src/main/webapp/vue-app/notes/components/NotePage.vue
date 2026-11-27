@@ -881,8 +881,12 @@ export default {
       }).then(() => {
         this.note = {...this.note, categoryIds};
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.menu.label.manageCategories.success')});
-      }).catch(() => {
-        this.$root.$emit('show-alert', {type: 'error', message: this.$t('notes.menu.label.manageCategories.error')});
+      }).catch(async (e) => {
+        console.error('Error while updating the note categories', e);
+        // Keep what has really been saved as the reference state, so that a retry is not refused again
+        this.note = {...this.note, categoryIds: this.$categoryLinkService.getCategoryIdsAfterFailure(this.note.categoryIds || [], e)};
+        const message = await this.$categoryLinkService.getUpdateErrorMessage(e, this.$t.bind(this));
+        this.$root.$emit('show-alert', {type: 'error', message: message || this.$t('notes.menu.label.manageCategories.error')});
       });
     },
     updateNoteTitle(title) {
