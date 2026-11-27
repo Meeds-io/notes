@@ -81,8 +81,6 @@ public class NoteDataStorage {
 
   public static final String     WIKI_FILES_NAMESPACE_NAME = "wiki";
 
-  public static final String     MOVE_DESTINATION_IS_DESCENDANT = "notes.move.destination.isDescendant";
-
   private static final int       MAX_NOTE_TREE_DEPTH = 1000;
 
   private WikiDAO                wikiDAO;
@@ -471,12 +469,12 @@ public class NoteDataStorage {
     PageEntity cursor = destinationPageEntity;
     for (int depth = 0; cursor != null && depth < MAX_NOTE_TREE_DEPTH; depth++) {
       if (cursor.getId() == pageEntity.getId()) {
-        throw new IllegalArgumentException(MOVE_DESTINATION_IS_DESCENDANT);
+        throw new IllegalArgumentException(NoteConstants.MOVE_DESTINATION_IS_DESCENDANT);
       }
       cursor = cursor.getParentPage();
     }
     if (cursor != null) {
-      throw new IllegalArgumentException(MOVE_DESTINATION_IS_DESCENDANT);
+      throw new IllegalArgumentException(NoteConstants.MOVE_DESTINATION_IS_DESCENDANT);
     }
   }
 

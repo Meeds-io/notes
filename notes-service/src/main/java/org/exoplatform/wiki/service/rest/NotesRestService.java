@@ -89,7 +89,6 @@ import org.exoplatform.social.rest.entity.IdentityEntity;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 import org.exoplatform.wiki.WikiException;
-import org.exoplatform.wiki.storage.NoteDataStorage;
 import org.exoplatform.wiki.model.DraftPage;
 import org.exoplatform.wiki.model.Page;
 import org.exoplatform.wiki.model.PageHistory;
@@ -1599,8 +1598,8 @@ public class NotesRestService implements ResourceContainer {
    *         the request
    */
   private static Response moveRefusal(IllegalArgumentException e) {
-    if (NoteDataStorage.MOVE_DESTINATION_IS_DESCENDANT.equals(e.getMessage())) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(NoteDataStorage.MOVE_DESTINATION_IS_DESCENDANT).build();
+    if (NoteConstants.MOVE_DESTINATION_IS_DESCENDANT.equals(e.getMessage())) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(NoteConstants.MOVE_DESTINATION_IS_DESCENDANT).build();
     }
     return Response.status(Response.Status.BAD_REQUEST).build();
   }

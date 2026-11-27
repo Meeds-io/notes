@@ -25,4 +25,7 @@ public interface NoteConstants {
   String NOTE_HOME_OLD_NAME = "homeNote";
 
   String NOTE_HOME_TITLE = "Home";
+
+  /** The message code of a move or reorder under the moved note or one of its descendants. */
+  String MOVE_DESTINATION_IS_DESCENDANT = "notes.move.destination.isDescendant";
 }
