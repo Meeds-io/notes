@@ -2115,7 +2115,7 @@ public class NoteServiceImpl implements NoteService {
     }
     if (StringUtils.isNotBlank(noteReorder.getTargetParentId())) {
       Page targetParent = getNoteById(noteReorder.getTargetParentId());
-      if (targetParent == null || targetParent.isDeleted()) {
+      if (targetParent != null && targetParent.isDeleted()) {
         throw new IllegalArgumentException("Destination parent note not found");
       }
     }
