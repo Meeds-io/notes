@@ -393,12 +393,12 @@
       :has-featured-image="hasFeaturedImage" />
     <note-editor-metadata-drawer
       ref="metadataDrawer"
-      :has-featured-image="hasFeaturedImage"
+      :has-featured-image="storedHasFeaturedImage"
       @metadata-updated="saveMetadata" />
     <note-publication-target-drawer />
     <note-publication-drawer
       ref="publicationDrawer"
-      :has-featured-image="hasFeaturedImage"
+      :has-featured-image="storedHasFeaturedImage"
       :is-publishing="isPublishing"
       :params="{
         spaceId: spaceId,
@@ -463,6 +463,7 @@ export default {
       isDraft: false,
       noteTitle: '',
       noteSummary: '',
+      storedProperties: null,
       spaceMembersUrl: `${eXo.env.portal.context}/g/:spaces:${eXo.env.portal.spaceGroup}/${eXo.env.portal.spaceUrl}/members`,
       childNodes: [],
       exportStatus: '',
@@ -551,6 +552,9 @@ export default {
     },
     noteFeatureImageUpdatedDate() {
       return this.note?.properties?.featuredImage?.lastUpdated || 0;
+    },
+    storedHasFeaturedImage() {
+      return this.storedProperties ? !!this.storedProperties.featuredImage?.id : this.hasFeaturedImage;
     },
     hasFeaturedImage() {
       return !!this.note?.properties?.featuredImage?.id;
@@ -764,7 +768,7 @@ export default {
     this.$root.$on('open-note-treeview', this.openNoteTreeView);
     this.$root.$on('note-export-pdf', this.createPDF);
     this.$root.$on('open-note-history', this.openNoteVersionsHistoryDrawer);
-    this.$root.$on('open-note-properties', () => this.$refs.metadataDrawer.open(this.note));
+    this.$root.$on('open-note-properties', () => this.$refs.metadataDrawer.open(this.storedProperties ? {...this.note, properties: this.storedProperties} : this.note));
     this.$root.$on('open-note-treeview-export', this.openNoteTreeView);
     this.$root.$on('open-note-import-drawer', this.openImportDrawer);
     this.$root.$on('open-publish-drawer', this.openPublishDrawer);
@@ -803,6 +807,7 @@ export default {
       this.isPublishing = true;
       if (note) {
         this.$notesService.updateNoteById(note).then(() => {
+          this.reloadStoredProperties(note.id);
           document.dispatchEvent(new CustomEvent('publish-note', {
             detail: {
               editPublication: false,
@@ -831,8 +836,13 @@ export default {
       this.canSchedule = publicationParams?.canSchedule;
       this.note = Object.assign(this.note, savedSettings);
       this.note.categories = this.note.categoryIds;
+      // A first publish opens, like the Properties drawer, from the note's stored
+      // properties: it saves them, so the displayed version's snapshot must not
+      // reach it. An existing publication keeps this.note, which the merge above
+      // gave the article's properties, and where its edit save reads the toggles.
+      const publicationNote = this.storedProperties && !savedSettings ? {...this.note, properties: structuredClone(this.storedProperties)} : this.note;
       setTimeout(() => {
-        this.$refs.publicationDrawer.open(this.note);
+        this.$refs.publicationDrawer.open(publicationNote);
       },200);
     },
     closeMobileActionMenu() {
@@ -1035,6 +1045,7 @@ export default {
     },
     getNoteById(noteId, source, viewNote) {
       return this.$notesService.getNoteById(noteId,this.targetLang, source, this.noteBookType, this.noteBookOwner).then(data => {
+        this.storeProperties(data?.properties);
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
@@ -1069,6 +1080,7 @@ export default {
     },
     getNoteByName(noteName, source, viewNote) {
       return this.$notesService.getNote(this.noteBookType, this.noteBookOwner, noteName, source, this.targetLang).then(data => {
+        this.storeProperties(data?.properties);
         this.note = data || {};
         this.isDraft = data.draftPage;
         this.loadData = true;
@@ -1092,6 +1104,7 @@ export default {
     },
     getDraftNote(noteId) {
       return this.$notesService.getDraftNoteById(noteId,this.selectedTranslation.value).then(data => {
+        this.storeProperties(data?.properties);
         this.note = {};
         this.note = data || {};
         this.isDraft = true;
@@ -1190,11 +1203,46 @@ export default {
         }
       });
     },
+    storeProperties(properties) {
+      // the note's own stored metadata, which a version snapshot may be behind
+      this.storedProperties = properties ? structuredClone(properties) : null;
+    },
+    propertiesLang() {
+      return this.note?.lang || this.selectedTranslation?.value || '';
+    },
+    reloadStoredProperties(noteId) {
+      // After a save that wrote the properties, the stored state is what the server
+      // holds, not the request: an uploaded cover gets its file id there, and a
+      // removed one is gone. The save's response may echo the request instead.
+      // read in the language the next Properties save writes to, the original
+      // version included, and drop an answer for a language switched meanwhile
+      const lang = this.propertiesLang();
+      return this.$notesService.getNoteById(noteId, lang, '', this.noteBookType, this.noteBookOwner).then(data => {
+        if (String(this.note?.id) !== String(noteId) || this.propertiesLang() !== lang) {
+          return;
+        }
+        this.storeProperties(data?.properties);
+        if (this.actualVersion) {
+          this.displayVersion(this.actualVersion);
+        }
+      }).catch(e => console.error('Error when reloading the note properties', e));
+    },
     displayVersion(version) {
+      const latest = version?.versionNumber != null && version.versionNumber === this.noteVersions[0]?.versionNumber;
       this.actualVersion = version;
       this.actualVersion.current = true;
       this.note.content = version?.content;
       this.note.title = version?.title;
+      if (latest && this.storedProperties) {
+        // The newest version, opened on load or from the history, is the note as
+        // stored: its summary, cover and flags come from the note's own
+        // properties, never from the version snapshot, which a Properties save
+        // does not update and which would be written back.
+        this.note.properties = structuredClone(this.storedProperties);
+        this.noteSummary = this.note.properties.summary;
+        this.noteTitle = version?.title;
+        return;
+      }
       // The summary and featured image (cover) are metadata stored per
       // note/translation, not per content version, so a version's properties may
       // not carry them. Preserve the note's current metadata (already resolved for
@@ -1229,6 +1277,11 @@ export default {
         this.note.properties = version.properties;
       }
       this.$notesService.restoreNoteVersion(note,version.versionNumber)
+        .then(() => {
+          if (version.properties) {
+            this.storeProperties(version.properties);
+          }
+        })
         .catch(e => {
           console.error('Error when restore note version', e);
           this.$root.$emit('version-restore-error');
@@ -1334,6 +1387,7 @@ export default {
           this.note.latestVersionId = note.latestVersionId;
           this.noteTitle = !this.note.parentPageId && this.note.title==='Home' ? this.noteHomeTitle : this.note.title;
           this.note.properties = note?.properties;
+          this.storeProperties(note?.properties);
           this.noteSummary = note?.properties?.summary;
         }
         this.updateURL();
@@ -1348,9 +1402,10 @@ export default {
       if (!properties) {
         return;
       }
-      const lang = this.note.lang || this.selectedTranslation?.value || '';
+      const lang = this.propertiesLang();
       this.$notesService.saveNoteMetadata(properties, lang).then(savedProperties => {
         this.note.properties = savedProperties;
+        this.storeProperties(savedProperties);
         this.noteSummary = savedProperties?.summary;
         this.$root.$emit('show-alert', {type: 'success', message: this.$t('notes.alert.success.label.propertiesUpdated')});
       }).catch(e => {
@@ -1373,6 +1428,8 @@ export default {
       const {editPublication, isPublishSchedule, link} = event.detail;
       this.isPublishing = false;
       this.$refs.publicationDrawer.close();
+      // the publication wrote the note's properties, its hide flags included
+      this.reloadStoredProperties(this.note.id);
       document.dispatchEvent(new CustomEvent('alert-message-html', {detail: {
         alertType: 'success',
         alertMessage: isPublishSchedule && this.$t('notes.schedule.success.message')
