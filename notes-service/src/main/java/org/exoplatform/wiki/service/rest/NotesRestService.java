@@ -366,21 +366,26 @@ public class NotesRestService implements ResourceContainer {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "400", description = "Invalid query input"),
+          @ApiResponse(responseCode = "404", description = "Note not found or not viewable by the user"),
           @ApiResponse(responseCode = "500", description = "Server internal error") })
   public Response getPageAvailableTranslationLanguages(@Parameter(description = "Note id", required = true)
   @PathParam("noteId")
   Long noteId, @QueryParam("withDrafts")
   Boolean withDrafts) {
     if (noteId == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("New document title is mandatory").build();
+      return Response.status(Response.Status.BAD_REQUEST).entity("Note id is mandatory").cacheControl(cc).build();
     }
     try {
+      Identity identity = ConversationState.getCurrent().getIdentity();
       List<String> languages = noteService.getPageAvailableTranslationLanguages(noteId,
+                                                                                identity,
                                                                                 Boolean.TRUE.equals(withDrafts));
-      return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).build();
+      return Response.ok(languages).type(MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
+    } catch (ObjectNotFoundException e) {
+      return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
     } catch (Exception e) {
      LOG.error("Error while getting available translation languages of the page with id : {}", noteId, e);
-     return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+     return Response.status(Response.Status.INTERNAL_SERVER_ERROR).cacheControl(cc).build();
     }
   }
 
