@@ -2556,10 +2556,15 @@ public class TestNoteService extends BaseTest {
     Long noteId = Long.valueOf(note.getId());
     String sourceParentId = noteService.getNoteById(note.getId()).getParentPageId();
 
-    // The owner gets the illustration info (none set), and so does a user who is not a viewer of the
-    // notebook: an article's readers get its image through the same endpoint
-    assertNull(noteService.getNoteFeaturedImageInfo(noteId, null, false, null, rootIdentityId, null));
-    assertNull(noteService.getNoteFeaturedImageInfo(noteId, null, false, null, maryIdentityId, null));
+    // The owner gets the illustration, and so does a user who is not a viewer of the notebook: an
+    // article's readers get its image through the same endpoint
+    this.bindMockedUploadService();
+    noteService.saveNoteMetadata(createNotePageProperties(noteId, "alt text", "summary"), null, rootIdentityId);
+    NoteFeaturedImage ownerImage = noteService.getNoteFeaturedImageInfo(noteId, null, false, null, rootIdentityId, null);
+    assertNotNull(ownerImage);
+    NoteFeaturedImage readerImage = noteService.getNoteFeaturedImageInfo(noteId, null, false, null, maryIdentityId, null);
+    assertNotNull(readerImage);
+    assertEquals(ownerImage.getId(), readerImage.getId());
 
     // A reorder that moves the note under a deleted note is refused, and the note stays where it was
     assertTrue(noteService.deleteNote(PortalConfig.USER_TYPE, "root", parent.getName()));
