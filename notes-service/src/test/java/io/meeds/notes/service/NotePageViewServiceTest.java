@@ -20,7 +20,12 @@ package io.meeds.notes.service;
 
 import static org.junit.Assert.assertThrows;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -44,6 +49,8 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 import org.exoplatform.social.attachment.AttachmentService;
 import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.social.metadata.model.MetadataItem;
@@ -351,17 +358,36 @@ public class NotePageViewServiceTest extends BaseTest { // NOSONAR
     noteService.saveNoteMetadata(new NotePageProperties(pageId, "default summary", null, false, false, false),
                                  null,
                                  userIdentityId);
-    NoteFeaturedImage frCover = new NoteFeaturedImage(4242L, "image/png", null, "fr cover", 0L, false);
-    noteService.saveNoteMetadata(new NotePageProperties(pageId, "fr summary", frCover, false, false, false),
-                                 "fr",
-                                 userIdentityId);
+    // the cover is the translation's own: a note keeps only a cover it holds, so
+    // it is written through an upload rather than pointed at by an id
+    NoteFeaturedImage frCover = new NoteFeaturedImage(0L, "image/png", "123", "fr cover", 0L, false);
+    UploadService uploadService = mock(UploadService.class);
+    UploadResource uploadResource = mock(UploadResource.class);
+    when(uploadResource.getStatus()).thenReturn(UploadResource.UPLOADED_STATUS);
+    when(uploadResource.getStoreLocation()).thenReturn(getClass().getResource("/images/John.png").getPath());
+    when(uploadService.getUploadResource(anyString())).thenReturn(uploadResource);
+    Field uploadServiceField = noteService.getClass().getDeclaredField("uploadService");
+    uploadServiceField.setAccessible(true);
+    Object originalUploadService = uploadServiceField.get(noteService);
+    long frCoverId;
+    try {
+      uploadServiceField.set(noteService, uploadService);
+      frCoverId = noteService.saveNoteMetadata(new NotePageProperties(pageId, "fr summary", frCover, false, false, false),
+                                               "fr",
+                                               userIdentityId)
+                             .getFeaturedImage()
+                             .getId();
+    } finally {
+      uploadServiceField.set(noteService, originalUploadService);
+    }
+    assertTrue(frCoverId > 0);
 
     notePageViewService.saveNotePage(pageNoteName, "fr content 2", "fr", administrator);
 
     Page frPage = noteService.getNoteByIdAndLang(pageId, "fr");
     assertEquals("fr content 2", frPage.getContent());
     assertEquals("fr summary", frPage.getProperties().getSummary());
-    assertEquals(4242L, frPage.getProperties().getFeaturedImage().getId().longValue());
+    assertEquals(frCoverId, frPage.getProperties().getFeaturedImage().getId().longValue());
     Page defaultPage = noteService.getNoteByIdAndLang(pageId, null);
     assertEquals("default content", defaultPage.getContent());
     assertEquals("default summary", defaultPage.getProperties().getSummary());
