@@ -2526,6 +2526,26 @@ public class TestNoteService extends BaseTest {
     return draftIds;
   }
 
+  public void testADeletedNoteGivesNoTranslationRight() throws Exception {
+    startSessionAs("root");
+    Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);
+    Page note = noteService.createNote(portalWiki, "Home", new Page("translatedDeletedNote", "translatedDeletedNote"), ROOT_IDENTITY);
+    note.setLang("fr");
+    noteService.createVersionOfNote(note, "root");
+    Long noteId = Long.valueOf(note.getId());
+    assertEquals(List.of("fr"), noteService.getPageAvailableTranslationLanguages(noteId, ROOT_IDENTITY, false));
+
+    assertTrue(noteService.deleteNote(PortalConfig.PORTAL_TYPE, PORTAL_NAME, note.getName()));
+
+    // The author, who could view and edit the note, gets neither its languages nor a translation delete
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getPageAvailableTranslationLanguages(noteId, ROOT_IDENTITY, false));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getPageAvailableTranslationLanguages(noteId, ROOT_IDENTITY, true));
+    assertThrows(ObjectNotFoundException.class, () -> noteService.deleteTranslation(noteId, "fr", ROOT_IDENTITY));
+    assertTrue(noteService.getPageAvailableTranslationLanguages(noteId, false).contains("fr"));
+  }
+
   public void testADeletedNoteIsNeitherExportedNorEdited() throws Exception {
     startSessionAs("root");
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);

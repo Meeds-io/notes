@@ -1582,8 +1582,8 @@ public class NoteServiceImpl implements NoteService {
                                                            Identity identity,
                                                            boolean withDrafts) throws ObjectNotFoundException, WikiException {
     Page note = pageId == null ? null : getNoteById(String.valueOf(pageId));
-    if (note == null || !canViewNote(note, identity.getUserId())) {
-      // A note the user cannot view is answered like a missing one
+    if (note == null || note.isDeleted() || !canViewNote(note, identity.getUserId())) {
+      // A deleted note, or one the user cannot view, is answered like a missing one
       throw new ObjectNotFoundException("note not found");
     }
     return getPageAvailableTranslationLanguages(pageId, withDrafts && canEditNote(note, identity.getUserId()));
@@ -1681,7 +1681,7 @@ public class NoteServiceImpl implements NoteService {
       // A note the user cannot view is answered as a missing one
       throw new ObjectNotFoundException("note not found");
     }
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("note not found");
     }
     if (!note.isCanManage()) {
