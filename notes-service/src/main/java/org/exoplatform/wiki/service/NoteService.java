@@ -181,7 +181,10 @@ public interface NoteService {
    * @return "True" if moving the note is successful, or "false" if not.
    * @throws WikiException if an error occured
    * @throws IllegalAccessException if the user don't have edit rights on the
-   *           note
+   *           note, or may not edit its notebook or the destination notebook
+   * @throws IllegalArgumentException with message
+   *           "notes.move.destination.isDescendant" if the destination is the
+   *           note itself or one of its descendants
    * @throws EntityNotFoundException if the the note to move don't exist
    */
   boolean moveNote(WikiPageParams currentLocationParams,
@@ -1056,6 +1059,13 @@ public interface NoteService {
   /**
    * @param noteReorder the payload object encapsulating the reordering details.
    * @param userIdentity user Identity
+   * @throws IllegalAccessException if the user may not edit the note or its
+   *           notebook, may not edit the destination notebook, or its target
+   *           id list, or its source id list when the note changes parent,
+   *           holds notes of a notebook the user may not edit
+   * @throws IllegalArgumentException with message
+   *           "notes.move.destination.isDescendant" if the new parent is the
+   *           note itself or one of its descendants
    */
   default void updateNotesPosition(NoteReorder noteReorder, Identity userIdentity) throws IllegalAccessException {
     throw new UnsupportedOperationException();

@@ -31,7 +31,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.Set;
 
 import io.meeds.notes.rest.model.NoteReorder;
@@ -77,6 +80,8 @@ public class NoteDataStorage {
   public static final String     WIKI_TYPE_DRAFT           = "draft";
 
   public static final String     WIKI_FILES_NAMESPACE_NAME = "wiki";
+
+  private static final int       MAX_NOTE_TREE_DEPTH = 1000;
 
   private WikiDAO                wikiDAO;
 
@@ -376,6 +381,43 @@ public class NoteDataStorage {
 
   @ExoTransactional
   public void movePage(WikiPageParams currentLocationParams, WikiPageParams newLocationParams) throws WikiException {
+    try {
+      doMovePage(currentLocationParams, newLocationParams, null);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * Moves a page under a destination page, checking in the same transaction
+   * that the destination is neither the page itself nor one of its descendants
+   * and that the wiki of the page and the destination wiki are ones the caller
+   * accepts (checked once per wiki).
+   *
+   * @param currentLocationParams location of the page to move
+   * @param newLocationParams location of the destination page
+   * @param wikiCheck accepts a wiki (type, owner) the caller may
+   *          edit, or null to accept any
+   * @throws IllegalAccessException when the wiki of the page or the destination
+   *           wiki is not accepted
+   * @throws IllegalArgumentException when the destination is the page or one of
+   *           its descendants
+   */
+  // @ExoTransactional opens (or joins) the JPA transaction the checks and the
+  // writes share; it commits even when the method throws, so every check runs
+  // before the first write. It is the deprecated annotation because every
+  // write of this storage runs under it: EXO-95582 moves the whole class to
+  // @ContainerTransactional, so that its methods keep one transaction behaviour
+  @ExoTransactional
+  public void movePage(WikiPageParams currentLocationParams,
+                       WikiPageParams newLocationParams,
+                       BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
+    doMovePage(currentLocationParams, newLocationParams, wikiCheck);
+  }
+
+  private void doMovePage(WikiPageParams currentLocationParams,
+                          WikiPageParams newLocationParams,
+                          BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
     PageEntity pageEntity = pageDAO.getPageOfWikiByName(currentLocationParams.getType(),
                                                         currentLocationParams.getOwner(),
                                                         currentLocationParams.getPageName());
@@ -392,6 +434,11 @@ public class NoteDataStorage {
           ":" + currentLocationParams.getPageName() + " to page " + newLocationParams.getType() + ":" +
           newLocationParams.getOwner() + ":" + newLocationParams.getPageName() + " because destination page does not exist.");
     }
+
+    BiPredicate<String, String> checkOnce = oncePerWiki(wikiCheck);
+    // the right to edit one note is not the right to take it out of its notebook
+    checkWikiAllowed(pageEntity.getWiki(), checkOnce);
+    checkDestination(pageEntity, destinationPageEntity, checkOnce);
 
     // save the move in the page moves history
     List<PageMoveEntity> pageMoves = pageEntity.getMoves();
@@ -413,6 +460,37 @@ public class NoteDataStorage {
     pageEntity.setMoves(pageMoves);
 
     pageDAO.update(pageEntity);
+  }
+
+  private void checkDestination(PageEntity pageEntity,
+                                PageEntity destinationPageEntity,
+                                BiPredicate<String, String> destinationWikiCheck) throws IllegalAccessException {
+    checkWikiAllowed(destinationPageEntity.getWiki(), destinationWikiCheck);
+    PageEntity cursor = destinationPageEntity;
+    for (int depth = 0; cursor != null && depth < MAX_NOTE_TREE_DEPTH; depth++) {
+      if (cursor.getId() == pageEntity.getId()) {
+        throw new IllegalArgumentException(NoteConstants.MOVE_DESTINATION_IS_DESCENDANT);
+      }
+      cursor = cursor.getParentPage();
+    }
+    if (cursor != null) {
+      throw new IllegalArgumentException(NoteConstants.MOVE_DESTINATION_IS_DESCENDANT);
+    }
+  }
+
+  private void checkWikiAllowed(WikiEntity wiki,
+                                BiPredicate<String, String> wikiCheck) throws IllegalAccessException {
+    if (wikiCheck != null && wiki != null && !wikiCheck.test(wiki.getType(), wiki.getOwner())) {
+      throw new IllegalAccessException("User does not have edit the note.");
+    }
+  }
+
+  private static BiPredicate<String, String> oncePerWiki(BiPredicate<String, String> wikiCheck) {
+    if (wikiCheck == null) {
+      return null;
+    }
+    Map<String, Boolean> results = new HashMap<>();
+    return (type, owner) -> results.computeIfAbsent(type + ":" + owner, key -> wikiCheck.test(type, owner));
   }
 
   /**
@@ -999,8 +1077,33 @@ public class NoteDataStorage {
     return convertDraftPageEntitiesToDraftPages(draftPageEntities);
   }
 
+  /**
+   * Moves and reorders notes, checking in the same transaction that the
+   * destination is neither the note itself nor one of its descendants and that
+   * every wiki touched by the request, the one of the moved note included, is
+   * one the caller accepts (checked once per wiki).
+   *
+   * @param noteReorder the reorder request
+   * @param wikiCheck accepts a wiki (type, owner) the caller may edit, or null
+   *          to accept any
+   * @throws IllegalAccessException when a note of the request lives in a wiki
+   *           that is not accepted
+   * @throws IllegalArgumentException when the destination is the note or one of
+   *           its descendants
+   */
+  // @ExoTransactional opens (or joins) the JPA transaction the checks and the
+  // writes share; it commits even when the method throws, so every check runs
+  // before the first write. It is the deprecated annotation because every
+  // write of this storage runs under it: EXO-95582 moves the whole class to
+  // @ContainerTransactional, so that its methods keep one transaction behaviour
   @ExoTransactional
-  public void updateNotesPosition(NoteReorder noteReorder) throws WikiException {
+  public void updateNotesPosition(NoteReorder noteReorder,
+                                  BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
+    doUpdateNotesPosition(noteReorder, wikiCheck);
+  }
+
+  private void doUpdateNotesPosition(NoteReorder noteReorder,
+                                     BiPredicate<String, String> wikiCheck) throws WikiException, IllegalAccessException {
     PageEntity pageToMove = pageDAO.find(Long.valueOf(noteReorder.getPageId()));
 
     if (pageToMove == null) {
@@ -1009,6 +1112,13 @@ public class NoteDataStorage {
     boolean isCrossFolderMove = noteReorder.getSourceParentId() != null
         && !noteReorder.getSourceParentId().equals(noteReorder.getTargetParentId());
 
+    BiPredicate<String, String> checkOnce = oncePerWiki(wikiCheck);
+    // the right to edit one note is not the right to reorder or move it in its notebook
+    checkWikiAllowed(pageToMove.getWiki(), checkOnce);
+    checkOrderedIdsWikis(noteReorder.getTargetOrderedIds(), checkOnce);
+    if (isCrossFolderMove) {
+      checkOrderedIdsWikis(noteReorder.getSourceOrderedIds(), checkOnce);
+    }
     if (isCrossFolderMove) {
       PageEntity destinationParentEntity = null;
       if (noteReorder.getTargetParentId() != null && !noteReorder.getTargetParentId().isEmpty()) {
@@ -1016,6 +1126,7 @@ public class NoteDataStorage {
         if (destinationParentEntity == null) {
           throw new WikiException("Destination parent page does not exist.");
         }
+        checkDestination(pageToMove, destinationParentEntity, checkOnce);
       }
       List<PageMoveEntity> pageMoves = pageToMove.getMoves();
       if (pageMoves == null) {
@@ -1053,6 +1164,18 @@ public class NoteDataStorage {
         if (pageToUpdate != null) {
           pageToUpdate.setPosition(position++);
           pageDAO.update(pageToUpdate);
+        }
+      }
+    }
+  }
+
+  private void checkOrderedIdsWikis(List<String> ids,
+                                    BiPredicate<String, String> wikiCheck) throws IllegalAccessException {
+    if (ids != null) {
+      for (String id : ids) {
+        PageEntity pageToUpdate = pageDAO.find(Long.valueOf(id));
+        if (pageToUpdate != null) {
+          checkWikiAllowed(pageToUpdate.getWiki(), wikiCheck);
         }
       }
     }
