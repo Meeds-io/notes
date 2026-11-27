@@ -21,10 +21,11 @@
 <template>
   <div
     v-if="hoverEdit"
-    :class="{
+    :class="!offset && {
       'r-0': !$vuetify.rtl,
       'l-0': $vuetify.rtl,
     }"
+    :style="offset && `inset-inline-end: ${offset}px`"
     class="position-absolute z-index-two t-0 d-flex align-center">
     <v-menu
       v-model="menu"
@@ -93,6 +94,11 @@ export default {
     loading: {
       type: Boolean,
       default: false,
+    },
+    // The width the settings and hide buttons take before the top end
+    offset: {
+      type: Number,
+      default: 0,
     },
   },
   data: () => ({

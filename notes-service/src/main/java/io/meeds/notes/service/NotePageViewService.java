@@ -32,6 +32,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.pom.data.PageKey;
 import org.exoplatform.services.log.ExoLogger;
@@ -52,6 +53,7 @@ import org.exoplatform.wiki.service.plugin.WikiPageAttachmentPlugin;
 import io.meeds.notes.model.NotePageData;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
+import io.meeds.social.hidden.service.HiddenApplicationService;
 
 import lombok.SneakyThrows;
 
@@ -70,6 +72,10 @@ public class NotePageViewService {
   private WikiService          noteBookService;
 
   private CMSService           cmsService;
+
+  // Social's Spring service, looked up at first use: this Kernel component
+  // starts before the Spring contexts
+  private HiddenApplicationService hiddenApplicationService;
 
   private AttachmentService    attachmentService;
 
@@ -93,6 +99,47 @@ public class NotePageViewService {
     this.identityManager = identityManager;
     this.userACL = userACL;
     this.localeConfigService = localeConfigService;
+  }
+
+  /**
+   * Stores whether each user may hide the block of content from its page.
+   * Turning it off shows the block again to every user who hid it.
+   *
+   * @param name block setting name
+   * @param allowed whether the block allows hiding
+   * @param currentUserAclIdentity user saving the option
+   * @throws ObjectNotFoundException when the block doesn't exist
+   * @throws IllegalAccessException when the user can't edit the block
+   */
+  public void saveHideAllowed(String name,
+                              boolean allowed,
+                              Identity currentUserAclIdentity) throws ObjectNotFoundException, IllegalAccessException {
+    if (!cmsService.isSettingNameExists(CMS_CONTENT_TYPE, name)) {
+      throw new ObjectNotFoundException(String.format("Block of content %s doesn't exist", name));
+    } else if (!cmsService.hasEditPermission(currentUserAclIdentity, CMS_CONTENT_TYPE, name)) {
+      throw new IllegalAccessException(String.format("User %s can't edit the block of content %s",
+                                                     currentUserAclIdentity == null ? IdentityConstants.ANONIM :
+                                                                                    currentUserAclIdentity.getUserId(),
+                                                     name));
+    }
+    getHiddenApplicationService().setHideAllowed(CMS_CONTENT_TYPE, name, allowed);
+  }
+
+  /**
+   * @param name block setting name
+   * @return true when each user may hide the block from its page
+   */
+  public boolean isHideAllowed(String name) {
+    return getHiddenApplicationService().isHideAllowed(CMS_CONTENT_TYPE, name);
+  }
+
+  /**
+   * @param name block setting name
+   * @param username user reading the block
+   * @return true when the block allows hiding and the user hid it
+   */
+  public boolean isHidden(String name, String username) {
+    return isHideAllowed(name) && getHiddenApplicationService().isHidden(CMS_CONTENT_TYPE, name, username);
   }
 
   public Page getNotePage(String name, String lang, Identity currentUserAclIdentity) throws IllegalAccessException {
@@ -558,6 +605,13 @@ public class NotePageViewService {
 
   private long getSuperUserIdentityId() {
     return Long.parseLong(identityManager.getOrCreateUserIdentity(userACL.getSuperUser()).getId());
+  }
+
+  protected HiddenApplicationService getHiddenApplicationService() {
+    if (hiddenApplicationService == null) {
+      hiddenApplicationService = ExoContainerContext.getService(HiddenApplicationService.class);
+    }
+    return hiddenApplicationService;
   }
 
 }

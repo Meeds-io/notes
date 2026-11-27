@@ -58,3 +58,14 @@ export function saveNotePage(name, content, lang) {
     }
   });
 }
+
+export function saveHideAllowed(name, allowed) {
+  return fetch(`/notes/rest/note-page-view/${encodeURIComponent(name)}/allow-hide?allowed=${!!allowed}`, {
+    method: 'PUT',
+    credentials: 'include',
+  }).then((resp) => {
+    if (!resp?.ok) {
+      throw new Error('Error saving whether the block of content may be hidden');
+    }
+  });
+}

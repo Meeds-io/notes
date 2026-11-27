@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.portlet.PortletPreferences;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -56,6 +58,13 @@ public class NotePageViewPortlet extends CMSPortlet {
         dataInitLock.unlock();
       }
     }
+  }
+
+  @Override
+  protected void setViewRequestAttributes(String name, RenderRequest request, RenderResponse response) {
+    boolean allowHide = getNotePageViewService().isHideAllowed(name);
+    request.setAttribute("allowHide", allowHide);
+    request.setAttribute("hidden", allowHide && getNotePageViewService().isHidden(name, request.getRemoteUser()));
   }
 
   private static NotePageViewService getNotePageViewService() {
