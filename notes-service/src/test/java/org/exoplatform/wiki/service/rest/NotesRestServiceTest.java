@@ -101,6 +101,7 @@ import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
+import io.meeds.notes.rest.model.NoteReorder;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
 
@@ -1214,5 +1215,11 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     draft.setParentPageId("12");
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
     verify(noteBookService, never()).getWikiByTypeAndOwner(anyString(), anyString());
+
+    // a reorder of a missing or deleted note
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId("12");
+    doThrow(new EntityNotFoundException("Note to update not found")).when(noteService).updateNotesPosition(eq(reorder), any());
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.reorderNotes(reorder).getStatus());
   }
 }

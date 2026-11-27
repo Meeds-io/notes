@@ -2571,6 +2571,11 @@ public class TestNoteService extends BaseTest {
     underDeletedParent.setTargetParentId(parent.getId());
     assertThrows(IllegalArgumentException.class, () -> noteService.updateNotesPosition(underDeletedParent, ROOT_IDENTITY));
     assertEquals(sourceParentId, noteService.getNoteById(note.getId()).getParentPageId());
+    NoteReorder amongDeletedSiblings = new NoteReorder();
+    amongDeletedSiblings.setPageId(note.getId());
+    amongDeletedSiblings.setSourceParentId(parent.getId());
+    amongDeletedSiblings.setTargetParentId(parent.getId());
+    assertThrows(IllegalArgumentException.class, () -> noteService.updateNotesPosition(amongDeletedSiblings, ROOT_IDENTITY));
 
     // Once deleted, the note gives its owner neither its illustration info nor a reorder
     assertTrue(noteService.deleteNote(PortalConfig.USER_TYPE, "root", note.getName()));

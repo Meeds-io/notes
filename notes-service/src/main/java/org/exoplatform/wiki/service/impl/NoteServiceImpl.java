@@ -2113,8 +2113,7 @@ public class NoteServiceImpl implements NoteService {
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
     }
-    if (StringUtils.isNotBlank(noteReorder.getTargetParentId())
-        && !StringUtils.equals(noteReorder.getSourceParentId(), noteReorder.getTargetParentId())) {
+    if (StringUtils.isNotBlank(noteReorder.getTargetParentId())) {
       Page targetParent = getNoteById(noteReorder.getTargetParentId());
       if (targetParent == null || targetParent.isDeleted()) {
         throw new IllegalArgumentException("Destination parent note not found");

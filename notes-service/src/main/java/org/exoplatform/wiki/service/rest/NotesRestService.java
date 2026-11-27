@@ -1606,6 +1606,8 @@ public class NotesRestService implements ResourceContainer {
     try {
       noteService.updateNotesPosition(request, ConversationState.getCurrent().getIdentity());
       return Response.ok().build();
+    } catch (EntityNotFoundException e) {
+      return Response.status(Response.Status.NOT_FOUND).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.BAD_REQUEST).build();
     } catch (IllegalAccessException e) {
