@@ -24,8 +24,8 @@ for (const index in objects) {
     notesService.saveDraftNote(draftNote)
       .then(() => localStorage.removeItem(objects[index]))
       .catch(error => {
-        // Refused for good: the user can no longer edit the note (403), or view it or its parent (404)
-        if (error?.status === 403 || error?.status === 404) {
+        // Refused for good: its note is deleted (400), the user can no longer edit the note (403), or view it or its parent (404)
+        if (error?.status === 400 || error?.status === 403 || error?.status === 404) {
           localStorage.removeItem(objects[index]);
         }
       });

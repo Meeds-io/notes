@@ -179,7 +179,7 @@ import io.meeds.notes.model.NotePageProperties;
         for (String noteId : notesToExportIds) {
           try {
             Page note = noteService.getNoteById(noteId, identity);
-            if (note == null) {
+            if (note == null || note.isDeleted()) {
               log.warn("Failed to export note {}: note not find ", noteId);
               continue;
             }
@@ -220,7 +220,7 @@ import io.meeds.notes.model.NotePageProperties;
           Page note;
           try {
             note = noteService.getNoteById(noteId, identity);
-            if (note == null) {
+            if (note == null || note.isDeleted()) {
               log.warn("Failed to export note {}: note not find ", noteId);
               continue;
             }

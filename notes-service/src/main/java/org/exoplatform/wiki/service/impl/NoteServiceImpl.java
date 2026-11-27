@@ -53,6 +53,7 @@ import org.exoplatform.commons.utils.PageList;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.pom.data.PageKey;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -103,6 +104,7 @@ import io.meeds.notes.model.NoteMetadataObject;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.plugin.NoteContentLinkPlugin;
 import io.meeds.notes.service.NotePageViewService;
+import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.html.model.HtmlProcessorContext;
 import io.meeds.social.html.utils.HtmlUtils;
@@ -696,7 +698,7 @@ public class NoteServiceImpl implements NoteService {
       return canEditNote(page, username);
     } else if (TC_NOTE_TYPE.equals(wikiType) && TC_NOTE_NAME.equals(page.getName())) {
       return true;
-    } else if ((StringUtils.equals(pageOwner, IdentityConstants.SYSTEM) || StringUtils.isBlank(pageOwner))
+    } else if (isCmsNote(page)
                && cmsService.hasAccessPermission(Utils.getIdentity(username),
                                                  NotePageViewService.CMS_CONTENT_TYPE,
                                                  page.getName())) {
@@ -726,7 +728,7 @@ public class NoteServiceImpl implements NoteService {
       return true;
     } else if (page.isDraftPage()) {
       return page.getParent() == null && StringUtils.equals(username, page.getAuthor());
-    } else if ((StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) || StringUtils.isBlank(page.getOwner()))
+    } else if (isCmsNote(page)
                && cmsService.hasEditPermission(Utils.getIdentity(username),
                                                NotePageViewService.CMS_CONTENT_TYPE,
                                                page.getName())) {
@@ -737,6 +739,36 @@ public class NoteServiceImpl implements NoteService {
     } else {
       return false;
     }
+  }
+
+  /**
+   * Checks whether a note is ruled by the CMS content type: a note owned by
+   * the system or without owner that holds a page's content, meaning a CMS
+   * setting of its notebook is named after it. The other ones, a Home note
+   * included, follow the rules of their notebook. The terms and conditions
+   * note is the only one ruled without such a setting.
+   */
+  private boolean isCmsNote(Page page) {
+    if (!StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM) && StringUtils.isNotBlank(page.getOwner())) {
+      return false;
+    }
+    if (isTermsAndConditionsNote(page)) {
+      return true;
+    }
+    CMSSetting setting = cmsService.getSetting(NotePageViewService.CMS_CONTENT_TYPE, page.getName());
+    if (setting == null) {
+      return false;
+    }
+    PageKey notebookKey = PageKey.create(setting.getPageReference());
+    String wikiType = StringUtils.isBlank(page.getWikiType()) ? WikiType.GROUP.name() : page.getWikiType();
+    return StringUtils.equalsIgnoreCase(wikiType, notebookKey.getType())
+           && StringUtils.equals(notebookKey.getId(), page.getWikiOwner());
+  }
+
+  private boolean isTermsAndConditionsNote(Page page) {
+    return TC_NOTE_TYPE.equals(page.getWikiType())
+           && StringUtils.equals(page.getOwner(), IdentityConstants.SYSTEM)
+           && TC_NOTE_NAME.equals(page.getName());
   }
 
   /**
@@ -1550,8 +1582,8 @@ public class NoteServiceImpl implements NoteService {
                                                            Identity identity,
                                                            boolean withDrafts) throws ObjectNotFoundException, WikiException {
     Page note = pageId == null ? null : getNoteById(String.valueOf(pageId));
-    if (note == null || !canViewNote(note, identity.getUserId())) {
-      // A note the user cannot view is answered like a missing one
+    if (note == null || note.isDeleted() || !canViewNote(note, identity.getUserId())) {
+      // A deleted note, or one the user cannot view, is answered like a missing one
       throw new ObjectNotFoundException("note not found");
     }
     return getPageAvailableTranslationLanguages(pageId, withDrafts && canEditNote(note, identity.getUserId()));
@@ -1649,7 +1681,7 @@ public class NoteServiceImpl implements NoteService {
       // A note the user cannot view is answered as a missing one
       throw new ObjectNotFoundException("note not found");
     }
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("note not found");
     }
     if (!note.isCanManage()) {
@@ -1734,7 +1766,8 @@ public class NoteServiceImpl implements NoteService {
     } else {
       note = getNoteByIdAndLang(noteId, lang);
     }
-    if (note == null) {
+    // A deleted note is answered like a missing one
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
     if (versionNumber != null) {
@@ -1952,7 +1985,7 @@ public class NoteServiceImpl implements NoteService {
     String noteId = String.valueOf(pageProperties.getNoteId());
     Page note = pageProperties.isDraft() ? getDraftNoteById(noteId, userIdentity.getUserId())
                                         : getNoteById(noteId, userIdentity);
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       throw new ObjectNotFoundException("note not found");
     }
     if (!note.isCanManage()) {
@@ -2074,10 +2107,16 @@ public class NoteServiceImpl implements NoteService {
 
   public void updateNotesPosition(NoteReorder noteReorder, Identity userIdentity) throws IllegalAccessException {
     Page existingNote = getNoteById(noteReorder.getPageId());
-    if (existingNote == null) {
+    if (existingNote == null || existingNote.isDeleted()) {
       throw new EntityNotFoundException("Note to update not found");
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
+    }
+    if (StringUtils.isNotBlank(noteReorder.getTargetParentId())) {
+      Page targetParent = getNoteById(noteReorder.getTargetParentId());
+      if (targetParent != null && targetParent.isDeleted()) {
+        throw new IllegalArgumentException("Destination parent note not found");
+      }
     }
     dataStorage.updateNotesPosition(noteReorder);
     Page updatedPage = getNoteById(noteReorder.getPageId());

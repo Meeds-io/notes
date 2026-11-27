@@ -78,12 +78,15 @@ public class NoteCategoryPlugin implements CategoryPlugin {
 
   @Override
   public boolean canAccess(String objectId, String username) {
-    return noteService.canViewNote(objectId, username);
+    Page note = noteService.getNoteById(objectId);
+    // A note's deletion ends the rights granted here
+    return note != null && !note.isDeleted() && noteService.canViewNote(note, username);
   }
 
   @Override
   public boolean canEdit(String objectId, String username) {
-    return noteService.canEditNote(objectId, username);
+    Page note = noteService.getNoteById(objectId);
+    return note != null && !note.isDeleted() && noteService.canEditNote(note, username);
   }
 
   public static long getSpaceId(Page note) {
@@ -121,7 +124,7 @@ public class NoteCategoryPlugin implements CategoryPlugin {
   @Override
   public CategoryEntryItem getEntryItem(String objectId, String username) {
     Page note = noteService.getNoteById(objectId);
-    if (note == null) {
+    if (note == null || note.isDeleted()) {
       return null;
     }
     Space space = StringUtils.isBlank(note.getWikiOwner()) ? null : spaceService.getSpaceByGroupId(note.getWikiOwner());

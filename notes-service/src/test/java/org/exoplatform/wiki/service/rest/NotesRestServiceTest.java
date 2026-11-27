@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -100,6 +101,7 @@ import io.meeds.notes.model.NoteFeaturedImage;
 import io.meeds.notes.model.NotePageProperties;
 import io.meeds.notes.rest.model.DraftPageEntity;
 import io.meeds.notes.rest.model.FeaturedImageEntity;
+import io.meeds.notes.rest.model.NoteReorder;
 import io.meeds.notes.rest.model.PageEntity;
 import io.meeds.notes.rest.model.PagePropertiesEntity;
 
@@ -1047,4 +1049,177 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     verify(noteService, never()).deleteVersionsByNoteIdAndLang(any(Long.class), any(String.class), any(Boolean.class));
   }
 
+  /**
+   * A deleted note's versions are answered as a missing note's. Mutation: drop
+   * the deleted check, and this test fails.
+   */
+  @Test
+  public void testGetNoteVersionsOfADeletedNote() throws Exception {
+    Page note = new Page("note");
+    note.setId("12");
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.getNoteVersions("12", null).getStatus());
+    verify(noteService, never()).getVersionsHistoryOfNoteByLang(any(Page.class), anyString(), any());
+  }
+
+  @Test
+  public void testUpdateADeletedNoteAnswersAsAMissingNote() throws Exception {
+    // an editable note, updated with its own title
+    Page note = new Page("note", "note");
+    note.setId("12");
+    note.setWikiType("group");
+    note.setWikiOwner("/spaces/team");
+    note.setContent("<p>content</p>");
+    note.setCanManage(true);
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(noteService.updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class)))
+             .thenReturn(note);
+    PageEntity updateRequest = new PageEntity();
+    updateRequest.setId("12");
+    updateRequest.setName("note");
+    updateRequest.setTitle("note");
+    // a new content: without the deletion, the request would be written
+    updateRequest.setContent("<p>new content</p>");
+    updateRequest.setWikiType("group");
+    updateRequest.setWikiOwner("/spaces/team");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.updateNoteById("12", updateRequest).getStatus());
+    verify(noteService, never()).updateNote(any(Page.class), any(PageUpdateType.class), any(org.exoplatform.services.security.Identity.class));
+  }
+
+  /**
+   * A deleted note answers 404 without the includeDeleted option; with it, the
+   * note's id and title only. Mutation: drop the deleted branch, and the option
+   * returns the content again.
+   */
+  @Test
+  public void testGetNoteByIdOfADeletedNoteReturnsItsTitleOnly() throws Exception {
+    Page note = newReadableNote();
+    note.setTitle("deleted title");
+    note.setDeleted(true);
+    when(noteService.getNoteByIdAndLang(1L, identity, "source", "en")).thenReturn(note);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(),
+                 notesRestService.getNoteById("1", "note", "user", false, "source", "en", false).getStatus());
+
+    Response response = notesRestService.getNoteById("1", "note", "user", false, "source", "en", true);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    Page returned = (Page) response.getEntity();
+    assertEquals("1", returned.getId());
+    assertEquals("deleted title", returned.getTitle());
+    assertTrue(returned.isDeleted());
+    assertNull(returned.getContent());
+    assertNull(returned.getWikiOwner());
+  }
+
+  @Test
+  public void testSaveDraftOfADeletedNoteAnswersAsAMissingNote() throws Exception {
+    Page parent = new Page("parent");
+    parent.setId("5");
+    parent.setWikiType("group");
+    parent.setWikiOwner("/spaces/team");
+    Page note = new Page("note");
+    note.setId("12");
+    note.setDeleted(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("5", identity)).thenReturn(parent);
+    when(noteService.getNoteById("12")).thenReturn(note);
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(noteBookService.getWikiByTypeAndOwner("group", "/spaces/team")).thenReturn(new Wiki("group", "/spaces/team"));
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setParentPageId("5");
+    draft.setTargetPageId("12");
+    draft.setWikiType("group");
+    draft.setWikiOwner("/spaces/team");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    verify(noteService, never()).createDraftForExistPage(any(), any(), any(), anyLong(), any());
+    verify(noteService, never()).updateDraftForExistPage(any(), any(), any(), anyLong(), any());
+  }
+
+  @Test
+  public void testRestoreAVersionOfADeletedNoteAnswersAsAMissingNote() throws Exception {
+    Page note = new Page("note");
+    note.setId("12");
+    note.setCanManage(true);
+    note.setDeleted(true);
+    when(noteService.getNoteById("12", identity)).thenReturn(note);
+    when(identity.getUserId()).thenReturn("userId");
+    Page restoreRequest = new Page("note");
+    restoreRequest.setId("12");
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.RestoreNoteVersion("1", restoreRequest).getStatus());
+    verify(noteService, never()).restoreVersionOfNote(anyString(), any(Page.class), anyString());
+  }
+
+  /**
+   * Every path that reads or writes a note by its id answers a deleted note as
+   * a missing one, and reaches no service write. Mutation: drop one of the
+   * deleted checks, and the assertion of its path fails.
+   */
+  @Test
+  public void testADeletedNoteIsAnsweredAsAMissingOneByEveryPath() throws Exception {
+    Page deleted = new Page("deleted", "deleted");
+    deleted.setId("12");
+    deleted.setWikiType("group");
+    deleted.setWikiOwner("/spaces/team");
+    deleted.setCanView(true);
+    deleted.setCanManage(true);
+    deleted.setCanImport(true);
+    deleted.setDeleted(true);
+    Page live = new Page("live", "live");
+    live.setId("13");
+    live.setWikiType("group");
+    live.setWikiOwner("/spaces/team");
+    live.setCanView(true);
+    live.setCanManage(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(deleted);
+    when(noteService.getNoteById("12")).thenReturn(deleted);
+    when(noteService.getNoteById("13", identity)).thenReturn(live);
+    when(noteService.getNoteById("13")).thenReturn(live);
+    when(noteService.getNoteByIdAndLang(12L, identity, null, null)).thenReturn(deleted);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.getLatestDraftOfPage("12", null).getStatus());
+    verify(noteService, never()).getLatestDraftPageByTargetPageAndLang(anyLong(), any());
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.markNoteAsViewed("12", null).getStatus());
+    verify(noteService, never()).markNoteAsViewed(any(Page.class), any(org.exoplatform.services.security.Identity.class));
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.deleteNoteById("12").getStatus());
+    verify(noteService, never()).deleteNote(anyString(), anyString(), anyString(), any(org.exoplatform.services.security.Identity.class));
+
+    // the moved note deleted, then the destination deleted
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.moveNote("12", "13").getStatus());
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.moveNote("13", "12").getStatus());
+    verify(noteService, never()).moveNote(any(WikiPageParams.class),
+                                          any(WikiPageParams.class),
+                                          any(org.exoplatform.services.security.Identity.class));
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.importNote("12", "upload", "overwrite").getStatus());
+    verify(uploadService, never()).getUploadResource(anyString());
+
+    // a deleted parent, for a new note and for a draft
+    PageEntity child = new PageEntity();
+    child.setTitle("child");
+    child.setParentPageId("12");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.createNote(child).getStatus());
+    verify(noteService, never()).isExisting(anyString(), anyString(), anyString());
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setTitle("child");
+    draft.setParentPageId("12");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    verify(noteBookService, never()).getWikiByTypeAndOwner(anyString(), anyString());
+
+    // a reorder of a missing or deleted note
+    NoteReorder reorder = new NoteReorder();
+    reorder.setPageId("12");
+    doThrow(new EntityNotFoundException("Note to update not found")).when(noteService).updateNotesPosition(eq(reorder), any());
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.reorderNotes(reorder).getStatus());
+  }
 }
