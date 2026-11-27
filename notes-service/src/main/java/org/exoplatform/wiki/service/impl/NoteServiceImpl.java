@@ -1766,7 +1766,9 @@ public class NoteServiceImpl implements NoteService {
     } else {
       note = getNoteByIdAndLang(noteId, lang);
     }
-    if (note == null) {
+    // A deleted note, or one the user cannot view, is answered like a missing one
+    if (note == null || note.isDeleted()
+        || (!isDraft && !canViewNote(note, identity == null ? null : identity.getRemoteId()))) {
       throw new ObjectNotFoundException("Note with id: " + noteId + " and lang: " + lang + " not found");
     }
     if (versionNumber != null) {
@@ -2106,10 +2108,17 @@ public class NoteServiceImpl implements NoteService {
 
   public void updateNotesPosition(NoteReorder noteReorder, Identity userIdentity) throws IllegalAccessException {
     Page existingNote = getNoteById(noteReorder.getPageId());
-    if (existingNote == null) {
+    if (existingNote == null || existingNote.isDeleted()) {
       throw new EntityNotFoundException("Note to update not found");
     } else if (userIdentity == null || !canEditNote(existingNote, userIdentity.getUserId())) {
       throw new IllegalAccessException("User does not have edit the note.");
+    }
+    if (StringUtils.isNotBlank(noteReorder.getTargetParentId())
+        && !StringUtils.equals(noteReorder.getSourceParentId(), noteReorder.getTargetParentId())) {
+      Page targetParent = getNoteById(noteReorder.getTargetParentId());
+      if (targetParent == null || targetParent.isDeleted()) {
+        throw new IllegalArgumentException("Destination parent note not found");
+      }
     }
     dataStorage.updateNotesPosition(noteReorder);
     Page updatedPage = getNoteById(noteReorder.getPageId());

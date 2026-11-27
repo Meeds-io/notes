@@ -1155,4 +1155,64 @@ public class NotesRestServiceTest extends AbstractKernelTest {
     assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.RestoreNoteVersion("1", restoreRequest).getStatus());
     verify(noteService, never()).restoreVersionOfNote(anyString(), any(Page.class), anyString());
   }
+
+  /**
+   * Every path that reads or writes a note by its id answers a deleted note as
+   * a missing one, and reaches no service write. Mutation: drop one of the
+   * deleted checks, and the assertion of its path fails.
+   */
+  @Test
+  public void testADeletedNoteIsAnsweredAsAMissingOneByEveryPath() throws Exception {
+    Page deleted = new Page("deleted", "deleted");
+    deleted.setId("12");
+    deleted.setWikiType("group");
+    deleted.setWikiOwner("/spaces/team");
+    deleted.setCanView(true);
+    deleted.setCanManage(true);
+    deleted.setCanImport(true);
+    deleted.setDeleted(true);
+    Page live = new Page("live", "live");
+    live.setId("13");
+    live.setWikiType("group");
+    live.setWikiOwner("/spaces/team");
+    live.setCanView(true);
+    live.setCanManage(true);
+    when(identity.getUserId()).thenReturn("userId");
+    when(noteService.getNoteById("12", identity)).thenReturn(deleted);
+    when(noteService.getNoteById("12")).thenReturn(deleted);
+    when(noteService.getNoteById("13", identity)).thenReturn(live);
+    when(noteService.getNoteById("13")).thenReturn(live);
+    when(noteService.getNoteByIdAndLang(12L, identity, null, null)).thenReturn(deleted);
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.getLatestDraftOfPage("12", null).getStatus());
+    verify(noteService, never()).getLatestDraftPageByTargetPageAndLang(anyLong(), any());
+
+    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), notesRestService.markNoteAsViewed("12", null).getStatus());
+    verify(noteService, never()).markNoteAsViewed(any(Page.class), any(org.exoplatform.services.security.Identity.class));
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.deleteNoteById("12").getStatus());
+    verify(noteService, never()).deleteNote(anyString(), anyString(), anyString(), any(org.exoplatform.services.security.Identity.class));
+
+    // the moved note deleted, then the destination deleted
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.moveNote("12", "13").getStatus());
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.moveNote("13", "12").getStatus());
+    verify(noteService, never()).moveNote(any(WikiPageParams.class),
+                                          any(WikiPageParams.class),
+                                          any(org.exoplatform.services.security.Identity.class));
+
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.importNote("12", "upload", "overwrite").getStatus());
+    verify(uploadService, never()).getUploadResource(anyString());
+
+    // a deleted parent, for a new note and for a draft
+    PageEntity child = new PageEntity();
+    child.setTitle("child");
+    child.setParentPageId("12");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.createNote(child).getStatus());
+    verify(noteService, never()).isExisting(anyString(), anyString(), anyString());
+    DraftPageEntity draft = new DraftPageEntity();
+    draft.setTitle("child");
+    draft.setParentPageId("12");
+    assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), notesRestService.saveDraft(draft).getStatus());
+    verify(noteBookService, never()).getWikiByTypeAndOwner(anyString(), anyString());
+  }
 }

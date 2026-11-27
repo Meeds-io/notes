@@ -2546,6 +2546,44 @@ public class TestNoteService extends BaseTest {
     assertTrue(noteService.getPageAvailableTranslationLanguages(noteId, false).contains("fr"));
   }
 
+  public void testANoteIllustrationAndReorderNeedAViewableNoteAndALiveDestination() throws Exception {
+    startSessionAs("root");
+    long rootIdentityId = getIdentityId("root");
+    long maryIdentityId = getIdentityId("mary");
+    Wiki userWiki = getOrCreateWiki(wikiService, PortalConfig.USER_TYPE, "root");
+    Page note = noteService.createNote(userWiki, "Home", new Page("illustratedPrivateNote", "illustratedPrivateNote"), ROOT_IDENTITY);
+    Page parent = noteService.createNote(userWiki, "Home", new Page("deletedReorderParent", "deletedReorderParent"), ROOT_IDENTITY);
+    Long noteId = Long.valueOf(note.getId());
+    String sourceParentId = noteService.getNoteById(note.getId()).getParentPageId();
+
+    // The owner gets the illustration info (none set), a user who cannot view the note gets the missing note's answer
+    assertNull(noteService.getNoteFeaturedImageInfo(noteId, null, false, null, rootIdentityId, null));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getNoteFeaturedImageInfo(noteId, null, false, null, maryIdentityId, null));
+
+    // A reorder that moves the note under a deleted note is refused, and the note stays where it was
+    assertTrue(noteService.deleteNote(PortalConfig.USER_TYPE, "root", parent.getName()));
+    NoteReorder underDeletedParent = new NoteReorder();
+    underDeletedParent.setPageId(note.getId());
+    underDeletedParent.setWikiType(PortalConfig.USER_TYPE);
+    underDeletedParent.setWikiOwner("root");
+    underDeletedParent.setSourceParentId(sourceParentId);
+    underDeletedParent.setTargetParentId(parent.getId());
+    assertThrows(IllegalArgumentException.class, () -> noteService.updateNotesPosition(underDeletedParent, ROOT_IDENTITY));
+    assertEquals(sourceParentId, noteService.getNoteById(note.getId()).getParentPageId());
+
+    // Once deleted, the note gives its owner neither its illustration info nor a reorder
+    assertTrue(noteService.deleteNote(PortalConfig.USER_TYPE, "root", note.getName()));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> noteService.getNoteFeaturedImageInfo(noteId, null, false, null, rootIdentityId, null));
+    NoteReorder deletedNote = new NoteReorder();
+    deletedNote.setPageId(note.getId());
+    deletedNote.setSourceParentId(sourceParentId);
+    deletedNote.setTargetParentId(sourceParentId);
+    Exception notFound = assertThrows(Exception.class, () -> noteService.updateNotesPosition(deletedNote, ROOT_IDENTITY));
+    assertEquals("Note to update not found", notFound.getMessage());
+  }
+
   public void testADeletedNoteIsNeitherExportedNorEdited() throws Exception {
     startSessionAs("root");
     Wiki portalWiki = getOrCreateWiki(wikiService, PortalConfig.PORTAL_TYPE, PORTAL_NAME);

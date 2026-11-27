@@ -495,7 +495,7 @@ public class NotesRestService implements ResourceContainer {
     }
     try {
       Page targetPage = noteService.getNoteById(noteId, ConversationState.getCurrent().getIdentity());
-      if (targetPage == null) {
+      if (targetPage == null || targetPage.isDeleted()) {
         return Response.status(Response.Status.NOT_FOUND).cacheControl(cc).build();
       }
       if (!targetPage.isCanManage()) {
@@ -574,7 +574,7 @@ public class NotesRestService implements ResourceContainer {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNotEmpty(note.getParentPageId())) {
         Page note_ = noteService.getNoteById(note.getParentPageId(), identity);
-        if (note_ != null) {
+        if (note_ != null && !note_.isDeleted()) {
           noteBookType = note_.getWikiType();
           noteBookOwner = note_.getWikiOwner();
           note.setParentPageName(note_.getName());
@@ -639,6 +639,9 @@ public class NotesRestService implements ResourceContainer {
       Identity identity = ConversationState.getCurrent().getIdentity();
       if (StringUtils.isNoneEmpty(draftNoteToSave.getParentPageId())) {
         parentNote = noteService.getNoteById(draftNoteToSave.getParentPageId(), identity);
+        if (parentNote != null && parentNote.isDeleted()) {
+          return Response.status(Response.Status.BAD_REQUEST).build();
+        }
       }
       if (parentNote != null) {
         noteBookType = parentNote.getWikiType();
@@ -1043,7 +1046,7 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
-      if (note == null) {
+      if (note == null || note.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       String noteName = note.getName();
@@ -1105,11 +1108,11 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteById(noteId, identity);
-      if (note == null) {
+      if (note == null || note.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       Page toNote = noteService.getNoteById(toNoteId);
-      if (toNote == null) {
+      if (toNote == null || toNote.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
       WikiPageParams currentLocationParams = new WikiPageParams(note.getWikiType(), note.getWikiOwner(), note.getName());
@@ -1245,7 +1248,7 @@ public class NotesRestService implements ResourceContainer {
 
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page parent = noteService.getNoteById(noteId, identity);
-      if (parent == null) {
+      if (parent == null || parent.isDeleted()) {
         return Response.status(Response.Status.BAD_REQUEST).build();
       }
 
@@ -1578,6 +1581,9 @@ public class NotesRestService implements ResourceContainer {
     try {
       Identity identity = ConversationState.getCurrent().getIdentity();
       Page note = noteService.getNoteByIdAndLang(Long.parseLong(noteId), identity, null, lang);
+      if (note == null || note.isDeleted()) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
       noteService.markNoteAsViewed(note, identity);
       return Response.ok().build();
     } catch (IllegalAccessException e) {
